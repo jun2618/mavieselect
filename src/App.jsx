@@ -893,10 +893,6 @@ async function downloadExcel(entry) {
 function LengthMeasurementPage({
   title,
   rooms,
-  onAddRoom,
-  onRenameRoom,
-  onDeleteRoom,
-  roomHasData,
   records,
   setRecords,
   pageIndex,
@@ -969,13 +965,6 @@ function LengthMeasurementPage({
         ))}
         <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>全室合計</button>
       </nav>
-      <RoomManagementControls
-        rooms={rooms}
-        onAddRoom={onAddRoom}
-        onRenameRoom={onRenameRoom}
-        onDeleteRoom={onDeleteRoom}
-        roomHasData={roomHasData}
-      />
 
       {isSummaryPage ? (
         <section className="card">
@@ -1084,6 +1073,7 @@ export default function App() {
   const [projectRooms, setProjectRooms] = useState(defaultRooms)
   const [roomConfirmations, setRoomConfirmations] = useState({})
   const [showMeasurementCheck, setShowMeasurementCheck] = useState(false)
+  const [showRoomManagement, setShowRoomManagement] = useState(false)
   const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
   const [measurementType, setMeasurementType] = useState('天井')
   const [height, setHeight] = useState('')
@@ -1505,6 +1495,7 @@ export default function App() {
     setIsDirty(false)
     setShowSavedList(false)
     setShowMeasurementCheck(false)
+    setShowRoomManagement(false)
     setReturnToMeasurementCheck(false)
     setStarted(true)
   }
@@ -1676,6 +1667,7 @@ export default function App() {
     setActiveInput('')
     setIsDirty(false)
     setShowMeasurementCheck(false)
+    setShowRoomManagement(false)
     setReturnToMeasurementCheck(false)
     setStarted(true)
   }
@@ -1770,6 +1762,11 @@ export default function App() {
   }
 
   function deleteRoom(roomName) {
+    if (rooms.length <= 1) {
+      window.alert('部屋をすべて削除することはできません')
+      return
+    }
+
     const roomIndex = rooms.indexOf(roomName)
     if (roomIndex === -1) return
     setProjectRooms(previous => previous.filter(name => name !== roomName))
@@ -2323,9 +2320,11 @@ export default function App() {
             </button>
             <p className="propertyLine">{selectedProperty?.name}　{unit}号室</p>
             <h1>
-              {showMeasurementCheck
-                ? '採寸チェック'
-                : activePage === 'cross'
+              {showRoomManagement
+                ? '部屋管理'
+                : showMeasurementCheck
+                  ? '採寸チェック'
+                  : activePage === 'cross'
                 ? isSummaryPage ? '全室の合計' : '採寸入力'
                 : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
             </h1>
@@ -2352,28 +2351,53 @@ export default function App() {
             </p>
             {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
 
-            <div className="measurementTypes" aria-label="採寸機能">
-              <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
-              <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
-              <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
-            </div>
+            {!showRoomManagement && !showMeasurementCheck && (
+              <div className="measurementTypes" aria-label="採寸機能">
+                <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
+                <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
+                <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
+              </div>
+            )}
 
-            <button
-              className="measurementCheckButton"
-              type="button"
-              onClick={() => {
-                setShowMeasurementCheck(previous => !previous)
-                setReturnToMeasurementCheck(false)
-              }}
-            >
-              {showMeasurementCheck
-                ? '採寸画面へ戻る'
-                : returnToMeasurementCheck
-                  ? '採寸チェックへ戻る'
-                  : '採寸チェック'}
-            </button>
+            {!showRoomManagement && (
+              <button
+                className="measurementCheckButton"
+                type="button"
+                onClick={() => {
+                  setShowMeasurementCheck(previous => !previous)
+                  setReturnToMeasurementCheck(false)
+                }}
+              >
+                {showMeasurementCheck
+                  ? '採寸画面へ戻る'
+                  : returnToMeasurementCheck
+                    ? '採寸チェックへ戻る'
+                    : '採寸チェック'}
+              </button>
+            )}
 
-            {showMeasurementCheck ? (
+            {!showMeasurementCheck && (
+              <button
+                className="measurementCheckButton"
+                type="button"
+                onClick={() => setShowRoomManagement(previous => !previous)}
+              >
+                {showRoomManagement ? '← 採寸画面へ戻る' : '⚙ 部屋管理'}
+              </button>
+            )}
+
+            {showRoomManagement ? (
+              <section className="card">
+                <h2>部屋管理</h2>
+                <RoomManagementControls
+                  rooms={rooms}
+                  onAddRoom={addCustomRoom}
+                  onRenameRoom={renameRoom}
+                  onDeleteRoom={deleteRoom}
+                  roomHasData={roomHasData}
+                />
+              </section>
+            ) : showMeasurementCheck ? (
               <section className="roomCheckSection">
                 <div className="roomCheckTotals" aria-live="polite">
                   <span>確認済み：{confirmedRoomCount}部屋</span>
@@ -2430,10 +2454,6 @@ export default function App() {
                 key="cf"
                 title="CF"
                 rooms={rooms}
-                onAddRoom={addCustomRoom}
-                onRenameRoom={renameRoom}
-                onDeleteRoom={deleteRoom}
-                roomHasData={roomHasData}
                 records={cfRecords}
                 setRecords={setCfRecords}
                 pageIndex={cfPageIndex}
@@ -2445,10 +2465,6 @@ export default function App() {
                 key="soft"
                 title="ソフト巾木"
                 rooms={rooms}
-                onAddRoom={addCustomRoom}
-                onRenameRoom={renameRoom}
-                onDeleteRoom={deleteRoom}
-                roomHasData={roomHasData}
                 records={softRecords}
                 setRecords={setSoftRecords}
                 pageIndex={softPageIndex}
@@ -2464,13 +2480,6 @@ export default function App() {
                   ))}
                   <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>全室合計</button>
                 </nav>
-                <RoomManagementControls
-                  rooms={rooms}
-                  onAddRoom={addCustomRoom}
-                  onRenameRoom={renameRoom}
-                  onDeleteRoom={deleteRoom}
-                  roomHasData={roomHasData}
-                />
                 {isSummaryPage ? (
                   <section className="card">
                     <h2>部屋ごとの合計</h2>

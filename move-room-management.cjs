@@ -165,19 +165,26 @@ replaceOnce(
 '部屋管理ボタンと専用ページを追加'
 );
 
-// 8) クロス画面に直置きされている部屋管理UIを削除
-replaceOnce(
-`                <RoomManagementControls
+// 8) クロス画面に直置きされている部屋管理UIを1箇所だけ削除
+{
+  const block = `                <RoomManagementControls
                   rooms={rooms}
                   onAddRoom={addCustomRoom}
                   onRenameRoom={renameRoom}
                   onDeleteRoom={deleteRoom}
                   roomHasData={roomHasData}
                 />
-`,
-``,
-'クロス画面から部屋管理UIを削除'
-);
+`
+  const count = s.split(block).length - 1
+  if (count < 1) {
+    console.error(`置換失敗: クロス画面から部屋管理UIを削除 (一致数: ${count})`)
+    process.exit(1)
+  }
+  // この時点では専用ページにも同じブロックが1つ存在するため、最後の一致だけ削除する
+  const index = s.lastIndexOf(block)
+  s = s.slice(0, index) + s.slice(index + block.length)
+  console.log('OK: クロス画面から部屋管理UIを削除')
+}
 
 // 9) CF呼び出しから不要propsを削除
 replaceOnce(
