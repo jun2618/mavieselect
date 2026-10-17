@@ -364,15 +364,21 @@ const styles = `
   .crossInputArea .numberKeypad { gap:6px; margin-top:10px; padding:8px; }
   .crossInputArea .keypadButton { min-height:42px; }
   .crossInputArea .crossRegister { min-height:50px; margin:10px 0 0; }
-  .saveButton { width:100%; margin:12px 0 4px; background:linear-gradient(180deg,#91baff,#6e91e8); box-shadow:0 5px 0 #526fc2; }
+  .measurementActions { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin:16px 0 20px; }
+  .measurementActions .saveButton,.measurementActions .secondaryButton { width:100%; margin:0; }
+  .saveButton { background:linear-gradient(180deg,#91baff,#6e91e8); box-shadow:0 5px 0 #526fc2; }
   .secondaryButton { width:100%; margin-top:12px; background:linear-gradient(180deg,#c6a4e8,#a77bd1); box-shadow:0 5px 0 #875bad; }
   .primary:disabled { opacity:.45; cursor:not-allowed; }
   .back { padding:9px 0; border:0; color:#d27f6d; background:transparent; font:inherit; font-size:16px; font-weight:800; cursor:pointer; }
-  .roomTabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin:18px 0; }
-  .room,.measurementType { min-height:50px; padding:8px 5px; border:1px solid #e9dce8; border-radius:14px; color:#75697a; background:linear-gradient(180deg,#fff,#f8f1f8); box-shadow:0 4px 0 #e3d4e1; font-size:15px; }
+  .roomTabs { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,96px),1fr)); gap:10px; margin:20px 0; }
+  .room,.measurementType { min-width:0; min-height:50px; padding:8px 5px; border:1px solid #e9dce8; border-radius:14px; color:#75697a; background:linear-gradient(180deg,#fff,#f8f1f8); box-shadow:0 4px 0 #e3d4e1; font-size:15px; overflow-wrap:anywhere; }
   .room.active,.measurementType.active { border-color:#f3a18f; color:#fff; background:linear-gradient(180deg,#ffb49b,#f18c7d); box-shadow:0 4px 0 #d6756c; }
   .measurementTypes,.inputRow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-  .measurementTypes { margin:0 0 20px; }
+  .measurementTypes { grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); gap:12px; margin:18px 0 20px; }
+  .measurementTypes .measurementType { white-space:normal; }
+  .roomNavigation { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:20px; }
+  .roomNavigation > button { flex:1 1 140px; min-width:0; min-height:54px; }
+  .roomNavigation .roomNavigationNext { width:auto; padding:0 18px; }
   .inputRow label { display:grid; grid-template-rows:38px 60px; width:100%; min-width:0; margin:0; text-align:center; }
   .inputRow label>span { display:flex; align-items:center; justify-content:center; white-space:nowrap; }
   .inputRow input { display:block; width:100%; height:60px; min-height:60px; padding:0 10px; font-size:21px; text-align:center; }
@@ -445,6 +451,10 @@ const styles = `
   .theme-pop .settingsOption { border-color:#edcbd9; background:#fffdf7; }
   .theme-pop .settingsOption.active { border-color:#e77ca2; background:linear-gradient(180deg,#f7a8c6,#e879a5); }
   @media (max-width:600px) {
+    .measurementActions { gap:16px; margin:18px 0 22px; }
+    .measurementTypes { grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr)); gap:12px; }
+    .roomTabs { gap:10px; margin:20px 0; }
+    .roomNavigation { gap:12px; }
     .crossInputArea .inputRow label { grid-template-rows:30px 52px; }
     .crossInputArea .inputRow input { height:52px; min-height:52px; }
     .crossInputArea .numberKeypad { gap:5px; padding:7px; }
@@ -504,94 +514,6 @@ function getLengthQuantity(record) {
 
 function getSoftBaseboardQuantity(record) {
   return Number(record.quantity || 0)
-}
-
-function getPhotoRoomKey(company, propertyName, address, unit, room) {
-  return JSON.stringify([company, propertyName, address, unit, room])
-}
-
-function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
-  const [selectedPhoto, setSelectedPhoto] = useState(null)
-
-  function handleFilesSelected(event) {
-    const files = Array.from(event.currentTarget.files || [])
-    event.currentTarget.value = ''
-    if (files.length) onAddFiles(files)
-  }
-
-  function deletePhoto(photo) {
-    if (!window.confirm('この写真を削除しますか？')) return
-    onDeletePhoto(photo)
-    setSelectedPhoto(null)
-  }
-
-  return (
-    <section className="card photoRoomCard">
-      <h2>{roomName}の写真</h2>
-      <div className="photoAddActions">
-        <label className="photoActionButton">
-          カメラで撮影
-          <input
-            className="photoFileInput"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleFilesSelected}
-            aria-label={`${roomName}の写真をカメラで撮影`}
-          />
-        </label>
-        <label className="photoActionButton">
-          ギャラリーから追加
-          <input
-            className="photoFileInput"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFilesSelected}
-            aria-label={`${roomName}の写真をギャラリーから選択`}
-          />
-        </label>
-      </div>
-      {photos.length ? (
-        <div className="photoThumbnailGrid">
-          {photos.map(photo => (
-            <div className="photoThumbnailItem" key={photo.id}>
-              <button
-                className="photoThumbnailButton"
-                type="button"
-                onClick={() => setSelectedPhoto(photo)}
-                aria-label="写真を拡大表示"
-              >
-                <img src={photo.url} alt={`${roomName}の写真`} />
-              </button>
-              <button className="photoDeleteButton" type="button" onClick={() => deletePhoto(photo)}>
-                削除
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="empty">この部屋の写真はありません</p>
-      )}
-      {selectedPhoto && (
-        <div className="photoModalBackdrop photoPreviewBackdrop" onClick={() => setSelectedPhoto(null)}>
-          <section
-            className="photoModal photoPreviewModal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="photo-preview-title"
-            onClick={event => event.stopPropagation()}
-          >
-            <h2 id="photo-preview-title">{roomName}の写真</h2>
-            <img className="photoLargePreview" src={selectedPhoto.url} alt={`${roomName}の拡大写真`} />
-            <button className="photoModalCancel" type="button" onClick={() => setSelectedPhoto(null)}>
-              写真一覧へ戻る
-            </button>
-          </section>
-        </div>
-      )}
-    </section>
-  )
 }
 
 function sumRecords(records, roomName, type) {
@@ -924,9 +846,9 @@ function LengthMeasurementPage({
               <div className="summaryLine summaryGrand"><span>{room}の{title}合計</span><strong>{formatQuantity(roomTotals[room] || 0)}{unit}</strong></div>
             </div>
           </section>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 16 }}>
+          <div className="roomNavigation">
             <button className="back" type="button" disabled={pageIndex === 0} onClick={() => goToPage(pageIndex - 1)}>← 前の部屋</button>
-            <button className="primary" type="button" style={{ width: 'auto', padding: '0 18px' }} onClick={() => goToPage(pageIndex + 1)}>
+            <button className="primary roomNavigationNext" type="button" onClick={() => goToPage(pageIndex + 1)}>
               {pageIndex === rooms.length - 1 ? '全室合計へ →' : '次の部屋 →'}
             </button>
           </div>
@@ -979,23 +901,10 @@ export default function App() {
   const [records, setRecords] = useState([])
   const [saveStatus, setSaveStatus] = useState('')
   const [activePage, setActivePage] = useState('cross')
-  const [showPhotoPage, setShowPhotoPage] = useState(false)
-  const [photoListOpen, setPhotoListOpen] = useState(false)
-  const [photoRoom, setPhotoRoom] = useState(rooms[0])
   const [cfPageIndex, setCfPageIndex] = useState(0)
   const [softPageIndex, setSoftPageIndex] = useState(0)
   const [cfRecords, setCfRecords] = useState([])
   const [softRecords, setSoftRecords] = useState([])
-  const [photosByRoom, setPhotosByRoom] = useState({})
-  const photosByRoomRef = useRef(photosByRoom)
-
-  useEffect(() => {
-    photosByRoomRef.current = photosByRoom
-  }, [photosByRoom])
-
-  useEffect(() => () => {
-    Object.values(photosByRoomRef.current).flat().forEach(photo => URL.revokeObjectURL(photo.url))
-  }, [])
 
   useEffect(() => {
     const saved = readLastSession()
@@ -1100,46 +1009,6 @@ export default function App() {
   function changeTheme(value) {
     setTheme(value)
     try { localStorage.setItem(themeKey, value) } catch { /* 設定の保存は任意 */ }
-  }
-
-  function addRoomPhotos(roomName, files) {
-    const imageFiles = files.filter(file => file.type.startsWith('image/'))
-    if (imageFiles.length !== files.length) {
-      window.alert('画像ファイルを選択してください。')
-    }
-    if (!imageFiles.length) return
-
-    const roomKey = getPhotoRoomKey(
-      company,
-      selectedProperty?.name || '',
-      selectedProperty?.address || '',
-      unit,
-      roomName
-    )
-    const addedPhotos = imageFiles.map(file => ({
-      id: createRecordId(),
-      name: file.name,
-      url: URL.createObjectURL(file),
-    }))
-    setPhotosByRoom(previous => ({
-      ...previous,
-      [roomKey]: [...(previous[roomKey] || []), ...addedPhotos],
-    }))
-  }
-
-  function deleteRoomPhoto(roomName, photoToDelete) {
-    const roomKey = getPhotoRoomKey(
-      company,
-      selectedProperty?.name || '',
-      selectedProperty?.address || '',
-      unit,
-      roomName
-    )
-    setPhotosByRoom(previous => ({
-      ...previous,
-      [roomKey]: (previous[roomKey] || []).filter(photo => photo.id !== photoToDelete.id),
-    }))
-    URL.revokeObjectURL(photoToDelete.url)
   }
 
   function savePropertyMaster(nextMaster, successMessage) {
@@ -1626,28 +1495,6 @@ export default function App() {
   const themeOptions = [
     ['beige', 'ベージュ'], ['dark', 'ダーク'], ['pop', 'ポップ'],
   ]
-  function openPhotoPage() {
-    const roomIndex = activePage === 'cf'
-      ? cfPageIndex
-      : activePage === 'soft'
-        ? softPageIndex
-        : pageIndex
-    setPhotoRoom(rooms[roomIndex] || rooms[0])
-    setPhotoListOpen(false)
-    setShowPhotoPage(true)
-  }
-
-  function getPhotosForRoom(roomName) {
-    const roomKey = getPhotoRoomKey(
-      company,
-      selectedProperty?.name || '',
-      selectedProperty?.address || '',
-      unit,
-      roomName
-    )
-    return photosByRoom[roomKey] || []
-  }
-
   return (
     <>
       <style>{styles}</style>
@@ -2081,42 +1928,37 @@ export default function App() {
             <button className="back" onClick={() => setStarted(false)}>← 物件情報へ戻る</button>
             <p className="propertyLine">{selectedProperty?.name}　{unit}号室</p>
             <h1>
-              {showPhotoPage
-                ? photoListOpen ? '📷 写真一覧' : `${photoRoom}の写真`
-                : activePage === 'cross'
-                  ? isSummaryPage ? '全室の合計' : '採寸入力'
-                  : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
+              {activePage === 'cross'
+                ? isSummaryPage ? '全室の合計' : '採寸入力'
+                : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
             </h1>
-            <button className="saveButton" type="button" onClick={saveCurrentData}>保存する</button>
-            <button
-              className="secondaryButton"
-              type="button"
-              onClick={() => downloadExcel({
-                company,
-                propertyName: selectedProperty?.name || '',
-                address: selectedProperty?.address || '',
-                unit,
-                records,
-                cfRecords,
-                softRecords,
-              })}
-            >
-              Excel出力
-            </button>
+            <div className="measurementActions">
+              <button className="saveButton" type="button" onClick={saveCurrentData}>保存する</button>
+              <button
+                className="secondaryButton"
+                type="button"
+                onClick={() => downloadExcel({
+                  company,
+                  propertyName: selectedProperty?.name || '',
+                  address: selectedProperty?.address || '',
+                  unit,
+                  records,
+                  cfRecords,
+                  softRecords,
+                })}
+              >
+                Excel出力
+              </button>
+            </div>
             {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
 
-            {!showPhotoPage ? (
-              <>
-                <div className="measurementTypes" aria-label="採寸機能">
-                  <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
-                  <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
-                  <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
-                </div>
-                <button className="photoSectionButton" type="button" onClick={openPhotoPage}>
-                  📷 写真
-                </button>
+            <div className="measurementTypes" aria-label="採寸機能">
+              <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
+              <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
+              <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
+            </div>
 
-                {activePage === 'cf' ? (
+            {activePage === 'cf' ? (
               <LengthMeasurementPage key="cf" title="CF" records={cfRecords} setRecords={setCfRecords} pageIndex={cfPageIndex} setPageIndex={setCfPageIndex} />
               ) : activePage === 'soft' ? (
               <LengthMeasurementPage key="soft" title="ソフト巾木" records={softRecords} setRecords={setSoftRecords} pageIndex={softPageIndex} setPageIndex={setSoftPageIndex} countOnly />
@@ -2253,60 +2095,15 @@ export default function App() {
                       </div>
                     </section>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 16 }}>
+                    <div className="roomNavigation">
                       <button className="back" type="button" disabled={pageIndex === 0} onClick={() => goToPage(pageIndex - 1)}>← 前の部屋</button>
-                      <button className="primary" type="button" style={{ width: 'auto', padding: '0 18px' }} onClick={() => goToPage(pageIndex + 1)}>
+                      <button className="primary roomNavigationNext" type="button" onClick={() => goToPage(pageIndex + 1)}>
                         {pageIndex === rooms.length - 1 ? '全室合計へ →' : '次の部屋 →'}
                       </button>
                     </div>
                   </>
                 )}
               </>
-            )}
-              </>
-            ) : (
-              <section className="photoPage">
-                <button className="back" type="button" onClick={() => setShowPhotoPage(false)}>
-                  ← 採寸画面へ戻る
-                </button>
-                {photoListOpen ? (
-                  <div className="photoRoomList">
-                    {rooms.map(roomName => (
-                      <button
-                        className="photoRoomListItem"
-                        key={roomName}
-                        type="button"
-                        onClick={() => {
-                          setPhotoRoom(roomName)
-                          setPhotoListOpen(false)
-                        }}
-                      >
-                        <span>{roomName}</span>
-                        <strong>{getPhotosForRoom(roomName).length}枚　›</strong>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <button className="back" type="button" onClick={() => setPhotoListOpen(true)}>
-                      ← 写真一覧へ戻る
-                    </button>
-                    <RoomPhotos
-                      key={getPhotoRoomKey(
-                        company,
-                        selectedProperty?.name || '',
-                        selectedProperty?.address || '',
-                        unit,
-                        photoRoom
-                      )}
-                      roomName={photoRoom}
-                      photos={getPhotosForRoom(photoRoom)}
-                      onAddFiles={files => addRoomPhotos(photoRoom, files)}
-                      onDeletePhoto={photo => deleteRoomPhoto(photoRoom, photo)}
-                    />
-                  </>
-                )}
-              </section>
             )}
           </main>
         )}
