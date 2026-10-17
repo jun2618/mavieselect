@@ -498,6 +498,9 @@ function formatQuantity(value) {
 }
 
 function getLengthQuantity(record) {
+  if (typeof record.quantity === 'number' && Number.isFinite(record.quantity)) {
+    return record.quantity
+  }
   return Number(record.length || 0) * Number(record.count || 0)
 }
 
@@ -631,7 +634,7 @@ function createCaseFile(entry) {
         type: record.type,
         height: Number(record.height || 0),
         count: Number(record.count || 0),
-        quantity: Number(getRecordQuantity(record)),
+        quantity: Number(formatQuantity(getRecordQuantity(record))),
         confirmedQuantity: Number(formatQuantity(getRecordQuantity(record))),
         memo: record.memo || '',
       })),
@@ -640,13 +643,14 @@ function createCaseFile(entry) {
         room: record.room,
         length: Number(record.length || 0),
         count: Number(record.count || 0),
+        quantity: Number(formatQuantity(getLengthQuantity(record))),
         confirmedQuantity: Number(formatQuantity(getLengthQuantity(record))),
         memo: record.memo || '',
       })),
       softRecords: (entry.softRecords || []).map(record => ({
         id: record.id,
         room: record.room,
-        quantity: Number(getSoftBaseboardQuantity(record)),
+        quantity: Number(formatQuantity(getSoftBaseboardQuantity(record))),
         confirmedQuantity: Number(formatQuantity(getSoftBaseboardQuantity(record))),
       })),
       updatedAt: savedAt,
@@ -722,7 +726,7 @@ function validateCaseFile(value) {
       const keys = kind === 'クロス'
         ? ['id', 'room', 'type', 'height', 'count', 'quantity', 'confirmedQuantity', 'memo']
         : kind === 'CF'
-          ? ['id', 'room', 'length', 'count', 'confirmedQuantity', 'memo']
+          ? ['id', 'room', 'length', 'count', 'quantity', 'confirmedQuantity', 'memo']
           : ['id', 'room', 'quantity', 'confirmedQuantity']
       assertAllowedKeys(row, keys, label)
       const id = assertText(row.id, `${label}のID`, { required: true, maxLength: 100 })
@@ -739,19 +743,20 @@ function validateCaseFile(value) {
         if (!measurementTypes.includes(type)) throw new Error(`${label}の採寸区分が認識できません。`)
         assertFiniteNumber(row.height, `${label}の高さ`, { min: Number.MIN_VALUE })
         assertFiniteNumber(row.count, `${label}の本数`, { min: 1, integer: true })
-        const quantity = assertFiniteNumber(row.quantity, `${label}の数量`)
-        return { id, room, type, height: row.height, count: row.count, quantity, confirmedQuantity, memo: assertText(row.memo, `${label}のメモ`) }
+        assertFiniteNumber(row.quantity, `${label}の数量`)
+        return { id, room, type, height: row.height, count: row.count, quantity: confirmedQuantity, memo: assertText(row.memo, `${label}のメモ`) }
       }
       if (kind === 'CF') {
         assertFiniteNumber(row.length, `${label}の長さ`, { min: Number.MIN_VALUE })
         assertFiniteNumber(row.count, `${label}の本数`, { min: 1, integer: true })
-        return { id, room, length: row.length, count: row.count, confirmedQuantity, memo: assertText(row.memo, `${label}のメモ`) }
+        if (row.quantity !== undefined) assertFiniteNumber(row.quantity, `${label}の数量`)
+        return { id, room, length: row.length, count: row.count, quantity: confirmedQuantity, memo: assertText(row.memo, `${label}のメモ`) }
       }
+      assertFiniteNumber(row.quantity, `${label}の数量`)
       return {
         id,
         room,
-        quantity: assertFiniteNumber(row.quantity, `${label}の数量`),
-        confirmedQuantity,
+        quantity: confirmedQuantity,
       }
     })
   }
@@ -1509,42 +1514,56 @@ export default function App() {
 
   async function shareCaseEntry(entry) {
     setShareStatus('')
+    let fileName = ''
+    let mimeType = 'application/json'
+    let fileSize = null
+    let canShareResult = null
+    const logShareError = error => {
+      console.error('案件ファイルの共有処理に失敗しました。', {
+        errorName: error?.name || 'Error',
+        errorMessage: error?.message || String(error),
+        fileName,
+        mimeType,
+        fileSize,
+        canShareResult,
+      })
+    }
+
     try {
       const caseFile = createCaseFile(entry)
-      const fileName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}_MCross案件.json`
+      fileName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}_MCross案件.json`
         .replace(/[\\/:*?"<>|]/g, '_')
       const fileContents = JSON.stringify(caseFile, null, 2)
       const file = typeof File === 'function'
-        ? new File([fileContents], fileName, { type: 'application/json' })
+        ? new File([fileContents], fileName, { type: mimeType })
         : null
+      fileSize = file?.size ?? new Blob([fileContents], { type: mimeType }).size
 
-      let canShareFile = false
-      try {
-        canShareFile = Boolean(
-          file && typeof navigator.share === 'function' &&
-          typeof navigator.canShare === 'function' &&
-          navigator.canShare({ files: [file] })
-        )
-      } catch {
-        canShareFile = false
-      }
-
-      if (canShareFile) {
+      if (file && typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
         try {
-          await navigator.share({ files: [file], title: 'M-Cross案件データ' })
-          setShareStatus('案件ファイルを共有しました。')
+          canShareResult = navigator.canShare({ files: [file] })
         } catch (error) {
-          if (error.name !== 'AbortError') {
-            setShareStatus('案件ファイルを共有できませんでした。')
+          canShareResult = false
+          logShareError(error)
+        }
+
+        if (canShareResult) {
+          try {
+            await navigator.share({ files: [file] })
+            setShareStatus('案件ファイルを共有しました。')
+            return
+          } catch (error) {
+            if (error.name === 'AbortError') return
+            logShareError(error)
           }
         }
-        return
       }
 
+      window.alert('この端末では案件ファイルを直接共有できないため、案件ファイルをダウンロードします')
       downloadTextFile(fileContents, fileName, 'application/json;charset=utf-8')
-      setShareStatus('ファイル共有に対応していないため、案件JSONをダウンロードしました。')
+      setShareStatus('案件ファイルをダウンロードしました。')
     } catch (error) {
-      console.error('案件ファイルを作成できませんでした。', error)
+      logShareError(error)
       window.alert('案件ファイルを作成できませんでした。')
     }
   }
