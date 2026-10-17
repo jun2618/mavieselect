@@ -1121,6 +1121,14 @@ export default function App() {
   const [savedEntries, setSavedEntries] = useState([])
   const [shareStatus, setShareStatus] = useState('')
   const caseImportInputRef = useRef(null)
+  const [incomingCaseId] = useState(
+    () => new URLSearchParams(window.location.search).get('caseShare')
+  )
+  const [incomingCase, setIncomingCase] = useState(
+    () => incomingCaseId ? { status: 'loading' } : null
+  )
+  const [incomingDuplicate, setIncomingDuplicate] = useState(null)
+  const [incomingCaseError, setIncomingCaseError] = useState('')
   const [savedSearch, setSavedSearch] = useState('')
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
@@ -1170,6 +1178,49 @@ export default function App() {
     }
     setStarted(Boolean(saved.propertyName && saved.unit))
   }, [])
+
+  useEffect(() => {
+    if (!incomingCaseId) return
+    let cancelled = false
+    const loadSharedCase = async () => {
+      if (!/^[A-Za-z0-9_-]{43}$/.test(incomingCaseId)) {
+        setIncomingCase({ status: 'error' })
+        setIncomingCaseError('共有リンクが無効です。')
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/cases/${encodeURIComponent(incomingCaseId)}`, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        })
+        const result = await response.json()
+        if (cancelled) return
+        if (response.status === 410) {
+          setIncomingCase({ status: 'error' })
+          setIncomingCaseError('この共有リンクは期限切れです')
+          return
+        }
+        if (!response.ok) {
+          throw new Error(result.error || '共有案件を読み込めませんでした。')
+        }
+        setIncomingCase({
+          status: 'ready',
+          caseData: validateCaseFile(result.caseFile),
+          expiresAt: result.expiresAt,
+        })
+        setIncomingCaseError('')
+      } catch (error) {
+        if (cancelled) return
+        setIncomingCase({ status: 'error' })
+        setIncomingCaseError(error.message || '共有案件を読み込めませんでした。')
+      }
+    }
+    loadSharedCase()
+    return () => {
+      cancelled = true
+    }
+  }, [incomingCaseId])
 
   useEffect(() => {
     if (!activeInput) return
@@ -1525,6 +1576,143 @@ export default function App() {
       console.error('M-Cross案件ファイルを書き出せませんでした。', error)
       window.alert('案件ファイルを作成できませんでした。')
     }
+  }
+
+  async function createCaseShareLink(entry) {
+    setShareStatus('案件共有リンクを作成しています。')
+    try {
+      const response = await fetch('/api/cases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(createCaseFile(entry)),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || '案件共有リンクを作成できませんでした。')
+
+      const shareUrl = new URL(window.location.pathname, window.location.origin)
+      shareUrl.searchParams.set('caseShare', result.id)
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({
+            title: 'M-Cross 案件共有',
+            text: `${entry.propertyName || '物件'} ${entry.unit || ''}号室の案件を確認してください。`,
+            url: shareUrl.toString(),
+          })
+          setShareStatus('案件共有リンクを共有しました。有効期限は7日間です。')
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            setShareStatus('共有はキャンセルされました。リンクは7日間有効です。')
+            return
+          }
+          await copyShareText(shareUrl.toString())
+          setShareStatus('共有画面を開けなかったため、案件共有リンクをコピーしました。')
+        }
+        return
+      }
+
+      await copyShareText(shareUrl.toString())
+      setShareStatus('案件共有リンクをコピーしました。有効期限は7日間です。')
+    } catch (error) {
+      console.error('案件共有リンクを作成できませんでした。', error)
+      setShareStatus(error.message || '案件共有リンクを作成できませんでした。')
+    }
+  }
+
+  function closeIncomingCase() {
+    const url = new URL(window.location.href)
+    url.searchParams.delete('caseShare')
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+    setIncomingCase(null)
+    setIncomingDuplicate(null)
+    setIncomingCaseError('')
+  }
+
+  function saveIncomingCase(mode) {
+    if (!incomingCase?.caseData) return
+    const importedData = incomingCase.caseData
+    const overwriteEntry = mode === 'overwrite' ? incomingDuplicate : null
+    const saveAsCopy = mode === 'copy'
+    const now = new Date()
+    let dataToSave = importedData
+
+    if (saveAsCopy) {
+      dataToSave = {
+        ...importedData,
+        propertyName: `${importedData.propertyName} (コピー ${now.toLocaleString('ja-JP')})`,
+        updatedAt: now.toISOString(),
+      }
+    }
+
+    try {
+      let storageKey = getSaveKey(
+        dataToSave.company,
+        { name: dataToSave.propertyName, address: dataToSave.address },
+        dataToSave.unit
+      )
+      if (saveAsCopy) {
+        let suffix = 2
+        while (localStorage.getItem(storageKey) !== null) {
+          dataToSave = {
+            ...dataToSave,
+            propertyName: `${importedData.propertyName} (コピー ${now.toLocaleString('ja-JP')} ${suffix})`,
+          }
+          storageKey = getSaveKey(
+            dataToSave.company,
+            { name: dataToSave.propertyName, address: dataToSave.address },
+            dataToSave.unit
+          )
+          suffix += 1
+        }
+      }
+
+      const existingTarget = localStorage.getItem(storageKey)
+      if (existingTarget !== null && storageKey !== overwriteEntry?.storageKey) {
+        setIncomingCaseError('同じ保存先の案件が既にあります。コピーとして保存するか、キャンセルしてください。')
+        setIncomingDuplicate(null)
+        return
+      }
+      localStorage.setItem(storageKey, JSON.stringify({
+        ...dataToSave,
+        pageIndex: 0,
+        cfPageIndex: 0,
+        softPageIndex: 0,
+        activePage: 'cross',
+        measurementType: '天井',
+        archived: false,
+      }))
+      if (overwriteEntry?.storageKey && overwriteEntry.storageKey !== storageKey) {
+        localStorage.removeItem(overwriteEntry.storageKey)
+      }
+      setSavedEntries(readSavedEntries())
+      setShowArchived(false)
+      setSavedSearch('')
+      setSavedCompanyFilter('')
+      setSelectedSavedKeys([])
+      setStarted(false)
+      setShowSavedList(true)
+      closeIncomingCase()
+    } catch (error) {
+      console.error('共有案件を保存できませんでした。', error)
+      setIncomingCaseError('案件を保存できませんでした。端末の空き容量をご確認ください。')
+    }
+  }
+
+  function beginIncomingCaseImport() {
+    if (!incomingCase?.caseData) return
+    const duplicates = readSavedEntries().filter(entry =>
+      entry.propertyName === incomingCase.caseData.propertyName &&
+      entry.unit === incomingCase.caseData.unit
+    )
+    if (duplicates.length > 1) {
+      setIncomingCaseError('同じ物件名・号室の案件が複数保存されています。先に重複を整理してください。')
+      return
+    }
+    setIncomingCaseError('')
+    if (duplicates.length === 1) {
+      setIncomingDuplicate(duplicates[0])
+      return
+    }
+    saveIncomingCase('new')
   }
 
   async function importCaseFile(event) {
@@ -2230,6 +2418,7 @@ export default function App() {
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadCsv(entry)}>CSV出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => shareEntry(entry)}>共有</button>
+                        <button className="actionButton actionCsv" type="button" onClick={() => createCaseShareLink(entry)}>共有リンクを作成</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => exportCaseEntry(entry)}>M-Cross案件を書き出す</button>
                         <button className="actionButton actionOverwrite" type="button" onClick={() => copyEntryShareText(entry)}>共有内容をコピー</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry, true)}>Excelを共有</button>
@@ -2381,6 +2570,17 @@ export default function App() {
                 softRecords,
               })}>
                 M-Cross案件を書き出す
+              </button>
+              <button className="secondaryButton" type="button" onClick={() => createCaseShareLink({
+                company,
+                propertyName: selectedProperty?.name || '',
+                address: selectedProperty?.address || '',
+                unit,
+                records,
+                cfRecords,
+                softRecords,
+              })}>
+                共有リンクを作成
               </button>
               <button className="secondaryButton" type="button" onClick={() => downloadExcel({
                 company,
@@ -2553,6 +2753,79 @@ export default function App() {
           </main>
         )}
       </div>
+      {incomingCase && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            display: 'grid',
+            placeItems: 'center',
+            overflowY: 'auto',
+            padding: 16,
+            background: 'rgba(30, 25, 30, 0.58)',
+          }}
+        >
+          <section
+            className="card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="incoming-case-title"
+            style={{ width: 'min(100%, 520px)', margin: 'auto' }}
+          >
+            {incomingCase.status === 'loading' ? (
+              <>
+                <h1 id="incoming-case-title">共有案件を確認しています</h1>
+                <p className="subtitle">しばらくお待ちください。</p>
+              </>
+            ) : incomingCase.status === 'error' ? (
+              <>
+                <h1 id="incoming-case-title">共有案件を開けません</h1>
+                <p role="alert">{incomingCaseError}</p>
+                <button className="secondaryButton" type="button" onClick={closeIncomingCase}>閉じる</button>
+              </>
+            ) : (
+              <>
+                <p className="eyebrow">M-Cross 案件共有</p>
+                <h1 id="incoming-case-title">
+                  {incomingCase.caseData.propertyName} {incomingCase.caseData.unit}号室
+                </h1>
+                <p className="subtitle">この案件をM-Crossに取り込みますか？</p>
+                <div className="card" style={{ margin: '18px 0', boxShadow: 'none' }}>
+                  <p><strong>管理会社：</strong>{incomingCase.caseData.company}</p>
+                  <p><strong>保存日時：</strong>{formatSavedDate(incomingCase.caseData.updatedAt)}</p>
+                  {incomingCase.caseData.address && (
+                    <p><strong>住所：</strong>{incomingCase.caseData.address}</p>
+                  )}
+                </div>
+                {incomingCaseError && <p className="saveStatus" role="alert">{incomingCaseError}</p>}
+                {incomingDuplicate ? (
+                  <>
+                    <p>同じ物件名・号室の案件が既に保存されています。保存方法を選択してください。</p>
+                    <div className="shareActions">
+                      <button className="primary" type="button" onClick={() => saveIncomingCase('overwrite')}>上書き</button>
+                      <button className="secondaryButton" type="button" onClick={() => saveIncomingCase('copy')}>コピーとして保存</button>
+                      <button className="secondaryButton" type="button" onClick={() => setIncomingDuplicate(null)}>キャンセル</button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="shareActions">
+                    <button
+                      className="primary"
+                      type="button"
+                      onClick={beginIncomingCaseImport}
+                      disabled={Boolean(incomingCaseError)}
+                    >
+                      取り込む
+                    </button>
+                    <button className="secondaryButton" type="button" onClick={closeIncomingCase}>キャンセル</button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </div>
+      )}
     </>
   )
 }
