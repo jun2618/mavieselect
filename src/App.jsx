@@ -1515,23 +1515,27 @@ export default function App() {
   async function shareCaseEntry(entry) {
     setShareStatus('')
     let fileName = ''
-    let mimeType = 'application/json'
+    const mimeType = 'text/plain'
     let fileSize = null
     let canShareResult = null
+    const hasShare = typeof navigator.share === 'function'
+    const hasCanShare = typeof navigator.canShare === 'function'
     const logShareError = error => {
       console.error('案件ファイルの共有処理に失敗しました。', {
-        errorName: error?.name || 'Error',
-        errorMessage: error?.message || String(error),
+        hasNavigatorShare: hasShare,
+        hasNavigatorCanShare: hasCanShare,
+        canShareResult,
         fileName,
         mimeType,
         fileSize,
-        canShareResult,
+        errorName: error?.name || 'Error',
+        errorMessage: error?.message || String(error),
       })
     }
 
     try {
       const caseFile = createCaseFile(entry)
-      fileName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}_MCross案件.json`
+      fileName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}_MCross案件.txt`
         .replace(/[\\/:*?"<>|]/g, '_')
       const fileContents = JSON.stringify(caseFile, null, 2)
       const file = typeof File === 'function'
@@ -1539,7 +1543,7 @@ export default function App() {
         : null
       fileSize = file?.size ?? new Blob([fileContents], { type: mimeType }).size
 
-      if (file && typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
+      if (file && hasShare && hasCanShare) {
         try {
           canShareResult = navigator.canShare({ files: [file] })
         } catch (error) {
@@ -1556,11 +1560,15 @@ export default function App() {
             if (error.name === 'AbortError') return
             logShareError(error)
           }
+        } else {
+          logShareError(new Error('navigator.canShare returned false for the case file'))
         }
+      } else {
+        logShareError(new Error('File sharing APIs are unavailable'))
       }
 
       window.alert('この端末では案件ファイルを直接共有できないため、案件ファイルをダウンロードします')
-      downloadTextFile(fileContents, fileName, 'application/json;charset=utf-8')
+      downloadTextFile(fileContents, fileName, 'text/plain;charset=utf-8')
       setShareStatus('案件ファイルをダウンロードしました。')
     } catch (error) {
       logShareError(error)
@@ -2132,7 +2140,7 @@ export default function App() {
               <input
                 ref={caseImportInputRef}
                 type="file"
-                accept=".json,application/json"
+                accept=".json,.txt,application/json,text/plain"
                 onChange={importCaseFile}
                 style={{ display: 'none' }}
                 aria-label="M-Cross案件ファイルを選択"
