@@ -1495,12 +1495,41 @@ export default function App() {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(createCaseFile(entry)),
       })
-      const result = await response.json()
-      if (!response.ok || typeof result?.url !== 'string' || !result.url.trim()) {
-        throw new Error('Invalid share URL response')
+      let result
+      try {
+        result = await response.json()
+      } catch (error) {
+        console.error('共有リンク作成APIのJSONレスポンスを解析できませんでした。', {
+          httpStatus: response.status,
+          errorName: error?.name || 'Error',
+          errorMessage: error?.message || String(error),
+        })
+        throw new Error('Invalid API response', { cause: error })
       }
 
-      const responseUrl = new URL(result.url)
+      const responseKeys = result && typeof result === 'object' && !Array.isArray(result)
+        ? Object.keys(result)
+        : []
+      if (!response.ok) {
+        console.error('共有リンク作成APIがエラーを返しました。', {
+          httpStatus: response.status,
+          responseKeys,
+        })
+        throw new Error('Share link API request failed')
+      }
+
+      const apiShareUrl = result && typeof result === 'object' && !Array.isArray(result)
+        ? result.url
+        : null
+      if (typeof apiShareUrl !== 'string' || !apiShareUrl.trim()) {
+        console.error('共有リンク作成APIに有効なurl文字列がありません。', {
+          httpStatus: response.status,
+          responseKeys,
+        })
+        throw new Error('Share URL is missing')
+      }
+
+      const responseUrl = new URL(apiShareUrl)
       const responseId = responseUrl.searchParams.get('caseShare')
       if (
         responseUrl.origin !== window.location.origin ||
@@ -1511,6 +1540,11 @@ export default function App() {
         throw new Error('Invalid share URL')
       }
       const shareUrl = responseUrl.toString()
+      console.info('共有リンク作成APIの応答を確認しました。', {
+        httpStatus: response.status,
+        responseKeys,
+        shareUrl,
+      })
       setGeneratedShareUrl(shareUrl)
 
       if (typeof navigator.share === 'function') {
@@ -1535,7 +1569,10 @@ export default function App() {
 
       setShareStatus('この端末では共有画面を利用できません。下のリンクをコピーして送信してください。')
     } catch (error) {
-      console.error('案件共有リンクを作成できませんでした。', error)
+      console.error('案件共有リンクを作成できませんでした。', {
+        errorName: error?.name || 'Error',
+        errorMessage: error?.message || String(error),
+      })
       setGeneratedShareUrl('')
       setShareStatus('共有リンクを作成できませんでした')
     }
