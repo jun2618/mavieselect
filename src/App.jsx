@@ -508,39 +508,6 @@ function getSoftBaseboardQuantity(record) {
   return Number(record.quantity || 0)
 }
 
-function createShareText(entry) {
-  const crossTotal = (entry.records || []).reduce(
-    (sum, record) => sum + getRecordQuantity(record),
-    0
-  )
-  const cfTotal = (entry.cfRecords || []).reduce(
-    (sum, record) => sum + getLengthQuantity(record),
-    0
-  )
-  const softTotal = (entry.softRecords || []).reduce(
-    (sum, record) => sum + getSoftBaseboardQuantity(record),
-    0
-  )
-  const lines = [
-    'MavieSelect 採寸データ',
-    '',
-    `管理会社：${entry.company || '未登録'}`,
-    `物件：${entry.propertyName || '未登録'}`,
-    `号室：${entry.unit ? `${entry.unit}号室` : '未登録'}`,
-    `住所：${entry.address || '未登録'}`,
-  ]
-
-  if (crossTotal > 0) lines.push(`クロス：${formatQuantity(crossTotal)}m`)
-  if (cfTotal > 0) lines.push(`CF：${formatQuantity(cfTotal)}㎡`)
-  if (softTotal > 0) lines.push(`ソフト巾木：${formatQuantity(softTotal)}枚`)
-
-  const memos = [...new Set(
-    (entry.records || []).map(record => String(record.memo || '').trim()).filter(Boolean)
-  )]
-  if (memos.length > 0) lines.push('', `メモ：${memos.join('、')}`)
-  return lines.join('\n')
-}
-
 async function copyShareText(text) {
   if (navigator.clipboard?.writeText) {
     try {
@@ -565,18 +532,6 @@ async function copyShareText(text) {
   } finally {
     textArea.remove()
   }
-}
-
-function downloadTextFile(contents, fileName, mimeType) {
-  const blob = new Blob([contents], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function sumRecords(records, roomName, type) {
@@ -1120,6 +1075,7 @@ export default function App() {
   const [showSavedList, setShowSavedList] = useState(false)
   const [savedEntries, setSavedEntries] = useState([])
   const [shareStatus, setShareStatus] = useState('')
+  const [generatedShareUrl, setGeneratedShareUrl] = useState('')
   const caseImportInputRef = useRef(null)
   const [incomingCaseId] = useState(
     () => new URLSearchParams(window.location.search).get('caseShare')
@@ -1530,55 +1486,8 @@ export default function App() {
     setShareStatus('')
   }
 
-  async function shareEntry(entry) {
-    const text = createShareText(entry)
-    setShareStatus('')
-    if (typeof navigator.share === 'function') {
-      try {
-        await navigator.share({ title: 'MavieSelect 採寸データ', text })
-        setShareStatus('共有画面を開きました。')
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          setShareStatus('共有できませんでした。共有内容のコピーをお試しください。')
-        }
-      }
-      return
-    }
-
-    try {
-      await copyShareText(text)
-      setShareStatus('共有に対応していないため、共有内容をコピーしました。')
-    } catch {
-      setShareStatus('コピーできませんでした。ブラウザーのクリップボード利用を確認してください。')
-    }
-  }
-
-  async function copyEntryShareText(entry) {
-    setShareStatus('')
-    try {
-      await copyShareText(createShareText(entry))
-      setShareStatus('共有内容をコピーしました。')
-    } catch {
-      setShareStatus('コピーできませんでした。ブラウザーのクリップボード利用を確認してください。')
-    }
-  }
-
-  function exportCaseEntry(entry) {
-    setShareStatus('')
-    try {
-      const caseFile = createCaseFile(entry)
-      const fileName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}_MCross案件.json`
-        .replace(/[\\/:*?"<>|]/g, '_')
-      const fileContents = JSON.stringify(caseFile, null, 2)
-      downloadTextFile(fileContents, fileName, 'application/json;charset=utf-8')
-      setShareStatus('M-Cross案件ファイルを保存しました。このファイルをLINEやメールなどで相手へ送ってください。')
-    } catch (error) {
-      console.error('M-Cross案件ファイルを書き出せませんでした。', error)
-      window.alert('案件ファイルを作成できませんでした。')
-    }
-  }
-
   async function createCaseShareLink(entry) {
+    setGeneratedShareUrl('')
     setShareStatus('案件共有リンクを作成しています。')
     try {
       const response = await fetch('/api/cases', {
@@ -1587,34 +1496,59 @@ export default function App() {
         body: JSON.stringify(createCaseFile(entry)),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error || '案件共有リンクを作成できませんでした。')
+      if (!response.ok || typeof result?.url !== 'string' || !result.url.trim()) {
+        throw new Error('Invalid share URL response')
+      }
 
-      const shareUrl = new URL(window.location.pathname, window.location.origin)
-      shareUrl.searchParams.set('caseShare', result.id)
+      const responseUrl = new URL(result.url)
+      const responseId = responseUrl.searchParams.get('caseShare')
+      if (
+        responseUrl.origin !== window.location.origin ||
+        !responseId ||
+        !/^[A-Za-z0-9_-]{43}$/.test(responseId) ||
+        (typeof result.id === 'string' && responseId !== result.id)
+      ) {
+        throw new Error('Invalid share URL')
+      }
+      const shareUrl = responseUrl.toString()
+      setGeneratedShareUrl(shareUrl)
+
       if (typeof navigator.share === 'function') {
         try {
-          await navigator.share({
-            title: 'M-Cross 案件共有',
-            text: `${entry.propertyName || '物件'} ${entry.unit || ''}号室の案件を確認してください。`,
-            url: shareUrl.toString(),
-          })
+          await navigator.share({ url: shareUrl })
+          setGeneratedShareUrl('')
           setShareStatus('案件共有リンクを共有しました。有効期限は7日間です。')
         } catch (error) {
           if (error.name === 'AbortError') {
-            setShareStatus('共有はキャンセルされました。リンクは7日間有効です。')
+            setShareStatus('共有はキャンセルされました。共有リンクは7日間有効です。')
             return
           }
-          await copyShareText(shareUrl.toString())
-          setShareStatus('共有画面を開けなかったため、案件共有リンクをコピーしました。')
+          console.error('共有画面を開けませんでした。', {
+            errorName: error.name || 'Error',
+            errorMessage: error.message || String(error),
+            shareUrl,
+          })
+          setShareStatus('共有画面を開けませんでした。下のリンクをコピーして送信してください。')
         }
         return
       }
 
-      await copyShareText(shareUrl.toString())
-      setShareStatus('案件共有リンクをコピーしました。有効期限は7日間です。')
+      setShareStatus('この端末では共有画面を利用できません。下のリンクをコピーして送信してください。')
     } catch (error) {
       console.error('案件共有リンクを作成できませんでした。', error)
-      setShareStatus(error.message || '案件共有リンクを作成できませんでした。')
+      setGeneratedShareUrl('')
+      setShareStatus('共有リンクを作成できませんでした')
+    }
+  }
+
+  async function copyGeneratedShareUrl() {
+    if (!generatedShareUrl) return
+    try {
+      await copyShareText(generatedShareUrl)
+      setShareStatus('共有リンクをコピーしました。')
+    } catch (error) {
+      console.error('共有リンクをコピーできませんでした。', error)
+      setShareStatus('リンクをコピーできませんでした。URLを選択してコピーしてください。')
     }
   }
 
@@ -2321,6 +2255,15 @@ export default function App() {
                 {showArchived ? 'アーカイブ件数' : '保存済み件数'}：{savedCount}件
               </p>
               {shareStatus && <p className="saveStatus" role="status">{shareStatus}</p>}
+              {generatedShareUrl && (
+                <div className="shareLinkResult">
+                  <label>
+                    <span>案件共有リンク（7日間有効）</span>
+                    <input type="url" readOnly value={generatedShareUrl} onFocus={event => event.target.select()} />
+                  </label>
+                  <button className="secondaryButton" type="button" onClick={copyGeneratedShareUrl}>リンクをコピー</button>
+                </div>
+              )}
               <p className="savedMeta" style={{ textAlign: 'center', margin: '6px 0 18px' }}>
                 表示中：{visibleSavedEntries.length}件
               </p>
@@ -2417,11 +2360,7 @@ export default function App() {
                         <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>上書き保存</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadCsv(entry)}>CSV出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
-                        <button className="actionButton actionCsv" type="button" onClick={() => shareEntry(entry)}>共有</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => createCaseShareLink(entry)}>共有リンクを作成</button>
-                        <button className="actionButton actionCsv" type="button" onClick={() => exportCaseEntry(entry)}>M-Cross案件を書き出す</button>
-                        <button className="actionButton actionOverwrite" type="button" onClick={() => copyEntryShareText(entry)}>共有内容をコピー</button>
-                        <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry, true)}>Excelを共有</button>
                         <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
                         <button
                           className="actionButton actionOverwrite"
@@ -2538,39 +2477,6 @@ export default function App() {
               Excel出力
             </button>
             <div className="shareActions">
-              <button className="secondaryButton" type="button" onClick={() => shareEntry({
-                company,
-                propertyName: selectedProperty?.name || '',
-                address: selectedProperty?.address || '',
-                unit,
-                records,
-                cfRecords,
-                softRecords,
-              })}>
-                共有
-              </button>
-              <button className="secondaryButton" type="button" onClick={() => copyEntryShareText({
-                company,
-                propertyName: selectedProperty?.name || '',
-                address: selectedProperty?.address || '',
-                unit,
-                records,
-                cfRecords,
-                softRecords,
-              })}>
-                共有内容をコピー
-              </button>
-              <button className="secondaryButton" type="button" onClick={() => exportCaseEntry({
-                company,
-                propertyName: selectedProperty?.name || '',
-                address: selectedProperty?.address || '',
-                unit,
-                records,
-                cfRecords,
-                softRecords,
-              })}>
-                M-Cross案件を書き出す
-              </button>
               <button className="secondaryButton" type="button" onClick={() => createCaseShareLink({
                 company,
                 propertyName: selectedProperty?.name || '',
@@ -2582,19 +2488,17 @@ export default function App() {
               })}>
                 共有リンクを作成
               </button>
-              <button className="secondaryButton" type="button" onClick={() => downloadExcel({
-                company,
-                propertyName: selectedProperty?.name || '',
-                address: selectedProperty?.address || '',
-                unit,
-                records,
-                cfRecords,
-                softRecords,
-              }, true)}>
-                Excelを共有
-              </button>
             </div>
             {shareStatus && <p className="saveStatus" role="status">{shareStatus}</p>}
+            {generatedShareUrl && (
+              <div className="shareLinkResult">
+                <label>
+                  <span>案件共有リンク（7日間有効）</span>
+                  <input type="url" readOnly value={generatedShareUrl} onFocus={event => event.target.select()} />
+                </label>
+                <button className="secondaryButton" type="button" onClick={copyGeneratedShareUrl}>リンクをコピー</button>
+              </div>
+            )}
             {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
 
             <div className="measurementTypes" aria-label="採寸機能">

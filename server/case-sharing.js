@@ -189,7 +189,9 @@ export async function createSharedCase(request) {
       allowOverwrite: false,
       contentType: 'application/json',
     })
-    return jsonResponse({ id, expiresAt }, 201)
+    const shareUrl = new URL('/', request.url)
+    shareUrl.searchParams.set('caseShare', id)
+    return jsonResponse({ id, expiresAt, url: shareUrl.toString() }, 201)
   } catch (error) {
     return errorResponse(error)
   }
