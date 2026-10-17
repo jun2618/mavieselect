@@ -517,12 +517,28 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
   const cameraInputRef = useRef(null)
   const galleryInputRef = useRef(null)
 
+  function openFilePicker(inputRef) {
+    const input = inputRef.current
+    if (!input) return
+
+    try {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker()
+        return
+      }
+    } catch {
+      // Use click() for browsers that expose showPicker but reject it.
+    }
+    input.click()
+  }
+
   function handleFilesSelected(event) {
     const files = Array.from(event.currentTarget.files || [])
     event.currentTarget.value = ''
+    if (!files.length) return
     onAddFiles(files)
     setPickerOpen(false)
-    if (files.length) setGalleryOpen(true)
+    setGalleryOpen(true)
   }
 
   function deletePhoto(photo) {
@@ -572,10 +588,10 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
             onClick={event => event.stopPropagation()}
           >
             <h2 id="photo-picker-title">{roomName}の写真を追加</h2>
-            <button className="photoModalButton" type="button" onClick={() => cameraInputRef.current?.click()}>
+            <button className="photoModalButton" type="button" onClick={() => openFilePicker(cameraInputRef)}>
               カメラで撮影
             </button>
-            <button className="photoModalButton" type="button" onClick={() => galleryInputRef.current?.click()}>
+            <button className="photoModalButton" type="button" onClick={() => openFilePicker(galleryInputRef)}>
               ギャラリーから選択
             </button>
             <button className="photoModalCancel" type="button" onClick={() => setPickerOpen(false)}>
@@ -616,11 +632,14 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
                 </div>
               ))}
             </div>
-            <button className="photoModalButton" type="button" onClick={() => setPickerOpen(true)}>
-              📷 写真を追加
+            <button className="photoModalButton" type="button" onClick={() => openFilePicker(cameraInputRef)}>
+              📷 続けて撮影
+            </button>
+            <button className="photoModalButton" type="button" onClick={() => openFilePicker(galleryInputRef)}>
+              ギャラリーから追加
             </button>
             <button className="photoModalCancel" type="button" onClick={() => setGalleryOpen(false)}>
-              部屋に戻る
+              完了
             </button>
           </section>
         </div>
