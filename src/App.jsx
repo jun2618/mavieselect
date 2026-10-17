@@ -506,6 +506,147 @@ function getSoftBaseboardQuantity(record) {
   return Number(record.quantity || 0)
 }
 
+function getPhotoRoomKey(company, propertyName, address, unit, room) {
+  return JSON.stringify([company, propertyName, address, unit, room])
+}
+
+function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [galleryOpen, setGalleryOpen] = useState(false)
+  const [selectedPhoto, setSelectedPhoto] = useState(null)
+  const cameraInputRef = useRef(null)
+  const galleryInputRef = useRef(null)
+
+  function handleFilesSelected(event) {
+    const files = Array.from(event.currentTarget.files || [])
+    event.currentTarget.value = ''
+    onAddFiles(files)
+    setPickerOpen(false)
+    if (files.length) setGalleryOpen(true)
+  }
+
+  function deletePhoto(photo) {
+    if (!window.confirm('この写真を削除しますか？')) return
+    onDeletePhoto(photo)
+    setSelectedPhoto(null)
+  }
+
+  return (
+    <>
+      <div className="roomPhotoActions">
+        <button
+          className="roomPhotoButton"
+          type="button"
+          onClick={() => photos.length ? setGalleryOpen(true) : setPickerOpen(true)}
+        >
+          📷 {photos.length ? `写真 ${photos.length}枚` : '写真を追加'}
+        </button>
+      </div>
+
+      <input
+        ref={cameraInputRef}
+        className="roomPhotoInput"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFilesSelected}
+        aria-label={`${roomName}の写真を撮影`}
+      />
+      <input
+        ref={galleryInputRef}
+        className="roomPhotoInput"
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFilesSelected}
+        aria-label={`${roomName}の写真を選択`}
+      />
+
+      {pickerOpen && (
+        <div className="photoModalBackdrop photoPickerBackdrop" onClick={() => setPickerOpen(false)}>
+          <section
+            className="photoModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="photo-picker-title"
+            onClick={event => event.stopPropagation()}
+          >
+            <h2 id="photo-picker-title">{roomName}の写真を追加</h2>
+            <button className="photoModalButton" type="button" onClick={() => cameraInputRef.current?.click()}>
+              カメラで撮影
+            </button>
+            <button className="photoModalButton" type="button" onClick={() => galleryInputRef.current?.click()}>
+              ギャラリーから選択
+            </button>
+            <button className="photoModalCancel" type="button" onClick={() => setPickerOpen(false)}>
+              キャンセル
+            </button>
+          </section>
+        </div>
+      )}
+
+      {galleryOpen && (
+        <div className="photoModalBackdrop" onClick={() => setGalleryOpen(false)}>
+          <section
+            className="photoModal photoGalleryModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="photo-gallery-title"
+            onClick={event => event.stopPropagation()}
+          >
+            <h2 id="photo-gallery-title">{roomName}の写真（{photos.length}枚）</h2>
+            <div className="photoThumbnailGrid">
+              {photos.map(photo => (
+                <div className="photoThumbnailItem" key={photo.id}>
+                  <button
+                    className="photoThumbnailButton"
+                    type="button"
+                    onClick={() => setSelectedPhoto(photo)}
+                    aria-label="写真を拡大表示"
+                  >
+                    <img src={photo.url} alt={`${roomName}の写真`} />
+                  </button>
+                  <button
+                    className="photoDeleteButton"
+                    type="button"
+                    onClick={() => deletePhoto(photo)}
+                  >
+                    削除
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button className="photoModalButton" type="button" onClick={() => setPickerOpen(true)}>
+              📷 写真を追加
+            </button>
+            <button className="photoModalCancel" type="button" onClick={() => setGalleryOpen(false)}>
+              部屋に戻る
+            </button>
+          </section>
+        </div>
+      )}
+
+      {selectedPhoto && (
+        <div className="photoModalBackdrop photoPreviewBackdrop" onClick={() => setSelectedPhoto(null)}>
+          <section
+            className="photoModal photoPreviewModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="photo-preview-title"
+            onClick={event => event.stopPropagation()}
+          >
+            <h2 id="photo-preview-title">{roomName}の写真</h2>
+            <img className="photoLargePreview" src={selectedPhoto.url} alt={`${roomName}の拡大写真`} />
+            <button className="photoModalCancel" type="button" onClick={() => setSelectedPhoto(null)}>
+              写真一覧へ戻る
+            </button>
+          </section>
+        </div>
+      )}
+    </>
+  )
+}
+
 function sumRecords(records, roomName, type) {
   return records
     .filter(record => record.room === roomName && record.type === type)
@@ -713,7 +854,15 @@ async function downloadExcel(entry) {
   }
 }
 
-function LengthMeasurementPage({ title, records, setRecords, pageIndex, setPageIndex, countOnly = false }) {
+function LengthMeasurementPage({
+  title,
+  records,
+  setRecords,
+  pageIndex,
+  setPageIndex,
+  countOnly = false,
+  photoContext,
+}) {
   const [length, setLength] = useState('')
   const [count, setCount] = useState('')
   const [activeInput, setActiveInput] = useState('')
@@ -796,6 +945,19 @@ function LengthMeasurementPage({ title, records, setRecords, pageIndex, setPageI
         <>
           <section className="card">
             <h2>{room}</h2>
+            <RoomPhotos
+              key={room}
+              roomName={room}
+              photos={photoContext.photosByRoom[getPhotoRoomKey(
+                photoContext.company,
+                photoContext.propertyName,
+                photoContext.address,
+                photoContext.unit,
+                room
+              )] || []}
+              onAddFiles={files => photoContext.onAddFiles(room, files)}
+              onDeletePhoto={photo => photoContext.onDeletePhoto(room, photo)}
+            />
             <form onSubmit={addRecord}>
               {countOnly ? (
                 <div className="inputRow" style={{ gridTemplateColumns: '1fr' }}>
@@ -888,6 +1050,16 @@ export default function App() {
   const [softPageIndex, setSoftPageIndex] = useState(0)
   const [cfRecords, setCfRecords] = useState([])
   const [softRecords, setSoftRecords] = useState([])
+  const [photosByRoom, setPhotosByRoom] = useState({})
+  const photosByRoomRef = useRef(photosByRoom)
+
+  useEffect(() => {
+    photosByRoomRef.current = photosByRoom
+  }, [photosByRoom])
+
+  useEffect(() => () => {
+    Object.values(photosByRoomRef.current).flat().forEach(photo => URL.revokeObjectURL(photo.url))
+  }, [])
 
   useEffect(() => {
     const saved = readLastSession()
@@ -992,6 +1164,46 @@ export default function App() {
   function changeTheme(value) {
     setTheme(value)
     try { localStorage.setItem(themeKey, value) } catch { /* 設定の保存は任意 */ }
+  }
+
+  function addRoomPhotos(roomName, files) {
+    const imageFiles = files.filter(file => file.type.startsWith('image/'))
+    if (imageFiles.length !== files.length) {
+      window.alert('画像ファイルを選択してください。')
+    }
+    if (!imageFiles.length) return
+
+    const roomKey = getPhotoRoomKey(
+      company,
+      selectedProperty?.name || '',
+      selectedProperty?.address || '',
+      unit,
+      roomName
+    )
+    const addedPhotos = imageFiles.map(file => ({
+      id: createRecordId(),
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }))
+    setPhotosByRoom(previous => ({
+      ...previous,
+      [roomKey]: [...(previous[roomKey] || []), ...addedPhotos],
+    }))
+  }
+
+  function deleteRoomPhoto(roomName, photoToDelete) {
+    const roomKey = getPhotoRoomKey(
+      company,
+      selectedProperty?.name || '',
+      selectedProperty?.address || '',
+      unit,
+      roomName
+    )
+    setPhotosByRoom(previous => ({
+      ...previous,
+      [roomKey]: (previous[roomKey] || []).filter(photo => photo.id !== photoToDelete.id),
+    }))
+    URL.revokeObjectURL(photoToDelete.url)
   }
 
   function savePropertyMaster(nextMaster, successMessage) {
@@ -1478,6 +1690,15 @@ export default function App() {
   const themeOptions = [
     ['beige', 'ベージュ'], ['dark', 'ダーク'], ['pop', 'ポップ'],
   ]
+  const photoContext = {
+    company,
+    propertyName: selectedProperty?.name || '',
+    address: selectedProperty?.address || '',
+    unit,
+    photosByRoom,
+    onAddFiles: addRoomPhotos,
+    onDeletePhoto: deleteRoomPhoto,
+  }
 
   return (
     <>
@@ -1941,9 +2162,9 @@ export default function App() {
             </div>
 
             {activePage === 'cf' ? (
-              <LengthMeasurementPage key="cf" title="CF" records={cfRecords} setRecords={setCfRecords} pageIndex={cfPageIndex} setPageIndex={setCfPageIndex} />
-            ) : activePage === 'soft' ? (
-              <LengthMeasurementPage key="soft" title="ソフト巾木" records={softRecords} setRecords={setSoftRecords} pageIndex={softPageIndex} setPageIndex={setSoftPageIndex} countOnly />
+              <LengthMeasurementPage key="cf" title="CF" records={cfRecords} setRecords={setCfRecords} pageIndex={cfPageIndex} setPageIndex={setCfPageIndex} photoContext={photoContext} />
+              ) : activePage === 'soft' ? (
+              <LengthMeasurementPage key="soft" title="ソフト巾木" records={softRecords} setRecords={setSoftRecords} pageIndex={softPageIndex} setPageIndex={setSoftPageIndex} countOnly photoContext={photoContext} />
             ) : (
               <>
                 <nav className="roomTabs" aria-label="クロスの部屋">
@@ -1997,6 +2218,25 @@ export default function App() {
                   <>
                     <section className="card">
                       <h2>{room}</h2>
+                      <RoomPhotos
+                        key={getPhotoRoomKey(
+                          company,
+                          selectedProperty?.name || '',
+                          selectedProperty?.address || '',
+                          unit,
+                          room
+                        )}
+                        roomName={room}
+                        photos={photosByRoom[getPhotoRoomKey(
+                          company,
+                          selectedProperty?.name || '',
+                          selectedProperty?.address || '',
+                          unit,
+                          room
+                        )] || []}
+                        onAddFiles={files => addRoomPhotos(room, files)}
+                        onDeletePhoto={photo => deleteRoomPhoto(room, photo)}
+                      />
                       <div className="measurementTypes" aria-label="採寸区分">
                         {measurementTypes.map(type => (
                           <button key={type} type="button" className={measurementType === type ? 'measurementType active' : 'measurementType'} onClick={() => {
