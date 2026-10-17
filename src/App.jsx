@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import properties from './m-cross-properties.json'
 import './App.css'
 
-const rooms = [
+const defaultRooms = [
   '居間', '台所', '洋間', '洋間2', '洋間3', '和室',
   '脱衣所', 'トイレ', '玄関', '階段', 'ホール',
 ]
@@ -353,6 +353,7 @@ const styles = `
   .card label { display:grid; gap:10px; min-width:0; margin:0 0 18px; }
   .card label>span { color:#817183; font-size:15px; font-weight:800; }
   .card input,.card select { width:100%; min-height:54px; padding:0 15px; border:2px solid #efe4dc; border-radius:14px; outline:none; color:#514751; background:#fffdfa; font:inherit; }
+  .card input.memoInput { height:56px; min-height:56px; padding:14px 15px; line-height:26px; }
   .card input:focus,.card select:focus { border-color:#f0a48f; box-shadow:0 0 0 4px rgba(240,164,143,.18); }
   .address { display:grid; gap:8px; margin:8px 0 20px; padding:15px; border:1px dashed #efc7b4; border-radius:15px; background:#fff7ed; }
   .address small { color:#dd8a73; font-size:13px; font-weight:800; }
@@ -373,6 +374,16 @@ const styles = `
   .primary:disabled { opacity:.45; cursor:not-allowed; }
   .back { padding:9px 0; border:0; color:#d27f6d; background:transparent; font:inherit; font-size:16px; font-weight:800; cursor:pointer; }
   .roomTabs { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,96px),1fr)); gap:10px; margin:20px 0; }
+  .customRoomControls { display:grid; gap:12px; margin:0 0 20px; }
+  .customRoomControls > .secondaryButton { width:100%; margin:0; }
+  .customRoomForm { display:grid; gap:8px; padding:14px; border:1px solid #f0d6c8; border-radius:14px; background:rgba(255,255,255,.7); }
+  .customRoomForm label { display:grid; gap:8px; margin:0; }
+  .customRoomForm label>span { color:#817183; font-size:15px; font-weight:800; }
+  .customRoomForm .primary { margin:0; }
+  .customRoomList { display:grid; gap:8px; }
+  .customRoomItem { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid #f0d6c8; border-radius:12px; background:rgba(255,255,255,.7); }
+  .customRoomItem span { min-width:0; overflow-wrap:anywhere; font-weight:700; }
+  .customRoomItem .dangerButton { min-height:40px; padding:6px 10px; flex:none; }
   .room,.measurementType { min-width:0; min-height:50px; padding:8px 5px; border:1px solid #e9dce8; border-radius:14px; color:#75697a; background:linear-gradient(180deg,#fff,#f8f1f8); box-shadow:0 4px 0 #e3d4e1; font-size:15px; overflow-wrap:anywhere; }
   .room.active,.measurementType.active { border-color:#f3a18f; color:#fff; background:linear-gradient(180deg,#ffb49b,#f18c7d); box-shadow:0 4px 0 #d6756c; }
   .measurementTypes,.inputRow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
@@ -447,6 +458,8 @@ const styles = `
   .theme-dark .roomCheckTotals,.theme-dark .roomCheckItem { color:#eee8e2; border-color:#51484d; background:#302c31; }
   .theme-dark .roomCheckName { color:#eee8e2; }
   .theme-dark .roomCheckDetails { color:#c3b8c0; }
+  .theme-dark .customRoomForm,.theme-dark .customRoomItem { color:#eee8e2; border-color:#51484d; background:#302c31; }
+  .theme-dark .customRoomForm label>span { color:#c3b8c0; }
   .theme-dark .roomConfirmButton { color:#f0a08d; border-color:#51484d; background:#39343a; }
   .theme-dark .roomCheckItem.confirmed { border-color:#52866b; background:#29392f; }
   .theme-dark .roomCheckItem.confirmed .roomConfirmButton { color:#a5dfbb; border-color:#52866b; background:#29392f; }
@@ -515,6 +528,67 @@ function NumberKeypad({ activeInput, onKey, onDone, decimalInput }) {
         入力完了
       </button>
     </div>
+  )
+}
+
+function RoomManagementControls({ rooms, customRooms, onAddRoom, onDeleteRoom }) {
+  const [showForm, setShowForm] = useState(false)
+  const [roomName, setRoomName] = useState('')
+  const [message, setMessage] = useState('')
+
+  function addRoom(event) {
+    event.preventDefault()
+    const name = roomName.trim()
+    if (!name) return
+    if (rooms.some(room => room.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+      setMessage('同じ名前の部屋がすでにあります')
+      return
+    }
+    onAddRoom(name)
+    setRoomName('')
+    setMessage('')
+    setShowForm(false)
+  }
+
+  return (
+    <section className="customRoomControls" aria-label="部屋の管理">
+      <button
+        className="secondaryButton"
+        type="button"
+        onClick={() => {
+          setShowForm(previous => !previous)
+          setMessage('')
+        }}
+      >
+        ＋ 部屋を追加
+      </button>
+      {showForm && (
+        <form className="customRoomForm" onSubmit={addRoom}>
+          <label>
+            <span>部屋名</span>
+            <input value={roomName} onChange={event => setRoomName(event.target.value)} />
+          </label>
+          {message && <p className="saveStatus" role="alert">{message}</p>}
+          <button className="primary" type="submit">追加</button>
+        </form>
+      )}
+      {customRooms.length > 0 && (
+        <div className="customRoomList">
+          {customRooms.map(name => (
+            <div className="customRoomItem" key={name}>
+              <span>{name}</span>
+              <button
+                className="dangerButton"
+                type="button"
+                onClick={() => onDeleteRoom(name)}
+              >
+                部屋を削除
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -747,6 +821,10 @@ async function downloadExcel(entry) {
 
 function LengthMeasurementPage({
   title,
+  rooms,
+  customRooms,
+  onAddRoom,
+  onDeleteRoom,
   records,
   setRecords,
   pageIndex,
@@ -819,6 +897,12 @@ function LengthMeasurementPage({
         ))}
         <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>全室合計</button>
       </nav>
+      <RoomManagementControls
+        rooms={rooms}
+        customRooms={customRooms}
+        onAddRoom={onAddRoom}
+        onDeleteRoom={onDeleteRoom}
+      />
 
       {isSummaryPage ? (
         <section className="card">
@@ -840,12 +924,12 @@ function LengthMeasurementPage({
             <form onSubmit={addRecord}>
               {countOnly ? (
                 <div className="inputRow" style={{ gridTemplateColumns: '1fr' }}>
-                  <label><span>枚数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップして入力" /></label>
+                  <label><span>枚数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
                 </div>
               ) : (
                 <div className="inputRow">
-                  <label><span>長さ（メートル）</span><input type="text" inputMode="none" readOnly value={length} onFocus={() => setActiveInput('length')} onClick={() => setActiveInput('length')} placeholder="タップして入力" /></label>
-                  <label><span>本数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップして入力" /></label>
+                  <label><span>長さ（メートル）</span><input type="text" inputMode="none" readOnly value={length} onFocus={() => setActiveInput('length')} onClick={() => setActiveInput('length')} placeholder="タップ" /></label>
+                  <label><span>本数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
                 </div>
               )}
               <NumberKeypad activeInput={activeInput} onKey={updateInput} onDone={() => setActiveInput('')} decimalInput={!countOnly && activeInput === 'length'} />
@@ -921,6 +1005,7 @@ export default function App() {
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
   const [currentStorageKey, setCurrentStorageKey] = useState('')
   const [pageIndex, setPageIndex] = useState(0)
+  const [customRooms, setCustomRooms] = useState([])
   const [roomConfirmations, setRoomConfirmations] = useState({})
   const [showMeasurementCheck, setShowMeasurementCheck] = useState(false)
   const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
@@ -939,6 +1024,7 @@ export default function App() {
   const [softPageIndex, setSoftPageIndex] = useState(0)
   const [cfRecords, setCfRecords] = useState([])
   const [softRecords, setSoftRecords] = useState([])
+  const rooms = [...defaultRooms, ...customRooms]
 
   useEffect(() => {
     const saved = readLastSession()
@@ -953,6 +1039,7 @@ export default function App() {
     setRecords(Array.isArray(saved.records) ? saved.records : [])
     setCfRecords(Array.isArray(saved.cfRecords) ? saved.cfRecords : [])
     setSoftRecords(Array.isArray(saved.softRecords) ? saved.softRecords : [])
+    setCustomRooms(Array.isArray(saved.customRooms) ? saved.customRooms : [])
     setRoomConfirmations(
       saved.roomConfirmations && typeof saved.roomConfirmations === 'object'
         ? saved.roomConfirmations
@@ -1306,6 +1393,7 @@ export default function App() {
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
     setSoftRecords(Array.isArray(entry.softRecords) ? entry.softRecords : [])
+    setCustomRooms(Array.isArray(entry.customRooms) ? entry.customRooms : [])
     setRoomConfirmations(
       entry.roomConfirmations && typeof entry.roomConfirmations === 'object'
         ? entry.roomConfirmations
@@ -1340,6 +1428,7 @@ export default function App() {
         records: Array.isArray(entry.records) ? entry.records : [],
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
         softRecords: Array.isArray(entry.softRecords) ? entry.softRecords : [],
+        customRooms: Array.isArray(entry.customRooms) ? entry.customRooms : [],
         roomConfirmations: entry.roomConfirmations && typeof entry.roomConfirmations === 'object'
           ? entry.roomConfirmations
           : {},
@@ -1453,6 +1542,7 @@ export default function App() {
       setRecords(Array.isArray(savedData?.records) ? savedData.records : [])
       setCfRecords(Array.isArray(savedData?.cfRecords) ? savedData.cfRecords : [])
       setSoftRecords(Array.isArray(savedData?.softRecords) ? savedData.softRecords : [])
+      setCustomRooms(Array.isArray(savedData?.customRooms) ? savedData.customRooms : [])
       setRoomConfirmations(
         savedData?.roomConfirmations && typeof savedData.roomConfirmations === 'object'
           ? savedData.roomConfirmations
@@ -1468,6 +1558,7 @@ export default function App() {
       setRecords([])
       setCfRecords([])
       setSoftRecords([])
+      setCustomRooms([])
       setRoomConfirmations({})
       setPageIndex(0)
       setCfPageIndex(0)
@@ -1509,6 +1600,7 @@ export default function App() {
       records,
       cfRecords,
       softRecords,
+      customRooms,
       roomConfirmations,
       pageIndex,
       cfPageIndex,
@@ -1529,6 +1621,43 @@ export default function App() {
     } catch {
       setSaveStatus('保存できませんでした。端末の空き容量をご確認ください')
     }
+  }
+
+  function addCustomRoom(roomName) {
+    if (rooms.some(name => name.toLocaleLowerCase() === roomName.toLocaleLowerCase())) return
+    setCustomRooms(previous => [...previous, roomName])
+    if (pageIndex === rooms.length) setPageIndex(rooms.length)
+    if (cfPageIndex === rooms.length) setCfPageIndex(rooms.length)
+    if (softPageIndex === rooms.length) setSoftPageIndex(rooms.length)
+    setSaveStatus('未保存の変更があります')
+  }
+
+  function deleteCustomRoom(roomName) {
+    if (!customRooms.includes(roomName)) return
+    const roomIndex = rooms.indexOf(roomName)
+    const hasRoomData = records.some(record => record.room === roomName)
+      || cfRecords.some(record => record.room === roomName)
+      || softRecords.some(record => record.room === roomName)
+    if (hasRoomData && !window.confirm('この部屋には採寸データがあります。本当に削除しますか？')) return
+
+    setCustomRooms(previous => previous.filter(name => name !== roomName))
+    setRecords(previous => previous.filter(record => record.room !== roomName))
+    setCfRecords(previous => previous.filter(record => record.room !== roomName))
+    setSoftRecords(previous => previous.filter(record => record.room !== roomName))
+    setRoomConfirmations(previous => {
+      const next = { ...previous }
+      delete next[roomName]
+      return next
+    })
+    const adjustPageIndex = index => {
+      if (index > roomIndex) return index - 1
+      return Math.min(index, rooms.length - 1)
+    }
+    setPageIndex(adjustPageIndex)
+    setCfPageIndex(adjustPageIndex)
+    setSoftPageIndex(adjustPageIndex)
+    setMemo('')
+    setSaveStatus('未保存の変更があります')
   }
 
   function goToPage(index) {
@@ -2156,6 +2285,10 @@ export default function App() {
               <LengthMeasurementPage
                 key="cf"
                 title="CF"
+                rooms={rooms}
+                customRooms={customRooms}
+                onAddRoom={addCustomRoom}
+                onDeleteRoom={deleteCustomRoom}
                 records={cfRecords}
                 setRecords={setCfRecords}
                 pageIndex={cfPageIndex}
@@ -2166,6 +2299,10 @@ export default function App() {
               <LengthMeasurementPage
                 key="soft"
                 title="ソフト巾木"
+                rooms={rooms}
+                customRooms={customRooms}
+                onAddRoom={addCustomRoom}
+                onDeleteRoom={deleteCustomRoom}
                 records={softRecords}
                 setRecords={setSoftRecords}
                 pageIndex={softPageIndex}
@@ -2181,7 +2318,12 @@ export default function App() {
                   ))}
                   <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>全室合計</button>
                 </nav>
-
+                <RoomManagementControls
+                  rooms={rooms}
+                  customRooms={customRooms}
+                  onAddRoom={addCustomRoom}
+                  onDeleteRoom={deleteCustomRoom}
+                />
                 {isSummaryPage ? (
                   <section className="card">
                     <h2>部屋ごとの合計</h2>
@@ -2248,7 +2390,7 @@ export default function App() {
                                 value={height}
                                 onFocus={() => setActiveInput('height')}
                                 onClick={() => setActiveInput('height')}
-                                placeholder="タップして入力"
+                                placeholder="タップ"
                               />
                             </label>
                             <label>
@@ -2261,7 +2403,7 @@ export default function App() {
                                 value={count}
                                 onFocus={() => setActiveInput('count')}
                                 onClick={() => setActiveInput('count')}
-                                placeholder="タップして入力"
+                                placeholder="タップ"
                               />
                             </label>
                           </div>
@@ -2281,6 +2423,7 @@ export default function App() {
                         <label>
                           <span>メモ</span>
                           <input
+                            className="memoInput"
                             type="text"
                             value={memo}
                             onChange={event => setMemo(event.target.value)}
