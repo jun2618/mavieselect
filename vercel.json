@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cleanup-cases",
-      "schedule": "0 3 * * *"
-    }
-  ]
-}
