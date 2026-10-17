@@ -39,4 +39,15 @@ h2 { margin: 0 0 18px; font-family: serif; font-size: 20px; font-weight: 500; }
 .summary { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding: 18px; border: 1px solid rgba(211,177,109,.4); border-radius: 10px; background: rgba(196,153,75,.08); }
 .summary span { color: #c4b9a2; font-size: 12px; }
 .summary strong { color: #e6c87e; font-size: 25px; }
+.masterCompanyList, .masterPropertyList { display: grid; gap: 10px; margin-top: 16px; }
+.masterCompanyItem, .masterPropertyItem { display: grid; gap: 10px; padding: 14px; border: 1px solid rgba(211,177,109,.22); border-radius: 8px; background: rgba(10,11,9,.45); }
+.masterCompanyItem strong, .masterPropertyItem strong { color: #e2d5b8; font-size: 14px; }
+.masterPropertySection { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(211,177,109,.2); }
+.masterPropertySection h3, .masterPropertyForm h3 { color: #d8bd7c; font-size: 16px; font-weight: 500; }
+.masterPropertyItem span { color: #aaa18e; font-size: 12px; overflow-wrap: anywhere; }
+.masterPropertyForm { margin-top: 18px; padding: 16px; border: 1px solid rgba(211,177,109,.25); border-radius: 9px; }
+.masterActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.masterActions > button { flex: 1 1 120px; min-height: 42px; padding: 8px; font-size: 12px; }
+.dangerButton { color: #f0b6a8; background: #2b1713; border: 1px solid #75443a; border-radius: 7px; cursor: pointer; font-weight: 700; }
+.masterPropertySection > .secondaryButton { width: 100%; min-height: 44px; color: #e2c47b; background: #211d14; border: 1px solid #8a6c37; border-radius: 8px; cursor: pointer; }
 @media (max-width: 380px) { .app { padding-left: 12px; padding-right: 12px; } .card { padding: 16px; } }

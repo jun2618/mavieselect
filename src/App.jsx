@@ -11,6 +11,7 @@ const storagePrefix = 'm-cross:'
 const fontSizeKey = 'm-cross-font-size'
 const themeKey = 'm-cross-theme'
 const lastSessionKey = 'm-cross-last-session'
+const propertyMasterKey = 'm-cross:property-master:v1'
 
 function createRecordId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
@@ -82,7 +83,7 @@ const romajiToKanaMap = {
   hya: 'ひゃ', hyu: 'ひゅ', hyo: 'ひょ',
   mya: 'みゃ', myu: 'みゅ', myo: 'みょ',
   rya: 'りゃ', ryu: 'りゅ', ryo: 'りょ',
-  gya: 'ぎゃ', gyu: 'ぎゅ', gyo: 'ぎょ',
+  gya: 'ぎゃ', gyu: 'gyu', gyo: 'ぎょ',
   ja: 'じゃ', ju: 'じゅ', jo: 'じょ',
   jya: 'じゃ', jyu: 'じゅ', jyo: 'じょ',
   bya: 'びゃ', byu: 'びゅ', byo: 'びょ',
@@ -215,9 +216,10 @@ function getPropertySearchForms(property) {
   const cached = propertySearchCache.get(property)
   if (cached) return cached
 
-  const aliases = property.alias ?? property.aliases ?? []
-  const aliasList = Array.isArray(aliases) ? aliases : [aliases]
-  const values = [property.name, ...aliasList].filter(
+  const aliasValues = [property.alias, property.aliases].flatMap(value =>
+    Array.isArray(value) ? value : value ? [value] : []
+  )
+  const values = [property.name, property.reading, ...aliasValues].filter(
     value => typeof value === 'string' && value.trim()
   )
   const forms = new Set(values.flatMap(searchForms))
@@ -234,6 +236,99 @@ function matchesProperty(property, queryForms) {
   return propertyForms.some(propertyForm =>
     queryForms.some(queryForm => propertyForm.includes(queryForm))
   )
+}
+
+function emptyPropertyMaster() {
+  return {
+    addedCompanies: [],
+    companyNames: {},
+    deletedCompanyIds: [],
+    addedProperties: [],
+    propertyOverrides: {},
+    deletedPropertyIds: [],
+  }
+}
+
+function loadPropertyMaster() {
+  try {
+    const stored = localStorage.getItem(propertyMasterKey)
+    if (!stored) return { master: emptyPropertyMaster(), error: '' }
+    const parsed = JSON.parse(stored)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Invalid property master data')
+    }
+    return {
+      master: {
+        ...emptyPropertyMaster(),
+        ...parsed,
+        addedCompanies: Array.isArray(parsed.addedCompanies) ? parsed.addedCompanies : [],
+        companyNames: parsed.companyNames && typeof parsed.companyNames === 'object' ? parsed.companyNames : {},
+        deletedCompanyIds: Array.isArray(parsed.deletedCompanyIds) ? parsed.deletedCompanyIds : [],
+        addedProperties: Array.isArray(parsed.addedProperties) ? parsed.addedProperties : [],
+        propertyOverrides: parsed.propertyOverrides && typeof parsed.propertyOverrides === 'object' ? parsed.propertyOverrides : {},
+        deletedPropertyIds: Array.isArray(parsed.deletedPropertyIds) ? parsed.deletedPropertyIds : [],
+      },
+      error: '',
+    }
+  } catch {
+    return {
+      master: emptyPropertyMaster(),
+      error: '保存済みの管理会社・物件データを読み込めませんでした。データを確認してください。',
+    }
+  }
+}
+
+function getBaseCompanyId(companyName) {
+  return `base-company:${encodeURIComponent(companyName)}`
+}
+
+function getBasePropertyId(companyName, district, index) {
+  return `base-property:${encodeURIComponent(companyName)}:${encodeURIComponent(district)}:${index}`
+}
+
+function getMergedPropertyMaster(master) {
+  const baseCompanies = Object.keys(properties).map(name => ({
+    id: getBaseCompanyId(name),
+    name: master.companyNames[getBaseCompanyId(name)] || name,
+    originalName: name,
+  }))
+  const allCompanies = [...baseCompanies, ...master.addedCompanies]
+  const deletedCompanyIds = new Set(master.deletedCompanyIds)
+  const activeCompanies = allCompanies.filter(company => !deletedCompanyIds.has(company.id))
+  const deletedPropertyIds = new Set(master.deletedPropertyIds)
+  const allProperties = []
+
+  Object.entries(properties).forEach(([originalCompanyName, districts]) => {
+    const companyId = getBaseCompanyId(originalCompanyName)
+    Object.entries(districts).forEach(([district, districtProperties]) => {
+      districtProperties.forEach((property, index) => {
+        const id = getBasePropertyId(originalCompanyName, district, index)
+        if (deletedPropertyIds.has(id) || deletedCompanyIds.has(companyId)) return
+        allProperties.push({
+          ...property,
+          ...(master.propertyOverrides[id] || {}),
+          id,
+          companyId,
+          company: master.companyNames[companyId] || originalCompanyName,
+        })
+      })
+    })
+  })
+
+  master.addedProperties.forEach(property => {
+    if (deletedCompanyIds.has(property.companyId)) return
+    const company = allCompanies.find(item => item.id === property.companyId)
+    if (!company || deletedPropertyIds.has(property.id)) return
+    allProperties.push({
+      ...property,
+      company: master.companyNames[property.companyId] || company.name,
+    })
+  })
+
+  return {
+    companies: activeCompanies,
+    properties: allProperties,
+  }
 }
 
 const styles = `
@@ -300,6 +395,8 @@ const styles = `
   .roomSummary .summaryLine { padding:4px 0; }
   .summaryGrand { margin-top:4px; padding-top:12px; border-top:1px solid #f1d2bd; font-weight:800; }
   .summaryGrand strong { font-size:25px; }
+  .shareActions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:10px; }
+  .shareActions .secondaryButton { min-width:0; padding:8px; font-size:14px; }
   .saveStatus { margin:8px 0 0; color:#548c73; font-size:15px; font-weight:700; text-align:center; }
   .empty { padding:15px 0; color:#a89ba7; font-size:15px; text-align:center; }
   .propertyResults,.savedList { display:grid; gap:12px; max-height:60vh; overflow-y:auto; }
@@ -395,12 +492,86 @@ function getRecordQuantity(record) {
   return Number(record.quantity) || Number(record.height || 0) * Number(record.count || 0)
 }
 
+function formatQuantity(value) {
+  const quantity = Number(value)
+  return (Math.round((quantity + Number.EPSILON) * 10) / 10).toFixed(1)
+}
+
 function getLengthQuantity(record) {
   return Number(record.length || 0) * Number(record.count || 0)
 }
 
 function getSoftBaseboardQuantity(record) {
   return Number(record.quantity || 0)
+}
+
+function createShareText(entry) {
+  const crossTotal = (entry.records || []).reduce(
+    (sum, record) => sum + getRecordQuantity(record),
+    0
+  )
+  const cfTotal = (entry.cfRecords || []).reduce(
+    (sum, record) => sum + getLengthQuantity(record),
+    0
+  )
+  const softTotal = (entry.softRecords || []).reduce(
+    (sum, record) => sum + getSoftBaseboardQuantity(record),
+    0
+  )
+  const lines = [
+    'MavieSelect 採寸データ',
+    '',
+    `管理会社：${entry.company || '未登録'}`,
+    `物件：${entry.propertyName || '未登録'}`,
+    `号室：${entry.unit ? `${entry.unit}号室` : '未登録'}`,
+    `住所：${entry.address || '未登録'}`,
+  ]
+
+  if (crossTotal > 0) lines.push(`クロス：${formatQuantity(crossTotal)}m`)
+  if (cfTotal > 0) lines.push(`CF：${formatQuantity(cfTotal)}㎡`)
+  if (softTotal > 0) lines.push(`ソフト巾木：${formatQuantity(softTotal)}枚`)
+
+  const memos = [...new Set(
+    (entry.records || []).map(record => String(record.memo || '').trim()).filter(Boolean)
+  )]
+  if (memos.length > 0) lines.push('', `メモ：${memos.join('、')}`)
+  return lines.join('\n')
+}
+
+async function copyShareText(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch {
+      // Fall through to the selection-based clipboard fallback.
+    }
+  }
+
+  const textArea = document.createElement('textarea')
+  textArea.value = text
+  textArea.setAttribute('readonly', '')
+  textArea.style.position = 'fixed'
+  textArea.style.opacity = '0'
+  document.body.appendChild(textArea)
+  try {
+    textArea.select()
+    if (!document.execCommand('copy')) {
+      throw new Error('Clipboard copy was not available')
+    }
+  } finally {
+    textArea.remove()
+  }
+}
+
+async function shareTextFallback(entry) {
+  const text = createShareText(entry)
+  if (typeof navigator.share === 'function') {
+    await navigator.share({ title: 'MavieSelect 採寸データ', text })
+  } else {
+    await copyShareText(text)
+    window.alert('Excelファイル共有に対応していないため、共有内容をコピーしました。')
+  }
 }
 
 function sumRecords(records, roomName, type) {
@@ -489,6 +660,154 @@ function downloadCsv(entry) {
   URL.revokeObjectURL(url)
 }
 
+async function downloadExcel(entry, shareFile = false) {
+  try {
+  const { default: ExcelJS } = await import('exceljs')
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = 'MavieSelect'
+  workbook.created = new Date()
+
+  const exportedAt = new Intl.DateTimeFormat('ja-JP').format(new Date())
+  const metadata = [
+    ['管理会社', entry.company || ''],
+    ['物件名', entry.propertyName || ''],
+    ['住所', entry.address || ''],
+    ['号室', entry.unit || ''],
+    ['出力日', exportedAt],
+  ]
+
+  function addWorksheet(name, tabColor, columns, rows) {
+    const worksheet = workbook.addWorksheet(name, {
+      properties: { tabColor: { argb: tabColor } },
+      views: [{ state: 'frozen', ySplit: 8 }],
+    })
+    const lastColumn = columns.length
+
+    worksheet.mergeCells(1, 1, 1, lastColumn)
+    const titleCell = worksheet.getCell(1, 1)
+    titleCell.value = `${name} 採寸データ`
+    titleCell.font = { name: 'Yu Gothic', size: 16, bold: true, color: { argb: 'FFFFFFFF' } }
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: tabColor } }
+    titleCell.alignment = { vertical: 'middle' }
+    worksheet.getRow(1).height = 28
+
+    metadata.forEach(([label, value], index) => {
+      const rowNumber = index + 3
+      worksheet.mergeCells(rowNumber, 2, rowNumber, lastColumn)
+      const labelCell = worksheet.getCell(rowNumber, 1)
+      labelCell.value = label
+      labelCell.font = { name: 'Yu Gothic', bold: true }
+      labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F4F7' } }
+      const valueCell = worksheet.getCell(rowNumber, 2)
+      valueCell.value = value
+      valueCell.font = { name: 'Yu Gothic' }
+    })
+
+    const headerRow = worksheet.getRow(8)
+    headerRow.values = columns
+    headerRow.height = 22
+    headerRow.eachCell(cell => {
+      cell.font = { name: 'Yu Gothic', bold: true, color: { argb: 'FFFFFFFF' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: tabColor } }
+      cell.alignment = { vertical: 'middle', horizontal: 'center' }
+    })
+    worksheet.autoFilter = {
+      from: { row: 8, column: 1 },
+      to: { row: 8, column: lastColumn },
+    }
+
+    rows.forEach(row => {
+      const dataRow = worksheet.addRow(row)
+      dataRow.eachCell(cell => {
+        cell.font = { name: 'Yu Gothic' }
+        cell.alignment = { vertical: 'middle' }
+      })
+    })
+
+    for (let columnIndex = 1; columnIndex <= lastColumn; columnIndex += 1) {
+      const maxLength = worksheet.getColumn(columnIndex).values.reduce((max, value) => {
+        const text = String(value ?? '')
+        const displayLength = [...text].reduce(
+          (length, character) => length + (character.charCodeAt(0) > 0xff ? 2 : 1),
+          0
+        )
+        return Math.max(max, displayLength)
+      }, 10)
+      worksheet.getColumn(columnIndex).width = Math.min(maxLength + 2, 50)
+    }
+  }
+
+  const crossRows = (entry.records || []).map(record => [
+    record.room || '',
+    record.type || '',
+    record.memo || '',
+    Number(record.height || 0),
+    Number(record.count || 0),
+    Number(formatQuantity(getRecordQuantity(record))),
+  ])
+  const cfRows = (entry.cfRecords || []).map(record => [
+    record.room || '',
+    record.memo || '',
+    Number(record.length || 0),
+    Number(record.count || 0),
+    Number(formatQuantity(getLengthQuantity(record))),
+  ])
+  const softRows = (entry.softRecords || []).map(record => {
+    const quantity = Number(formatQuantity(getSoftBaseboardQuantity(record)))
+    return [record.room || '', quantity, quantity]
+  })
+
+  addWorksheet('クロス', 'FFF08A79', ['部屋名', '採寸区分', 'メモ', '長さ', '本数', '数量'], crossRows)
+  addWorksheet('CF', 'FF6E91E8', ['部屋名', 'メモ', '長さ', '本数', '数量'], cfRows)
+  addWorksheet('ソフト巾木', 'FF63BEA1', ['部屋名', '枚数', '数量'], softRows)
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+  const safeName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}`.replace(/[\\/:*?"<>|]/g, '_')
+  const fileName = `${safeName}_採寸データ.xlsx`
+  if (shareFile) {
+    const file = typeof File === 'function'
+      ? new File([blob], fileName, { type: blob.type })
+      : null
+    if (file && navigator.canShare?.({ files: [file] }) && navigator.share) {
+      await navigator.share({
+        files: [file],
+        title: 'MavieSelect 採寸データ',
+        text: `${entry.propertyName || '物件'} ${entry.unit || ''}号室の採寸データ`,
+      })
+      return
+    }
+    await shareTextFallback(entry)
+    return
+  }
+
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } catch (error) {
+    if (shareFile) {
+      if (error.name === 'AbortError') return
+      try {
+        await shareTextFallback(entry)
+      } catch (fallbackError) {
+        if (fallbackError.name !== 'AbortError') {
+          window.alert('Excelファイルと共有内容を共有できませんでした。')
+        }
+      }
+      return
+    }
+    console.error('Excelファイルを出力できませんでした。', error)
+    window.alert('Excelファイルを出力できませんでした。')
+  }
+}
+
 function LengthMeasurementPage({ title, records, setRecords, pageIndex, setPageIndex, countOnly = false }) {
   const [length, setLength] = useState('')
   const [count, setCount] = useState('')
@@ -561,11 +880,11 @@ function LengthMeasurementPage({ title, records, setRecords, pageIndex, setPageI
           {rooms.map(roomName => (
             <div className="roomSummary" key={roomName}>
               <h3>{roomName}</h3>
-              <div className="summaryLine"><span>{title}</span><strong>{Number(roomTotals[roomName] || 0).toFixed(2)}{unit}</strong></div>
+              <div className="summaryLine"><span>{title}</span><strong>{formatQuantity(roomTotals[roomName] || 0)}{unit}</strong></div>
             </div>
           ))}
           <div className="summary">
-            <div className="summaryLine summaryGrand"><span>全室{title}合計</span><strong>{total.toFixed(2)}{unit}</strong></div>
+            <div className="summaryLine summaryGrand"><span>全室{title}合計</span><strong>{formatQuantity(total)}{unit}</strong></div>
           </div>
         </section>
       ) : (
@@ -594,15 +913,15 @@ function LengthMeasurementPage({ title, records, setRecords, pageIndex, setPageI
                 <div className="record" key={item.id}>
                   <div>
                     <strong>{countOnly ? 'ソフト巾木登録' : title}</strong>
-                    <small>{countOnly ? `${item.quantity}枚` : `${Number(item.length).toFixed(2)}m × ${item.count}本`}</small>
+                    <small>{countOnly ? `${formatQuantity(item.quantity)}枚` : `${Number(item.length).toFixed(2)}m × ${item.count}本`}</small>
                   </div>
-                  <b>{getQuantity(item).toFixed(2)}{unit}</b>
+                  <b>{formatQuantity(getQuantity(item))}{unit}</b>
                   <button type="button" onClick={() => setRecords(prev => prev.filter(record => record.id !== item.id))} aria-label={`${room}の${title}登録を削除`}>×</button>
                 </div>
               ))}
             </div>
             <div className="summary">
-              <div className="summaryLine summaryGrand"><span>{room}の{title}合計</span><strong>{Number(roomTotals[room] || 0).toFixed(2)}{unit}</strong></div>
+              <div className="summaryLine summaryGrand"><span>{room}の{title}合計</span><strong>{formatQuantity(roomTotals[room] || 0)}{unit}</strong></div>
             </div>
           </section>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 16 }}>
@@ -619,6 +938,19 @@ function LengthMeasurementPage({ title, records, setRecords, pageIndex, setPageI
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [propertyMasterState, setPropertyMasterState] = useState(loadPropertyMaster)
+  const [masterCompanyName, setMasterCompanyName] = useState('')
+  const [editingCompanyId, setEditingCompanyId] = useState('')
+  const [masterPropertyCompanyId, setMasterPropertyCompanyId] = useState('')
+  const [showPropertyForm, setShowPropertyForm] = useState(false)
+  const [editingPropertyId, setEditingPropertyId] = useState('')
+  const [propertyForm, setPropertyForm] = useState({
+    name: '',
+    address: '',
+    reading: '',
+    aliases: '',
+  })
+  const [masterStatus, setMasterStatus] = useState(propertyMasterState.error)
   const [fontSize, setFontSize] = useState(() => readPreference(fontSizeKey, 'medium'))
   const [theme, setTheme] = useState(() => readPreference(themeKey, 'beige'))
 
@@ -629,6 +961,7 @@ export default function App() {
   const [started, setStarted] = useState(false)
   const [showSavedList, setShowSavedList] = useState(false)
   const [savedEntries, setSavedEntries] = useState([])
+  const [shareStatus, setShareStatus] = useState('')
   const [savedSearch, setSavedSearch] = useState('')
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
@@ -697,8 +1030,14 @@ export default function App() {
 
   const isSummaryPage = pageIndex === rooms.length
   const room = isSummaryPage ? '' : rooms[pageIndex]
-  const companies = Object.keys(properties)
-  const companyProperties = company ? Object.values(properties[company] || {}).flat() : []
+  const mergedPropertyMaster = useMemo(
+    () => getMergedPropertyMaster(propertyMasterState.master),
+    [propertyMasterState.master]
+  )
+  const companies = mergedPropertyMaster.companies.map(item => item.name)
+  const companyProperties = company
+    ? mergedPropertyMaster.properties.filter(item => item.company === company)
+    : []
   const queryForms = useMemo(() => searchForms(propertySearch), [propertySearch])
   const filteredProperties = queryForms.length
     ? companyProperties.filter(item => matchesProperty(item, queryForms))
@@ -751,6 +1090,203 @@ export default function App() {
     try { localStorage.setItem(themeKey, value) } catch { /* 設定の保存は任意 */ }
   }
 
+  function savePropertyMaster(nextMaster, successMessage) {
+    if (propertyMasterState.error) {
+      setMasterStatus(propertyMasterState.error)
+      return false
+    }
+    try {
+      localStorage.setItem(propertyMasterKey, JSON.stringify(nextMaster))
+      setPropertyMasterState({ master: nextMaster, error: '' })
+      setMasterStatus(successMessage)
+      return true
+    } catch {
+      setMasterStatus('保存できませんでした。端末の空き容量やブラウザーの保存設定をご確認ください。')
+      return false
+    }
+  }
+
+  function addMasterCompany(event) {
+    event.preventDefault()
+    const name = masterCompanyName.trim()
+    if (!name) return
+    if (mergedPropertyMaster.companies.some(item => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+      setMasterStatus('同じ管理会社名がすでに登録されています。')
+      return
+    }
+
+    const company = { id: createRecordId(), name }
+    if (savePropertyMaster({
+      ...propertyMasterState.master,
+      addedCompanies: [...propertyMasterState.master.addedCompanies, company],
+    }, '管理会社を追加しました。')) {
+      setMasterCompanyName('')
+      setMasterPropertyCompanyId(company.id)
+      setEditingCompanyId('')
+    }
+  }
+
+  function renameMasterCompany(companyId) {
+    const name = masterCompanyName.trim()
+    if (!name) return
+    const companyBeingRenamed = mergedPropertyMaster.companies.find(item => item.id === companyId)
+    if (!companyBeingRenamed) return
+    if (mergedPropertyMaster.companies.some(item =>
+      item.id !== companyId && item.name.toLocaleLowerCase() === name.toLocaleLowerCase()
+    )) {
+      setMasterStatus('同じ管理会社名がすでに登録されています。')
+      return
+    }
+
+    if (savePropertyMaster({
+      ...propertyMasterState.master,
+      companyNames: { ...propertyMasterState.master.companyNames, [companyId]: name },
+    }, '管理会社名を変更しました。')) {
+      if (!started && company === companyBeingRenamed.name) setCompany(name)
+      setMasterCompanyName('')
+      setEditingCompanyId('')
+    }
+  }
+
+  function deleteMasterCompany(masterCompany) {
+    const propertyCount = mergedPropertyMaster.properties.filter(
+      property => property.companyId === masterCompany.id
+    ).length
+    const confirmation = propertyCount
+      ? `「${masterCompany.name}」には${propertyCount}件の物件があります。管理会社と物件を一覧から削除しますか？`
+      : `管理会社「${masterCompany.name}」を削除しますか？`
+    if (!window.confirm(confirmation)) return
+
+    const nextMaster = {
+      ...propertyMasterState.master,
+      deletedCompanyIds: [...new Set([...propertyMasterState.master.deletedCompanyIds, masterCompany.id])],
+    }
+    if (savePropertyMaster(nextMaster, '管理会社を削除しました。')) {
+      if (!started && company === masterCompany.name) {
+        setCompany('')
+        setPropertySearch('')
+        setSelectedProperty(null)
+      }
+      if (masterPropertyCompanyId === masterCompany.id) setMasterPropertyCompanyId('')
+      if (editingCompanyId === masterCompany.id) {
+        setEditingCompanyId('')
+        setMasterCompanyName('')
+      }
+    }
+  }
+
+  function startEditingCompany(company) {
+    setEditingCompanyId(company.id)
+    setMasterCompanyName(company.name)
+  }
+
+  function startAddingProperty(companyId = masterPropertyCompanyId) {
+    setEditingPropertyId('')
+    setShowPropertyForm(true)
+    setMasterPropertyCompanyId(companyId)
+    setPropertyForm({ name: '', address: '', reading: '', aliases: '' })
+    setMasterStatus('')
+  }
+
+  function startEditingProperty(property) {
+    setEditingPropertyId(property.id)
+    setShowPropertyForm(true)
+    setMasterPropertyCompanyId(property.companyId)
+    setPropertyForm({
+      name: property.name || '',
+      address: property.address || '',
+      reading: property.reading || '',
+      aliases: Array.isArray(property.aliases)
+        ? property.aliases.join(', ')
+        : String(property.aliases || property.alias || ''),
+    })
+    setMasterStatus('')
+  }
+
+  function saveMasterProperty(event) {
+    event.preventDefault()
+    const name = propertyForm.name.trim()
+    if (!name || !masterPropertyCompanyId) return
+    const aliases = propertyForm.aliases.split(/[,、\n]/).map(alias => alias.trim()).filter(Boolean)
+    const values = {
+      name,
+      address: propertyForm.address.trim(),
+      reading: propertyForm.reading.trim(),
+      aliases,
+      alias: null,
+    }
+    const master = propertyMasterState.master
+    let nextMaster
+
+    if (editingPropertyId.startsWith('base-property:')) {
+      const originalProperty = mergedPropertyMaster.properties.find(
+        property => property.id === editingPropertyId
+      )
+      if (originalProperty && originalProperty.companyId !== masterPropertyCompanyId) {
+        nextMaster = {
+          ...master,
+          deletedPropertyIds: [...new Set([...master.deletedPropertyIds, editingPropertyId])],
+          addedProperties: [
+            ...master.addedProperties,
+            { id: createRecordId(), companyId: masterPropertyCompanyId, ...values },
+          ],
+        }
+      } else {
+        nextMaster = {
+          ...master,
+          propertyOverrides: {
+            ...master.propertyOverrides,
+            [editingPropertyId]: values,
+          },
+        }
+      }
+    } else if (editingPropertyId) {
+      nextMaster = {
+        ...master,
+        addedProperties: master.addedProperties.map(property =>
+          property.id === editingPropertyId
+            ? { ...property, ...values, companyId: masterPropertyCompanyId }
+            : property
+        ),
+      }
+    } else {
+      nextMaster = {
+        ...master,
+        addedProperties: [
+          ...master.addedProperties,
+          { id: createRecordId(), companyId: masterPropertyCompanyId, ...values },
+        ],
+      }
+    }
+
+    if (savePropertyMaster(nextMaster, editingPropertyId ? '物件情報を更新しました。' : '物件を追加しました。')) {
+      setEditingPropertyId('')
+      setShowPropertyForm(false)
+      setPropertyForm({ name: '', address: '', reading: '', aliases: '' })
+    }
+  }
+
+  function deleteMasterProperty(property) {
+    if (!window.confirm(`物件「${property.name}」を削除しますか？`)) return
+    const master = propertyMasterState.master
+    const nextMaster = property.id.startsWith('base-property:')
+      ? {
+          ...master,
+          deletedPropertyIds: [...new Set([...master.deletedPropertyIds, property.id])],
+        }
+      : {
+          ...master,
+          addedProperties: master.addedProperties.filter(item => item.id !== property.id),
+        }
+    if (savePropertyMaster(nextMaster, '物件を削除しました。')) {
+      if (!started && selectedProperty?.id === property.id) {
+        setSelectedProperty(null)
+        setPropertySearch('')
+      }
+      if (editingPropertyId === property.id) startAddingProperty(property.companyId)
+    }
+  }
+
   function openSavedList() {
     setSavedEntries(readSavedEntries())
     setSelectedSavedKeys([])
@@ -781,6 +1317,40 @@ export default function App() {
     setSaveStatus('')
     setShowSavedList(false)
     setStarted(true)
+    setShareStatus('')
+  }
+
+  async function shareEntry(entry) {
+    const text = createShareText(entry)
+    setShareStatus('')
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: 'MavieSelect 採寸データ', text })
+        setShareStatus('共有画面を開きました。')
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          setShareStatus('共有できませんでした。共有内容のコピーをお試しください。')
+        }
+      }
+      return
+    }
+
+    try {
+      await copyShareText(text)
+      setShareStatus('共有に対応していないため、共有内容をコピーしました。')
+    } catch {
+      setShareStatus('コピーできませんでした。ブラウザーのクリップボード利用を確認してください。')
+    }
+  }
+
+  async function copyEntryShareText(entry) {
+    setShareStatus('')
+    try {
+      await copyShareText(createShareText(entry))
+      setShareStatus('共有内容をコピーしました。')
+    } catch {
+      setShareStatus('コピーできませんでした。ブラウザーのクリップボード利用を確認してください。')
+    }
   }
 
   function overwriteSavedEntry(entry) {
@@ -1088,6 +1658,162 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              <h2 style={{ marginTop: 28 }}>管理会社・物件管理</h2>
+              {masterStatus && <p className="saveStatus" role="status">{masterStatus}</p>}
+              <form onSubmit={event => {
+                if (editingCompanyId) {
+                  event.preventDefault()
+                  renameMasterCompany(editingCompanyId)
+                } else {
+                  addMasterCompany(event)
+                }
+              }}>
+                <label>
+                  <span>{editingCompanyId ? '管理会社名を編集' : '新しい管理会社'}</span>
+                  <input
+                    value={masterCompanyName}
+                    onChange={event => setMasterCompanyName(event.target.value)}
+                    placeholder="管理会社名"
+                    required
+                  />
+                </label>
+                <div className="masterActions">
+                  <button className="primary" type="submit">
+                    {editingCompanyId ? '管理会社名を保存' : '管理会社を追加'}
+                  </button>
+                  {editingCompanyId && (
+                    <button className="secondaryButton" type="button" onClick={() => {
+                      setEditingCompanyId('')
+                      setMasterCompanyName('')
+                    }}>
+                      編集をキャンセル
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              <div className="masterCompanyList">
+                {mergedPropertyMaster.companies.map(masterCompany => (
+                  <div className="masterCompanyItem" key={masterCompany.id}>
+                    <strong>{masterCompany.name}</strong>
+                    <div className="masterActions">
+                      <button type="button" className="secondaryButton" onClick={() => {
+                        setMasterPropertyCompanyId(masterCompany.id)
+                        setShowPropertyForm(false)
+                        setEditingPropertyId('')
+                      }}>
+                        物件一覧
+                      </button>
+                      <button type="button" className="secondaryButton" onClick={() => startEditingCompany(masterCompany)}>
+                        編集
+                      </button>
+                      <button type="button" className="dangerButton" onClick={() => deleteMasterCompany(masterCompany)}>
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {masterPropertyCompanyId && (
+                <section className="masterPropertySection">
+                  <h3>
+                    {mergedPropertyMaster.companies.find(item => item.id === masterPropertyCompanyId)?.name || ''}
+                    の物件
+                  </h3>
+                  <button className="secondaryButton" type="button" onClick={() => startAddingProperty()}>
+                    ＋ 新規物件追加
+                  </button>
+                  <div className="masterPropertyList">
+                    {mergedPropertyMaster.properties
+                      .filter(property => property.companyId === masterPropertyCompanyId)
+                      .map(property => (
+                        <article className="masterPropertyItem" key={property.id}>
+                          <strong>{property.name}</strong>
+                          <span>{property.address || '住所未登録'}</span>
+                          <span>読み方：{property.reading || '未登録'}</span>
+                          <span>
+                            別名：{(Array.isArray(property.aliases)
+                              ? property.aliases
+                              : property.aliases ? [property.aliases] : property.alias ? [property.alias] : []
+                            ).join('、') || '未登録'}
+                          </span>
+                          <div className="masterActions">
+                            <button className="secondaryButton" type="button" onClick={() => startEditingProperty(property)}>
+                              編集
+                            </button>
+                            <button className="dangerButton" type="button" onClick={() => deleteMasterProperty(property)}>
+                              削除
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                  </div>
+
+                  {showPropertyForm && (
+                    <form className="masterPropertyForm" onSubmit={saveMasterProperty}>
+                      <h3>{editingPropertyId ? '物件を編集' : '物件を追加'}</h3>
+                      <label>
+                        <span>管理会社</span>
+                        <select
+                          value={masterPropertyCompanyId}
+                          onChange={event => {
+                            setMasterPropertyCompanyId(event.target.value)
+                            setEditingPropertyId('')
+                          }}
+                          required
+                        >
+                          <option value="">管理会社を選択</option>
+                          {mergedPropertyMaster.companies.map(item => (
+                            <option value={item.id} key={item.id}>{item.name}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>物件名</span>
+                        <input
+                          value={propertyForm.name}
+                          onChange={event => setPropertyForm(prev => ({ ...prev, name: event.target.value }))}
+                          required
+                        />
+                      </label>
+                      <label>
+                        <span>住所</span>
+                        <input
+                          value={propertyForm.address}
+                          onChange={event => setPropertyForm(prev => ({ ...prev, address: event.target.value }))}
+                        />
+                      </label>
+                      <label>
+                        <span>検索用の読み方</span>
+                        <input
+                          value={propertyForm.reading}
+                          onChange={event => setPropertyForm(prev => ({ ...prev, reading: event.target.value }))}
+                          placeholder="例：しゅしゅ"
+                        />
+                      </label>
+                      <label>
+                        <span>検索用の別名（カンマ区切り）</span>
+                        <input
+                          value={propertyForm.aliases}
+                          onChange={event => setPropertyForm(prev => ({ ...prev, aliases: event.target.value }))}
+                          placeholder="例：CHOUCHOU, chou"
+                        />
+                      </label>
+                      <div className="masterActions">
+                        <button className="primary" type="submit">
+                          {editingPropertyId ? '物件を保存' : '物件を追加'}
+                        </button>
+                        <button className="secondaryButton" type="button" onClick={() => {
+                          setEditingPropertyId('')
+                          setShowPropertyForm(false)
+                          setPropertyForm({ name: '', address: '', reading: '', aliases: '' })
+                        }}>キャンセル</button>
+                      </div>
+                    </form>
+                  )}
+                </section>
+              )}
             </section>
           </main>
         ) : showSavedList && !started ? (
@@ -1125,6 +1851,7 @@ export default function App() {
               <p className="saveStatus">
                 {showArchived ? 'アーカイブ件数' : '保存済み件数'}：{savedCount}件
               </p>
+              {shareStatus && <p className="saveStatus" role="status">{shareStatus}</p>}
               <p className="savedMeta" style={{ textAlign: 'center', margin: '6px 0 18px' }}>
                 表示中：{visibleSavedEntries.length}件
               </p>
@@ -1220,6 +1947,10 @@ export default function App() {
                         <button className="actionButton actionOverwrite" type="button" onClick={() => openSavedEntry(entry)}>編集</button>
                         <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>上書き保存</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadCsv(entry)}>CSV出力</button>
+                        <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
+                        <button className="actionButton actionCsv" type="button" onClick={() => shareEntry(entry)}>共有</button>
+                        <button className="actionButton actionOverwrite" type="button" onClick={() => copyEntryShareText(entry)}>共有内容をコピー</button>
+                        <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry, true)}>Excelを共有</button>
                         <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
                         <button
                           className="actionButton actionOverwrite"
@@ -1289,6 +2020,19 @@ export default function App() {
                 <small>物件住所</small>
                 <strong>{selectedProperty?.address || '物件を選択すると住所が表示されます'}</strong>
               </div>
+              <button
+                className="secondaryButton"
+                type="button"
+                disabled={!selectedProperty?.address?.trim()}
+                onClick={() => {
+                  const address = selectedProperty?.address?.trim()
+                  if (!address) return
+                  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+                  window.open(mapUrl, '_blank', 'noopener,noreferrer')
+                }}
+              >
+                地図・ナビを開く
+              </button>
               <label>
                 <span>号室</span>
                 <input value={unit} onChange={event => setUnit(event.target.value)} placeholder="例：501" />
@@ -1307,6 +2051,57 @@ export default function App() {
                 : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
             </h1>
             <button className="saveButton" type="button" onClick={saveCurrentData}>保存する</button>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={() => downloadExcel({
+                company,
+                propertyName: selectedProperty?.name || '',
+                address: selectedProperty?.address || '',
+                unit,
+                records,
+                cfRecords,
+                softRecords,
+              })}
+            >
+              Excel出力
+            </button>
+            <div className="shareActions">
+              <button className="secondaryButton" type="button" onClick={() => shareEntry({
+                company,
+                propertyName: selectedProperty?.name || '',
+                address: selectedProperty?.address || '',
+                unit,
+                records,
+                cfRecords,
+                softRecords,
+              })}>
+                共有
+              </button>
+              <button className="secondaryButton" type="button" onClick={() => copyEntryShareText({
+                company,
+                propertyName: selectedProperty?.name || '',
+                address: selectedProperty?.address || '',
+                unit,
+                records,
+                cfRecords,
+                softRecords,
+              })}>
+                共有内容をコピー
+              </button>
+              <button className="secondaryButton" type="button" onClick={() => downloadExcel({
+                company,
+                propertyName: selectedProperty?.name || '',
+                address: selectedProperty?.address || '',
+                unit,
+                records,
+                cfRecords,
+                softRecords,
+              }, true)}>
+                Excelを共有
+              </button>
+            </div>
+            {shareStatus && <p className="saveStatus" role="status">{shareStatus}</p>}
             {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
 
             <div className="measurementTypes" aria-label="採寸機能">
@@ -1345,12 +2140,12 @@ export default function App() {
                           {measurementTypes.map(type => (
                             <div className="summaryLine" key={type}>
                               <span>{type}</span>
-                              <strong>{roomTotalsByType[type].toFixed(2)}m</strong>
+                              <strong>{formatQuantity(roomTotalsByType[type])}m</strong>
                             </div>
                           ))}
                           <div className="summaryLine">
                             <span>部屋合計</span>
-                            <strong>{roomTotal.toFixed(2)}m</strong>
+                            <strong>{formatQuantity(roomTotal)}m</strong>
                           </div>
                         </div>
                       )
@@ -1359,12 +2154,12 @@ export default function App() {
                       {measurementTypes.map(type => (
                         <div className="summaryLine" key={type}>
                           <span>{type}合計</span>
-                          <strong>{totalsByType[type].toFixed(2)}m</strong>
+                          <strong>{formatQuantity(totalsByType[type])}m</strong>
                         </div>
                       ))}
                       <div className="summaryLine summaryGrand">
                         <span>全区分合計</span>
-                        <strong>{grandTotal.toFixed(2)}m</strong>
+                        <strong>{formatQuantity(grandTotal)}m</strong>
                       </div>
                     </div>
                   </section>
@@ -1445,7 +2240,7 @@ export default function App() {
                               <small>{Number(item.height).toFixed(2)}m × {item.count}本</small>
                               {item.memo && <small>メモ：{item.memo}</small>}
                             </div>
-                            <b>{getRecordQuantity(item).toFixed(2)}m</b>
+                            <b>{formatQuantity(getRecordQuantity(item))}m</b>
                             <button type="button" onClick={() => deleteCrossRecord(item.id)} aria-label={`${room}の${item.type}の登録を削除`}>×</button>
                           </div>
                         ))}
