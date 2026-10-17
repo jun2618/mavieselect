@@ -2322,9 +2322,7 @@ export default function App() {
             <h1>
               {showRoomManagement
                 ? '部屋管理'
-                : showMeasurementCheck
-                  ? '採寸チェック'
-                  : activePage === 'cross'
+                : activePage === 'cross'
                 ? isSummaryPage ? '全室の合計' : '採寸入力'
                 : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
             </h1>
@@ -2351,7 +2349,7 @@ export default function App() {
             </p>
             {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
 
-            {!showRoomManagement && !showMeasurementCheck && (
+            {!showRoomManagement && (
               <div className="measurementTypes" aria-label="採寸機能">
                 <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
                 <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
@@ -2359,32 +2357,13 @@ export default function App() {
               </div>
             )}
 
-            {!showRoomManagement && (
-              <button
-                className="measurementCheckButton"
-                type="button"
-                onClick={() => {
-                  setShowMeasurementCheck(previous => !previous)
-                  setReturnToMeasurementCheck(false)
-                }}
-              >
-                {showMeasurementCheck
-                  ? '採寸画面へ戻る'
-                  : returnToMeasurementCheck
-                    ? '採寸チェックへ戻る'
-                    : '採寸チェック'}
-              </button>
-            )}
-
-            {!showMeasurementCheck && (
-              <button
-                className="measurementCheckButton"
-                type="button"
-                onClick={() => setShowRoomManagement(previous => !previous)}
-              >
-                {showRoomManagement ? '← 採寸画面へ戻る' : '⚙ 部屋管理'}
-              </button>
-            )}
+            <button
+              className="measurementCheckButton"
+              type="button"
+              onClick={() => setShowRoomManagement(previous => !previous)}
+            >
+              {showRoomManagement ? '← 採寸画面へ戻る' : '⚙ 部屋管理'}
+            </button>
 
             {showRoomManagement ? (
               <section className="card">
@@ -2396,58 +2375,6 @@ export default function App() {
                   onDeleteRoom={deleteRoom}
                   roomHasData={roomHasData}
                 />
-              </section>
-            ) : showMeasurementCheck ? (
-              <section className="roomCheckSection">
-                <div className="roomCheckTotals" aria-live="polite">
-                  <span>確認済み：{confirmedRoomCount}部屋</span>
-                  <span>未確認：{rooms.length - confirmedRoomCount}部屋</span>
-                </div>
-                <div className="roomCheckList">
-                  {rooms.map((roomName, index) => {
-                    const status = getRoomInputStatus(roomName)
-                    return (
-                      <article
-                        className={`roomCheckItem${status.confirmed ? ' confirmed' : ''}`}
-                        key={roomName}
-                      >
-                        <button
-                          className="roomCheckName"
-                          type="button"
-                          onClick={() => {
-                            setPageIndex(index)
-                            setCfPageIndex(index)
-                            setSoftPageIndex(index)
-                            setActivePage('cross')
-                            setActiveInput('')
-                            setHeight('')
-                            setCount('')
-                            setMemo('')
-                            setShowMeasurementCheck(false)
-                            setReturnToMeasurementCheck(true)
-                          }}
-                        >
-                          <span>{status.confirmed ? '✅' : '⚠️'} {roomName}</span>
-                          <span>{status.confirmed ? '確認済み' : '未確認'}</span>
-                        </button>
-                        <div className="roomCheckDetails">
-                          <span>クロス：{status.cross ? '入力あり' : '入力なし'}</span>
-                          <span>CF：{status.cf ? '入力あり' : '入力なし'}</span>
-                          <span>ソフト巾木：{status.soft ? '入力あり' : '入力なし'}</span>
-                          <span>メモ：{status.memo ? 'あり' : 'なし'}</span>
-                        </div>
-                        <button
-                          className="roomConfirmButton"
-                          type="button"
-                          aria-pressed={status.confirmed}
-                          onClick={() => toggleRoomConfirmation(roomName)}
-                        >
-                          {status.confirmed ? '確認を解除' : '確認済みにする'}
-                        </button>
-                      </article>
-                    )
-                  })}
-                </div>
               </section>
             ) : activePage === 'cf' ? (
               <LengthMeasurementPage
