@@ -720,6 +720,27 @@ function getRecordQuantity(record) {
   return Number(record.quantity) || Number(record.height || 0) * Number(record.count || 0)
 }
 
+function scrollToActualPosition(targetId, topPadding = 88) {
+  window.setTimeout(() => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const target = document.getElementById(targetId)
+        if (!target) {
+          console.warn('スクロール先が見つかりません:', targetId)
+          return
+        }
+        const rect = target.getBoundingClientRect()
+        const targetTop = window.pageYOffset + rect.top - topPadding
+        window.scrollTo({
+          top: Math.max(0, targetTop),
+          left: 0,
+          behavior: 'smooth',
+        })
+      })
+    })
+  }, 260)
+}
+
 function formatQuantity(value) {
   const quantity = Number(value)
   return (Math.round((quantity + Number.EPSILON) * 10) / 10).toFixed(1)
@@ -1012,9 +1033,12 @@ function LengthMeasurementPage({
 
   return (
     <>
-      <nav className="roomTabs" aria-label={`${title}の部屋`}>
+      <nav className="roomTabs" id={`room-tabs-${title}`} ref={roomTabsRef} aria-label={`${title}の部屋`}>
         {rooms.map((name, index) => (
-          <button key={name} type="button" className={pageIndex === index ? 'room active' : 'room'} onClick={() => goToPage(index)}>{name}</button>
+          <button key={name} type="button" className={pageIndex === index ? 'room active' : 'room'} onClick={() => {
+            goToPage(index)
+            scrollToActualPosition(`measurement-input-${title}`, 88)
+          }}>{name}</button>
         ))}
         <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>全室合計</button>
       </nav>
@@ -1034,7 +1058,7 @@ function LengthMeasurementPage({
         </section>
       ) : (
         <>
-          <section className="card">
+          <section className="card measurementTarget" id={`measurement-input-${title}`} ref={measurementTargetRef}>
             <h2>{room}</h2>
             <form onSubmit={addRecord}>
               {countOnly ? (
@@ -2635,9 +2659,12 @@ export default function App() {
               />
             ) : (
               <>
-                <nav className="roomTabs" aria-label="クロスの部屋">
+                <nav className="roomTabs" id="room-tabs-cross" ref={crossRoomTabsRef} aria-label="クロスの部屋">
                   {rooms.map((name, index) => (
-                    <button key={name} type="button" className={pageIndex === index ? 'room active' : 'room'} onClick={() => goToPage(index)}>{name}</button>
+                    <button key={name} type="button" className={pageIndex === index ? 'room active' : 'room'} onClick={() => {
+                      goToPage(index)
+                      scrollToActualPosition('cross-measurement-target', 88)
+                    }}>{name}</button>
                   ))}
                   <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>全室合計</button>
                 </nav>
@@ -2685,7 +2712,7 @@ export default function App() {
                   <>
                     <section className="card">
                       <h2>{room}</h2>
-                      <div className="measurementTypes" aria-label="採寸区分">
+                      <div className="measurementTypes measurementTarget" id="cross-measurement-target" ref={crossMeasurementTargetRef} aria-label="採寸区分">
                         {measurementTypes.map(type => (
                           <button key={type} type="button" className={measurementType === type ? 'measurementType active' : 'measurementType'} onClick={() => {
                             setMeasurementType(type)
