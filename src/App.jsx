@@ -1512,66 +1512,17 @@ export default function App() {
     }
   }
 
-  async function shareCaseEntry(entry) {
+  function exportCaseEntry(entry) {
     setShareStatus('')
-    let fileName = ''
-    const mimeType = 'text/plain'
-    let fileSize = null
-    let canShareResult = null
-    const hasShare = typeof navigator.share === 'function'
-    const hasCanShare = typeof navigator.canShare === 'function'
-    const logShareError = error => {
-      console.error('案件ファイルの共有処理に失敗しました。', {
-        hasNavigatorShare: hasShare,
-        hasNavigatorCanShare: hasCanShare,
-        canShareResult,
-        fileName,
-        mimeType,
-        fileSize,
-        errorName: error?.name || 'Error',
-        errorMessage: error?.message || String(error),
-      })
-    }
-
     try {
       const caseFile = createCaseFile(entry)
-      fileName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}_MCross案件.txt`
+      const fileName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}_MCross案件.json`
         .replace(/[\\/:*?"<>|]/g, '_')
       const fileContents = JSON.stringify(caseFile, null, 2)
-      const file = typeof File === 'function'
-        ? new File([fileContents], fileName, { type: mimeType })
-        : null
-      fileSize = file?.size ?? new Blob([fileContents], { type: mimeType }).size
-
-      if (file && hasShare && hasCanShare) {
-        try {
-          canShareResult = navigator.canShare({ files: [file] })
-        } catch (error) {
-          canShareResult = false
-          logShareError(error)
-        }
-
-        if (canShareResult) {
-          try {
-            await navigator.share({ files: [file] })
-            setShareStatus('案件ファイルを共有しました。')
-            return
-          } catch (error) {
-            if (error.name === 'AbortError') return
-            logShareError(error)
-          }
-        } else {
-          logShareError(new Error('navigator.canShare returned false for the case file'))
-        }
-      } else {
-        logShareError(new Error('File sharing APIs are unavailable'))
-      }
-
-      window.alert('この端末では案件ファイルを直接共有できないため、案件ファイルをダウンロードします')
-      downloadTextFile(fileContents, fileName, 'text/plain;charset=utf-8')
-      setShareStatus('案件ファイルをダウンロードしました。')
+      downloadTextFile(fileContents, fileName, 'application/json;charset=utf-8')
+      setShareStatus('M-Cross案件ファイルを保存しました。このファイルをLINEやメールなどで相手へ送ってください。')
     } catch (error) {
-      logShareError(error)
+      console.error('M-Cross案件ファイルを書き出せませんでした。', error)
       window.alert('案件ファイルを作成できませんでした。')
     }
   }
@@ -2279,15 +2230,7 @@ export default function App() {
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadCsv(entry)}>CSV出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => shareEntry(entry)}>共有</button>
-                        <button className="actionButton actionCsv" type="button" onClick={() => shareCaseEntry(entry)}>
-                          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" style={{ verticalAlign: 'middle', marginRight: 4 }}>
-                            <circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                            <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                            <circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                            <path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4" fill="none" stroke="currentColor" strokeWidth="2" />
-                          </svg>
-                          案件を共有
-                        </button>
+                        <button className="actionButton actionCsv" type="button" onClick={() => exportCaseEntry(entry)}>M-Cross案件を書き出す</button>
                         <button className="actionButton actionOverwrite" type="button" onClick={() => copyEntryShareText(entry)}>共有内容をコピー</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry, true)}>Excelを共有</button>
                         <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
@@ -2428,7 +2371,7 @@ export default function App() {
               })}>
                 共有内容をコピー
               </button>
-              <button className="secondaryButton" type="button" onClick={() => shareCaseEntry({
+              <button className="secondaryButton" type="button" onClick={() => exportCaseEntry({
                 company,
                 propertyName: selectedProperty?.name || '',
                 address: selectedProperty?.address || '',
@@ -2437,13 +2380,7 @@ export default function App() {
                 cfRecords,
                 softRecords,
               })}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" style={{ verticalAlign: 'middle', marginRight: 4 }}>
-                  <circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4" fill="none" stroke="currentColor" strokeWidth="2" />
-                </svg>
-                案件を共有
+                M-Cross案件を書き出す
               </button>
               <button className="secondaryButton" type="button" onClick={() => downloadExcel({
                 company,
