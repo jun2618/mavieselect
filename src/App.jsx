@@ -369,7 +369,8 @@ const styles = `
   .main h1,.card h2 { color:#514751; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-weight:800; letter-spacing:.04em; }
   .main h1 { margin:0 0 12px; font-size:clamp(32px,8vw,42px); }
   .subtitle,.propertyLine { color:#8e8190; font-size:16px; line-height:1.8; }
-  .propertyLine { margin:18px 0 5px; color:#d27f6d; font-weight:700; }
+  .propertyLine { margin:18px 0 8px; color:#d27f6d; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:21px; font-weight:800; letter-spacing:.035em; line-height:1.55; text-align:left; text-shadow:0 2px 0 rgba(255,227,212,.7); }
+  .measurementBackButton { display:inline-flex; align-items:center; justify-content:center; min-height:46px; margin:0 0 4px; padding:9px 16px; border:1px solid #efc7b4; border-radius:14px; color:#c96e69; background:linear-gradient(180deg,#fff,#fff3e9); box-shadow:0 4px 0 #ead8cb; font:inherit; font-size:15px; font-weight:800; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .card { margin-top:20px; padding:clamp(20px,5vw,30px); border:1px solid rgba(230,202,184,.85); border-radius:24px; background:rgba(255,255,255,.82); box-shadow:0 12px 0 #ead8cb,0 18px 36px rgba(111,82,88,.12); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
   .masterCompanyForm,.masterPropertySection,.masterPropertyForm { scroll-margin-top:24px; }
   .card h2 { margin:0 0 22px; text-align:center; font-size:26px; }
@@ -515,6 +516,8 @@ const styles = `
   .theme-dark .room,.theme-dark .measurementType,.theme-dark .keypadButton { color:#eee8e2; border-color:#51484d; background:#39343a; box-shadow:0 4px 0 #282428; }
   .theme-dark .room.active,.theme-dark .measurementType.active,.theme-dark .settingsOption.active { color:#fff; background:#c87568; }
   .theme-dark .empty { color:#b9acb5; }
+  .theme-dark .measurementBackButton { color:#f0a08d; border-color:#51484d; background:#39343a; box-shadow:0 4px 0 #282428; }
+  .theme-dark .propertyLine { color:#f0a08d; text-shadow:none; }
   .theme-dark .roomCheckTotals,.theme-dark .roomCheckItem { color:#eee8e2; border-color:#51484d; background:#302c31; }
   .theme-dark .roomCheckName { color:#eee8e2; }
   .theme-dark .roomCheckDetails { color:#c3b8c0; }
@@ -526,6 +529,8 @@ const styles = `
   .theme-dark .record { border-color:#51484d; }
   .theme-pop { color:#51414b; background:radial-gradient(circle at 8% 10%,rgba(255,190,215,.65),transparent 25%),radial-gradient(circle at 95% 28%,rgba(185,221,255,.65),transparent 28%),linear-gradient(145deg,#fff8e9,#fff0e6); }
   .theme-pop .header { border-color:#f4b9c9; }
+  .theme-pop .measurementBackButton { color:#bc557e; border-color:#f2c5d1; background:#fff0f4; box-shadow:0 4px 0 #f0c7d4; }
+  .theme-pop .propertyLine { color:#d95386; text-shadow:0 2px 0 #ffe0e9; }
   .theme-pop .brand { color:#e75d91; text-shadow:0 3px 0 #ffe0e9; }
   .theme-pop .mavieBrand { color:#d95386; }
   .theme-pop .card { border-color:#f3c5ce; background:rgba(255,252,241,.9); box-shadow:0 12px 0 #f5d8c3,0 18px 36px rgba(170,95,130,.12); }
@@ -557,6 +562,8 @@ const styles = `
   }
   @media (max-width:420px) {
     .main { width:min(100% - 24px,620px); margin-top:22px; }
+    .propertyLine { font-size:19px; overflow-wrap:anywhere; }
+    .measurementBackButton { width:100%; min-height:48px; }
     .header { width:calc(100% - 24px); }
     .brand { font-size:30px; }
     .mavieBrand { font-size:20px; }
@@ -2414,7 +2421,8 @@ export default function App() {
         ) : (
           <main className="main">
             <button
-              className="back"
+              className="measurementBackButton"
+              type="button"
               onClick={() => requestNavigation(() => {
                 setStarted(false)
                 setShowSavedList(false)
