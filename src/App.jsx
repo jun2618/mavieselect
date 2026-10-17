@@ -464,11 +464,11 @@ const styles = `
   .estimateSettingsGrid label { margin:0; }
   .estimateIntro { margin:0 0 14px; color:#8e8190; line-height:1.7; }
   .estimateRoom { display:grid; gap:10px; margin-bottom:16px; padding:15px; border:1px solid #f0d6c8; border-radius:16px; background:rgba(255,255,255,.82); }
-  .estimateRoom h3 { margin:0; color:#514751; font-size:20px; }
-  .estimateRow { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(70px,.7fr) minmax(80px,.7fr) minmax(96px,.8fr); gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid #f0e7e1; }
+  .estimateRoom h3 { margin:0; color:#514751; font-size:20px; text-align:left; }
+  .estimateRow { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(70px,.7fr) minmax(80px,.7fr) minmax(96px,.8fr); gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid #f0e7e1; text-align:left; }
   .estimateRow:last-child { border-bottom:0; }
   .estimateRow strong { color:#514751; }
-  .estimateNumber { text-align:right; white-space:nowrap; }
+  .estimateNumber { text-align:left; white-space:nowrap; }
   .estimateTotal { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:18px; padding:18px; border-radius:16px; color:#6d5865; background:#fff0d8; font-size:20px; font-weight:900; }
   .estimateTotal strong { color:#c96358; font-size:28px; }
   .estimateNote { margin:16px 0 0; padding:14px; border:1px dashed #efc7b4; border-radius:14px; color:#806f7b; background:#fff9f1; line-height:1.7; }
@@ -477,6 +477,7 @@ const styles = `
   @media (max-width:520px) {
     .estimateRow { grid-template-columns:minmax(0,1fr) auto; }
     .estimateRow .estimateUnit,.estimateRow .estimateRate { grid-column:1 / -1; text-align:left; color:#958896; }
+    .estimateRow .estimateNumber { text-align:left; }
   }
   .saveStatus { margin:8px 0 0; color:#548c73; font-size:15px; font-weight:700; text-align:center; }
   .leaveConfirmBackdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:20px; background:rgba(35,28,34,.48); }
@@ -2484,32 +2485,85 @@ export default function App() {
             )}
 
             {showEstimate ? (() => {
-              const factor = Math.max(0, Number(caseCrossFactor) || 0)
+              // お客様向け画面には換算率を表示せず、設定済みの案件換算率だけを計算に使用します。
+              const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
               const estimateRows = []
 
-              records.forEach(record => {
-                const measured = getRecordQuantity(record)
-                const billed = measured * factor
-                const rate = Number(pricingSettings.crossRates[record.type] || 0)
-                estimateRows.push({
-                  room: record.room,
-                  label: 'クロス張替 ' + record.type + (record.memo ? '（' + record.memo + '）' : ''),
-                  quantity: billed,
-                  unit: '㎡',
-                  rate,
-                  amount: billed * rate,
-                  measured,
+              // クロスは「部屋・採寸区分・メモ」でまとめます。
+              // メモなしは同じ部屋・区分で合計し、メモありはメモ内容ごとに分けます。
+              rooms.forEach(roomName => {
+                measurementTypes.forEach(type => {
+                  const matchingRecords = records.filter(record =>
+                    record.room === roomName && record.type === type
+                  )
+                  const groups = new Map()
+
+                  matchingRecords.forEach(record => {
+                    const memoText = String(record.memo || '').trim()
+                    const key = memoText || '__NO_MEMO__'
+                    const current = groups.get(key) || { memo: memoText, measured: 0 }
+                    current.measured += getRecordQuantity(record)
+                    groups.set(key, current)
+                  })
+
+                  groups.forEach(group => {
+                    const billedQuantity = group.measured * factor
+                    const rate = Number(pricingSettings.crossRates[type] || 0)
+                    const typeLabel = type.startsWith('収納')
+                      ? '収納 ' + type.replace('収納', '')
+                      : type
+                    estimateRows.push({
+                      room: roomName,
+                      category: 'cross',
+                      label: roomName + typeLabel + (group.memo ? '（' + group.memo + '）' : ''),
+                      quantity: billedQuantity,
+                      unit: '㎡',
+                      rate,
+                      amount: billedQuantity * rate,
+                    })
+                  })
                 })
-              })
-              cfRecords.forEach(record => {
-                const quantity = getLengthQuantity(record)
-                const rate = Number(pricingSettings.cfRate || 0)
-                estimateRows.push({ room: record.room, label: 'CF貼り' + (record.memo ? '（' + record.memo + '）' : ''), quantity, unit: '㎡', rate, amount: quantity * rate })
-              })
-              softRecords.forEach(record => {
-                const quantity = getSoftBaseboardQuantity(record)
-                const rate = Number(pricingSettings.softRate || 0)
-                estimateRows.push({ room: record.room, label: 'ソフト巾木', quantity, unit: '枚', rate, amount: quantity * rate })
+
+                // CFは部屋ごとにまとめ、メモがあればメモ内容ごとに分けます。
+                const cfGroups = new Map()
+                cfRecords
+                  .filter(record => record.room === roomName)
+                  .forEach(record => {
+                    const memoText = String(record.memo || '').trim()
+                    const key = memoText || '__NO_MEMO__'
+                    const current = cfGroups.get(key) || { memo: memoText, quantity: 0 }
+                    current.quantity += getLengthQuantity(record)
+                    cfGroups.set(key, current)
+                  })
+                cfGroups.forEach(group => {
+                  const rate = Number(pricingSettings.cfRate || 0)
+                  estimateRows.push({
+                    room: roomName,
+                    category: 'cf',
+                    label: roomName + ' CF貼り' + (group.memo ? '（' + group.memo + '）' : ''),
+                    quantity: group.quantity,
+                    unit: '㎡',
+                    rate,
+                    amount: group.quantity * rate,
+                  })
+                })
+
+                // ソフト巾木は部屋ごとの合計にします。
+                const softQuantity = softRecords
+                  .filter(record => record.room === roomName)
+                  .reduce((sum, record) => sum + getSoftBaseboardQuantity(record), 0)
+                if (softQuantity > 0) {
+                  const rate = Number(pricingSettings.softRate || 0)
+                  estimateRows.push({
+                    room: roomName,
+                    category: 'soft',
+                    label: roomName + ' ソフト巾木',
+                    quantity: softQuantity,
+                    unit: '枚',
+                    rate,
+                    amount: softQuantity * rate,
+                  })
+                }
               })
 
               const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0)
@@ -2517,20 +2571,6 @@ export default function App() {
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室</h2>
                   <p className="estimateIntro">退去時にお客様へ提示するための概算です。正式見積ではありません。</p>
-                  <label className="estimateFactor">
-                    <span>この案件のクロス換算率</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={caseCrossFactor}
-                      onChange={event => {
-                        setCaseCrossFactor(event.target.value)
-                        markUnsaved()
-                      }}
-                    />
-                    <small>例：1mを1㎡で計算する場合は1.0、0.9㎡で計算する場合は0.9</small>
-                  </label>
 
                   {estimateRows.length === 0 ? (
                     <p className="empty">概算できる採寸データがありません</p>
@@ -2541,7 +2581,7 @@ export default function App() {
                       <section className="estimateRoom" key={roomName}>
                         <h3>{roomName}</h3>
                         {roomRows.map((row, index) => (
-                          <div className="estimateRow" key={row.label + '-' + index}>
+                          <div className="estimateRow" key={row.category + '-' + row.label + '-' + index}>
                             <strong>{row.label}</strong>
                             <span className="estimateNumber estimateUnit">{formatQuantity(row.quantity)}{row.unit}</span>
                             <span className="estimateNumber estimateRate">× {formatYen(row.rate)}</span>
