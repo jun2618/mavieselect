@@ -514,20 +514,147 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState(null)
-  const cameraInputRef = useRef(null)
+  const [cameraOpen, setCameraOpen] = useState(false)
+  const [cameraStream, setCameraStream] = useState(null)
+  const [cameraError, setCameraError] = useState('')
+  const [pendingShots, setPendingShots] = useState([])
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
+  const cameraStreamRef = useRef(null)
+  const cameraRequestIdRef = useRef(0)
+  const pendingShotsRef = useRef(pendingShots)
+
+  useEffect(() => {
+    pendingShotsRef.current = pendingShots
+  }, [pendingShots])
   const galleryInputRef = useRef(null)
 
-  function openFilePicker(inputRef) {
-    const input = inputRef.current
-    if (!input) return
+  useEffect(() => {
+    if (!cameraOpen || !cameraStream || !videoRef.current) return
+    const video = videoRef.current
+    video.srcObject = cameraStream
+    video.play().catch(() => {
+      setCameraError('カメラ映像を開始できません。カメラの使用を許可して再度お試しください。')
+    })
+    return () => {
+      video.pause()
+      video.srcObject = null
+    }
+  }, [cameraOpen, cameraStream])
 
+  useEffect(() => () => {
+    cameraRequestIdRef.current += 1
+    cameraStreamRef.current?.getTracks().forEach(track => track.stop())
+    pendingShotsRef.current.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
+  }, [])
+
+  async function startCamera() {
+    setPickerOpen(false)
+    setCameraError('')
+    setCameraOpen(true)
+    const requestId = cameraRequestIdRef.current + 1
+    cameraRequestIdRef.current = requestId
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError('このブラウザーではカメラを利用できません。HTTPSで開き、カメラ対応ブラウザーをご利用ください。')
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+      })
+      if (cameraRequestIdRef.current !== requestId) {
+        stream.getTracks().forEach(track => track.stop())
+        return
+      }
+      cameraStreamRef.current = stream
+      setCameraStream(stream)
+    } catch (error) {
+      if (cameraRequestIdRef.current !== requestId) return
+      console.error('カメラを起動できませんでした。', {
+        errorName: error?.name || 'Error',
+        errorMessage: error?.message || String(error),
+      })
+      setCameraError(error?.name === 'NotAllowedError'
+        ? 'カメラの使用が許可されていません。ブラウザーのサイト設定でカメラを許可してください。'
+        : 'カメラを起動できませんでした。カメラの使用権限と端末の設定をご確認ください。')
+    }
+  }
+
+  function stopCamera() {
+    cameraRequestIdRef.current += 1
+    cameraStreamRef.current?.getTracks().forEach(track => track.stop())
+    cameraStreamRef.current = null
+    setCameraStream(null)
+    setCameraOpen(false)
+  }
+
+  function cancelCamera() {
+    stopCamera()
+    setPendingShots(previous => {
+      previous.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
+      return []
+    })
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+      setCameraError('カメラ映像の準備ができていません。少し待ってから撮影してください。')
+      return
+    }
+
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const context = canvas.getContext('2d')
+    if (!context) {
+      setCameraError('写真を撮影できませんでした。')
+      return
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    canvas.toBlob(blob => {
+      if (!blob) {
+        setCameraError('写真を作成できませんでした。もう一度撮影してください。')
+        return
+      }
+      const file = new File([blob], `m-cross-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      setPendingShots(previous => [...previous, {
+        id: createRecordId(),
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }])
+      setCameraError('')
+    }, 'image/jpeg', 0.92)
+  }
+
+  function completeCamera() {
+    const completedShots = pendingShots
+    stopCamera()
+    if (completedShots.length) {
+      onAddFiles(completedShots.map(photo => photo.file))
+      completedShots.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
+      setPendingShots([])
+      setGalleryOpen(true)
+    }
+  }
+
+  function openGalleryPicker() {
+    const input = galleryInputRef.current
+    if (!input) return
     try {
       if (typeof input.showPicker === 'function') {
         input.showPicker()
         return
       }
     } catch {
-      // Use click() for browsers that expose showPicker but reject it.
+      // Fall back for browsers that expose but reject showPicker().
     }
     input.click()
   }
@@ -560,15 +687,6 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
       </div>
 
       <input
-        ref={cameraInputRef}
-        className="roomPhotoInput"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFilesSelected}
-        aria-label={`${roomName}の写真を撮影`}
-      />
-      <input
         ref={galleryInputRef}
         className="roomPhotoInput"
         type="file"
@@ -588,15 +706,54 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
             onClick={event => event.stopPropagation()}
           >
             <h2 id="photo-picker-title">{roomName}の写真を追加</h2>
-            <button className="photoModalButton" type="button" onClick={() => openFilePicker(cameraInputRef)}>
-              カメラで撮影
+            <button className="photoModalButton" type="button" onClick={startCamera}>
+              撮影開始
             </button>
-            <button className="photoModalButton" type="button" onClick={() => openFilePicker(galleryInputRef)}>
+            <button className="photoModalButton" type="button" onClick={openGalleryPicker}>
               ギャラリーから選択
             </button>
             <button className="photoModalCancel" type="button" onClick={() => setPickerOpen(false)}>
               キャンセル
             </button>
+          </section>
+        </div>
+      )}
+
+      {cameraOpen && (
+        <div className="photoModalBackdrop photoCameraBackdrop">
+          <section
+            className="photoModal photoCameraModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="photo-camera-title"
+          >
+            <h2 id="photo-camera-title">{roomName}の撮影</h2>
+            <div className="photoCameraViewport">
+              {cameraStream ? (
+                <video ref={videoRef} autoPlay muted playsInline aria-label={`${roomName}のカメラ映像`} />
+              ) : (
+                <p>{cameraError || 'カメラを起動しています…'}</p>
+              )}
+            </div>
+            <canvas ref={canvasRef} className="photoCaptureCanvas" />
+            <p className="photoCameraCount" aria-live="polite">撮影枚数：{pendingShots.length}枚</p>
+            {cameraError && cameraStream && <p className="photoCameraError" role="alert">{cameraError}</p>}
+            <div className="photoCameraControls">
+              <button
+                className="photoModalButton photoShutterButton"
+                type="button"
+                onClick={capturePhoto}
+                disabled={!cameraStream}
+              >
+                撮影
+              </button>
+              <button className="photoModalButton" type="button" onClick={completeCamera}>
+                完了
+              </button>
+              <button className="photoModalCancel" type="button" onClick={cancelCamera}>
+                キャンセル
+              </button>
+            </div>
           </section>
         </div>
       )}
@@ -632,10 +789,7 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
                 </div>
               ))}
             </div>
-            <button className="photoModalButton" type="button" onClick={() => openFilePicker(cameraInputRef)}>
-              📷 続けて撮影
-            </button>
-            <button className="photoModalButton" type="button" onClick={() => openFilePicker(galleryInputRef)}>
+            <button className="photoModalButton" type="button" onClick={openGalleryPicker}>
               ギャラリーから追加
             </button>
             <button className="photoModalCancel" type="button" onClick={() => setGalleryOpen(false)}>
