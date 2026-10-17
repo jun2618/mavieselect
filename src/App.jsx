@@ -564,14 +564,16 @@ async function copyShareText(text) {
   }
 }
 
-async function shareTextFallback(entry) {
-  const text = createShareText(entry)
-  if (typeof navigator.share === 'function') {
-    await navigator.share({ title: 'MavieSelect 採寸データ', text })
-  } else {
-    await copyShareText(text)
-    window.alert('Excelファイル共有に対応していないため、共有内容をコピーしました。')
-  }
+function downloadTextFile(contents, fileName, mimeType) {
+  const blob = new Blob([contents], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function sumRecords(records, roomName, type) {
@@ -609,6 +611,160 @@ function readSavedEntries() {
     )
   } catch {
     return []
+  }
+}
+
+function createCaseFile(entry) {
+  const savedAt = entry.updatedAt || new Date().toISOString()
+  return {
+    format: 'm-cross-case',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    caseData: {
+      company: entry.company,
+      propertyName: entry.propertyName,
+      address: entry.address || '',
+      unit: entry.unit,
+      records: (entry.records || []).map(record => ({
+        id: record.id,
+        room: record.room,
+        type: record.type,
+        height: Number(record.height || 0),
+        count: Number(record.count || 0),
+        quantity: Number(getRecordQuantity(record)),
+        confirmedQuantity: Number(formatQuantity(getRecordQuantity(record))),
+        memo: record.memo || '',
+      })),
+      cfRecords: (entry.cfRecords || []).map(record => ({
+        id: record.id,
+        room: record.room,
+        length: Number(record.length || 0),
+        count: Number(record.count || 0),
+        confirmedQuantity: Number(formatQuantity(getLengthQuantity(record))),
+        memo: record.memo || '',
+      })),
+      softRecords: (entry.softRecords || []).map(record => ({
+        id: record.id,
+        room: record.room,
+        quantity: Number(getSoftBaseboardQuantity(record)),
+        confirmedQuantity: Number(formatQuantity(getSoftBaseboardQuantity(record))),
+      })),
+      updatedAt: savedAt,
+    },
+  }
+}
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function assertAllowedKeys(value, allowedKeys, label) {
+  if (!isPlainObject(value) || Object.keys(value).some(key => !allowedKeys.includes(key))) {
+    throw new Error(`${label}の形式が正しくありません。`)
+  }
+}
+
+function assertText(value, label, { required = false, maxLength = 2000 } = {}) {
+  if (typeof value !== 'string' || value.length > maxLength || (required && !value.trim())) {
+    throw new Error(`${label}が正しくありません。`)
+  }
+  return value
+}
+
+function assertFiniteNumber(value, label, { min = 0, integer = false } = {}) {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    value < min ||
+    value > Number.MAX_SAFE_INTEGER ||
+    (integer && !Number.isInteger(value))
+  ) {
+    throw new Error(`${label}が正しくありません。`)
+  }
+  return value
+}
+
+function validateCaseFile(value) {
+  assertAllowedKeys(value, ['format', 'version', 'exportedAt', 'caseData'], '案件ファイル')
+  if (value.format !== 'm-cross-case' || value.version !== 1) {
+    throw new Error('M-Cross案件ファイルではないか、未対応のバージョンです。')
+  }
+  assertText(value.exportedAt, '出力日時', { required: true, maxLength: 50 })
+  if (Number.isNaN(Date.parse(value.exportedAt))) {
+    throw new Error('出力日時が正しくありません。')
+  }
+
+  const data = value.caseData
+  assertAllowedKeys(
+    data,
+    ['company', 'propertyName', 'address', 'unit', 'records', 'cfRecords', 'softRecords', 'updatedAt'],
+    '案件データ'
+  )
+  assertText(data.company, '管理会社', { required: true, maxLength: 300 })
+  assertText(data.propertyName, '物件名', { required: true, maxLength: 300 })
+  assertText(data.address, '住所', { maxLength: 1000 })
+  assertText(data.unit, '号室', { required: true, maxLength: 100 })
+  assertText(data.updatedAt, '保存日時', { required: true, maxLength: 50 })
+  if (Number.isNaN(Date.parse(data.updatedAt))) {
+    throw new Error('保存日時が正しくありません。')
+  }
+  if (!Array.isArray(data.records) || !Array.isArray(data.cfRecords) || !Array.isArray(data.softRecords)) {
+    throw new Error('採寸データの配列が不足しています。')
+  }
+  if (data.records.length + data.cfRecords.length + data.softRecords.length > 10000) {
+    throw new Error('案件データの件数が上限を超えています。')
+  }
+
+  const validateRows = (rows, kind) => {
+    const identifiers = new Set()
+    return rows.map((row, index) => {
+      const label = `${kind} ${index + 1}件目`
+      const keys = kind === 'クロス'
+        ? ['id', 'room', 'type', 'height', 'count', 'quantity', 'confirmedQuantity', 'memo']
+        : kind === 'CF'
+          ? ['id', 'room', 'length', 'count', 'confirmedQuantity', 'memo']
+          : ['id', 'room', 'quantity', 'confirmedQuantity']
+      assertAllowedKeys(row, keys, label)
+      const id = assertText(row.id, `${label}のID`, { required: true, maxLength: 100 })
+      if (identifiers.has(id)) throw new Error(`${label}のIDが重複しています。`)
+      identifiers.add(id)
+      const room = assertText(row.room, `${label}の部屋名`, { required: true, maxLength: 100 })
+      if (!rooms.includes(room)) throw new Error(`${label}の部屋名が認識できません。`)
+      const confirmedQuantity = assertFiniteNumber(row.confirmedQuantity, `${label}の確定済み数量`)
+      if (Number(formatQuantity(confirmedQuantity)) !== confirmedQuantity) {
+        throw new Error(`${label}の数量は小数第1位までの数値にしてください。`)
+      }
+      if (kind === 'クロス') {
+        const type = assertText(row.type, `${label}の採寸区分`, { required: true, maxLength: 100 })
+        if (!measurementTypes.includes(type)) throw new Error(`${label}の採寸区分が認識できません。`)
+        assertFiniteNumber(row.height, `${label}の高さ`, { min: Number.MIN_VALUE })
+        assertFiniteNumber(row.count, `${label}の本数`, { min: 1, integer: true })
+        const quantity = assertFiniteNumber(row.quantity, `${label}の数量`)
+        return { id, room, type, height: row.height, count: row.count, quantity, confirmedQuantity, memo: assertText(row.memo, `${label}のメモ`) }
+      }
+      if (kind === 'CF') {
+        assertFiniteNumber(row.length, `${label}の長さ`, { min: Number.MIN_VALUE })
+        assertFiniteNumber(row.count, `${label}の本数`, { min: 1, integer: true })
+        return { id, room, length: row.length, count: row.count, confirmedQuantity, memo: assertText(row.memo, `${label}のメモ`) }
+      }
+      return {
+        id,
+        room,
+        quantity: assertFiniteNumber(row.quantity, `${label}の数量`),
+        confirmedQuantity,
+      }
+    })
+  }
+
+  return {
+    company: data.company,
+    propertyName: data.propertyName,
+    address: data.address,
+    unit: data.unit,
+    records: validateRows(data.records, 'クロス'),
+    cfRecords: validateRows(data.cfRecords, 'CF'),
+    softRecords: validateRows(data.softRecords, 'ソフト巾木'),
+    updatedAt: data.updatedAt,
   }
 }
 
@@ -771,16 +927,24 @@ async function downloadExcel(entry, shareFile = false) {
     const file = typeof File === 'function'
       ? new File([blob], fileName, { type: blob.type })
       : null
-    if (file && navigator.canShare?.({ files: [file] }) && navigator.share) {
-      await navigator.share({
-        files: [file],
-        title: 'MavieSelect 採寸データ',
-        text: `${entry.propertyName || '物件'} ${entry.unit || ''}号室の採寸データ`,
-      })
-      return
+    let fileShareSupported = false
+    try {
+      fileShareSupported = Boolean(
+        file && typeof navigator.share === 'function' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] })
+      )
+      if (fileShareSupported) {
+        await navigator.share({
+          files: [file],
+          title: 'MavieSelect 採寸データ',
+        })
+        return
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') return
     }
-    await shareTextFallback(entry)
-    return
+    window.alert('この端末ではExcelファイルを直接共有できません。Excelをダウンロードします。')
   }
 
   const url = URL.createObjectURL(blob)
@@ -792,17 +956,6 @@ async function downloadExcel(entry, shareFile = false) {
   link.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   } catch (error) {
-    if (shareFile) {
-      if (error.name === 'AbortError') return
-      try {
-        await shareTextFallback(entry)
-      } catch (fallbackError) {
-        if (fallbackError.name !== 'AbortError') {
-          window.alert('Excelファイルと共有内容を共有できませんでした。')
-        }
-      }
-      return
-    }
     console.error('Excelファイルを出力できませんでした。', error)
     window.alert('Excelファイルを出力できませんでした。')
   }
@@ -962,6 +1115,7 @@ export default function App() {
   const [showSavedList, setShowSavedList] = useState(false)
   const [savedEntries, setSavedEntries] = useState([])
   const [shareStatus, setShareStatus] = useState('')
+  const caseImportInputRef = useRef(null)
   const [savedSearch, setSavedSearch] = useState('')
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
@@ -1350,6 +1504,139 @@ export default function App() {
       setShareStatus('共有内容をコピーしました。')
     } catch {
       setShareStatus('コピーできませんでした。ブラウザーのクリップボード利用を確認してください。')
+    }
+  }
+
+  async function shareCaseEntry(entry) {
+    setShareStatus('')
+    try {
+      const caseFile = createCaseFile(entry)
+      const fileName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}_MCross案件.json`
+        .replace(/[\\/:*?"<>|]/g, '_')
+      const fileContents = JSON.stringify(caseFile, null, 2)
+      const file = typeof File === 'function'
+        ? new File([fileContents], fileName, { type: 'application/json' })
+        : null
+
+      let canShareFile = false
+      try {
+        canShareFile = Boolean(
+          file && typeof navigator.share === 'function' &&
+          typeof navigator.canShare === 'function' &&
+          navigator.canShare({ files: [file] })
+        )
+      } catch {
+        canShareFile = false
+      }
+
+      if (canShareFile) {
+        try {
+          await navigator.share({ files: [file], title: 'M-Cross案件データ' })
+          setShareStatus('案件ファイルを共有しました。')
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            setShareStatus('案件ファイルを共有できませんでした。')
+          }
+        }
+        return
+      }
+
+      downloadTextFile(fileContents, fileName, 'application/json;charset=utf-8')
+      setShareStatus('ファイル共有に対応していないため、案件JSONをダウンロードしました。')
+    } catch (error) {
+      console.error('案件ファイルを作成できませんでした。', error)
+      window.alert('案件ファイルを作成できませんでした。')
+    }
+  }
+
+  async function importCaseFile(event) {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      window.alert('案件ファイルが大きすぎます。')
+      return
+    }
+
+    let importedData
+    try {
+      importedData = validateCaseFile(JSON.parse(await file.text()))
+    } catch (error) {
+      window.alert(error instanceof SyntaxError
+        ? 'JSON形式が壊れているため、案件を取り込めません。'
+        : error.message || '案件ファイルの内容を確認できません。')
+      return
+    }
+
+    const duplicates = readSavedEntries().filter(entry =>
+      entry.propertyName === importedData.propertyName &&
+      entry.unit === importedData.unit
+    )
+    let overwriteEntry = null
+    let saveAsCopy = false
+    if (duplicates.length > 1) {
+      window.alert('同じ物件名・号室の案件が複数保存されています。重複を整理してから取り込んでください。')
+      return
+    }
+    if (duplicates.length === 1) {
+      const choice = window.prompt(
+        `「${importedData.propertyName} ${importedData.unit}号室」は既に保存されています。\n\n1：上書きする\n2：別案件として保存する（コピー）\n0：キャンセル\n\n番号を入力してください。`,
+        '0'
+      )
+      if (choice === null || choice.trim() === '0') return
+      if (choice.trim() === '1') overwriteEntry = duplicates[0]
+      else if (choice.trim() === '2') saveAsCopy = true
+      else {
+        window.alert('1、2、または0を入力してください。案件は取り込まれていません。')
+        return
+      }
+    }
+
+    const importedAt = new Date()
+    const dataToSave = saveAsCopy
+      ? {
+          ...importedData,
+          propertyName: `${importedData.propertyName} (コピー ${importedAt.toLocaleString('ja-JP')})`,
+          updatedAt: importedAt.toISOString(),
+        }
+      : importedData
+    const storageKey = getSaveKey(
+      dataToSave.company,
+      { name: dataToSave.propertyName, address: dataToSave.address },
+      dataToSave.unit
+    )
+
+    try {
+      const existingTarget = localStorage.getItem(storageKey)
+      if (
+        existingTarget !== null &&
+        storageKey !== overwriteEntry?.storageKey
+      ) {
+        window.alert('保存先に別の案件が存在するため、安全のため取り込みを中止しました。')
+        return
+      }
+      localStorage.setItem(storageKey, JSON.stringify({
+        ...dataToSave,
+        pageIndex: 0,
+        cfPageIndex: 0,
+        softPageIndex: 0,
+        activePage: 'cross',
+        measurementType: '天井',
+        archived: false,
+      }))
+      if (overwriteEntry?.storageKey && overwriteEntry.storageKey !== storageKey) {
+        localStorage.removeItem(overwriteEntry.storageKey)
+      }
+      setSavedEntries(readSavedEntries())
+      setShowArchived(false)
+      setSavedSearch('')
+      setSavedCompanyFilter('')
+      setSelectedSavedKeys([])
+      setShareStatus(saveAsCopy ? '案件をコピーとして取り込みました。' : '案件を取り込みました。')
+    } catch (error) {
+      console.error('案件データを保存できませんでした。', error)
+      window.alert('案件を保存できませんでした。端末の空き容量をご確認ください。')
     }
   }
 
@@ -1823,6 +2110,22 @@ export default function App() {
             <h1>{showArchived ? 'アーカイブ一覧' : '保存済み一覧'}</h1>
 
             <section className="card">
+              <input
+                ref={caseImportInputRef}
+                type="file"
+                accept=".json,application/json"
+                onChange={importCaseFile}
+                style={{ display: 'none' }}
+                aria-label="M-Cross案件ファイルを選択"
+              />
+              <button
+                className="actionButton actionCsv"
+                type="button"
+                onClick={() => caseImportInputRef.current?.click()}
+                style={{ width: '100%', marginBottom: 16 }}
+              >
+                案件を取り込む
+              </button>
               <div className="settingsOptions" style={{ marginBottom: 18 }}>
                 <button
                   type="button"
@@ -1949,6 +2252,15 @@ export default function App() {
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadCsv(entry)}>CSV出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => shareEntry(entry)}>共有</button>
+                        <button className="actionButton actionCsv" type="button" onClick={() => shareCaseEntry(entry)}>
+                          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" style={{ verticalAlign: 'middle', marginRight: 4 }}>
+                            <circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                            <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                            <circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                            <path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4" fill="none" stroke="currentColor" strokeWidth="2" />
+                          </svg>
+                          案件を共有
+                        </button>
                         <button className="actionButton actionOverwrite" type="button" onClick={() => copyEntryShareText(entry)}>共有内容をコピー</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry, true)}>Excelを共有</button>
                         <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
@@ -2088,6 +2400,23 @@ export default function App() {
                 softRecords,
               })}>
                 共有内容をコピー
+              </button>
+              <button className="secondaryButton" type="button" onClick={() => shareCaseEntry({
+                company,
+                propertyName: selectedProperty?.name || '',
+                address: selectedProperty?.address || '',
+                unit,
+                records,
+                cfRecords,
+                softRecords,
+              })}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" style={{ verticalAlign: 'middle', marginRight: 4 }}>
+                  <circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4" fill="none" stroke="currentColor" strokeWidth="2" />
+                </svg>
+                案件を共有
               </button>
               <button className="secondaryButton" type="button" onClick={() => downloadExcel({
                 company,
