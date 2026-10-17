@@ -518,16 +518,12 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
   const [cameraStream, setCameraStream] = useState(null)
   const [cameraError, setCameraError] = useState('')
   const [pendingShots, setPendingShots] = useState([])
+  const [pendingCaptures, setPendingCaptures] = useState(0)
   const videoRef = useRef(null)
-  const canvasRef = useRef(null)
   const cameraStreamRef = useRef(null)
   const cameraRequestIdRef = useRef(0)
-  const pendingShotsRef = useRef(pendingShots)
-
-  useEffect(() => {
-    pendingShotsRef.current = pendingShots
-  }, [pendingShots])
-  const galleryInputRef = useRef(null)
+  const pendingShotsRef = useRef([])
+  const pendingCaptureCountRef = useRef(0)
 
   useEffect(() => {
     if (!cameraOpen || !cameraStream || !videoRef.current) return
@@ -548,9 +544,20 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
     pendingShotsRef.current.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
   }, [])
 
+  function updatePendingShots(update) {
+    const nextShots = typeof update === 'function'
+      ? update(pendingShotsRef.current)
+      : update
+    pendingShotsRef.current = nextShots
+    setPendingShots(nextShots)
+  }
+
   async function startCamera() {
     setPickerOpen(false)
     setCameraError('')
+    updatePendingShots([])
+    pendingCaptureCountRef.current = 0
+    setPendingCaptures(0)
     setCameraOpen(true)
     const requestId = cameraRequestIdRef.current + 1
     cameraRequestIdRef.current = requestId
@@ -597,7 +604,9 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
 
   function cancelCamera() {
     stopCamera()
-    setPendingShots(previous => {
+    pendingCaptureCountRef.current = 0
+    setPendingCaptures(0)
+    updatePendingShots(previous => {
       previous.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
       return []
     })
@@ -605,12 +614,12 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
 
   function capturePhoto() {
     const video = videoRef.current
-    const canvas = canvasRef.current
-    if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+    if (!video || !video.videoWidth || !video.videoHeight) {
       setCameraError('カメラ映像の準備ができていません。少し待ってから撮影してください。')
       return
     }
 
+    const canvas = document.createElement('canvas')
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
     const context = canvas.getContext('2d')
@@ -619,44 +628,61 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
       return
     }
     context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const requestId = cameraRequestIdRef.current
+    pendingCaptureCountRef.current += 1
+    setPendingCaptures(pendingCaptureCountRef.current)
     canvas.toBlob(blob => {
-      if (!blob) {
-        setCameraError('写真を作成できませんでした。もう一度撮影してください。')
-        return
+      try {
+        if (requestId !== cameraRequestIdRef.current) return
+        if (!blob) {
+          setCameraError('写真を作成できませんでした。もう一度撮影してください。')
+          return
+        }
+        const file = new File([blob], `m-cross-${Date.now()}.jpg`, { type: 'image/jpeg' })
+        updatePendingShots(previous => [...previous, {
+          id: createRecordId(),
+          file,
+          previewUrl: URL.createObjectURL(file),
+        }])
+        setCameraError('')
+      } catch (error) {
+        console.error('撮影した写真を準備できませんでした。', error)
+        setCameraError('撮影した写真を準備できませんでした。')
+      } finally {
+        if (requestId === cameraRequestIdRef.current) {
+          pendingCaptureCountRef.current = Math.max(0, pendingCaptureCountRef.current - 1)
+          setPendingCaptures(pendingCaptureCountRef.current)
+        }
       }
-      const file = new File([blob], `m-cross-${Date.now()}.jpg`, { type: 'image/jpeg' })
-      setPendingShots(previous => [...previous, {
-        id: createRecordId(),
-        file,
-        previewUrl: URL.createObjectURL(file),
-      }])
-      setCameraError('')
     }, 'image/jpeg', 0.92)
   }
 
   function completeCamera() {
-    const completedShots = pendingShots
+    if (pendingCaptureCountRef.current > 0) return
+    const completedShots = pendingShotsRef.current
     stopCamera()
     if (completedShots.length) {
       onAddFiles(completedShots.map(photo => photo.file))
       completedShots.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
-      setPendingShots([])
+      updatePendingShots([])
       setGalleryOpen(true)
     }
   }
 
-  function openGalleryPicker() {
-    const input = galleryInputRef.current
-    if (!input) return
-    try {
-      if (typeof input.showPicker === 'function') {
-        input.showPicker()
-        return
-      }
-    } catch {
-      // Fall back for browsers that expose but reject showPicker().
-    }
-    input.click()
+  function renderGalleryPicker(label) {
+    return (
+      <label className="photoGalleryPicker photoModalButton">
+        {label}
+        <input
+          className="roomPhotoInput"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFilesSelected}
+          aria-label={`${roomName}の写真を選択`}
+        />
+      </label>
+    )
   }
 
   function handleFilesSelected(event) {
@@ -686,16 +712,6 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
         </button>
       </div>
 
-      <input
-        ref={galleryInputRef}
-        className="roomPhotoInput"
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleFilesSelected}
-        aria-label={`${roomName}の写真を選択`}
-      />
-
       {pickerOpen && (
         <div className="photoModalBackdrop photoPickerBackdrop" onClick={() => setPickerOpen(false)}>
           <section
@@ -709,9 +725,7 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
             <button className="photoModalButton" type="button" onClick={startCamera}>
               撮影開始
             </button>
-            <button className="photoModalButton" type="button" onClick={openGalleryPicker}>
-              ギャラリーから選択
-            </button>
+            {renderGalleryPicker('ギャラリーから選択')}
             <button className="photoModalCancel" type="button" onClick={() => setPickerOpen(false)}>
               キャンセル
             </button>
@@ -735,8 +749,9 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
                 <p>{cameraError || 'カメラを起動しています…'}</p>
               )}
             </div>
-            <canvas ref={canvasRef} className="photoCaptureCanvas" />
-            <p className="photoCameraCount" aria-live="polite">撮影枚数：{pendingShots.length}枚</p>
+            <p className="photoCameraCount" aria-live="polite">
+              撮影枚数：{pendingShots.length}枚{pendingCaptures ? '（写真を処理中…）' : ''}
+            </p>
             {cameraError && cameraStream && <p className="photoCameraError" role="alert">{cameraError}</p>}
             <div className="photoCameraControls">
               <button
@@ -747,7 +762,7 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
               >
                 撮影
               </button>
-              <button className="photoModalButton" type="button" onClick={completeCamera}>
+              <button className="photoModalButton" type="button" onClick={completeCamera} disabled={pendingCaptures > 0}>
                 完了
               </button>
               <button className="photoModalCancel" type="button" onClick={cancelCamera}>
@@ -789,9 +804,7 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
                 </div>
               ))}
             </div>
-            <button className="photoModalButton" type="button" onClick={openGalleryPicker}>
-              ギャラリーから追加
-            </button>
+            {renderGalleryPicker('ギャラリーから追加')}
             <button className="photoModalCancel" type="button" onClick={() => setGalleryOpen(false)}>
               完了
             </button>
