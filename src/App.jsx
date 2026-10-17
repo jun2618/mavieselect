@@ -10,7 +10,6 @@ const measurementTypes = ['天井', '収納天井', '壁', '収納壁']
 const storagePrefix = 'm-cross:'
 const fontSizeKey = 'm-cross-font-size'
 const themeKey = 'm-cross-theme'
-const lastSessionKey = 'm-cross-last-session'
 const propertyMasterKey = 'm-cross:property-master:v1'
 
 function createRecordId() {
@@ -22,15 +21,6 @@ function readPreference(key, fallback) {
     return localStorage.getItem(key) || fallback
   } catch {
     return fallback
-  }
-}
-
-function readLastSession() {
-  try {
-    const value = localStorage.getItem(lastSessionKey)
-    return value ? JSON.parse(value) : null
-  } catch {
-    return null
   }
 }
 
@@ -369,6 +359,9 @@ const styles = `
   .crossInputArea .crossRegister { min-height:50px; margin:10px 0 0; }
   .measurementActions { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin:16px 0 20px; }
   .measurementActions .saveButton,.measurementActions .secondaryButton { width:100%; margin:0; }
+  .saveState { margin:8px 0 0; padding:6px 10px; border-radius:10px; font-size:13px; font-weight:800; text-align:center; }
+  .saveState.saved { color:#548c73; background:#edf8f0; }
+  .saveState.dirty { color:#b14f4b; background:#fff0eb; }
   .saveButton { background:linear-gradient(180deg,#91baff,#6e91e8); box-shadow:0 5px 0 #526fc2; }
   .secondaryButton { width:100%; margin-top:12px; background:linear-gradient(180deg,#c6a4e8,#a77bd1); box-shadow:0 5px 0 #875bad; }
   .primary:disabled { opacity:.45; cursor:not-allowed; }
@@ -381,9 +374,17 @@ const styles = `
   .customRoomForm label>span { color:#817183; font-size:15px; font-weight:800; }
   .customRoomForm .primary { margin:0; }
   .customRoomList { display:grid; gap:8px; }
-  .customRoomItem { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid #f0d6c8; border-radius:12px; background:rgba(255,255,255,.7); }
-  .customRoomItem span { min-width:0; overflow-wrap:anywhere; font-weight:700; }
-  .customRoomItem .dangerButton { min-height:40px; padding:6px 10px; flex:none; }
+  .customRoomItem { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; padding:10px 12px; border:1px solid #f0d6c8; border-radius:12px; background:rgba(255,255,255,.7); }
+  .customRoomItem > span { min-width:0; overflow-wrap:anywhere; font-weight:700; }
+  .roomManagementActions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+  .roomManagementActions > button { width:auto; min-width:76px; min-height:42px; margin:0; padding:8px 12px; font-size:14px; }
+  .roomEditForm,.roomDeleteConfirmation { grid-column:1 / -1; display:grid; gap:8px; width:100%; }
+  .roomEditForm label { display:grid; gap:8px; margin:0; }
+  .roomEditForm label>span { color:#817183; font-size:15px; font-weight:800; }
+  .roomEditForm .primary { margin:0; }
+  .roomDeleteConfirmation p { margin:0; line-height:1.7; }
+  .roomDeleteConfirmation .roomManagementActions { justify-content:stretch; }
+  .roomDeleteConfirmation .roomManagementActions > button { flex:1 1 120px; }
   .room,.measurementType { min-width:0; min-height:50px; padding:8px 5px; border:1px solid #e9dce8; border-radius:14px; color:#75697a; background:linear-gradient(180deg,#fff,#f8f1f8); box-shadow:0 4px 0 #e3d4e1; font-size:15px; overflow-wrap:anywhere; }
   .room.active,.measurementType.active { border-color:#f3a18f; color:#fff; background:linear-gradient(180deg,#ffb49b,#f18c7d); box-shadow:0 4px 0 #d6756c; }
   .measurementTypes,.inputRow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
@@ -426,6 +427,12 @@ const styles = `
   .summaryGrand { margin-top:4px; padding-top:12px; border-top:1px solid #f1d2bd; font-weight:800; }
   .summaryGrand strong { font-size:25px; }
   .saveStatus { margin:8px 0 0; color:#548c73; font-size:15px; font-weight:700; text-align:center; }
+  .leaveConfirmBackdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:20px; background:rgba(35,28,34,.48); }
+  .leaveConfirmDialog { display:grid; gap:12px; width:min(100%,420px); padding:22px; border:1px solid #f0d6c8; border-radius:20px; background:#fffdfa; box-shadow:0 16px 44px rgba(35,28,34,.24); }
+  .leaveConfirmDialog h2 { margin:0; color:#514751; font-size:20px; }
+  .leaveConfirmDialog p { margin:0; color:#65596a; line-height:1.7; }
+  .leaveConfirmDialog button { margin:0; }
+  .leaveConfirmDialog .secondaryButton { width:100%; }
   .empty { padding:15px 0; color:#a89ba7; font-size:15px; text-align:center; }
   .propertyResults,.savedList { display:grid; gap:12px; max-height:60vh; overflow-y:auto; }
   .propertyResults { margin:-8px 0 18px; }
@@ -459,7 +466,7 @@ const styles = `
   .theme-dark .roomCheckName { color:#eee8e2; }
   .theme-dark .roomCheckDetails { color:#c3b8c0; }
   .theme-dark .customRoomForm,.theme-dark .customRoomItem { color:#eee8e2; border-color:#51484d; background:#302c31; }
-  .theme-dark .customRoomForm label>span { color:#c3b8c0; }
+  .theme-dark .customRoomForm label>span,.theme-dark .roomEditForm label>span { color:#c3b8c0; }
   .theme-dark .roomConfirmButton { color:#f0a08d; border-color:#51484d; background:#39343a; }
   .theme-dark .roomCheckItem.confirmed { border-color:#52866b; background:#29392f; }
   .theme-dark .roomCheckItem.confirmed .roomConfirmButton { color:#a5dfbb; border-color:#52866b; background:#29392f; }
@@ -531,12 +538,21 @@ function NumberKeypad({ activeInput, onKey, onDone, decimalInput }) {
   )
 }
 
-function RoomManagementControls({ rooms, customRooms, onAddRoom, onDeleteRoom }) {
+function RoomManagementControls({
+  rooms,
+  onAddRoom,
+  onRenameRoom,
+  onDeleteRoom,
+  roomHasData,
+}) {
   const [showForm, setShowForm] = useState(false)
   const [roomName, setRoomName] = useState('')
   const [message, setMessage] = useState('')
+  const [editingRoom, setEditingRoom] = useState('')
+  const [editingName, setEditingName] = useState('')
+  const [roomToDelete, setRoomToDelete] = useState('')
 
-  function addRoom(event) {
+  function saveRoom(event) {
     event.preventDefault()
     const name = roomName.trim()
     if (!name) return
@@ -549,6 +565,23 @@ function RoomManagementControls({ rooms, customRooms, onAddRoom, onDeleteRoom })
     setMessage('')
     setShowForm(false)
   }
+
+  function saveEditedRoom(event) {
+    event.preventDefault()
+    const name = editingName.trim()
+    if (!name) return
+    if (name.toLocaleLowerCase() !== editingRoom.toLocaleLowerCase() &&
+        rooms.some(room => room.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+      setMessage('同じ名前の部屋がすでにあります')
+      return
+    }
+    onRenameRoom(editingRoom, name)
+    setEditingRoom('')
+    setEditingName('')
+    setMessage('')
+  }
+
+  const pendingRoomHasData = roomToDelete ? roomHasData(roomToDelete) : false
 
   return (
     <section className="customRoomControls" aria-label="部屋の管理">
@@ -563,7 +596,7 @@ function RoomManagementControls({ rooms, customRooms, onAddRoom, onDeleteRoom })
         ＋ 部屋を追加
       </button>
       {showForm && (
-        <form className="customRoomForm" onSubmit={addRoom}>
+        <form className="customRoomForm" onSubmit={saveRoom}>
           <label>
             <span>部屋名</span>
             <input value={roomName} onChange={event => setRoomName(event.target.value)} />
@@ -572,22 +605,60 @@ function RoomManagementControls({ rooms, customRooms, onAddRoom, onDeleteRoom })
           <button className="primary" type="submit">追加</button>
         </form>
       )}
-      {customRooms.length > 0 && (
-        <div className="customRoomList">
-          {customRooms.map(name => (
-            <div className="customRoomItem" key={name}>
-              <span>{name}</span>
-              <button
-                className="dangerButton"
-                type="button"
-                onClick={() => onDeleteRoom(name)}
-              >
-                部屋を削除
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="customRoomList">
+        {rooms.map(name => (
+          <div className="customRoomItem" key={name}>
+            {editingRoom === name ? (
+              <form className="roomEditForm" onSubmit={saveEditedRoom}>
+                <label>
+                  <span>部屋名</span>
+                  <input value={editingName} onChange={event => setEditingName(event.target.value)} />
+                </label>
+                {message && <p className="saveStatus" role="alert">{message}</p>}
+                <div className="roomManagementActions">
+                  <button className="primary" type="submit">保存</button>
+                  <button className="secondaryButton" type="button" onClick={() => {
+                    setEditingRoom('')
+                    setEditingName('')
+                    setMessage('')
+                  }}>キャンセル</button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <span>{name}</span>
+                <div className="roomManagementActions">
+                  <button className="secondaryButton" type="button" onClick={() => {
+                    setEditingRoom(name)
+                    setEditingName(name)
+                    setRoomToDelete('')
+                    setMessage('')
+                  }}>編集</button>
+                  <button className="dangerButton" type="button" onClick={() => {
+                    setRoomToDelete(name)
+                    setEditingRoom('')
+                    setMessage('')
+                  }}>削除</button>
+                </div>
+              </>
+            )}
+            {roomToDelete === name && (
+              <div className="roomDeleteConfirmation" role="alertdialog" aria-label={`${name}の削除確認`}>
+                <p>{pendingRoomHasData
+                  ? `${name}には採寸データがあります。この部屋を削除すると、クロス・CF・ソフト巾木・メモも削除されます。本当に削除しますか？`
+                  : 'この部屋を削除しますか？'}</p>
+                <div className="roomManagementActions">
+                  <button className="dangerButton" type="button" onClick={() => {
+                    onDeleteRoom(name)
+                    setRoomToDelete('')
+                  }}>削除する</button>
+                  <button className="secondaryButton" type="button" onClick={() => setRoomToDelete('')}>キャンセル</button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
@@ -822,9 +893,10 @@ async function downloadExcel(entry) {
 function LengthMeasurementPage({
   title,
   rooms,
-  customRooms,
   onAddRoom,
+  onRenameRoom,
   onDeleteRoom,
+  roomHasData,
   records,
   setRecords,
   pageIndex,
@@ -899,9 +971,10 @@ function LengthMeasurementPage({
       </nav>
       <RoomManagementControls
         rooms={rooms}
-        customRooms={customRooms}
         onAddRoom={onAddRoom}
+        onRenameRoom={onRenameRoom}
         onDeleteRoom={onDeleteRoom}
+        roomHasData={roomHasData}
       />
 
       {isSummaryPage ? (
@@ -997,6 +1070,9 @@ export default function App() {
   const [unit, setUnit] = useState('')
   const [started, setStarted] = useState(false)
   const [showSavedList, setShowSavedList] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
+  const pendingNavigationRef = useRef(null)
   const [savedEntries, setSavedEntries] = useState([])
   const [savedSearch, setSavedSearch] = useState('')
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
@@ -1005,7 +1081,7 @@ export default function App() {
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
   const [currentStorageKey, setCurrentStorageKey] = useState('')
   const [pageIndex, setPageIndex] = useState(0)
-  const [customRooms, setCustomRooms] = useState([])
+  const [projectRooms, setProjectRooms] = useState(defaultRooms)
   const [roomConfirmations, setRoomConfirmations] = useState({})
   const [showMeasurementCheck, setShowMeasurementCheck] = useState(false)
   const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
@@ -1024,40 +1100,7 @@ export default function App() {
   const [softPageIndex, setSoftPageIndex] = useState(0)
   const [cfRecords, setCfRecords] = useState([])
   const [softRecords, setSoftRecords] = useState([])
-  const rooms = [...defaultRooms, ...customRooms]
-
-  useEffect(() => {
-    const saved = readLastSession()
-    if (!saved) return
-
-    setCompany(saved.company || '')
-    setPropertySearch(saved.propertyName || '')
-    setSelectedProperty(saved.propertyName
-      ? { name: saved.propertyName, address: saved.address || '' }
-      : null)
-    setUnit(saved.unit || '')
-    setRecords(Array.isArray(saved.records) ? saved.records : [])
-    setCfRecords(Array.isArray(saved.cfRecords) ? saved.cfRecords : [])
-    setSoftRecords(Array.isArray(saved.softRecords) ? saved.softRecords : [])
-    setCustomRooms(Array.isArray(saved.customRooms) ? saved.customRooms : [])
-    setRoomConfirmations(
-      saved.roomConfirmations && typeof saved.roomConfirmations === 'object'
-        ? saved.roomConfirmations
-        : {}
-    )
-    setPageIndex(Number.isInteger(saved.pageIndex) ? saved.pageIndex : 0)
-    setCfPageIndex(Number.isInteger(saved.cfPageIndex) ? saved.cfPageIndex : 0)
-    setSoftPageIndex(Number.isInteger(saved.softPageIndex) ? saved.softPageIndex : 0)
-    setActivePage(saved.activePage || 'cross')
-    if (saved.company && saved.propertyName && saved.unit) {
-      setCurrentStorageKey(getSaveKey(
-        saved.company,
-        { name: saved.propertyName, address: saved.address || '' },
-        saved.unit
-      ))
-    }
-    setStarted(Boolean(saved.propertyName && saved.unit))
-  }, [])
+  const rooms = projectRooms
 
   useEffect(() => {
     if (!activeInput) return
@@ -1091,6 +1134,17 @@ export default function App() {
 
     return () => cancelAnimationFrame(frame)
   }, [managementScrollTarget, masterPropertyCompanyId, showPropertyForm, editingCompanyId])
+
+  useEffect(() => {
+    if (!started || !isDirty) return undefined
+
+    const warnBeforeUnload = event => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warnBeforeUnload)
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload)
+  }, [started, isDirty])
 
   const isSummaryPage = pageIndex === rooms.length
   const room = isSummaryPage ? '' : rooms[pageIndex]
@@ -1152,7 +1206,7 @@ export default function App() {
       delete next[roomName]
       return next
     })
-    setSaveStatus('未保存の変更があります')
+    markUnsaved()
   }
 
   function toggleRoomConfirmation(roomName) {
@@ -1162,7 +1216,12 @@ export default function App() {
       else next[roomName] = true
       return next
     })
-    setSaveStatus('未保存の変更があります')
+    markUnsaved()
+  }
+
+  function markUnsaved() {
+    setIsDirty(true)
+    setSaveStatus('')
   }
 
   function changeFontSize(value) {
@@ -1375,16 +1434,48 @@ export default function App() {
     }
   }
 
-  function openSavedList() {
-    setSavedEntries(readSavedEntries())
-    setSelectedSavedKeys([])
-    setSavedSearch('')
-    setSavedCompanyFilter('')
-    setShowArchived(false)
-    setShowSavedList(true)
+  function requestNavigation(action) {
+    if (!started || !isDirty) {
+      action()
+      return
+    }
+
+    pendingNavigationRef.current = action
+    setShowLeaveConfirmation(true)
   }
 
-  function openSavedEntry(entry) {
+  function continuePendingNavigation() {
+    const action = pendingNavigationRef.current
+    pendingNavigationRef.current = null
+    setShowLeaveConfirmation(false)
+    action?.()
+  }
+
+  function discardAndNavigate() {
+    setIsDirty(false)
+    setSaveStatus('')
+    continuePendingNavigation()
+  }
+
+  function saveAndNavigate() {
+    if (!saveCurrentData()) return
+    continuePendingNavigation()
+  }
+
+  function openSavedList() {
+    requestNavigation(() => {
+      setStarted(false)
+      setIsDirty(false)
+      setSavedEntries(readSavedEntries())
+      setSelectedSavedKeys([])
+      setSavedSearch('')
+      setSavedCompanyFilter('')
+      setShowArchived(false)
+      setShowSavedList(true)
+    })
+  }
+
+  function loadSavedEntry(entry) {
     setCurrentStorageKey(entry.storageKey || '')
     setCompany(entry.company || '')
     setPropertySearch(entry.propertyName || '')
@@ -1393,7 +1484,9 @@ export default function App() {
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
     setSoftRecords(Array.isArray(entry.softRecords) ? entry.softRecords : [])
-    setCustomRooms(Array.isArray(entry.customRooms) ? entry.customRooms : [])
+    setProjectRooms(Array.isArray(entry.rooms)
+      ? entry.rooms
+      : [...defaultRooms, ...(Array.isArray(entry.customRooms) ? entry.customRooms : [])])
     setRoomConfirmations(
       entry.roomConfirmations && typeof entry.roomConfirmations === 'object'
         ? entry.roomConfirmations
@@ -1406,13 +1499,18 @@ export default function App() {
     setMeasurementType(entry.measurementType || '天井')
     setHeight('')
     setCount('')
-    setMemo('')
+    setMemo(entry.draftMemo || '')
     setActiveInput('')
     setSaveStatus('')
+    setIsDirty(false)
     setShowSavedList(false)
     setShowMeasurementCheck(false)
     setReturnToMeasurementCheck(false)
     setStarted(true)
+  }
+
+  function openSavedEntry(entry) {
+    requestNavigation(() => loadSavedEntry(entry))
   }
 
   function overwriteSavedEntry(entry) {
@@ -1428,7 +1526,9 @@ export default function App() {
         records: Array.isArray(entry.records) ? entry.records : [],
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
         softRecords: Array.isArray(entry.softRecords) ? entry.softRecords : [],
-        customRooms: Array.isArray(entry.customRooms) ? entry.customRooms : [],
+        rooms: Array.isArray(entry.rooms)
+          ? entry.rooms
+          : [...defaultRooms, ...(Array.isArray(entry.customRooms) ? entry.customRooms : [])],
         roomConfirmations: entry.roomConfirmations && typeof entry.roomConfirmations === 'object'
           ? entry.roomConfirmations
           : {},
@@ -1542,7 +1642,9 @@ export default function App() {
       setRecords(Array.isArray(savedData?.records) ? savedData.records : [])
       setCfRecords(Array.isArray(savedData?.cfRecords) ? savedData.cfRecords : [])
       setSoftRecords(Array.isArray(savedData?.softRecords) ? savedData.softRecords : [])
-      setCustomRooms(Array.isArray(savedData?.customRooms) ? savedData.customRooms : [])
+      setProjectRooms(Array.isArray(savedData?.rooms)
+        ? savedData.rooms
+        : [...defaultRooms, ...(Array.isArray(savedData?.customRooms) ? savedData.customRooms : [])])
       setRoomConfirmations(
         savedData?.roomConfirmations && typeof savedData.roomConfirmations === 'object'
           ? savedData.roomConfirmations
@@ -1553,24 +1655,26 @@ export default function App() {
       setSoftPageIndex(Number.isInteger(savedData?.softPageIndex) ? savedData.softPageIndex : 0)
       setActivePage(savedData?.activePage || 'cross')
       setMeasurementType(savedData?.measurementType || '天井')
-      setSaveStatus(savedData ? '保存済みデータを読み込みました' : '')
+      setMemo(savedData?.draftMemo || '')
+      setSaveStatus('')
     } catch {
       setRecords([])
       setCfRecords([])
       setSoftRecords([])
-      setCustomRooms([])
+      setProjectRooms(defaultRooms)
       setRoomConfirmations({})
       setPageIndex(0)
       setCfPageIndex(0)
       setSoftPageIndex(0)
       setActivePage('cross')
       setMeasurementType('天井')
+      setMemo('')
       setSaveStatus('保存データを読み込めませんでした')
     }
     setHeight('')
     setCount('')
-    setMemo('')
     setActiveInput('')
+    setIsDirty(false)
     setShowMeasurementCheck(false)
     setReturnToMeasurementCheck(false)
     setStarted(true)
@@ -1579,7 +1683,7 @@ export default function App() {
   function saveCurrentData() {
     if (!company || !selectedProperty || !unit.trim()) {
       setSaveStatus('管理会社・物件・号室を選択してください')
-      return
+      return false
     }
 
     const storageKey = currentStorageKey || getSaveKey(company, selectedProperty, unit)
@@ -1600,7 +1704,8 @@ export default function App() {
       records,
       cfRecords,
       softRecords,
-      customRooms,
+      draftMemo: memo,
+      rooms,
       roomConfirmations,
       pageIndex,
       cfPageIndex,
@@ -1614,33 +1719,60 @@ export default function App() {
     try {
       const serialized = JSON.stringify(saveData)
       localStorage.setItem(storageKey, serialized)
-      localStorage.setItem(lastSessionKey, serialized)
       setCurrentStorageKey(storageKey)
       setSavedEntries(readSavedEntries())
-      setSaveStatus('この物件・号室のデータを保存しました')
+      setIsDirty(false)
+      setSaveStatus('')
+      return true
     } catch {
       setSaveStatus('保存できませんでした。端末の空き容量をご確認ください')
+      return false
     }
   }
 
   function addCustomRoom(roomName) {
     if (rooms.some(name => name.toLocaleLowerCase() === roomName.toLocaleLowerCase())) return
-    setCustomRooms(previous => [...previous, roomName])
+    setProjectRooms(previous => [...previous, roomName])
     if (pageIndex === rooms.length) setPageIndex(rooms.length)
     if (cfPageIndex === rooms.length) setCfPageIndex(rooms.length)
     if (softPageIndex === rooms.length) setSoftPageIndex(rooms.length)
-    setSaveStatus('未保存の変更があります')
+    markUnsaved()
   }
 
-  function deleteCustomRoom(roomName) {
-    if (!customRooms.includes(roomName)) return
-    const roomIndex = rooms.indexOf(roomName)
-    const hasRoomData = records.some(record => record.room === roomName)
+  function renameRoom(oldName, newName) {
+    if (oldName === newName) return
+    if (rooms.some(name => name !== oldName && name.toLocaleLowerCase() === newName.toLocaleLowerCase())) return
+
+    setProjectRooms(previous => previous.map(name => name === oldName ? newName : name))
+    setRecords(previous => previous.map(record =>
+      record.room === oldName ? { ...record, room: newName } : record
+    ))
+    setCfRecords(previous => previous.map(record =>
+      record.room === oldName ? { ...record, room: newName } : record
+    ))
+    setSoftRecords(previous => previous.map(record =>
+      record.room === oldName ? { ...record, room: newName } : record
+    ))
+    setRoomConfirmations(previous => {
+      if (!previous[oldName]) return previous
+      const next = { ...previous }
+      delete next[oldName]
+      next[newName] = true
+      return next
+    })
+    markUnsaved()
+  }
+
+  function roomHasData(roomName) {
+    return records.some(record => record.room === roomName)
       || cfRecords.some(record => record.room === roomName)
       || softRecords.some(record => record.room === roomName)
-    if (hasRoomData && !window.confirm('この部屋には採寸データがあります。本当に削除しますか？')) return
+  }
 
-    setCustomRooms(previous => previous.filter(name => name !== roomName))
+  function deleteRoom(roomName) {
+    const roomIndex = rooms.indexOf(roomName)
+    if (roomIndex === -1) return
+    setProjectRooms(previous => previous.filter(name => name !== roomName))
     setRecords(previous => previous.filter(record => record.room !== roomName))
     setCfRecords(previous => previous.filter(record => record.room !== roomName))
     setSoftRecords(previous => previous.filter(record => record.room !== roomName))
@@ -1651,13 +1783,13 @@ export default function App() {
     })
     const adjustPageIndex = index => {
       if (index > roomIndex) return index - 1
-      return Math.min(index, rooms.length - 1)
+      return Math.max(0, Math.min(index, rooms.length - 1))
     }
     setPageIndex(adjustPageIndex)
     setCfPageIndex(adjustPageIndex)
     setSoftPageIndex(adjustPageIndex)
     setMemo('')
-    setSaveStatus('未保存の変更があります')
+    markUnsaved()
   }
 
   function goToPage(index) {
@@ -1709,14 +1841,14 @@ export default function App() {
         block: 'center',
       })
     })
-    setSaveStatus('未保存の変更があります')
+    markUnsaved()
   }
 
   function deleteCrossRecord(id) {
     const deletedRecord = records.find(item => item.id === id)
     setRecords(prev => prev.filter(item => item.id !== id))
     if (deletedRecord) markRoomUnconfirmed(deletedRecord.room)
-    setSaveStatus('未保存の変更があります')
+    markUnsaved()
   }
 
   function getRoomInputStatus(roomName) {
@@ -2179,7 +2311,16 @@ export default function App() {
           </main>
         ) : (
           <main className="main">
-            <button className="back" onClick={() => setStarted(false)}>← 物件情報へ戻る</button>
+            <button
+              className="back"
+              onClick={() => requestNavigation(() => {
+                setStarted(false)
+                setShowSavedList(false)
+                setIsDirty(false)
+              })}
+            >
+              ← 物件情報へ戻る
+            </button>
             <p className="propertyLine">{selectedProperty?.name}　{unit}号室</p>
             <h1>
               {showMeasurementCheck
@@ -2206,6 +2347,9 @@ export default function App() {
                 Excel出力
               </button>
             </div>
+            <p className={`saveState ${isDirty ? 'dirty' : 'saved'}`} role="status" aria-live="polite">
+              {isDirty ? '未保存' : '保存済み'}
+            </p>
             {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
 
             <div className="measurementTypes" aria-label="採寸機能">
@@ -2286,9 +2430,10 @@ export default function App() {
                 key="cf"
                 title="CF"
                 rooms={rooms}
-                customRooms={customRooms}
                 onAddRoom={addCustomRoom}
-                onDeleteRoom={deleteCustomRoom}
+                onRenameRoom={renameRoom}
+                onDeleteRoom={deleteRoom}
+                roomHasData={roomHasData}
                 records={cfRecords}
                 setRecords={setCfRecords}
                 pageIndex={cfPageIndex}
@@ -2300,9 +2445,10 @@ export default function App() {
                 key="soft"
                 title="ソフト巾木"
                 rooms={rooms}
-                customRooms={customRooms}
                 onAddRoom={addCustomRoom}
-                onDeleteRoom={deleteCustomRoom}
+                onRenameRoom={renameRoom}
+                onDeleteRoom={deleteRoom}
+                roomHasData={roomHasData}
                 records={softRecords}
                 setRecords={setSoftRecords}
                 pageIndex={softPageIndex}
@@ -2320,9 +2466,10 @@ export default function App() {
                 </nav>
                 <RoomManagementControls
                   rooms={rooms}
-                  customRooms={customRooms}
                   onAddRoom={addCustomRoom}
-                  onDeleteRoom={deleteCustomRoom}
+                  onRenameRoom={renameRoom}
+                  onDeleteRoom={deleteRoom}
+                  roomHasData={roomHasData}
                 />
                 {isSummaryPage ? (
                   <section className="card">
@@ -2426,7 +2573,10 @@ export default function App() {
                             className="memoInput"
                             type="text"
                             value={memo}
-                            onChange={event => setMemo(event.target.value)}
+                            onChange={event => {
+                              setMemo(event.target.value)
+                              markUnsaved()
+                            }}
                             placeholder="例：窓面、部分張替え"
                           />
                         </label>
@@ -2460,6 +2610,40 @@ export default function App() {
               </>
             )}
           </main>
+        )}
+        {showLeaveConfirmation && (
+          <div className="leaveConfirmBackdrop">
+            <section
+              className="leaveConfirmDialog"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="leave-confirm-title"
+              aria-describedby="leave-confirm-description"
+            >
+              <h2 id="leave-confirm-title">未保存の変更</h2>
+              <p id="leave-confirm-description">
+                変更内容が保存されていません。<br />
+                保存せずに移動しますか？
+              </p>
+              <button className="saveButton" type="button" onClick={saveAndNavigate}>
+                保存して移動
+              </button>
+              <button className="dangerButton" type="button" onClick={discardAndNavigate}>
+                保存せずに移動
+              </button>
+              {saveStatus && <p className="saveStatus" role="alert">{saveStatus}</p>}
+              <button
+                className="secondaryButton"
+                type="button"
+                onClick={() => {
+                  pendingNavigationRef.current = null
+                  setShowLeaveConfirmation(false)
+                }}
+              >
+                キャンセル
+              </button>
+            </section>
+          </div>
         )}
       </div>
     </>
