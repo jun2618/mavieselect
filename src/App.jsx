@@ -341,12 +341,14 @@ const styles = `
   .brand { color:#f08b78; font-family:"Zen Maru Gothic",sans-serif; font-size:32px; font-weight:900; letter-spacing:.04em; text-shadow:0 3px 0 #ffe3d4; }
   .settingsButton { width:46px; height:46px; border:1px solid #efd8ca; border-radius:14px; color:#d27f6d; background:#fffaf5; font:inherit; font-size:22px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .main { width:min(100% - 32px,620px); margin:28px auto 0; }
+  .settingsMain.managementPropertyOpen { padding-bottom:calc(100vh - 48px); }
   .eyebrow { margin:0 0 10px; color:#e58a75; font-size:14px; font-weight:800; letter-spacing:.1em; }
   .main h1,.card h2 { color:#514751; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-weight:800; letter-spacing:.04em; }
   .main h1 { margin:0 0 12px; font-size:clamp(32px,8vw,42px); }
   .subtitle,.propertyLine { color:#8e8190; font-size:16px; line-height:1.8; }
   .propertyLine { margin:18px 0 5px; color:#d27f6d; font-weight:700; }
   .card { margin-top:20px; padding:clamp(20px,5vw,30px); border:1px solid rgba(230,202,184,.85); border-radius:24px; background:rgba(255,255,255,.82); box-shadow:0 12px 0 #ead8cb,0 18px 36px rgba(111,82,88,.12); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .masterCompanyForm,.masterPropertySection,.masterPropertyForm { scroll-margin-top:24px; }
   .card h2 { margin:0 0 22px; text-align:center; font-size:26px; }
   .card label { display:grid; gap:10px; min-width:0; margin:0 0 18px; }
   .card label>span { color:#817183; font-size:15px; font-weight:800; }
@@ -376,6 +378,17 @@ const styles = `
   .measurementTypes,.inputRow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
   .measurementTypes { grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); gap:12px; margin:18px 0 20px; }
   .measurementTypes .measurementType { white-space:normal; }
+  .measurementCheckButton { width:100%; min-height:54px; margin:0 0 20px; padding:10px 14px; border:1px solid #efc7b4; border-radius:15px; color:#c96e69; background:linear-gradient(180deg,#fff,#fff3e9); box-shadow:0 4px 0 #ead8cb; font:inherit; font-size:17px; font-weight:800; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .roomCheckSection { display:grid; gap:14px; }
+  .roomCheckTotals { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); gap:10px; padding:14px; border:1px solid #f0e3dc; border-radius:14px; background:#fff5e7; color:#806f7b; font-weight:800; text-align:center; }
+  .roomCheckList { display:grid; gap:14px; }
+  .roomCheckItem { display:grid; gap:10px; padding:14px; border:1px solid #f0d6c8; border-radius:16px; background:rgba(255,255,255,.82); box-shadow:0 4px 0 #ead8cb; }
+  .roomCheckItem.confirmed { border-color:#a9d8bd; background:#f5fff8; }
+  .roomCheckName { display:flex; min-width:0; min-height:44px; align-items:center; justify-content:space-between; gap:8px; padding:4px 2px; border:0; color:#514751; background:transparent; font:inherit; font-size:18px; font-weight:800; text-align:left; cursor:pointer; }
+  .roomCheckName span:last-child { flex:none; color:#548c73; font-size:14px; }
+  .roomCheckDetails { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr)); gap:8px; color:#806f7b; font-size:14px; }
+  .roomConfirmButton { width:100%; min-height:44px; padding:8px 12px; border:1px solid #efc7b4; border-radius:12px; color:#c96e69; background:#fff7f0; font:inherit; font-weight:800; cursor:pointer; }
+  .roomCheckItem.confirmed .roomConfirmButton { border-color:#a9d8bd; color:#438464; background:#edfbf2; }
   .roomNavigation { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:20px; }
   .roomNavigation > button { flex:1 1 140px; min-width:0; min-height:54px; }
   .roomNavigation .roomNavigationNext { width:auto; padding:0 18px; }
@@ -431,6 +444,12 @@ const styles = `
   .theme-dark .room,.theme-dark .measurementType,.theme-dark .keypadButton { color:#eee8e2; border-color:#51484d; background:#39343a; box-shadow:0 4px 0 #282428; }
   .theme-dark .room.active,.theme-dark .measurementType.active,.theme-dark .settingsOption.active { color:#fff; background:#c87568; }
   .theme-dark .empty { color:#b9acb5; }
+  .theme-dark .roomCheckTotals,.theme-dark .roomCheckItem { color:#eee8e2; border-color:#51484d; background:#302c31; }
+  .theme-dark .roomCheckName { color:#eee8e2; }
+  .theme-dark .roomCheckDetails { color:#c3b8c0; }
+  .theme-dark .roomConfirmButton { color:#f0a08d; border-color:#51484d; background:#39343a; }
+  .theme-dark .roomCheckItem.confirmed { border-color:#52866b; background:#29392f; }
+  .theme-dark .roomCheckItem.confirmed .roomConfirmButton { color:#a5dfbb; border-color:#52866b; background:#29392f; }
   .theme-dark .record { border-color:#51484d; }
   .theme-pop { color:#51414b; background:radial-gradient(circle at 8% 10%,rgba(255,190,215,.65),transparent 25%),radial-gradient(circle at 95% 28%,rgba(185,221,255,.65),transparent 28%),linear-gradient(145deg,#fff8e9,#fff0e6); }
   .theme-pop .header { border-color:#f4b9c9; }
@@ -450,6 +469,9 @@ const styles = `
   .theme-pop .summaryLine strong { color:#d65e88; }
   .theme-pop .settingsOption { border-color:#edcbd9; background:#fffdf7; }
   .theme-pop .settingsOption.active { border-color:#e77ca2; background:linear-gradient(180deg,#f7a8c6,#e879a5); }
+  .theme-pop .roomCheckTotals { border-color:#f2d2bd; background:#fff5e7; }
+  .theme-pop .roomCheckItem { border-color:#f2d2bd; background:rgba(255,252,241,.9); }
+  .theme-pop .roomCheckItem.confirmed { border-color:#a9d8bd; background:#f5fff8; }
   @media (max-width:600px) {
     .measurementActions { gap:16px; margin:18px 0 22px; }
     .measurementTypes { grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr)); gap:12px; }
@@ -730,6 +752,7 @@ function LengthMeasurementPage({
   pageIndex,
   setPageIndex,
   countOnly = false,
+  onRoomRecordsChanged,
 }) {
   const [length, setLength] = useState('')
   const [count, setCount] = useState('')
@@ -782,6 +805,7 @@ function LengthMeasurementPage({
         id: createRecordId(), room, length: numericLength, count: numericCount,
       }])
     }
+    onRoomRecordsChanged(room)
     setLength('')
     setCount('')
     setActiveInput('')
@@ -838,7 +862,10 @@ function LengthMeasurementPage({
                     <small>{countOnly ? `${formatQuantity(item.quantity)}枚` : `${Number(item.length).toFixed(2)}m × ${item.count}本`}</small>
                   </div>
                   <b>{formatQuantity(getQuantity(item))}{unit}</b>
-                  <button type="button" onClick={() => setRecords(prev => prev.filter(record => record.id !== item.id))} aria-label={`${room}の${title}登録を削除`}>×</button>
+                  <button type="button" onClick={() => {
+                    setRecords(prev => prev.filter(record => record.id !== item.id))
+                    onRoomRecordsChanged(room)
+                  }} aria-label={`${room}の${title}登録を削除`}>×</button>
                 </div>
               ))}
             </div>
@@ -872,6 +899,10 @@ export default function App() {
     reading: '',
     aliases: '',
   })
+  const [managementScrollTarget, setManagementScrollTarget] = useState('')
+  const companyFormRef = useRef(null)
+  const propertyListRef = useRef(null)
+  const propertyFormRef = useRef(null)
   const [masterStatus, setMasterStatus] = useState(propertyMasterState.error)
   const [fontSize, setFontSize] = useState(() => readPreference(fontSizeKey, 'medium'))
   const [theme, setTheme] = useState(() => readPreference(themeKey, 'beige'))
@@ -890,6 +921,9 @@ export default function App() {
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
   const [currentStorageKey, setCurrentStorageKey] = useState('')
   const [pageIndex, setPageIndex] = useState(0)
+  const [roomConfirmations, setRoomConfirmations] = useState({})
+  const [showMeasurementCheck, setShowMeasurementCheck] = useState(false)
+  const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
   const [measurementType, setMeasurementType] = useState('天井')
   const [height, setHeight] = useState('')
   const [count, setCount] = useState('')
@@ -919,6 +953,11 @@ export default function App() {
     setRecords(Array.isArray(saved.records) ? saved.records : [])
     setCfRecords(Array.isArray(saved.cfRecords) ? saved.cfRecords : [])
     setSoftRecords(Array.isArray(saved.softRecords) ? saved.softRecords : [])
+    setRoomConfirmations(
+      saved.roomConfirmations && typeof saved.roomConfirmations === 'object'
+        ? saved.roomConfirmations
+        : {}
+    )
     setPageIndex(Number.isInteger(saved.pageIndex) ? saved.pageIndex : 0)
     setCfPageIndex(Number.isInteger(saved.cfPageIndex) ? saved.cfPageIndex : 0)
     setSoftPageIndex(Number.isInteger(saved.softPageIndex) ? saved.softPageIndex : 0)
@@ -948,6 +987,23 @@ export default function App() {
 
     return () => cancelAnimationFrame(frame)
   }, [activeInput])
+
+  useEffect(() => {
+    if (!managementScrollTarget) return
+
+    const frame = requestAnimationFrame(() => {
+      const target = {
+        companyForm: companyFormRef.current,
+        propertyList: propertyListRef.current,
+        propertyForm: propertyFormRef.current,
+      }[managementScrollTarget]
+
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setManagementScrollTarget('')
+    })
+
+    return () => cancelAnimationFrame(frame)
+  }, [managementScrollTarget, masterPropertyCompanyId, showPropertyForm, editingCompanyId])
 
   const isSummaryPage = pageIndex === rooms.length
   const room = isSummaryPage ? '' : rooms[pageIndex]
@@ -1000,6 +1056,27 @@ export default function App() {
   const savedCount = savedEntries.filter(
     entry => Boolean(entry.archived) === showArchived
   ).length
+  const confirmedRoomCount = rooms.filter(roomName => roomConfirmations[roomName]).length
+
+  function markRoomUnconfirmed(roomName) {
+    setRoomConfirmations(previous => {
+      if (!previous[roomName]) return previous
+      const next = { ...previous }
+      delete next[roomName]
+      return next
+    })
+    setSaveStatus('未保存の変更があります')
+  }
+
+  function toggleRoomConfirmation(roomName) {
+    setRoomConfirmations(previous => {
+      const next = { ...previous }
+      if (next[roomName]) delete next[roomName]
+      else next[roomName] = true
+      return next
+    })
+    setSaveStatus('未保存の変更があります')
+  }
 
   function changeFontSize(value) {
     setFontSize(value)
@@ -1099,6 +1176,7 @@ export default function App() {
   function startEditingCompany(company) {
     setEditingCompanyId(company.id)
     setMasterCompanyName(company.name)
+    setManagementScrollTarget('companyForm')
   }
 
   function startAddingProperty(companyId = masterPropertyCompanyId) {
@@ -1107,6 +1185,7 @@ export default function App() {
     setMasterPropertyCompanyId(companyId)
     setPropertyForm({ name: '', address: '', reading: '', aliases: '' })
     setMasterStatus('')
+    setManagementScrollTarget('propertyForm')
   }
 
   function startEditingProperty(property) {
@@ -1121,6 +1200,7 @@ export default function App() {
         ? property.aliases.join(', ')
         : String(property.aliases || property.alias || ''),
     })
+    setManagementScrollTarget('propertyForm')
     setMasterStatus('')
   }
 
@@ -1226,6 +1306,11 @@ export default function App() {
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
     setSoftRecords(Array.isArray(entry.softRecords) ? entry.softRecords : [])
+    setRoomConfirmations(
+      entry.roomConfirmations && typeof entry.roomConfirmations === 'object'
+        ? entry.roomConfirmations
+        : {}
+    )
     setPageIndex(Number.isInteger(entry.pageIndex) ? entry.pageIndex : 0)
     setCfPageIndex(Number.isInteger(entry.cfPageIndex) ? entry.cfPageIndex : 0)
     setSoftPageIndex(Number.isInteger(entry.softPageIndex) ? entry.softPageIndex : 0)
@@ -1237,6 +1322,8 @@ export default function App() {
     setActiveInput('')
     setSaveStatus('')
     setShowSavedList(false)
+    setShowMeasurementCheck(false)
+    setReturnToMeasurementCheck(false)
     setStarted(true)
   }
 
@@ -1253,6 +1340,9 @@ export default function App() {
         records: Array.isArray(entry.records) ? entry.records : [],
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
         softRecords: Array.isArray(entry.softRecords) ? entry.softRecords : [],
+        roomConfirmations: entry.roomConfirmations && typeof entry.roomConfirmations === 'object'
+          ? entry.roomConfirmations
+          : {},
         pageIndex: Number.isInteger(entry.pageIndex) ? entry.pageIndex : 0,
         cfPageIndex: Number.isInteger(entry.cfPageIndex) ? entry.cfPageIndex : 0,
         softPageIndex: Number.isInteger(entry.softPageIndex) ? entry.softPageIndex : 0,
@@ -1363,6 +1453,11 @@ export default function App() {
       setRecords(Array.isArray(savedData?.records) ? savedData.records : [])
       setCfRecords(Array.isArray(savedData?.cfRecords) ? savedData.cfRecords : [])
       setSoftRecords(Array.isArray(savedData?.softRecords) ? savedData.softRecords : [])
+      setRoomConfirmations(
+        savedData?.roomConfirmations && typeof savedData.roomConfirmations === 'object'
+          ? savedData.roomConfirmations
+          : {}
+      )
       setPageIndex(Number.isInteger(savedData?.pageIndex) ? savedData.pageIndex : 0)
       setCfPageIndex(Number.isInteger(savedData?.cfPageIndex) ? savedData.cfPageIndex : 0)
       setSoftPageIndex(Number.isInteger(savedData?.softPageIndex) ? savedData.softPageIndex : 0)
@@ -1373,6 +1468,7 @@ export default function App() {
       setRecords([])
       setCfRecords([])
       setSoftRecords([])
+      setRoomConfirmations({})
       setPageIndex(0)
       setCfPageIndex(0)
       setSoftPageIndex(0)
@@ -1384,6 +1480,8 @@ export default function App() {
     setCount('')
     setMemo('')
     setActiveInput('')
+    setShowMeasurementCheck(false)
+    setReturnToMeasurementCheck(false)
     setStarted(true)
   }
 
@@ -1411,6 +1509,7 @@ export default function App() {
       records,
       cfRecords,
       softRecords,
+      roomConfirmations,
       pageIndex,
       cfPageIndex,
       softPageIndex,
@@ -1469,6 +1568,7 @@ export default function App() {
       quantity: numericHeight * numericCount,
       memo: memo.trim(),
     }])
+    markRoomUnconfirmed(room)
     setHeight('')
     setCount('')
     setMemo('')
@@ -1484,8 +1584,21 @@ export default function App() {
   }
 
   function deleteCrossRecord(id) {
+    const deletedRecord = records.find(item => item.id === id)
     setRecords(prev => prev.filter(item => item.id !== id))
+    if (deletedRecord) markRoomUnconfirmed(deletedRecord.room)
     setSaveStatus('未保存の変更があります')
+  }
+
+  function getRoomInputStatus(roomName) {
+    const roomCrossRecords = records.filter(record => record.room === roomName)
+    return {
+      cross: roomCrossRecords.length > 0,
+      cf: cfRecords.some(record => record.room === roomName),
+      soft: softRecords.some(record => record.room === roomName),
+      memo: roomCrossRecords.some(record => Boolean(record.memo?.trim())),
+      confirmed: Boolean(roomConfirmations[roomName]),
+    }
   }
 
   const fontScales = { small: 0.8, medium: 0.9, large: 1 }
@@ -1511,7 +1624,7 @@ export default function App() {
         </header>
 
         {settingsOpen ? (
-          <main className="main">
+          <main className={`main settingsMain${masterPropertyCompanyId ? ' managementPropertyOpen' : ''}`}>
             <button className="back" type="button" onClick={() => setSettingsOpen(false)}>← 戻る</button>
             <p className="eyebrow">アプリの表示設定</p>
             <h1>設定</h1>
@@ -1546,7 +1659,10 @@ export default function App() {
               </div>
               <h2 style={{ marginTop: 28 }}>管理会社・物件管理</h2>
               {masterStatus && <p className="saveStatus" role="status">{masterStatus}</p>}
-              <form onSubmit={event => {
+              <form
+                className="masterCompanyForm"
+                ref={companyFormRef}
+                onSubmit={event => {
                 if (editingCompanyId) {
                   event.preventDefault()
                   renameMasterCompany(editingCompanyId)
@@ -1564,7 +1680,11 @@ export default function App() {
                   />
                 </label>
                 <div className="masterActions">
-                  <button className="primary" type="submit">
+                  <button
+                    className="primary"
+                    type="submit"
+                    onClick={() => setManagementScrollTarget('companyForm')}
+                  >
                     {editingCompanyId ? '管理会社名を保存' : '管理会社を追加'}
                   </button>
                   {editingCompanyId && (
@@ -1587,6 +1707,7 @@ export default function App() {
                         setMasterPropertyCompanyId(masterCompany.id)
                         setShowPropertyForm(false)
                         setEditingPropertyId('')
+                        setManagementScrollTarget('propertyList')
                       }}>
                         物件一覧
                       </button>
@@ -1602,7 +1723,7 @@ export default function App() {
               </div>
 
               {masterPropertyCompanyId && (
-                <section className="masterPropertySection">
+                <section className="masterPropertySection" ref={propertyListRef}>
                   <h3>
                     {mergedPropertyMaster.companies.find(item => item.id === masterPropertyCompanyId)?.name || ''}
                     の物件
@@ -1637,7 +1758,11 @@ export default function App() {
                   </div>
 
                   {showPropertyForm && (
-                    <form className="masterPropertyForm" onSubmit={saveMasterProperty}>
+                    <form
+                      className="masterPropertyForm"
+                      ref={propertyFormRef}
+                      onSubmit={saveMasterProperty}
+                    >
                       <h3>{editingPropertyId ? '物件を編集' : '物件を追加'}</h3>
                       <label>
                         <span>管理会社</span>
@@ -1928,7 +2053,9 @@ export default function App() {
             <button className="back" onClick={() => setStarted(false)}>← 物件情報へ戻る</button>
             <p className="propertyLine">{selectedProperty?.name}　{unit}号室</p>
             <h1>
-              {activePage === 'cross'
+              {showMeasurementCheck
+                ? '採寸チェック'
+                : activePage === 'cross'
                 ? isSummaryPage ? '全室の合計' : '採寸入力'
                 : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
             </h1>
@@ -1958,10 +2085,94 @@ export default function App() {
               <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
             </div>
 
-            {activePage === 'cf' ? (
-              <LengthMeasurementPage key="cf" title="CF" records={cfRecords} setRecords={setCfRecords} pageIndex={cfPageIndex} setPageIndex={setCfPageIndex} />
+            <button
+              className="measurementCheckButton"
+              type="button"
+              onClick={() => {
+                setShowMeasurementCheck(previous => !previous)
+                setReturnToMeasurementCheck(false)
+              }}
+            >
+              {showMeasurementCheck
+                ? '採寸画面へ戻る'
+                : returnToMeasurementCheck
+                  ? '採寸チェックへ戻る'
+                  : '採寸チェック'}
+            </button>
+
+            {showMeasurementCheck ? (
+              <section className="roomCheckSection">
+                <div className="roomCheckTotals" aria-live="polite">
+                  <span>確認済み：{confirmedRoomCount}部屋</span>
+                  <span>未確認：{rooms.length - confirmedRoomCount}部屋</span>
+                </div>
+                <div className="roomCheckList">
+                  {rooms.map((roomName, index) => {
+                    const status = getRoomInputStatus(roomName)
+                    return (
+                      <article
+                        className={`roomCheckItem${status.confirmed ? ' confirmed' : ''}`}
+                        key={roomName}
+                      >
+                        <button
+                          className="roomCheckName"
+                          type="button"
+                          onClick={() => {
+                            setPageIndex(index)
+                            setCfPageIndex(index)
+                            setSoftPageIndex(index)
+                            setActivePage('cross')
+                            setActiveInput('')
+                            setHeight('')
+                            setCount('')
+                            setMemo('')
+                            setShowMeasurementCheck(false)
+                            setReturnToMeasurementCheck(true)
+                          }}
+                        >
+                          <span>{status.confirmed ? '✅' : '⚠️'} {roomName}</span>
+                          <span>{status.confirmed ? '確認済み' : '未確認'}</span>
+                        </button>
+                        <div className="roomCheckDetails">
+                          <span>クロス：{status.cross ? '入力あり' : '入力なし'}</span>
+                          <span>CF：{status.cf ? '入力あり' : '入力なし'}</span>
+                          <span>ソフト巾木：{status.soft ? '入力あり' : '入力なし'}</span>
+                          <span>メモ：{status.memo ? 'あり' : 'なし'}</span>
+                        </div>
+                        <button
+                          className="roomConfirmButton"
+                          type="button"
+                          aria-pressed={status.confirmed}
+                          onClick={() => toggleRoomConfirmation(roomName)}
+                        >
+                          {status.confirmed ? '確認を解除' : '確認済みにする'}
+                        </button>
+                      </article>
+                    )
+                  })}
+                </div>
+              </section>
+            ) : activePage === 'cf' ? (
+              <LengthMeasurementPage
+                key="cf"
+                title="CF"
+                records={cfRecords}
+                setRecords={setCfRecords}
+                pageIndex={cfPageIndex}
+                setPageIndex={setCfPageIndex}
+                onRoomRecordsChanged={markRoomUnconfirmed}
+              />
               ) : activePage === 'soft' ? (
-              <LengthMeasurementPage key="soft" title="ソフト巾木" records={softRecords} setRecords={setSoftRecords} pageIndex={softPageIndex} setPageIndex={setSoftPageIndex} countOnly />
+              <LengthMeasurementPage
+                key="soft"
+                title="ソフト巾木"
+                records={softRecords}
+                setRecords={setSoftRecords}
+                pageIndex={softPageIndex}
+                setPageIndex={setSoftPageIndex}
+                countOnly
+                onRoomRecordsChanged={markRoomUnconfirmed}
+              />
             ) : (
               <>
                 <nav className="roomTabs" aria-label="クロスの部屋">
