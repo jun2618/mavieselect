@@ -61,8 +61,68 @@ h2 { margin: 0 0 18px; font-family: serif; font-size: 20px; font-weight: 500; }
   cursor: pointer;
   font-weight: 700;
 }
-.roomPhotoButton { width: 100%; }
-.roomPhotoInput { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 100%; padding: 0; opacity: 0; pointer-events: auto; cursor: pointer; }
+.photoSectionButton {
+  width: 100%;
+  min-height: 58px;
+  margin: 4px 0 18px;
+  border: 2px solid #f3c5ae;
+  border-radius: 16px;
+  color: #c96e69;
+  background: linear-gradient(180deg, #fff, #fff3e9);
+  box-shadow: 0 4px 0 #ead8cb;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.photoPage { display: grid; gap: 10px; }
+.photoRoomList { display: grid; gap: 10px; }
+.photoRoomListItem {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border: 1px solid #f0d6c8;
+  border-radius: 14px;
+  color: #635865;
+  background: linear-gradient(180deg, #fff, #fff7f0);
+  box-shadow: 0 4px 0 #ead8cb;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.photoRoomListItem strong { color: #d27f6d; }
+.photoRoomCard { margin-top: 8px; }
+.photoRoomCard .photoAddActions { display: grid; gap: 10px; margin-bottom: 18px; }
+.photoRoomCard .photoActionButton {
+  position: relative;
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid #efc7b4;
+  border-radius: 14px;
+  color: #c96e69;
+  background: #fff7f0;
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+}
+.photoRoomCard .photoFileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
 .photoModalBackdrop {
   position: fixed;
   inset: 0;
@@ -73,8 +133,6 @@ h2 { margin: 0 0 18px; font-family: serif; font-size: 20px; font-weight: 500; }
   padding: 16px;
   background: rgba(0, 0, 0, .78);
 }
-.photoPickerBackdrop { z-index: 2002; }
-.photoCameraBackdrop { z-index: 2003; }
 .photoPreviewBackdrop { z-index: 2004; }
 .photoModal {
   width: min(100%, 520px);
@@ -87,29 +145,14 @@ h2 { margin: 0 0 18px; font-family: serif; font-size: 20px; font-weight: 500; }
   border-radius: 14px;
   box-shadow: 0 24px 55px rgba(0, 0, 0, .6);
 }
-.photoModal h2 { text-align: center; }
-.photoModalButton, .photoModalCancel { width: 100%; margin-top: 10px; }
-.photoModalButton:disabled { opacity: .45; cursor: not-allowed; }
-.photoGalleryPicker { position: relative; display: flex; align-items: center; justify-content: center; margin: 10px 0 0; text-align: center; }
-.photoModalCancel { color: #c8bfad; background: #191a17; border-color: #49463b; }
-.photoCameraModal { width: min(100%, 720px); }
-.photoCameraViewport { display: grid; min-height: 220px; max-height: 62vh; place-items: center; overflow: hidden; background: #050505; border-radius: 9px; }
-.photoCameraViewport video { display: block; width: 100%; max-height: 62vh; object-fit: contain; }
-.photoCameraViewport p { padding: 20px; color: #c8bfad; text-align: center; }
-.photoCameraCount { margin: 14px 0 4px; color: #e2c47b; font-weight: 700; text-align: center; }
-.photoCameraError { color: #f0b6a8; font-size: 13px; text-align: center; }
-.photoCameraControls { display: grid; gap: 8px; }
-.photoCameraControls .photoModalButton, .photoCameraControls .photoModalCancel { margin-top: 8px; }
-.photoShutterButton { min-height: 54px; color: #111; background: #e2c47b; font-size: 18px; }
 .photoThumbnailGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .photoThumbnailItem { min-width: 0; }
-.photoThumbnailButton { display: block; width: 100%; padding: 0; overflow: hidden; background: #080908; border: 1px solid #49463b; border-radius: 7px; cursor: zoom-in; }
-.photoThumbnailButton img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
-.photoDeleteButton { width: 100%; min-height: 34px; margin-top: 5px; padding: 5px; color: #f0b6a8; background: #2b1713; border-color: #75443a; font-size: 12px; }
+.photoThumbnailButton { display: block; width: 100%; padding: 0; overflow: hidden; background: #fffaf5; border: 1px solid #efc7b4; border-radius: 10px; cursor: zoom-in; }
+.photoThumbnailButton img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
+.photoDeleteButton { width: 100%; min-height: 38px; margin-top: 5px; padding: 5px; color: #b75c57; background: #fff0eb; border: 1px solid #edc8bd; border-radius: 9px; font-size: 13px; }
 .photoPreviewModal { width: min(100%, 900px); }
-.photoLargePreview { display: block; max-width: 100%; max-height: 70vh; margin: 0 auto; object-fit: contain; }
+.photoLargePreview { display: block; width: 100%; max-height: 70vh; margin: 0 auto; object-fit: contain; }
 @media (max-width: 420px) {
-  .photoModal { padding: 16px; }
   .photoThumbnailGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 380px) { .app { padding-left: 12px; padding-right: 12px; } .card { padding: 16px; } }

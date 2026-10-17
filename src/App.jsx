@@ -511,187 +511,12 @@ function getPhotoRoomKey(company, propertyName, address, unit, room) {
 }
 
 function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [galleryOpen, setGalleryOpen] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState(null)
-  const [cameraOpen, setCameraOpen] = useState(false)
-  const [cameraStream, setCameraStream] = useState(null)
-  const [cameraError, setCameraError] = useState('')
-  const [pendingShots, setPendingShots] = useState([])
-  const [pendingCaptures, setPendingCaptures] = useState(0)
-  const videoRef = useRef(null)
-  const cameraStreamRef = useRef(null)
-  const cameraRequestIdRef = useRef(0)
-  const pendingShotsRef = useRef([])
-  const pendingCaptureCountRef = useRef(0)
-
-  useEffect(() => {
-    if (!cameraOpen || !cameraStream || !videoRef.current) return
-    const video = videoRef.current
-    video.srcObject = cameraStream
-    video.play().catch(() => {
-      setCameraError('カメラ映像を開始できません。カメラの使用を許可して再度お試しください。')
-    })
-    return () => {
-      video.pause()
-      video.srcObject = null
-    }
-  }, [cameraOpen, cameraStream])
-
-  useEffect(() => () => {
-    cameraRequestIdRef.current += 1
-    cameraStreamRef.current?.getTracks().forEach(track => track.stop())
-    pendingShotsRef.current.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
-  }, [])
-
-  function updatePendingShots(update) {
-    const nextShots = typeof update === 'function'
-      ? update(pendingShotsRef.current)
-      : update
-    pendingShotsRef.current = nextShots
-    setPendingShots(nextShots)
-  }
-
-  async function startCamera() {
-    setPickerOpen(false)
-    setCameraError('')
-    updatePendingShots([])
-    pendingCaptureCountRef.current = 0
-    setPendingCaptures(0)
-    setCameraOpen(true)
-    const requestId = cameraRequestIdRef.current + 1
-    cameraRequestIdRef.current = requestId
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError('このブラウザーではカメラを利用できません。HTTPSで開き、カメラ対応ブラウザーをご利用ください。')
-      return
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-      })
-      if (cameraRequestIdRef.current !== requestId) {
-        stream.getTracks().forEach(track => track.stop())
-        return
-      }
-      cameraStreamRef.current = stream
-      setCameraStream(stream)
-    } catch (error) {
-      if (cameraRequestIdRef.current !== requestId) return
-      console.error('カメラを起動できませんでした。', {
-        errorName: error?.name || 'Error',
-        errorMessage: error?.message || String(error),
-      })
-      setCameraError(error?.name === 'NotAllowedError'
-        ? 'カメラの使用が許可されていません。ブラウザーのサイト設定でカメラを許可してください。'
-        : 'カメラを起動できませんでした。カメラの使用権限と端末の設定をご確認ください。')
-    }
-  }
-
-  function stopCamera() {
-    cameraRequestIdRef.current += 1
-    cameraStreamRef.current?.getTracks().forEach(track => track.stop())
-    cameraStreamRef.current = null
-    setCameraStream(null)
-    setCameraOpen(false)
-  }
-
-  function cancelCamera() {
-    stopCamera()
-    pendingCaptureCountRef.current = 0
-    setPendingCaptures(0)
-    updatePendingShots(previous => {
-      previous.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
-      return []
-    })
-  }
-
-  function capturePhoto() {
-    const video = videoRef.current
-    if (!video || !video.videoWidth || !video.videoHeight) {
-      setCameraError('カメラ映像の準備ができていません。少し待ってから撮影してください。')
-      return
-    }
-
-    const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const context = canvas.getContext('2d')
-    if (!context) {
-      setCameraError('写真を撮影できませんでした。')
-      return
-    }
-    context.drawImage(video, 0, 0, canvas.width, canvas.height)
-    const requestId = cameraRequestIdRef.current
-    pendingCaptureCountRef.current += 1
-    setPendingCaptures(pendingCaptureCountRef.current)
-    canvas.toBlob(blob => {
-      try {
-        if (requestId !== cameraRequestIdRef.current) return
-        if (!blob) {
-          setCameraError('写真を作成できませんでした。もう一度撮影してください。')
-          return
-        }
-        const file = new File([blob], `m-cross-${Date.now()}.jpg`, { type: 'image/jpeg' })
-        updatePendingShots(previous => [...previous, {
-          id: createRecordId(),
-          file,
-          previewUrl: URL.createObjectURL(file),
-        }])
-        setCameraError('')
-      } catch (error) {
-        console.error('撮影した写真を準備できませんでした。', error)
-        setCameraError('撮影した写真を準備できませんでした。')
-      } finally {
-        if (requestId === cameraRequestIdRef.current) {
-          pendingCaptureCountRef.current = Math.max(0, pendingCaptureCountRef.current - 1)
-          setPendingCaptures(pendingCaptureCountRef.current)
-        }
-      }
-    }, 'image/jpeg', 0.92)
-  }
-
-  function completeCamera() {
-    if (pendingCaptureCountRef.current > 0) return
-    const completedShots = pendingShotsRef.current
-    stopCamera()
-    if (completedShots.length) {
-      onAddFiles(completedShots.map(photo => photo.file))
-      completedShots.forEach(photo => URL.revokeObjectURL(photo.previewUrl))
-      updatePendingShots([])
-      setGalleryOpen(true)
-    }
-  }
-
-  function renderGalleryPicker(label) {
-    return (
-      <label className="photoGalleryPicker photoModalButton">
-        {label}
-        <input
-          className="roomPhotoInput"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFilesSelected}
-          aria-label={`${roomName}の写真を選択`}
-        />
-      </label>
-    )
-  }
 
   function handleFilesSelected(event) {
     const files = Array.from(event.currentTarget.files || [])
     event.currentTarget.value = ''
-    if (!files.length) return
-    onAddFiles(files)
-    setPickerOpen(false)
-    setGalleryOpen(true)
+    if (files.length) onAddFiles(files)
   }
 
   function deletePhoto(photo) {
@@ -701,117 +526,53 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
   }
 
   return (
-    <>
-      <div className="roomPhotoActions">
-        <button
-          className="roomPhotoButton"
-          type="button"
-          onClick={() => photos.length ? setGalleryOpen(true) : setPickerOpen(true)}
-        >
-          📷 {photos.length ? `写真 ${photos.length}枚` : '写真を追加'}
-        </button>
+    <section className="card photoRoomCard">
+      <h2>{roomName}の写真</h2>
+      <div className="photoAddActions">
+        <label className="photoActionButton">
+          カメラで撮影
+          <input
+            className="photoFileInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFilesSelected}
+            aria-label={`${roomName}の写真をカメラで撮影`}
+          />
+        </label>
+        <label className="photoActionButton">
+          ギャラリーから追加
+          <input
+            className="photoFileInput"
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFilesSelected}
+            aria-label={`${roomName}の写真をギャラリーから選択`}
+          />
+        </label>
       </div>
-
-      {pickerOpen && (
-        <div className="photoModalBackdrop photoPickerBackdrop" onClick={() => setPickerOpen(false)}>
-          <section
-            className="photoModal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="photo-picker-title"
-            onClick={event => event.stopPropagation()}
-          >
-            <h2 id="photo-picker-title">{roomName}の写真を追加</h2>
-            <button className="photoModalButton" type="button" onClick={startCamera}>
-              撮影開始
-            </button>
-            {renderGalleryPicker('ギャラリーから選択')}
-            <button className="photoModalCancel" type="button" onClick={() => setPickerOpen(false)}>
-              キャンセル
-            </button>
-          </section>
-        </div>
-      )}
-
-      {cameraOpen && (
-        <div className="photoModalBackdrop photoCameraBackdrop">
-          <section
-            className="photoModal photoCameraModal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="photo-camera-title"
-          >
-            <h2 id="photo-camera-title">{roomName}の撮影</h2>
-            <div className="photoCameraViewport">
-              {cameraStream ? (
-                <video ref={videoRef} autoPlay muted playsInline aria-label={`${roomName}のカメラ映像`} />
-              ) : (
-                <p>{cameraError || 'カメラを起動しています…'}</p>
-              )}
-            </div>
-            <p className="photoCameraCount" aria-live="polite">
-              撮影枚数：{pendingShots.length}枚{pendingCaptures ? '（写真を処理中…）' : ''}
-            </p>
-            {cameraError && cameraStream && <p className="photoCameraError" role="alert">{cameraError}</p>}
-            <div className="photoCameraControls">
+      {photos.length ? (
+        <div className="photoThumbnailGrid">
+          {photos.map(photo => (
+            <div className="photoThumbnailItem" key={photo.id}>
               <button
-                className="photoModalButton photoShutterButton"
+                className="photoThumbnailButton"
                 type="button"
-                onClick={capturePhoto}
-                disabled={!cameraStream}
+                onClick={() => setSelectedPhoto(photo)}
+                aria-label="写真を拡大表示"
               >
-                撮影
+                <img src={photo.url} alt={`${roomName}の写真`} />
               </button>
-              <button className="photoModalButton" type="button" onClick={completeCamera} disabled={pendingCaptures > 0}>
-                完了
-              </button>
-              <button className="photoModalCancel" type="button" onClick={cancelCamera}>
-                キャンセル
+              <button className="photoDeleteButton" type="button" onClick={() => deletePhoto(photo)}>
+                削除
               </button>
             </div>
-          </section>
+          ))}
         </div>
+      ) : (
+        <p className="empty">この部屋の写真はありません</p>
       )}
-
-      {galleryOpen && (
-        <div className="photoModalBackdrop" onClick={() => setGalleryOpen(false)}>
-          <section
-            className="photoModal photoGalleryModal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="photo-gallery-title"
-            onClick={event => event.stopPropagation()}
-          >
-            <h2 id="photo-gallery-title">{roomName}の写真（{photos.length}枚）</h2>
-            <div className="photoThumbnailGrid">
-              {photos.map(photo => (
-                <div className="photoThumbnailItem" key={photo.id}>
-                  <button
-                    className="photoThumbnailButton"
-                    type="button"
-                    onClick={() => setSelectedPhoto(photo)}
-                    aria-label="写真を拡大表示"
-                  >
-                    <img src={photo.url} alt={`${roomName}の写真`} />
-                  </button>
-                  <button
-                    className="photoDeleteButton"
-                    type="button"
-                    onClick={() => deletePhoto(photo)}
-                  >
-                    削除
-                  </button>
-                </div>
-              ))}
-            </div>
-            {renderGalleryPicker('ギャラリーから追加')}
-            <button className="photoModalCancel" type="button" onClick={() => setGalleryOpen(false)}>
-              完了
-            </button>
-          </section>
-        </div>
-      )}
-
       {selectedPhoto && (
         <div className="photoModalBackdrop photoPreviewBackdrop" onClick={() => setSelectedPhoto(null)}>
           <section
@@ -829,7 +590,7 @@ function RoomPhotos({ roomName, photos, onAddFiles, onDeletePhoto }) {
           </section>
         </div>
       )}
-    </>
+    </section>
   )
 }
 
@@ -1047,7 +808,6 @@ function LengthMeasurementPage({
   pageIndex,
   setPageIndex,
   countOnly = false,
-  photoContext,
 }) {
   const [length, setLength] = useState('')
   const [count, setCount] = useState('')
@@ -1131,19 +891,6 @@ function LengthMeasurementPage({
         <>
           <section className="card">
             <h2>{room}</h2>
-            <RoomPhotos
-              key={room}
-              roomName={room}
-              photos={photoContext.photosByRoom[getPhotoRoomKey(
-                photoContext.company,
-                photoContext.propertyName,
-                photoContext.address,
-                photoContext.unit,
-                room
-              )] || []}
-              onAddFiles={files => photoContext.onAddFiles(room, files)}
-              onDeletePhoto={photo => photoContext.onDeletePhoto(room, photo)}
-            />
             <form onSubmit={addRecord}>
               {countOnly ? (
                 <div className="inputRow" style={{ gridTemplateColumns: '1fr' }}>
@@ -1232,6 +979,9 @@ export default function App() {
   const [records, setRecords] = useState([])
   const [saveStatus, setSaveStatus] = useState('')
   const [activePage, setActivePage] = useState('cross')
+  const [showPhotoPage, setShowPhotoPage] = useState(false)
+  const [photoListOpen, setPhotoListOpen] = useState(false)
+  const [photoRoom, setPhotoRoom] = useState(rooms[0])
   const [cfPageIndex, setCfPageIndex] = useState(0)
   const [softPageIndex, setSoftPageIndex] = useState(0)
   const [cfRecords, setCfRecords] = useState([])
@@ -1876,14 +1626,26 @@ export default function App() {
   const themeOptions = [
     ['beige', 'ベージュ'], ['dark', 'ダーク'], ['pop', 'ポップ'],
   ]
-  const photoContext = {
-    company,
-    propertyName: selectedProperty?.name || '',
-    address: selectedProperty?.address || '',
-    unit,
-    photosByRoom,
-    onAddFiles: addRoomPhotos,
-    onDeletePhoto: deleteRoomPhoto,
+  function openPhotoPage() {
+    const roomIndex = activePage === 'cf'
+      ? cfPageIndex
+      : activePage === 'soft'
+        ? softPageIndex
+        : pageIndex
+    setPhotoRoom(rooms[roomIndex] || rooms[0])
+    setPhotoListOpen(false)
+    setShowPhotoPage(true)
+  }
+
+  function getPhotosForRoom(roomName) {
+    const roomKey = getPhotoRoomKey(
+      company,
+      selectedProperty?.name || '',
+      selectedProperty?.address || '',
+      unit,
+      roomName
+    )
+    return photosByRoom[roomKey] || []
   }
 
   return (
@@ -2319,9 +2081,11 @@ export default function App() {
             <button className="back" onClick={() => setStarted(false)}>← 物件情報へ戻る</button>
             <p className="propertyLine">{selectedProperty?.name}　{unit}号室</p>
             <h1>
-              {activePage === 'cross'
-                ? isSummaryPage ? '全室の合計' : '採寸入力'
-                : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
+              {showPhotoPage
+                ? photoListOpen ? '📷 写真一覧' : `${photoRoom}の写真`
+                : activePage === 'cross'
+                  ? isSummaryPage ? '全室の合計' : '採寸入力'
+                  : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
             </h1>
             <button className="saveButton" type="button" onClick={saveCurrentData}>保存する</button>
             <button
@@ -2341,16 +2105,21 @@ export default function App() {
             </button>
             {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
 
-            <div className="measurementTypes" aria-label="採寸機能">
-              <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
-              <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
-              <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
-            </div>
+            {!showPhotoPage ? (
+              <>
+                <div className="measurementTypes" aria-label="採寸機能">
+                  <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
+                  <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
+                  <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
+                </div>
+                <button className="photoSectionButton" type="button" onClick={openPhotoPage}>
+                  📷 写真
+                </button>
 
-            {activePage === 'cf' ? (
-              <LengthMeasurementPage key="cf" title="CF" records={cfRecords} setRecords={setCfRecords} pageIndex={cfPageIndex} setPageIndex={setCfPageIndex} photoContext={photoContext} />
+                {activePage === 'cf' ? (
+              <LengthMeasurementPage key="cf" title="CF" records={cfRecords} setRecords={setCfRecords} pageIndex={cfPageIndex} setPageIndex={setCfPageIndex} />
               ) : activePage === 'soft' ? (
-              <LengthMeasurementPage key="soft" title="ソフト巾木" records={softRecords} setRecords={setSoftRecords} pageIndex={softPageIndex} setPageIndex={setSoftPageIndex} countOnly photoContext={photoContext} />
+              <LengthMeasurementPage key="soft" title="ソフト巾木" records={softRecords} setRecords={setSoftRecords} pageIndex={softPageIndex} setPageIndex={setSoftPageIndex} countOnly />
             ) : (
               <>
                 <nav className="roomTabs" aria-label="クロスの部屋">
@@ -2404,25 +2173,6 @@ export default function App() {
                   <>
                     <section className="card">
                       <h2>{room}</h2>
-                      <RoomPhotos
-                        key={getPhotoRoomKey(
-                          company,
-                          selectedProperty?.name || '',
-                          selectedProperty?.address || '',
-                          unit,
-                          room
-                        )}
-                        roomName={room}
-                        photos={photosByRoom[getPhotoRoomKey(
-                          company,
-                          selectedProperty?.name || '',
-                          selectedProperty?.address || '',
-                          unit,
-                          room
-                        )] || []}
-                        onAddFiles={files => addRoomPhotos(room, files)}
-                        onDeletePhoto={photo => deleteRoomPhoto(room, photo)}
-                      />
                       <div className="measurementTypes" aria-label="採寸区分">
                         {measurementTypes.map(type => (
                           <button key={type} type="button" className={measurementType === type ? 'measurementType active' : 'measurementType'} onClick={() => {
@@ -2512,6 +2262,51 @@ export default function App() {
                   </>
                 )}
               </>
+            )}
+              </>
+            ) : (
+              <section className="photoPage">
+                <button className="back" type="button" onClick={() => setShowPhotoPage(false)}>
+                  ← 採寸画面へ戻る
+                </button>
+                {photoListOpen ? (
+                  <div className="photoRoomList">
+                    {rooms.map(roomName => (
+                      <button
+                        className="photoRoomListItem"
+                        key={roomName}
+                        type="button"
+                        onClick={() => {
+                          setPhotoRoom(roomName)
+                          setPhotoListOpen(false)
+                        }}
+                      >
+                        <span>{roomName}</span>
+                        <strong>{getPhotosForRoom(roomName).length}枚　›</strong>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <button className="back" type="button" onClick={() => setPhotoListOpen(true)}>
+                      ← 写真一覧へ戻る
+                    </button>
+                    <RoomPhotos
+                      key={getPhotoRoomKey(
+                        company,
+                        selectedProperty?.name || '',
+                        selectedProperty?.address || '',
+                        unit,
+                        photoRoom
+                      )}
+                      roomName={photoRoom}
+                      photos={getPhotosForRoom(photoRoom)}
+                      onAddFiles={files => addRoomPhotos(photoRoom, files)}
+                      onDeletePhoto={photo => deleteRoomPhoto(photoRoom, photo)}
+                    />
+                  </>
+                )}
+              </section>
             )}
           </main>
         )}
