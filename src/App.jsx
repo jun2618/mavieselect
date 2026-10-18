@@ -239,7 +239,7 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
       ...rows,
       ...additionalWorks.map(item => ({
         room: item.room || '',
-        parts: [item.room || '', item.work || '', ''],
+        parts: [item.room || '', '', item.work || ''],
         memo: item.memo || '',
         category: 'additionalWork',
         quantity: Number(item.quantity || 0),
