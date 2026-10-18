@@ -4414,13 +4414,6 @@ export default function App() {
             {[['72%','#00eaff'],['48%','#ff2bc9'],['88%','#00eaff'],['62%','#fff22b'],['96%','#ff2bc9'],['55%','#00eaff'],['78%','#ff2bc9'],['44%','#fff22b'],['84%','#00eaff'],['66%','#ff2bc9']].map(([height,color],index) => <span key={index} className="retroBuilding" style={{ '--h': height, '--c': color }} />)}
           </div>
         </div>
-        <nav className="retroCommand" aria-label="RETROコマンド">
-          <strong>コマンド</strong>
-          <button type="button" onClick={() => runRetroCommand('measure')}>さいすん</button>
-          <button type="button" onClick={() => runRetroCommand('save')}>{started ? 'ほぞん' : 'ほぞんリスト'}</button>
-          <button type="button" onClick={() => runRetroCommand('status')}>ステータス</button>
-          <button type="button" onClick={() => runRetroCommand('settings')}>せってい</button>
-        </nav>
         <div className="retroCat" aria-hidden="true"><img src="/retro-cat-final.png" alt="" /></div>
         {showRetroUnlock && <div className="galaxyUnlock retroUnlock"><small>SECRET THEME</small><strong>RETRO MODE UNLOCKED!</strong><span>🐱</span><p>設定のテーマカラーからRETROを選べます</p></div>}
         {effectBurst && <div className={`registrationEffect effect-${effectBurst.theme}`} aria-hidden="true">{[0,1,2,3,4,5,6,7].map(index => <span key={index} style={{ '--i': index }}>{effectBurst.symbol}</span>)}</div>}
