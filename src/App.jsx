@@ -12,6 +12,8 @@ const fontSizeKey = 'm-cross-font-size'
 const themeKey = 'm-cross-theme'
 const propertyMasterKey = 'm-cross:property-master:v1'
 const pricingSettingsKey = 'm-cross:pricing-settings:v1'
+const estimateCopyFormatKey = 'm-cross-estimate-copy-format'
+const quickMemos = ['窓面', '窓向かって右面', '窓向かって左面', '正面', '右面', '左面', 'シンク背面', 'シンク向かって右面', 'シンク向かって左面', '梁含む', '梁除く', '下がり天井']
 const defaultPricingSettings = {
   crossRates: {
     '天井': 650,
@@ -43,6 +45,267 @@ function loadPricingSettings() {
 
 function formatYen(value) {
   return new Intl.NumberFormat('ja-JP').format(Math.round(Number(value) || 0)) + '円'
+}
+function splitMeasurementType(type) {
+  return type.startsWith('収納') ? ['収納', type.replace('収納', '')] : [type]
+}
+function buildEstimateRows(records, cfRecords, softRecords, rooms, factor, pricingSettings) {
+  const rows = []
+
+  function groupByMemo(targetRecords) {
+    const groups = new Map()
+    targetRecords.forEach(record => {
+      const memo = String(record.memo || '').trim()
+      if (!groups.has(memo)) groups.set(memo, [])
+      groups.get(memo).push(record)
+    })
+    return groups
+  }
+
+  rooms.forEach(roomName => {
+    const crossDefinitions = [
+      {
+        parts: [roomName, '天井', 'クロス貼替'],
+        records: records.filter(record =>
+          record.room === roomName && record.type === '天井'
+        ),
+        amountForRecord: record =>
+          getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['天井'] || 0),
+      },
+      {
+        parts: [roomName, '壁', 'クロス貼替'],
+        records: records.filter(record =>
+          record.room === roomName && record.type === '壁'
+        ),
+        amountForRecord: record =>
+          getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['壁'] || 0),
+      },
+      {
+        parts: [roomName, '収納', 'クロス貼替'],
+        records: records.filter(record =>
+          record.room === roomName &&
+          (record.type === '収納天井' || record.type === '収納壁')
+        ),
+        amountForRecord: record =>
+          getRecordQuantity(record) * factor * Number(pricingSettings.crossRates[record.type] || 0),
+        storage: true,
+      },
+    ]
+
+    crossDefinitions.forEach(definition => {
+      groupByMemo(definition.records).forEach((groupRecords, inputMemo) => {
+        const quantity = groupRecords.reduce(
+          (sum, record) => sum + getRecordQuantity(record), 0
+        ) * factor
+        if (quantity <= 0) return
+        const amount = groupRecords.reduce(
+          (sum, record) => sum + definition.amountForRecord(record), 0
+        )
+        const memo = definition.storage
+          ? ['天井壁', inputMemo].filter(Boolean).join('・')
+          : inputMemo
+        rows.push({
+          room: roomName,
+          parts: definition.parts,
+          memo,
+          category: 'cross',
+          quantity,
+          unit: '㎡',
+          rate: quantity > 0 ? amount / quantity : 0,
+          amount,
+        })
+      })
+    })
+
+    const roomCfRecords = cfRecords.filter(record => record.room === roomName)
+    groupByMemo(roomCfRecords).forEach((groupRecords, memo) => {
+      const quantity = groupRecords.reduce(
+        (sum, record) => sum + getLengthQuantity(record), 0
+      )
+      if (quantity <= 0) return
+      const rate = Number(pricingSettings.cfRate || 0)
+      rows.push({
+        room: roomName,
+        parts: [roomName, 'CF貼替'],
+        memo,
+        category: 'cf',
+        quantity,
+        unit: '㎡',
+        rate,
+        amount: quantity * rate,
+      })
+    })
+  })
+
+  // ソフト巾木も、メモなしは全室合算、メモありはメモごとに別行にします。
+  groupByMemo(softRecords).forEach((groupRecords, memo) => {
+    const quantity = groupRecords.reduce(
+      (sum, record) => sum + getSoftBaseboardQuantity(record), 0
+    )
+    if (quantity <= 0) return
+    const rate = Number(pricingSettings.softRate || 0)
+    rows.push({
+      room: '__ALL_ROOMS__',
+      parts: ['ソフト巾木貼替'],
+      memo,
+      category: 'soft',
+      quantity,
+      unit: '枚',
+      rate,
+      amount: quantity * rate,
+    })
+  })
+
+  return rows.map(row => ({
+    ...row,
+    label: row.parts.join(' '),
+  }))
+}
+
+function estimateRowsToClipboardText(rows, format) {
+  return rows.map(row => {
+    const itemCells = format === 'split' ? row.parts : [row.parts.join(' ')]
+    return [...itemCells, formatQuantity(row.quantity), row.unit].join('\t')
+  }).join('\n')
+}
+
+
+async function downloadEstimateExcel(entry, rows, format) {
+  try {
+    if (!rows.length) {
+      window.alert('出力できる見積項目がありません。')
+      return
+    }
+    const { default: ExcelJS } = await import('exceljs')
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'MavieSelect'
+    workbook.created = new Date()
+    const worksheet = workbook.addWorksheet('見積用', {
+      views: [{ state: 'frozen', ySplit: 8 }],
+    })
+    worksheet.properties.defaultRowHeight = 21
+    worksheet.views = [{ showGridLines: false, state: 'frozen', ySplit: 8 }]
+
+    const maxParts = format === 'split'
+      ? Math.max(...rows.map(row => row.parts.length))
+      : 1
+    const lastColumn = maxParts + 3
+    const outputRows = rows.map(row => {
+      const splitParts = row.category === 'cf' ? [row.room, '床', 'CF貼替'] : row.parts
+      const itemCells = format === 'split' ? splitParts : [row.parts.join(' ')]
+      const emptyFill = Array(Math.max(0, maxParts - itemCells.length)).fill('')
+      return [
+        ...itemCells,
+        ...emptyFill,
+        row.memo || '',
+        Number(formatQuantity(row.quantity)),
+        row.unit,
+      ]
+    })
+
+    worksheet.mergeCells(1, 1, 1, lastColumn)
+    const titleCell = worksheet.getCell(1, 1)
+    titleCell.value = '見積用データ'
+    titleCell.font = { name: 'Yu Gothic', size: 16, bold: true, color: { argb: 'FFFFFFFF' } }
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF9B72CF' } }
+    titleCell.alignment = { vertical: 'middle', horizontal: 'left' }
+    worksheet.getRow(1).height = 30
+
+    const metadata = [
+      ['管理会社', entry.company || ''],
+      ['物件名', entry.propertyName || ''],
+      ['住所', entry.address || ''],
+      ['号室', entry.unit || ''],
+      ['出力日', new Intl.DateTimeFormat('ja-JP').format(new Date())],
+    ]
+    metadata.forEach(([label, value], index) => {
+      const rowNumber = index + 3
+      worksheet.getCell(rowNumber, 1).value = label
+      worksheet.getCell(rowNumber, 1).font = { name: 'Yu Gothic', bold: true, color: { argb: 'FF666666' } }
+      worksheet.getCell(rowNumber, 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F4F7' } }
+      worksheet.mergeCells(rowNumber, 2, rowNumber, lastColumn)
+      worksheet.getCell(rowNumber, 2).value = value
+      worksheet.getCell(rowNumber, 2).font = { name: 'Yu Gothic', color: { argb: 'FF008000' } }
+      worksheet.getCell(rowNumber, 2).alignment = { vertical: 'middle', wrapText: true }
+    })
+
+    const headers = format === 'split'
+      ? [...Array(maxParts)].map((_, index) => '項目' + (index + 1))
+      : ['工事項目']
+    headers.push('メモ', '数量', '単位')
+    const headerRow = worksheet.getRow(8)
+    headerRow.values = headers
+    headerRow.height = 24
+    headerRow.eachCell(cell => {
+      cell.font = { name: 'Yu Gothic', bold: true, color: { argb: 'FFFFFFFF' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF9B72CF' } }
+      cell.alignment = { vertical: 'middle', horizontal: 'center' }
+    })
+    worksheet.autoFilter = {
+      from: { row: 8, column: 1 },
+      to: { row: 8, column: lastColumn },
+    }
+
+    outputRows.forEach((values, rowIndex) => {
+      const dataRow = worksheet.addRow(values)
+      dataRow.height = 23
+      dataRow.eachCell((cell, columnIndex) => {
+        cell.font = {
+          name: 'Yu Gothic',
+          size: 11,
+          color: { argb: columnIndex > maxParts + 1 ? 'FF000000' : 'FF008000' },
+        }
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: columnIndex === maxParts + 2 ? 'right' : 'left',
+          wrapText: true,
+        }
+        if (rowIndex % 2 === 1) {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFBF8FD' } }
+        }
+      })
+      dataRow.getCell(maxParts + 2).numFmt = '0.0'
+    })
+
+    for (let columnIndex = 1; columnIndex <= lastColumn; columnIndex += 1) {
+      const maxLength = worksheet.getColumn(columnIndex).values.reduce((max, value) => {
+        const text = String(value ?? '')
+        const displayLength = [...text].reduce(
+          (length, character) => length + (character.charCodeAt(0) > 0xff ? 2 : 1),
+          0
+        )
+        return Math.max(max, displayLength)
+      }, 0)
+      const minimumWidth = columnIndex === maxParts + 1
+        ? 16
+        : columnIndex === maxParts + 2
+          ? 8
+          : columnIndex === maxParts + 3
+            ? 6
+            : 8
+      worksheet.getColumn(columnIndex).width = Math.max(minimumWidth, Math.min(maxLength + 2, 40))
+    }
+    worksheet.getColumn(maxParts + 1).width = Math.max(16, worksheet.getColumn(maxParts + 1).width)
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const safeName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}`
+      .replace(/[\\/:*?"<>|]/g, '_')
+    const fileName = `${safeName}_見積用.xlsx`
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } catch (error) {
+    console.error('見積用Excelを出力できませんでした。', error)
+    window.alert('見積用Excelを出力できませんでした。')
+  }
 }
 
 function createRecordId() {
@@ -475,6 +738,10 @@ const styles = `
   .estimateNote { margin:16px 0 0; padding:14px; border:1px dashed #efc7b4; border-radius:14px; color:#806f7b; background:#fff9f1; line-height:1.7; }
   .estimateFactor { display:grid; gap:8px; margin-bottom:16px; }
   .estimateFactor input { width:100%; min-height:54px; padding:0 15px; border:2px solid #efe4dc; border-radius:14px; font:inherit; }
+  .quickMemos { display:flex; flex-wrap:wrap; gap:8px; margin:-8px 0 18px; }
+  .quickMemoButton { min-height:40px; padding:7px 11px; border:1px solid #efc7b4; border-radius:999px; color:#c96e69; background:#fff7f0; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+  .copyFormatPreview { margin:10px 0 0; color:#8e8190; font-size:13px; line-height:1.7; }
+  .copyStatus { margin:12px 0 0; color:#548c73; font-weight:800; text-align:center; }
   @media (max-width:520px) {
     .estimateRow { grid-template-columns:minmax(0,1fr) auto; }
     .estimateRow .estimateUnit,.estimateRow .estimateRate { grid-column:1 / -1; text-align:left; color:#958896; }
@@ -974,7 +1241,10 @@ async function downloadExcel(entry) {
         )
         return Math.max(max, displayLength)
       }, 10)
-      worksheet.getColumn(columnIndex).width = Math.min(maxLength + 2, 50)
+      const headerText = String(columns[columnIndex - 1] || '')
+      const minimumWidth = headerText === '数量' ? 8 : headerText === '単位' ? 6 : 6
+      worksheet.getColumn(columnIndex).width = Math.max(minimumWidth, Math.min(maxLength + 2, 40))
+      worksheet.getColumn(columnIndex).alignment = { vertical: 'middle', wrapText: maxLength > 40 }
     }
   }
 
@@ -1034,7 +1304,9 @@ function LengthMeasurementPage({
 }) {
   const [length, setLength] = useState('')
   const [count, setCount] = useState('')
+  const [memo, setMemo] = useState('')
   const [activeInput, setActiveInput] = useState('')
+  const memoInputRef = useRef(null)
   const isSummaryPage = pageIndex === rooms.length
   const room = isSummaryPage ? '' : rooms[pageIndex]
   const roomRecords = records.filter(item => item.room === room)
@@ -1053,6 +1325,7 @@ function LengthMeasurementPage({
     setActiveInput('')
     setLength('')
     setCount('')
+    setMemo('')
   }
 
   function updateInput(key) {
@@ -1074,21 +1347,25 @@ function LengthMeasurementPage({
     if (countOnly) {
       const quantity = Number(count)
       if (!Number.isInteger(quantity) || quantity < 1) return
-      setRecords(prev => [...prev, { id: createRecordId(), room, quantity }])
+      setRecords(prev => [...prev, { id: createRecordId(), room, quantity, memo: memo.trim() }])
     } else {
       const numericLength = Number(length.replace(/[。．]/g, '.'))
       const numericCount = Number(count)
       if (!Number.isFinite(numericLength) || numericLength <= 0 || !Number.isInteger(numericCount) || numericCount < 1) return
       setRecords(prev => [...prev, {
-        id: createRecordId(), room, length: numericLength, count: numericCount,
+        id: createRecordId(), room, length: numericLength, count: numericCount, memo: memo.trim(),
       }])
     }
     onRoomRecordsChanged(room)
     setLength('')
     setCount('')
+    setMemo('')
     setActiveInput('')
   }
-
+  function addQuickMemo(text) {
+    const words = memo.trim() ? memo.trim().split(/\s+/) : []
+    if (!words.includes(text)) setMemo([...words, text].join(' '))
+  }
   return (
     <>
       <nav className="roomTabs" aria-label={`${title}の部屋`}>
@@ -1127,6 +1404,10 @@ function LengthMeasurementPage({
                 </div>
               )}
               <NumberKeypad activeInput={activeInput} onKey={updateInput} onDone={() => setActiveInput('')} decimalInput={!countOnly && activeInput === 'length'} />
+              <label>
+                <span>メモ</span>
+                <input ref={memoInputRef} className="memoInput" type="text" value={memo} onChange={event => setMemo(event.target.value)} placeholder="例：窓面、収納内" />
+              </label>
               <button className="add" type="submit">{countOnly ? '＋ ソフト巾木登録' : `＋ ${title}の内容を登録`}</button>
             </form>
             <div className="records">
@@ -1138,6 +1419,7 @@ function LengthMeasurementPage({
                   <div>
                     <strong>{countOnly ? 'ソフト巾木登録' : title}</strong>
                     <small>{countOnly ? `${formatQuantity(item.quantity)}枚` : `${Number(item.length).toFixed(2)}m × ${item.count}本`}</small>
+                    {item.memo && <small>メモ：{item.memo}</small>}
                   </div>
                   <b>{formatQuantity(getQuantity(item))}{unit}</b>
                   <button type="button" onClick={() => {
@@ -1210,6 +1492,7 @@ export default function App() {
   const [showEstimate, setShowEstimate] = useState(false)
   const [caseCrossFactor, setCaseCrossFactor] = useState(() => String(loadPricingSettings().crossFactor))
   const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
+  const [estimateCopyFormat, setEstimateCopyFormat] = useState(() => readPreference(estimateCopyFormatKey, 'merged'))
   const [measurementType, setMeasurementType] = useState('天井')
   const [height, setHeight] = useState('')
   const [count, setCount] = useState('')
@@ -1218,6 +1501,7 @@ export default function App() {
   const heightInputRef = useRef(null)
   const countInputRef = useRef(null)
   const crossInputAreaRef = useRef(null)
+  const memoInputRef = useRef(null)
   const [records, setRecords] = useState([])
   const [saveStatus, setSaveStatus] = useState('')
   const [activePage, setActivePage] = useState('cross')
@@ -1369,7 +1653,10 @@ export default function App() {
     setTheme(value)
     try { localStorage.setItem(themeKey, value) } catch { /* 設定の保存は任意 */ }
   }
-
+  function changeEstimateCopyFormat(value) {
+    setEstimateCopyFormat(value)
+    try { localStorage.setItem(estimateCopyFormatKey, value) } catch { /* 設定の保存は任意 */ }
+  }
   function savePropertyMaster(nextMaster, successMessage) {
     if (propertyMasterState.error) {
       setMasterStatus(propertyMasterState.error)
@@ -1964,6 +2251,13 @@ export default function App() {
     setValue(`${currentValue}${key}`)
   }
 
+  function addQuickMemo(text) {
+    const words = memo.trim() ? memo.trim().split(/\s+/) : []
+    if (!words.includes(text)) {
+      setMemo([...words, text].join(' '))
+      markUnsaved()
+    }
+  }
   function addCrossRecord(event) {
     event.preventDefault()
     const numericHeight = Number(height.replace(/[。．]/g, '.'))
@@ -2068,6 +2362,14 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              <h2 style={{ marginTop: 28 }}>見積コピー形式</h2>
+              <div className="settingsOptions">
+                <button type="button" className={`settingsOption${estimateCopyFormat === 'split' ? ' active' : ''}`} onClick={() => changeEstimateCopyFormat('split')}>項目を分ける</button>
+                <button type="button" className={`settingsOption${estimateCopyFormat === 'merged' ? ' active' : ''}`} onClick={() => changeEstimateCopyFormat('merged')}>項目をまとめる</button>
+              </div>
+              <p className="copyFormatPreview">
+                {estimateCopyFormat === 'split' ? '社員用：居間｜収納｜壁｜クロス貼替｜8.6｜㎡' : '自分用：居間 収納 壁 クロス貼替｜8.6｜㎡'}
+              </p>
               <h2 style={{ marginTop: 28 }}>概算金額の基本設定</h2>
               <div className="estimateSettings">
                 <p className="estimateIntro">ここで設定した単価と換算率を、新しい案件の概算金額に使用します。</p>
@@ -2567,85 +2869,7 @@ export default function App() {
             {showEstimate ? (() => {
               // お客様向け画面には換算率を表示せず、設定済みの案件換算率だけを計算に使用します。
               const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
-              const estimateRows = []
-
-              // クロスは「部屋・採寸区分・メモ」でまとめます。
-              // メモなしは同じ部屋・区分で合計し、メモありはメモ内容ごとに分けます。
-              rooms.forEach(roomName => {
-                measurementTypes.forEach(type => {
-                  const matchingRecords = records.filter(record =>
-                    record.room === roomName && record.type === type
-                  )
-                  const groups = new Map()
-
-                  matchingRecords.forEach(record => {
-                    const memoText = String(record.memo || '').trim()
-                    const key = memoText || '__NO_MEMO__'
-                    const current = groups.get(key) || { memo: memoText, measured: 0 }
-                    current.measured += getRecordQuantity(record)
-                    groups.set(key, current)
-                  })
-
-                  groups.forEach(group => {
-                    const billedQuantity = group.measured * factor
-                    const rate = Number(pricingSettings.crossRates[type] || 0)
-                    const typeLabel = type.startsWith('収納')
-                      ? '収納 ' + type.replace('収納', '')
-                      : type
-                    estimateRows.push({
-                      room: roomName,
-                      category: 'cross',
-                      label: roomName + typeLabel + (group.memo ? '（' + group.memo + '）' : ''),
-                      quantity: billedQuantity,
-                      unit: '㎡',
-                      rate,
-                      amount: billedQuantity * rate,
-                    })
-                  })
-                })
-
-                // CFは部屋ごとにまとめ、メモがあればメモ内容ごとに分けます。
-                const cfGroups = new Map()
-                cfRecords
-                  .filter(record => record.room === roomName)
-                  .forEach(record => {
-                    const memoText = String(record.memo || '').trim()
-                    const key = memoText || '__NO_MEMO__'
-                    const current = cfGroups.get(key) || { memo: memoText, quantity: 0 }
-                    current.quantity += getLengthQuantity(record)
-                    cfGroups.set(key, current)
-                  })
-                cfGroups.forEach(group => {
-                  const rate = Number(pricingSettings.cfRate || 0)
-                  estimateRows.push({
-                    room: roomName,
-                    category: 'cf',
-                    label: roomName + ' CF貼り' + (group.memo ? '（' + group.memo + '）' : ''),
-                    quantity: group.quantity,
-                    unit: '㎡',
-                    rate,
-                    amount: group.quantity * rate,
-                  })
-                })
-
-                // ソフト巾木は部屋ごとの合計にします。
-                const softQuantity = softRecords
-                  .filter(record => record.room === roomName)
-                  .reduce((sum, record) => sum + getSoftBaseboardQuantity(record), 0)
-                if (softQuantity > 0) {
-                  const rate = Number(pricingSettings.softRate || 0)
-                  estimateRows.push({
-                    room: roomName,
-                    category: 'soft',
-                    label: roomName + ' ソフト巾木',
-                    quantity: softQuantity,
-                    unit: '枚',
-                    rate,
-                    amount: softQuantity * rate,
-                  })
-                }
-              })
-
+              const estimateRows = buildEstimateRows(records, cfRecords, softRecords, rooms, factor, pricingSettings)
               const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0)
               return (
                 <section className="card">
@@ -2671,7 +2895,18 @@ export default function App() {
                       </section>
                     )
                   })}
-
+                  <button
+                    className="secondaryButton"
+                    type="button"
+                    onClick={() => downloadEstimateExcel({
+                      company,
+                      propertyName: selectedProperty?.name || '',
+                      address: selectedProperty?.address || '',
+                      unit,
+                    }, estimateRows, estimateCopyFormat)}
+                  >
+                    📊 見積用Excel出力
+                  </button>
                   <div className="estimateTotal">
                     <span>概算合計</span>
                     <strong>{formatYen(totalAmount)}</strong>
@@ -2820,6 +3055,7 @@ export default function App() {
                         <label>
                           <span>メモ</span>
                           <input
+                            ref={memoInputRef}
                             className="memoInput"
                             type="text"
                             value={memo}
@@ -2830,8 +3066,11 @@ export default function App() {
                             placeholder="例：窓面、部分張替え"
                           />
                         </label>
+                        <div className="quickMemos" aria-label="よく使うメモ">
+                          {quickMemos.map(text => <button key={text} className="quickMemoButton" type="button" onClick={() => addQuickMemo(text)}>{text}</button>)}
+                          <button className="quickMemoButton" type="button" onClick={() => memoInputRef.current?.focus()}>その他</button>
+                        </div>
                       </form>
-
                       <div className="records">
                         {roomRecords.length === 0 ? (
                           <p className="empty">{room}の{measurementType}の登録内容はありません</p>
