@@ -1313,9 +1313,10 @@ function normalizeImportedEntry(value) {
 function createMCrossShareFile(entry, extension = 'mcross') {
   const data = normalizeImportedEntry(entry)
   const packageData = { fileType: mCrossFileType, version: mCrossFileVersion, exportedAt: new Date().toISOString(), data }
-  const safeExtension = extension === 'json' ? 'json' : 'mcross'
+  const safeExtension = ['json', 'txt'].includes(extension) ? extension : 'mcross'
   const fileName = `${makeSafeFileName(data.propertyName)}_${makeSafeFileName(data.unit)}号室.${safeExtension}`
-  const file = new File([JSON.stringify(packageData, null, 2)], fileName, { type: 'application/json' })
+  const mimeType = safeExtension === 'txt' ? 'text/plain' : 'application/json'
+  const file = new File([JSON.stringify(packageData, null, 2)], fileName, { type: mimeType })
   return { data, file, fileName }
 }
 
@@ -1333,7 +1334,7 @@ function downloadMCrossData(entry) {
 
 async function shareMCrossData(entry) {
   try {
-    const { data, file, fileName } = createMCrossShareFile(entry, 'json')
+    const { data, file, fileName } = createMCrossShareFile(entry, 'txt')
     const shareData = {
       title: `M-Cross ${data.propertyName} ${data.unit}号室`,
       text: 'M-Crossの保存データです。M-Crossの「保存済み一覧」から読み込んでください。',
@@ -2480,7 +2481,7 @@ export default function App() {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!/\.(mcross|json)$/i.test(file.name)) { window.alert('M-Crossから受け取った .mcross または .json ファイルを選択してください。'); return }
+    if (!/\.(mcross|json|txt)$/i.test(file.name)) { window.alert('M-Crossから受け取った .mcross、.json、または .txt ファイルを選択してください。'); return }
     try {
       const packageData = JSON.parse(await file.text())
       if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) throw new Error('M-Cross用ファイルではないか、対応していないバージョンです。')
@@ -3288,7 +3289,7 @@ export default function App() {
                 </button>
               </div>
 
-              <input ref={importFileInputRef} type="file" accept=".mcross,.json,application/json" onChange={importMCrossData} style={{ display: 'none' }} />
+              <input ref={importFileInputRef} type="file" accept=".mcross,.json,.txt,application/json,text/plain" onChange={importMCrossData} style={{ display: 'none' }} />
               <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
                 📥 M-Crossデータを読み込む
               </button>
