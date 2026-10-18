@@ -1277,6 +1277,81 @@ function escapeCsv(value) {
   return `"${String(value ?? '').replace(/"/g, '""')}"`
 }
 
+const mCrossFileType = 'M-Cross saved property'
+const mCrossFileVersion = 1
+
+function makeSafeFileName(value) {
+  return String(value || '物件')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function normalizeImportedEntry(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('保存データの形式が正しくありません。')
+  }
+  const requiredText = ['company', 'propertyName', 'address', 'unit']
+  for (const key of requiredText) {
+    if (typeof value[key] !== 'string') {
+      throw new Error('物件情報が不足しています。')
+    }
+  }
+  if (!value.propertyName.trim() || !value.unit.trim()) {
+    throw new Error('物件名または号室がありません。')
+  }
+  return {
+    company: value.company,
+    propertyName: value.propertyName,
+    address: value.address,
+    unit: value.unit.trim(),
+    records: Array.isArray(value.records) ? value.records : [],
+    cfRecords: Array.isArray(value.cfRecords) ? value.cfRecords : [],
+    softRecords: Array.isArray(value.softRecords) ? value.softRecords : [],
+    floorTrimRecords: Array.isArray(value.floorTrimRecords) ? value.floorTrimRecords : [],
+    additionalWorks: Array.isArray(value.additionalWorks) ? value.additionalWorks : [],
+    draftMemo: typeof value.draftMemo === 'string' ? value.draftMemo : '',
+    rooms: Array.isArray(value.rooms) && value.rooms.length ? value.rooms : defaultRooms,
+    roomConfirmations: value.roomConfirmations && typeof value.roomConfirmations === 'object' && !Array.isArray(value.roomConfirmations)
+      ? value.roomConfirmations
+      : {},
+    pageIndex: Number.isInteger(value.pageIndex) ? value.pageIndex : 0,
+    cfPageIndex: Number.isInteger(value.cfPageIndex) ? value.cfPageIndex : 0,
+    softPageIndex: Number.isInteger(value.softPageIndex) ? value.softPageIndex : 0,
+    activePage: typeof value.activePage === 'string' ? value.activePage : 'cross',
+    measurementType: measurementTypes.includes(value.measurementType) ? value.measurementType : '天井',
+    caseCrossFactor: Math.max(0, Number(value.caseCrossFactor) || 0),
+    archived: Boolean(value.archived),
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+function downloadMCrossData(entry) {
+  try {
+    const data = normalizeImportedEntry(entry)
+    const packageData = {
+      fileType: mCrossFileType,
+      version: mCrossFileVersion,
+      exportedAt: new Date().toISOString(),
+      data,
+    }
+    const blob = new Blob([JSON.stringify(packageData, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${makeSafeFileName(data.propertyName)}_${makeSafeFileName(data.unit)}号室.mcross`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } catch (error) {
+    console.error('M-Crossデータを書き出せませんでした。', error)
+    window.alert('M-Crossデータを書き出せませんでした。')
+  }
+}
+
 function downloadCsv(entry) {
   const headers = [
     '管理会社', '物件名', '住所', '号室', '部屋名',
@@ -1877,6 +1952,7 @@ export default function App() {
   const [workingDraft, setWorkingDraft] = useState(null)
   const [showDraftRecovery, setShowDraftRecovery] = useState(false)
   const pendingNavigationRef = useRef(null)
+  const importFileInputRef = useRef(null)
   const [savedEntries, setSavedEntries] = useState([])
   const [savedSearch, setSavedSearch] = useState('')
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
@@ -2402,6 +2478,41 @@ export default function App() {
       setShowArchived(false)
       setShowSavedList(true)
     })
+  }
+
+  async function importMCrossData(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!file.name.toLocaleLowerCase().endsWith('.mcross')) {
+      window.alert('拡張子が .mcross のファイルを選択してください。')
+      return
+    }
+    try {
+      const text = await file.text()
+      const packageData = JSON.parse(text)
+      if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) {
+        throw new Error('M-Cross用ファイルではないか、対応していないバージョンです。')
+      }
+      const imported = normalizeImportedEntry(packageData.data)
+      const propertyForKey = { name: imported.propertyName, address: imported.address }
+      const storageKey = getSaveKey(imported.company, propertyForKey, imported.unit)
+      const alreadyExists = localStorage.getItem(storageKey) !== null
+      if (alreadyExists) {
+        const overwrite = window.confirm(
+          `「${imported.propertyName} ${imported.unit}号室」はすでに保存されています。\n\n上書きして読み込みますか？`
+        )
+        if (!overwrite) return
+      }
+      localStorage.setItem(storageKey, JSON.stringify(imported))
+      setSavedEntries(readSavedEntries())
+      setShowArchived(false)
+      setSelectedSavedKeys([])
+      window.alert(`「${imported.propertyName} ${imported.unit}号室」を読み込みました。`)
+    } catch (error) {
+      console.error('M-Crossデータを読み込めませんでした。', error)
+      window.alert(error instanceof Error ? error.message : 'M-Crossデータを読み込めませんでした。')
+    }
   }
 
   function loadSavedEntry(entry) {
@@ -3199,6 +3310,21 @@ export default function App() {
                 </button>
               </div>
 
+              <input
+                ref={importFileInputRef}
+                type="file"
+                accept=".mcross,application/json"
+                onChange={importMCrossData}
+                style={{ display: 'none' }}
+              />
+              <button
+                className="secondaryButton"
+                type="button"
+                onClick={() => importFileInputRef.current?.click()}
+                style={{ marginTop: 0, marginBottom: 18 }}
+              >
+                📥 M-Crossデータを読み込む
+              </button>
               <p className="saveStatus">
                 {showArchived ? 'アーカイブ件数' : '保存済み件数'}：{savedCount}件
               </p>
@@ -3298,6 +3424,7 @@ export default function App() {
                         <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>上書き保存</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadCsv(entry)}>CSV出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
+                        <button className="actionButton actionOverwrite" type="button" onClick={() => downloadMCrossData(entry)}>📦 M-Cross出力</button>
                         <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
                         <button
                           className="actionButton actionOverwrite"
