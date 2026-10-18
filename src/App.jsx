@@ -1981,6 +1981,9 @@ export default function App() {
   const [workingDraft, setWorkingDraft] = useState(null)
   const [showDraftRecovery, setShowDraftRecovery] = useState(false)
   const pendingNavigationRef = useRef(null)
+  const appHistoryRef = useRef([])
+  const applyingBrowserBackRef = useRef(false)
+  const historySequenceRef = useRef(0)
   const importFileInputRef = useRef(null)
   const [savedEntries, setSavedEntries] = useState([])
   const [savedSearch, setSavedSearch] = useState('')
@@ -2518,6 +2521,94 @@ export default function App() {
       if (editingPropertyId === property.id) startAddingProperty(property.companyId)
     }
   }
+
+  function captureAppView() {
+    if (settingsOpen) return { kind: 'settings', settingsPage }
+    if (showSavedList && !started) return { kind: 'saved', archived: showArchived }
+    if (started) {
+      return {
+        kind: 'measurement',
+        activePage,
+        pageIndex,
+        cfPageIndex,
+        softPageIndex,
+        showEstimate,
+        showRoomManagement,
+      }
+    }
+    return { kind: 'property' }
+  }
+
+  function applyAppView(view) {
+    if (!view) return
+    applyingBrowserBackRef.current = true
+    if (view.kind === 'settings') {
+      setSettingsOpen(true)
+      setSettingsPage(view.settingsPage || 'home')
+      setShowSavedList(false)
+    } else if (view.kind === 'saved') {
+      setSettingsOpen(false)
+      setShowSavedList(true)
+      setShowArchived(Boolean(view.archived))
+      setStarted(false)
+    } else if (view.kind === 'measurement') {
+      setSettingsOpen(false)
+      setShowSavedList(false)
+      setStarted(true)
+      setActivePage(view.activePage || 'cross')
+      setPageIndex(Number.isInteger(view.pageIndex) ? view.pageIndex : 0)
+      setCfPageIndex(Number.isInteger(view.cfPageIndex) ? view.cfPageIndex : 0)
+      setSoftPageIndex(Number.isInteger(view.softPageIndex) ? view.softPageIndex : 0)
+      setShowEstimate(Boolean(view.showEstimate))
+      setShowRoomManagement(Boolean(view.showRoomManagement))
+    } else {
+      setSettingsOpen(false)
+      setSettingsPage('home')
+      setShowSavedList(false)
+      setStarted(false)
+      setShowEstimate(false)
+      setShowRoomManagement(false)
+    }
+    window.setTimeout(() => { applyingBrowserBackRef.current = false }, 0)
+  }
+
+  function pushCurrentAppView(view) {
+    const previous = appHistoryRef.current.at(-1)
+    const serialized = JSON.stringify(view)
+    if (previous?.serialized === serialized) return
+    historySequenceRef.current += 1
+    const entry = { view, serialized, sequence: historySequenceRef.current }
+    appHistoryRef.current.push(entry)
+    window.history.pushState({ mCross: true, sequence: entry.sequence }, '', window.location.href)
+  }
+
+  useEffect(() => {
+    const initialView = captureAppView()
+    const initial = { view: initialView, serialized: JSON.stringify(initialView), sequence: 0 }
+    appHistoryRef.current = [initial]
+    window.history.replaceState({ ...(window.history.state || {}), mCross: true, sequence: 0 }, '', window.location.href)
+    const handlePopState = () => {
+      if (appHistoryRef.current.length <= 1) return
+      appHistoryRef.current.pop()
+      const previous = appHistoryRef.current.at(-1)
+      const navigateBack = () => applyAppView(previous?.view)
+      if (started && isDirty) {
+        pendingNavigationRef.current = navigateBack
+        setShowLeaveConfirmation(true)
+        window.history.pushState({ mCross: true, sequence: historySequenceRef.current }, '', window.location.href)
+        return
+      }
+      navigateBack()
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [started, isDirty])
+
+  useEffect(() => {
+    if (applyingBrowserBackRef.current) return
+    const timer = window.setTimeout(() => pushCurrentAppView(captureAppView()), 0)
+    return () => window.clearTimeout(timer)
+  }, [settingsOpen, settingsPage, showSavedList, showArchived, started, activePage, pageIndex, cfPageIndex, softPageIndex, showEstimate, showRoomManagement])
 
   function requestNavigation(action) {
     if (!started || !isDirty) {
