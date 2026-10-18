@@ -22,6 +22,7 @@ const quickMemosKey = 'm-cross:quick-memos:v1'
 const playSettingsKey = 'm-cross:play-settings:v1'
 const todayStatsKey = 'm-cross:today-stats:v1'
 const galaxyUnlockedKey = 'm-cross:galaxy-unlocked:v1'
+const retroUnlockedKey = 'm-cross:retro-unlocked:v1'
 const defaultCommonAdditionalWorks = ['畳表替え', '電球交換', 'ドア簡易着色補修', '戸当たりゴム取付', '建具調整', 'コーキング']
 const quickMemos = ['窓面', '窓向かって右面', '窓向かって左面', '正面', '右面', '左面', 'シンク背面', 'シンク向かって右面', 'シンク向かって左面', '梁含む', '梁除く', '下がり天井']
 function loadStringList(key, fallback) {
@@ -765,7 +766,7 @@ function getMergedPropertyMaster(master) {
 }
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&family=DotGothic16&display=swap');
   .app { min-height:100vh; padding-bottom:max(36px,env(safe-area-inset-bottom)); color:#514751; background:radial-gradient(circle at 8% 10%,rgba(255,211,180,.45),transparent 24%),radial-gradient(circle at 95% 30%,rgba(202,224,255,.55),transparent 27%),#fff9f1; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:16px; }
   .app * { box-sizing:border-box; }
   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
@@ -1189,6 +1190,7 @@ const styles = `
   .splash-sakura { color:#c65380; background:#fff1f6; font-family:"Zen Kurenaido",sans-serif; }
   .splash-ice { color:#2589bf; background:#effbff; }
   .splash-forest { color:#3e744d; background:#eef2e7; font-family:"Noto Serif JP",serif; }
+  .splash-retro { color:#00f6ff; background:#02040c; font-family:"DotGothic16",monospace; text-shadow:3px 0 #ff2bd1,-3px 0 #00efff; }
   .splash-galaxy { color:#d8c6ff; background:radial-gradient(circle,#33236d,#03020a); text-shadow:0 0 14px #7d5cff; }
   @keyframes splashOut { 0%,70% { opacity:1; } 100% { opacity:0; visibility:hidden; } }
   .galaxyUnlock { position:fixed; z-index:2100; inset:0; display:grid; place-content:center; gap:10px; color:#fff; background:radial-gradient(circle at center,#351c78,#05020d 65%); text-align:center; text-shadow:0 0 10px #8868ff; animation:splashOut 2.4s ease forwards; }
@@ -1202,6 +1204,81 @@ const styles = `
   .theme-galaxy .subtitle,.theme-galaxy .savedMeta,.theme-galaxy .card label>span,.theme-galaxy .savedCardDate,.theme-galaxy .savedListSummary { color:#cdc4eb; }
   .theme-galaxy .primary,.theme-galaxy .add,.theme-galaxy .saveButton,.theme-galaxy .secondaryButton,.theme-galaxy .room.active,.theme-galaxy .measurementType.active,.theme-galaxy .settingsOption.active { color:#fff; background:linear-gradient(135deg,#7058ed,#e047bc); box-shadow:0 5px 0 #3a287f,0 0 12px rgba(216,67,193,.35); }
   .theme-galaxy .room,.theme-galaxy .measurementType,.theme-galaxy .keypadButton,.theme-galaxy .settingsMenuButton,.theme-galaxy .savedMoreButton { color:#ded7ff; border-color:#6955c9; background:#12102e; }
+  /* RETRO MODE: a deliberately different 8-bit arcade skin */
+
+  .theme-retro .retroCity { display:none !important; }
+  .theme-retro .main { background:transparent; }
+  .theme-retro .card,.theme-retro .savedItem,.theme-retro .roomSummary,.theme-retro .summary,.theme-retro .estimateRoom,.theme-retro .globalListEditor,.theme-retro .globalListItem,.theme-retro .savedToolbar,.theme-retro .additionalWorkForm,.theme-retro .todayStats { background:rgba(2,7,17,.86); backdrop-filter:blur(1.5px); }
+  @media(max-width:700px){ .theme-retro { background-size:auto 100vh; background-position:center top; background-attachment:fixed; } }
+  .theme-retro { position:relative; color:#f7fbff; background-color:#02040c; background-image:linear-gradient(180deg,rgba(1,3,12,.08) 0%,rgba(1,3,12,.20) 36%,rgba(1,3,12,.34) 100%),url('/retro-ny-bg.png'); background-size:cover; background-position:center top; background-repeat:no-repeat; background-attachment:fixed; font-family:"DotGothic16","MS Gothic",monospace; image-rendering:pixelated; overflow-x:hidden; }
+  .theme-retro .main { position:relative; }
+ }
+  .theme-retro::before { content:""; position:fixed; z-index:0; inset:0; pointer-events:none; background:radial-gradient(circle at 8% 12%,#fff 0 1px,transparent 2px),radial-gradient(circle at 23% 7%,#00efff 0 2px,transparent 3px),radial-gradient(circle at 42% 16%,#ff55dc 0 1px,transparent 2px),radial-gradient(circle at 66% 8%,#fff42a 0 2px,transparent 3px),radial-gradient(circle at 89% 18%,#fff 0 1px,transparent 2px),linear-gradient(rgba(0,238,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,0,220,.055) 1px,transparent 1px),linear-gradient(155deg,rgba(3,8,28,.4),rgba(55,4,54,.34)); background-size:97px 83px,131px 109px,157px 127px,191px 149px,223px 173px,18px 18px,18px 18px,auto; }
+  .theme-retro::after { content:""; position:fixed; z-index:0; inset:0; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px); mix-blend-mode:screen; }
+  .theme-retro > * { position:relative; z-index:1; }
+  .theme-retro .header { border-bottom:4px solid #00efff; box-shadow:0 4px 0 #ff2bd1; }
+  .theme-retro .brandLogo { image-rendering:pixelated; filter:drop-shadow(3px 0 #ff2bd1) drop-shadow(-3px 0 #00efff); }
+  .theme-retro .mavieBrand { color:#ff5bd8; font-family:"DotGothic16",monospace; font-size:15px; text-shadow:2px 2px #45104e; }
+  .theme-retro .brand,.theme-retro .main h1,.theme-retro .card h2,.theme-retro .card h3 { color:#faffff; font-family:"DotGothic16",monospace; letter-spacing:.04em; text-shadow:3px 0 #00dffa,-3px 0 #ff27cc; }
+  .theme-retro .eyebrow,.theme-retro .propertyLine,.theme-retro .savedUnit { color:#29f7ff; font-family:"DotGothic16",monospace; text-shadow:2px 2px #064554; }
+  .theme-retro .card,.theme-retro .savedItem,.theme-retro .roomSummary,.theme-retro .summary,.theme-retro .estimateRoom,.theme-retro .globalListEditor,.theme-retro .globalListItem,.theme-retro .savedToolbar,.theme-retro .additionalWorkForm,.theme-retro .todayStats { border:3px solid #00eaff; border-radius:0; color:#f7fbff; background:rgba(2,7,17,.95); box-shadow:4px 4px 0 #ff2bc9,-3px -3px 0 #19315d; backdrop-filter:none; }
+  .theme-retro .card input,.theme-retro .card select,.theme-retro .propertyOption,.theme-retro .settingsOption,.theme-retro .estimateFactor input { border:2px solid #00eaff; border-radius:0; color:#fff; background:#030817; box-shadow:3px 3px 0 #14254b; font-family:"DotGothic16",monospace; }
+  .theme-retro .subtitle,.theme-retro .savedMeta,.theme-retro .record small,.theme-retro .card label>span,.theme-retro .summaryLine,.theme-retro .copyFormatPreview,.theme-retro .estimateIntro,.theme-retro .savedCardDate,.theme-retro .savedListSummary { color:#b9d7e8; }
+  .theme-retro .primary,.theme-retro .add,.theme-retro .saveButton,.theme-retro .secondaryButton,.theme-retro .measurementCheckButton { border:3px solid #00eaff; border-radius:0; color:#07101b; background:#fff11c; box-shadow:5px 5px 0 #7b6600; font-family:"DotGothic16",monospace; text-shadow:none; }
+  .theme-retro .secondaryButton,.theme-retro .saveButton { color:#f5ffff; background:#051125; box-shadow:5px 5px 0 #072f45; }
+  .theme-retro .room,.theme-retro .measurementType,.theme-retro .keypadButton,.theme-retro .settingsMenuButton,.theme-retro .savedMoreButton,.theme-retro .quickMemoButton,.theme-retro .floorTrimColorButton,.theme-retro .roomConfirmButton { border:2px solid #00eaff; border-radius:0; color:#fff; background:#061020; box-shadow:4px 4px 0 #102048; font-family:"DotGothic16",monospace; text-shadow:2px 2px #07101f; }
+  .theme-retro .room.active,.theme-retro .measurementType.active,.theme-retro .settingsOption.active { border-color:#ff32d2; color:#fff; background:#531044; box-shadow:4px 4px 0 #00eaff; }
+  .theme-retro .keypadButton.utility { color:#ff70df; border-color:#ff32d2; }
+  .theme-retro .add.crossRegister { color:#00160b; border-color:#5cff8d; background:#37f36f; box-shadow:5px 5px 0 #09712e; }
+  .theme-retro .numberKeypad,.theme-retro .address { border:3px solid #00eaff; border-radius:0; background:#020714; box-shadow:inset 0 0 0 2px #122047; }
+  .theme-retro .record { color:#fff; border-color:#1b6f86; }
+  .theme-retro .record b,.theme-retro .summaryLine strong,.theme-retro .estimateTotal strong { color:#fff11c; text-shadow:2px 2px #6d5800; }
+  .theme-retro .actionOpen { background:#142300; color:#fff11c; border:2px solid #fff11c; }
+  .theme-retro .actionCsv { background:#001c22; color:#4ffaff; border:2px solid #00eaff; }
+  .theme-retro .actionOverwrite { background:#230629; color:#ff8ce8; border:2px solid #ff32d2; }
+  .theme-retro .actionDelete { background:#2b0713; color:#ff769b; border:2px solid #ff385e; }
+  .theme-retro .settingsButton,.theme-retro .measurementBackButton,.theme-retro .back { border-radius:0; color:#45f8ff; border-color:#00eaff; background:#041020; box-shadow:3px 3px 0 #ff2bc9; font-family:"DotGothic16",monospace; }
+  .theme-retro .todayStats { grid-template-columns:auto 1fr 1fr; }
+  .theme-retro .todayStats strong { color:#fff11c; }
+
+  .theme-retro .savedItem { position:relative; padding-left:78px; min-height:118px; }
+  .theme-retro .savedItem::before { content:""; position:absolute; left:12px; top:17px; width:58px; height:68px; background:url('/retro-building-icon.png') center/contain no-repeat; image-rendering:pixelated; filter:drop-shadow(3px 3px 0 #ff2bc9) drop-shadow(-1px -1px 0 #00eaff); }
+  .theme-retro .propertyOption { position:relative; padding-left:58px; }
+  .theme-retro .propertyOption::before { content:""; position:absolute; left:9px; top:50%; width:40px; height:43px; transform:translateY(-50%); background:url('/retro-building-icon.png') center/contain no-repeat; image-rendering:pixelated; filter:drop-shadow(2px 2px 0 #ff2bc9); }
+
+  .theme-retro .measurementTypes::before { content:"★ FIELD QUEST ★"; grid-column:1/-1; padding:7px; border:2px solid #fff22b; color:#fff22b; background:#0c0820; box-shadow:3px 3px 0 #ff2bc9; text-align:center; letter-spacing:.12em; }
+  .theme-retro .card:first-of-type::after { content:"★ ★ ★"; display:block; margin-top:14px; color:#ff40d8; text-align:center; letter-spacing:1.1em; text-shadow:0 0 7px #00eaff; }
+  .retroCity,.retroCat { display:none; }
+  .theme-retro .retroCity { display:block; position:fixed; z-index:0; left:0; right:0; bottom:0; height:280px; overflow:hidden; pointer-events:none; background:linear-gradient(transparent 0%,rgba(4,6,20,.28) 20%,#02040c 96%); filter:saturate(1.35); }
+  .theme-retro .retroMoon { position:absolute; right:9%; top:12px; width:62px; height:62px; border-radius:50%; background:#fff32b; box-shadow:0 0 18px rgba(255,245,50,.55); }
+  .theme-retro .retroMoon::after { content:""; position:absolute; left:19px; top:-7px; width:60px; height:60px; border-radius:50%; background:#02040c; }
+  .theme-retro .retroBuildings { position:absolute; left:-2%; right:-2%; bottom:0; display:flex; align-items:flex-end; justify-content:space-around; height:225px; filter:drop-shadow(0 0 5px rgba(0,234,255,.32)); }
+  .theme-retro .retroBuilding { position:relative; width:8%; height:var(--h); min-width:44px; border:2px solid var(--c); background:linear-gradient(90deg,rgba(5,14,35,.98),rgba(18,8,38,.98)); box-shadow:inset 0 0 10px color-mix(in srgb,var(--c) 28%,transparent); }
+  .theme-retro .retroBuilding::before { content:""; position:absolute; inset:10px 6px 5px; background:repeating-linear-gradient(0deg,transparent 0 10px,var(--c) 10px 15px),repeating-linear-gradient(90deg,transparent 0 10px,rgba(0,0,0,.92) 10px 15px); opacity:.95; animation:windowFlicker 2.8s steps(2,end) infinite; }
+  .theme-retro .retroBuilding:nth-child(2n)::before { animation-delay:.8s; }
+  .theme-retro .retroBuilding:nth-child(3n)::before { animation-delay:1.5s; }
+  @keyframes windowFlicker { 50% { opacity:.58; filter:hue-rotate(35deg); } }
+  .theme-retro .retroBuilding:nth-child(4)::after { content:""; position:absolute; left:50%; bottom:100%; width:3px; height:48px; background:#00eaff; box-shadow:0 0 6px #00eaff; }
+
+  .theme-retro .retroCat { display:block; position:fixed; z-index:3; right:max(8px,env(safe-area-inset-right)); bottom:max(12px,env(safe-area-inset-bottom)); width:92px; height:102px; pointer-events:none; filter:drop-shadow(4px 4px 0 #ff2bc9) drop-shadow(-2px -2px 0 #00eaff); }
+  .theme-retro .retroCat img { width:100%; height:100%; object-fit:contain; image-rendering:pixelated; }
+
+  .retroCommand { display:none; }
+  .theme-retro .retroCommand { display:block; position:fixed; z-index:5; left:max(10px,env(safe-area-inset-left)); bottom:max(16px,env(safe-area-inset-bottom)); width:190px; padding:12px 14px; border:4px double #fff; color:#fff; background:#020208; box-shadow:0 0 0 3px #111,5px 5px 0 #00eaff,9px 9px 0 #ff2bc9; font-family:"DotGothic16","MS Gothic",monospace; pointer-events:auto; }
+  .theme-retro .retroCommand strong { display:block; margin-bottom:8px; color:#fff22b; font-size:14px; letter-spacing:.1em; }
+  .theme-retro .retroCommand button { display:block; width:100%; min-height:32px; padding:3px 5px; border:0; color:#fff; background:transparent; font-family:"DotGothic16","MS Gothic",monospace; font-size:13px; text-align:left; cursor:pointer; }
+  .theme-retro .retroCommand button:hover,.theme-retro .retroCommand button:focus-visible { color:#fff22b; outline:2px solid #00eaff; background:#10102a; }
+  .theme-retro .retroCommand button::before { content:"  "; }
+  .theme-retro .retroCommand button:hover::before,.theme-retro .retroCommand button:focus-visible::before { content:"▶ "; color:#fff22b; }
+  .theme-retro .retroCommand button:first-of-type::before { content:"▶ "; color:#fff22b; animation:cursorBlink .8s steps(1,end) infinite; }
+  @keyframes cursorBlink { 50% { opacity:0; } }
+  .theme-retro .retroCat { right:max(16px,env(safe-area-inset-right)); bottom:max(18px,env(safe-area-inset-bottom)); width:118px; height:132px; }
+  .theme-retro .retroCat::after { content:"GOOD WORK!"; position:absolute; right:78%; bottom:76%; width:92px; padding:6px; border:2px solid #fff22b; color:#fff22b; background:#080616; box-shadow:3px 3px 0 #ff2bc9; font-size:10px; text-align:center; }
+  .theme-retro .completeBackdrop { background:rgba(1,2,9,.9); }
+  .theme-retro .completeCard { border:4px solid #00eaff; border-radius:0; color:#fff; background:#030817; box-shadow:6px 6px 0 #ff29cc; font-family:"DotGothic16",monospace; }
+  .theme-retro .completeCard::before { content:"STAGE CLEAR!"; display:block; margin-bottom:12px; color:#ffef24; font-size:30px; text-shadow:3px 3px #ce238f; }
+  .theme-retro .completeCard h2 { color:#fff; text-shadow:3px 0 #00eaff,-3px 0 #ff2bc9; }
+  @media(max-width:520px){ .theme-retro .retroCity{height:210px}.theme-retro .retroBuildings{height:165px}.theme-retro .retroCat{width:84px;height:94px;bottom:12px}.theme-retro .retroCommand{width:150px;padding:9px 10px}.theme-retro .retroCommand button{font-size:11px}.theme-retro .retroCat::after{display:none} }
   @media (max-width:600px) {
     .measurementActions { gap:16px; margin:18px 0 22px; }
     .measurementTypes { grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr)); gap:12px; }
@@ -2128,6 +2205,9 @@ export default function App() {
   const [showComplete, setShowComplete] = useState(false)
   const [showSplash, setShowSplash] = useState(() => loadPlaySettings().splash)
   const [galaxyUnlocked, setGalaxyUnlocked] = useState(() => readPreference(galaxyUnlockedKey, 'false') === 'true')
+  const [retroUnlocked, setRetroUnlocked] = useState(() => readPreference(retroUnlockedKey, 'false') === 'true')
+  const [showRetroUnlock, setShowRetroUnlock] = useState(false)
+  const retroHoldTimerRef = useRef(null)
   const [showGalaxyUnlock, setShowGalaxyUnlock] = useState(false)
   const logoTapRef = useRef({ count: 0, last: 0 })
   const completedStateRef = useRef(false)
@@ -2490,7 +2570,7 @@ export default function App() {
       const oscillator = context.createOscillator()
       const gain = context.createGain()
       const presets = { simple: [660, 'sine'], pop: [880, 'triangle'], cyber: [1240, 'square'] }
-      const [frequency, type] = presets[playSettings.sound] || presets.simple
+      const [frequency, type] = theme === 'retro' ? [980, 'square'] : (presets[playSettings.sound] || presets.simple)
       oscillator.frequency.value = frequency
       oscillator.type = type
       gain.gain.setValueAtTime(0.055, context.currentTime)
@@ -2504,10 +2584,21 @@ export default function App() {
     updateTodayStats(previous => ({ ...previous, registrations: previous.registrations + 1 }))
     playRegistrationSound()
     if (!playSettings.effects) return
-    const symbols = { beige: '✨', dark: '✦', pop: '🎉', cyber: '⚡', luxury: '✦', sakura: '🌸', ice: '❄', forest: '🍃', galaxy: '★' }
+    const symbols = { beige: '✨', dark: '✦', pop: '🎉', cyber: '⚡', luxury: '✦', sakura: '🌸', ice: '❄', forest: '🍃', galaxy: '★', retro: 'GOOD!' }
     setEffectBurst({ id: Date.now(), symbol: symbols[theme] || '✨', theme })
     window.setTimeout(() => setEffectBurst(null), 700)
   }
+  function startRetroHold() {
+    window.clearTimeout(retroHoldTimerRef.current)
+    retroHoldTimerRef.current = window.setTimeout(() => {
+      if (retroUnlocked) return
+      setRetroUnlocked(true)
+      setShowRetroUnlock(true)
+      try { localStorage.setItem(retroUnlockedKey, 'true') } catch { /* 任意解除 */ }
+      window.setTimeout(() => setShowRetroUnlock(false), 2600)
+    }, 1200)
+  }
+  function cancelRetroHold() { window.clearTimeout(retroHoldTimerRef.current) }
   function handleLogoTap() {
     const now = Date.now()
     const nextCount = now - logoTapRef.current.last > 1400 ? 1 : logoTapRef.current.count + 1
@@ -3399,21 +3490,64 @@ export default function App() {
   const fontOptions = [
     ['small', '小'], ['medium', '中'], ['large', '大'],
   ]
+  function playRetroCommandSound() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext
+      if (!AudioContextClass) return
+      const context = new AudioContextClass()
+      const oscillator = context.createOscillator()
+      const gain = context.createGain()
+      oscillator.type = 'square'
+      oscillator.frequency.value = 920
+      gain.gain.setValueAtTime(0.045, context.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.09)
+      oscillator.connect(gain); gain.connect(context.destination)
+      oscillator.start(); oscillator.stop(context.currentTime + 0.1)
+      oscillator.onended = () => context.close()
+    } catch { /* 音を利用できない場合は無音 */ }
+  }
+  function runRetroCommand(command) {
+    playRetroCommandSound()
+    if (command === 'measure') {
+      if (started) {
+        setShowMeasurementCheck(false); setShowEstimate(false); setShowRoomManagement(false)
+        setActivePage('cross')
+      }
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+      return
+    }
+    if (command === 'save') {
+      if (started) saveCurrentData()
+      else openSavedList()
+      return
+    }
+    if (command === 'status') {
+      if (started) setShowMeasurementCheck(true)
+      else openSavedList()
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+      return
+    }
+    if (command === 'settings') {
+      setSettingsPage('home'); setSettingsOpen(true); setShowSavedList(false)
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+    }
+  }
   const themeOptions = [
     ['beige', 'ベージュ'], ['dark', 'ダーク'], ['pop', 'ポップ'], ['cyber', 'サイバー'],
     ['luxury', 'Luxury Black'], ['sakura', 'SAKURA'], ['ice', 'Ice'], ['forest', 'Forest'],
     ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
+    ...(retroUnlocked ? [['retro', 'RETRO']] : []),
   ]
   return (
     <>
       <style>{styles}</style>
       <div
-        className={`app${theme === 'dark' ? ' theme-dark' : theme === 'pop' ? ' theme-pop' : theme === 'cyber' ? ' theme-cyber' : theme === 'luxury' ? ' theme-luxury' : theme === 'sakura' ? ' theme-sakura' : theme === 'ice' ? ' theme-ice' : theme === 'forest' ? ' theme-forest' : theme === 'galaxy' ? ' theme-galaxy' : ''}`}
+        className={`app${theme === 'dark' ? ' theme-dark' : theme === 'pop' ? ' theme-pop' : theme === 'cyber' ? ' theme-cyber' : theme === 'luxury' ? ' theme-luxury' : theme === 'sakura' ? ' theme-sakura' : theme === 'ice' ? ' theme-ice' : theme === 'forest' ? ' theme-forest' : theme === 'galaxy' ? ' theme-galaxy' : theme === 'retro' ? ' theme-retro' : ''}`}
         style={{ zoom: fontScales[fontSize] || 1 }}
       >
         <header className="header">
           <div className="brandGroup">
-            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" onClick={handleLogoTap} />
+            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" onClick={handleLogoTap} onPointerDown={startRetroHold} onPointerUp={cancelRetroHold} onPointerCancel={cancelRetroHold} onPointerLeave={cancelRetroHold} />
             <div>
               <div className="mavieBrand">MavieSelect</div>
               <div className="brand">M-Cross</div>
@@ -4274,6 +4408,21 @@ export default function App() {
             )}
           </main>
         )}
+        <div className="retroCity" aria-hidden="true">
+          <div className="retroMoon" />
+          <div className="retroBuildings">
+            {[['72%','#00eaff'],['48%','#ff2bc9'],['88%','#00eaff'],['62%','#fff22b'],['96%','#ff2bc9'],['55%','#00eaff'],['78%','#ff2bc9'],['44%','#fff22b'],['84%','#00eaff'],['66%','#ff2bc9']].map(([height,color],index) => <span key={index} className="retroBuilding" style={{ '--h': height, '--c': color }} />)}
+          </div>
+        </div>
+        <nav className="retroCommand" aria-label="RETROコマンド">
+          <strong>コマンド</strong>
+          <button type="button" onClick={() => runRetroCommand('measure')}>さいすん</button>
+          <button type="button" onClick={() => runRetroCommand('save')}>{started ? 'ほぞん' : 'ほぞんリスト'}</button>
+          <button type="button" onClick={() => runRetroCommand('status')}>ステータス</button>
+          <button type="button" onClick={() => runRetroCommand('settings')}>せってい</button>
+        </nav>
+        <div className="retroCat" aria-hidden="true"><img src="/retro-cat-final.png" alt="" /></div>
+        {showRetroUnlock && <div className="galaxyUnlock retroUnlock"><small>SECRET THEME</small><strong>RETRO MODE UNLOCKED!</strong><span>🐱</span><p>設定のテーマカラーからRETROを選べます</p></div>}
         {effectBurst && <div className={`registrationEffect effect-${effectBurst.theme}`} aria-hidden="true">{[0,1,2,3,4,5,6,7].map(index => <span key={index} style={{ '--i': index }}>{effectBurst.symbol}</span>)}</div>}
         {showComplete && (
           <div className="completeBackdrop" onClick={() => setShowComplete(false)}>
@@ -4286,7 +4435,7 @@ export default function App() {
             </section>
           </div>
         )}
-        {showSplash && <div className={`splashScreen splash-${theme}`}><strong>M-CROSS</strong><span>{theme === 'cyber' ? 'FIELD MEASUREMENT SYSTEM / READY' : 'MavieSelect Field Measurement'}</span></div>}
+        {showSplash && <div className={`splashScreen splash-${theme}`}><strong>M-CROSS</strong><span>{theme === 'cyber' ? 'FIELD MEASUREMENT SYSTEM / READY' : theme === 'retro' ? 'RETRO MODE / PRESS START' : 'MavieSelect Field Measurement'}</span></div>}
         {showGalaxyUnlock && <div className="galaxyUnlock"><small>SECRET THEME</small><strong>GALAXY UNLOCKED</strong><span>★</span></div>}
         {showDraftRecovery && workingDraft && (
           <div className="leaveConfirmBackdrop">
