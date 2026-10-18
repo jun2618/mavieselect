@@ -12,23 +12,31 @@ const fontSizeKey = 'm-cross-font-size'
 const themeKey = 'm-cross-theme'
 const propertyMasterKey = 'm-cross:property-master:v1'
 const pricingSettingsKey = 'm-cross:pricing-settings:v1'
+const pricingSettingsVersionKey = 'm-cross:pricing-settings-version'
+const currentPricingSettingsVersion = '2'
 const estimateCopyFormatKey = 'm-cross-estimate-copy-format'
 const quickMemos = ['窓面', '窓向かって右面', '窓向かって左面', '正面', '右面', '左面', 'シンク背面', 'シンク向かって右面', 'シンク向かって左面', '梁含む', '梁除く', '下がり天井']
 const defaultPricingSettings = {
   crossRates: {
-    '天井': 650,
-    '収納天井': 650,
-    '壁': 650,
-    '収納壁': 650,
+    '天井': 990,
+    '収納天井': 990,
+    '壁': 990,
+    '収納壁': 990,
   },
-  cfRate: 2600,
-  softRate: 0,
-  floorTrimRate: 0,
+  cfRate: 2300,
+  softRate: 420,
+  floorTrimRate: 3500,
   crossFactor: 1,
 }
 
 function loadPricingSettings() {
   try {
+    const version = localStorage.getItem(pricingSettingsVersionKey)
+    if (version !== currentPricingSettingsVersion) {
+      localStorage.setItem(pricingSettingsKey, JSON.stringify(defaultPricingSettings))
+      localStorage.setItem(pricingSettingsVersionKey, currentPricingSettingsVersion)
+      return defaultPricingSettings
+    }
     const stored = JSON.parse(localStorage.getItem(pricingSettingsKey) || 'null')
     if (!stored || typeof stored !== 'object') return defaultPricingSettings
     return {
@@ -130,15 +138,18 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
   })
 
   // 2. クロスが終わった後に、CFを全部屋分並べます。
-  orderedRooms.forEach(roomName => {
+  const cfRooms = [...orderedRooms]
+  if (cfRecords.some(record => record.room === '土間') && !cfRooms.includes('土間')) cfRooms.push('土間')
+  cfRooms.forEach(roomName => {
     const roomCfRecords = cfRecords.filter(record => record.room === roomName)
     groupByMemo(roomCfRecords).forEach((groupRecords, memo) => {
-      const quantity = groupRecords.reduce((sum, record) => sum + getLengthQuantity(record), 0)
+      const measuredLength = groupRecords.reduce((sum, record) => sum + getLengthQuantity(record), 0)
+      const quantity = measuredLength * 1.8
       if (quantity <= 0) return
       const rate = Number(pricingSettings.cfRate || 0)
       cfRows.push({
         room: roomName,
-        parts: [roomName, 'CF貼替'],
+        parts: [roomName, '床', 'CF貼り'],
         memo,
         category: 'cf',
         quantity,
@@ -148,7 +159,6 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
       })
     })
   })
-
   // 3. 最後にソフト巾木。メモなしは全室合計、メモありはメモ別です。
   groupByMemo(softRecords).forEach((groupRecords, memo) => {
     const quantity = groupRecords.reduce((sum, record) => sum + getSoftBaseboardQuantity(record), 0)
@@ -225,10 +235,16 @@ async function downloadEstimateExcel(entry, rows, format) {
     const maxParts = format === 'split'
       ? Math.max(...rows.map(row => row.parts.length))
       : 1
-    const lastColumn = maxParts + 3
+    // 「項目を分ける」場合だけ、項目3とメモの間へ空白の調整列を1列入れる。
+    const spacerCount = format === 'split' ? 1 : 2
+    const firstSpacerColumnIndex = maxParts + 1
+    const memoColumnIndex = maxParts + spacerCount + 1
+    const quantityColumnIndex = maxParts + spacerCount + 2
+    const unitColumnIndex = maxParts + spacerCount + 3
+    const lastColumn = unitColumnIndex
     const outputRows = rows.map(row => {
       const splitParts = row.category === 'cf'
-        ? [row.room, '床', 'CF貼替']
+        ? row.parts
         : row.category === 'floorTrim'
           ? [row.parts[0], '床', '見切り取付']
           : row.parts
@@ -237,6 +253,7 @@ async function downloadEstimateExcel(entry, rows, format) {
       return [
         ...itemCells,
         ...emptyFill,
+        ...Array(spacerCount).fill(''),
         row.memo || '',
         Number(formatQuantity(row.quantity)),
         row.unit,
@@ -272,6 +289,7 @@ async function downloadEstimateExcel(entry, rows, format) {
     const headers = format === 'split'
       ? [...Array(maxParts)].map((_, index) => '項目' + (index + 1))
       : ['工事項目']
+    headers.push(...Array(spacerCount).fill(''))
     headers.push('メモ', '数量', '単位')
     const headerRow = worksheet.getRow(8)
     headerRow.values = headers
@@ -293,18 +311,18 @@ async function downloadEstimateExcel(entry, rows, format) {
         cell.font = {
           name: 'Yu Gothic',
           size: 11,
-          color: { argb: columnIndex > maxParts + 1 ? 'FF000000' : 'FF008000' },
+          color: { argb: columnIndex >= memoColumnIndex ? 'FF000000' : 'FF008000' },
         }
         cell.alignment = {
           vertical: 'middle',
-          horizontal: columnIndex === maxParts + 2 ? 'right' : 'left',
+          horizontal: columnIndex === quantityColumnIndex ? 'right' : 'left',
           wrapText: true,
         }
         if (rowIndex % 2 === 1) {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFBF8FD' } }
         }
       })
-      dataRow.getCell(maxParts + 2).numFmt = '0.0'
+      dataRow.getCell(quantityColumnIndex).numFmt = '0.0'
     })
 
     function getDisplayLength(value) {
@@ -320,15 +338,20 @@ async function downloadEstimateExcel(entry, rows, format) {
         (max, value) => Math.max(max, getDisplayLength(value)),
         0
       )
-      const isMemoColumn = columnIndex === maxParts + 1
-      const isQuantityColumn = columnIndex === maxParts + 2
-      const isUnitColumn = columnIndex === maxParts + 3
+      const isSpacerColumn = columnIndex >= firstSpacerColumnIndex && columnIndex < memoColumnIndex
+      const isMemoColumn = columnIndex === memoColumnIndex
+      const isQuantityColumn = columnIndex === quantityColumnIndex
+      const isUnitColumn = columnIndex === unitColumnIndex
 
       let minimumWidth = 6
       let maximumWidth = 24
       let extraWidth = 1.5
 
-      if (isMemoColumn) {
+      if (isSpacerColumn) {
+        minimumWidth = 3
+        maximumWidth = 3
+        extraWidth = 0
+      } else if (isMemoColumn) {
         minimumWidth = 12
         maximumWidth = 28
         extraWidth = 2
@@ -350,6 +373,7 @@ async function downloadEstimateExcel(entry, rows, format) {
         minimumWidth,
         Math.min(maximumWidth, maxLength + extraWidth)
       )
+      if (isSpacerColumn) column.width = 3
       column.alignment = {
         vertical: 'middle',
         horizontal: isQuantityColumn ? 'right' : 'left',
@@ -692,7 +716,12 @@ const styles = `
   .app { min-height:100vh; padding-bottom:max(36px,env(safe-area-inset-bottom)); color:#514751; background:radial-gradient(circle at 8% 10%,rgba(255,211,180,.45),transparent 24%),radial-gradient(circle at 95% 30%,rgba(202,224,255,.55),transparent 27%),#fff9f1; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:16px; }
   .app * { box-sizing:border-box; }
   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
-  .brandGroup { display:grid; justify-items:start; gap:0; line-height:1; }
+  .brandGroup { display:flex; align-items:center; justify-content:flex-start; gap:10px; line-height:1; min-width:0; }
+  .brandLogo { width:62px; height:62px; object-fit:contain; flex:0 0 auto; filter:drop-shadow(0 5px 10px rgba(148,76,196,.18)); transition:filter .2s ease,transform .2s ease; }
+  .theme-dark .brandLogo { filter:drop-shadow(0 0 8px rgba(240,160,141,.35)); }
+  .theme-pop .brandLogo { filter:drop-shadow(0 5px 9px rgba(231,93,145,.22)); }
+  .theme-cyber .brandLogo { filter:drop-shadow(0 0 7px rgba(0,234,255,.8)) drop-shadow(0 0 11px rgba(255,37,216,.45)); }
+  @media (max-width:520px) { .brandLogo { width:54px; height:54px; } }
   .mavieBrand { margin:0 0 2px 2px; color:#d98278; font-family:"Dancing Script","Segoe Script",cursive; font-size:21px; font-weight:700; letter-spacing:.035em; line-height:1.15; }
   .brand { color:#f08b78; font-family:"Zen Maru Gothic",sans-serif; font-size:32px; font-weight:900; letter-spacing:.04em; text-shadow:0 3px 0 #ffe3d4; }
   .settingsButton { width:46px; height:46px; border:1px solid #efd8ca; border-radius:14px; color:#d27f6d; background:#fffaf5; font:inherit; font-size:22px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -1268,18 +1297,19 @@ async function downloadExcel(entry) {
       views: [{ state: 'frozen', ySplit: 8 }],
     })
     const lastColumn = columns.length
+    const displayLastColumn = Math.max(lastColumn, 6)
 
-    worksheet.mergeCells(1, 1, 1, lastColumn)
+    worksheet.mergeCells(1, 1, 1, displayLastColumn)
     const titleCell = worksheet.getCell(1, 1)
     titleCell.value = `${name} 採寸データ`
     titleCell.font = { name: 'Yu Gothic', size: 16, bold: true, color: { argb: 'FFFFFFFF' } }
     titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: tabColor } }
-    titleCell.alignment = { vertical: 'middle' }
+    titleCell.alignment = { vertical: 'middle', horizontal: 'left' }
     worksheet.getRow(1).height = 28
 
     metadata.forEach(([label, value], index) => {
       const rowNumber = index + 3
-      worksheet.mergeCells(rowNumber, 2, rowNumber, lastColumn)
+      worksheet.mergeCells(rowNumber, 2, rowNumber, displayLastColumn)
       const labelCell = worksheet.getCell(rowNumber, 1)
       labelCell.value = label
       labelCell.font = { name: 'Yu Gothic', bold: true }
@@ -1287,6 +1317,8 @@ async function downloadExcel(entry) {
       const valueCell = worksheet.getCell(rowNumber, 2)
       valueCell.value = value
       valueCell.font = { name: 'Yu Gothic' }
+      valueCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false }
+      labelCell.alignment = { vertical: 'middle', horizontal: 'left' }
     })
 
     const headerRow = worksheet.getRow(8)
@@ -1340,9 +1372,9 @@ async function downloadExcel(entry) {
         maximumWidth = 30
         extraWidth = 2
       } else if (['長さ', '高さ', '本数', '枚数', '数量'].includes(headerText)) {
-        minimumWidth = 8
-        maximumWidth = 10
-        extraWidth = 1
+        minimumWidth = 10
+        maximumWidth = 12
+        extraWidth = 2
       } else if (headerText === '単位') {
         minimumWidth = 5
         maximumWidth = 6
@@ -1364,6 +1396,37 @@ async function downloadExcel(entry) {
         horizontal: ['長さ', '高さ', '本数', '枚数', '数量'].includes(headerText) ? 'right' : 'left',
         wrapText: maxLength + extraWidth > maximumWidth,
       }
+    }
+
+    if (name === 'ソフト巾木') {
+      worksheet.getColumn(1).width = Math.max(12, worksheet.getColumn(1).width || 0)
+      worksheet.getColumn(2).width = Math.max(10, worksheet.getColumn(2).width || 0)
+      worksheet.getColumn(3).width = Math.max(10, worksheet.getColumn(3).width || 0)
+    }
+
+    // Final layout override: make property information visibly start at the left edge.
+    titleCell.alignment = { vertical: 'middle', horizontal: 'left' }
+    metadata.forEach(([, value], index) => {
+      const rowNumber = index + 3
+      const labelCell = worksheet.getCell(rowNumber, 1)
+      const valueCell = worksheet.getCell(rowNumber, 2)
+      valueCell.value = value
+      labelCell.alignment = { vertical: 'middle', horizontal: 'left' }
+      valueCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false }
+    })
+
+    // Keep the soft-baseboard sheet as readable as the other measurement sheets.
+    if (name === 'ソフト巾木') {
+      worksheet.getColumn(1).width = 18
+      worksheet.getColumn(2).width = 14
+      worksheet.getColumn(3).width = 14
+      worksheet.getColumn(4).width = 12
+      worksheet.getColumn(5).width = 12
+      worksheet.getColumn(6).width = 12
+      worksheet.getRow(8).height = 24
+      worksheet.getCell(8, 1).alignment = { vertical: 'middle', horizontal: 'left' }
+      worksheet.getCell(8, 2).alignment = { vertical: 'middle', horizontal: 'center' }
+      worksheet.getCell(8, 3).alignment = { vertical: 'middle', horizontal: 'center' }
     }
   }
 
@@ -1684,6 +1747,26 @@ export default function App() {
   const [floorTrimRecords, setFloorTrimRecords] = useState([])
   const rooms = projectRooms
 
+  useEffect(() => {
+    const showNewPropertyScreen = () => {
+      setStarted(false)
+      setShowSavedList(false)
+      setSettingsOpen(false)
+      setShowEstimate(false)
+      setShowRoomManagement(false)
+      setShowMeasurementCheck(false)
+      setCompany('')
+      setPropertySearch('')
+      setSelectedProperty(null)
+      setUnit('')
+      setCurrentStorageKey('')
+      setIsDirty(false)
+    }
+    showNewPropertyScreen()
+    const handlePageShow = event => { if (event.persisted) showNewPropertyScreen() }
+    window.addEventListener('pageshow', handlePageShow)
+    return () => window.removeEventListener('pageshow', handlePageShow)
+  }, [])
   useEffect(() => {
     if (!activeInput) return
 
@@ -2507,8 +2590,11 @@ export default function App() {
       >
         <header className="header">
           <div className="brandGroup">
-            <div className="mavieBrand">MavieSelect</div>
-            <div className="brand">M-Cross</div>
+            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" />
+            <div>
+              <div className="mavieBrand">MavieSelect</div>
+              <div className="brand">M-Cross</div>
+            </div>
           </div>
           <button className="settingsButton" type="button" aria-label="設定" onClick={() => setSettingsOpen(true)}>⚙️</button>
         </header>
@@ -2572,7 +2658,7 @@ export default function App() {
                     </label>
                   ))}
                   <label>
-                    <span>CF（円／㎡）</span>
+                    <span>CF（円／㎡・概算数量は実測m×1.8）</span>
                     <input type="number" min="0" step="1" value={pricingSettings.cfRate} onChange={event => updatePricingSetting('cfRate', event.target.value)} />
                   </label>
                   <label>
@@ -3125,7 +3211,7 @@ export default function App() {
               <LengthMeasurementPage
                 key="cf"
                 title="CF"
-                rooms={rooms}
+                rooms={rooms.includes('土間') ? rooms : [...rooms, '土間']}
                 records={cfRecords}
                 setRecords={setCfRecords}
                 pageIndex={cfPageIndex}
