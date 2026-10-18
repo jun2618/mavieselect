@@ -8,6 +8,7 @@ const defaultRooms = [
 ]
 const measurementTypes = ['天井', '収納天井', '壁', '収納壁']
 const storagePrefix = 'm-cross:'
+const workingDraftKey = 'm-cross-working-draft:v1'
 const fontSizeKey = 'm-cross-font-size'
 const themeKey = 'm-cross-theme'
 const propertyMasterKey = 'm-cross:property-master:v1'
@@ -1873,6 +1874,8 @@ export default function App() {
   const [showSavedList, setShowSavedList] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
+  const [workingDraft, setWorkingDraft] = useState(null)
+  const [showDraftRecovery, setShowDraftRecovery] = useState(false)
   const pendingNavigationRef = useRef(null)
   const [savedEntries, setSavedEntries] = useState([])
   const [savedSearch, setSavedSearch] = useState('')
@@ -1940,6 +1943,78 @@ export default function App() {
     window.addEventListener('pageshow', handlePageShow)
     return () => window.removeEventListener('pageshow', handlePageShow)
   }, [])
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(workingDraftKey)
+      if (!stored) return
+
+      const draft = JSON.parse(stored)
+      if (!draft || typeof draft !== 'object' || Array.isArray(draft)) {
+        localStorage.removeItem(workingDraftKey)
+        return
+      }
+
+      setWorkingDraft(draft)
+      setShowDraftRecovery(true)
+    } catch {
+      try { localStorage.removeItem(workingDraftKey) } catch { /* 復旧不能なデータは無視 */ }
+    }
+  }, [])
+  useEffect(() => {
+    if (!started || !isDirty) return
+    if (!company || !selectedProperty || !unit.trim()) return
+
+    const draft = {
+      company,
+      propertyName: selectedProperty.name || '',
+      address: selectedProperty.address || '',
+      unit: unit.trim(),
+      records,
+      cfRecords,
+      softRecords,
+      floorTrimRecords,
+      additionalWorks,
+      draftMemo: memo,
+      rooms,
+      roomConfirmations,
+      pageIndex,
+      cfPageIndex,
+      softPageIndex,
+      activePage,
+      measurementType,
+      caseCrossFactor,
+      currentStorageKey,
+      updatedAt: new Date().toISOString(),
+    }
+
+    try {
+      localStorage.setItem(workingDraftKey, JSON.stringify(draft))
+      setWorkingDraft(draft)
+    } catch (error) {
+      console.error('作業中データを自動保存できませんでした。', error)
+    }
+  }, [
+    started,
+    isDirty,
+    company,
+    selectedProperty,
+    unit,
+    records,
+    cfRecords,
+    softRecords,
+    floorTrimRecords,
+    additionalWorks,
+    memo,
+    rooms,
+    roomConfirmations,
+    pageIndex,
+    cfPageIndex,
+    softPageIndex,
+    activePage,
+    measurementType,
+    caseCrossFactor,
+    currentStorageKey,
+  ])
   useEffect(() => {
     if (!activeInput) return
 
@@ -2304,6 +2379,8 @@ export default function App() {
   }
 
   function discardAndNavigate() {
+    try { localStorage.removeItem(workingDraftKey) } catch { /* 削除失敗は無視 */ }
+    setWorkingDraft(null)
     setIsDirty(false)
     setSaveStatus('')
     continuePendingNavigation()
@@ -2548,6 +2625,56 @@ export default function App() {
     setStarted(true)
   }
 
+  function restoreWorkingDraft() {
+    const draft = workingDraft
+    if (!draft) return
+
+    setCompany(draft.company || '')
+    setPropertySearch(draft.propertyName || '')
+    setSelectedProperty({
+      name: draft.propertyName || '',
+      address: draft.address || '',
+    })
+    setUnit(draft.unit || '')
+    setRecords(Array.isArray(draft.records) ? draft.records : [])
+    setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
+    setSoftRecords(Array.isArray(draft.softRecords) ? draft.softRecords : [])
+    setFloorTrimRecords(Array.isArray(draft.floorTrimRecords) ? draft.floorTrimRecords : [])
+    setAdditionalWorks(Array.isArray(draft.additionalWorks) ? draft.additionalWorks : [])
+    setProjectRooms(
+      Array.isArray(draft.rooms) && draft.rooms.length ? draft.rooms : defaultRooms
+    )
+    setRoomConfirmations(
+      draft.roomConfirmations && typeof draft.roomConfirmations === 'object'
+        ? draft.roomConfirmations
+        : {}
+    )
+    setPageIndex(Number.isInteger(draft.pageIndex) ? draft.pageIndex : 0)
+    setCfPageIndex(Number.isInteger(draft.cfPageIndex) ? draft.cfPageIndex : 0)
+    setSoftPageIndex(Number.isInteger(draft.softPageIndex) ? draft.softPageIndex : 0)
+    setActivePage(draft.activePage || 'cross')
+    setMeasurementType(draft.measurementType || '天井')
+    setCaseCrossFactor(String(draft.caseCrossFactor ?? pricingSettings.crossFactor))
+    setCurrentStorageKey(draft.currentStorageKey || '')
+    setHeight('')
+    setCount('')
+    setMemo(draft.draftMemo || '')
+    setActiveInput('')
+    setSaveStatus('')
+    setShowSavedList(false)
+    setShowMeasurementCheck(false)
+    setShowRoomManagement(false)
+    setShowEstimate(false)
+    setReturnToMeasurementCheck(false)
+    setShowDraftRecovery(false)
+    setIsDirty(true)
+    setStarted(true)
+  }
+  function discardWorkingDraft() {
+    try { localStorage.removeItem(workingDraftKey) } catch { /* 削除失敗は無視 */ }
+    setWorkingDraft(null)
+    setShowDraftRecovery(false)
+  }
   function saveCurrentData() {
     if (!company || !selectedProperty || !unit.trim()) {
       setSaveStatus('管理会社・物件・号室を選択してください')
@@ -2590,6 +2717,8 @@ export default function App() {
     try {
       const serialized = JSON.stringify(saveData)
       localStorage.setItem(storageKey, serialized)
+      localStorage.removeItem(workingDraftKey)
+      setWorkingDraft(null)
       setCurrentStorageKey(storageKey)
       setSavedEntries(readSavedEntries())
       setIsDirty(false)
@@ -3609,6 +3738,32 @@ export default function App() {
               </>
             )}
           </main>
+        )}
+        {showDraftRecovery && workingDraft && (
+          <div className="leaveConfirmBackdrop">
+            <section
+              className="leaveConfirmDialog"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="draft-recovery-title"
+            >
+              <h2 id="draft-recovery-title">前回の作業中データがあります</h2>
+              <p>
+                保存する前にM-Crossが終了した可能性があります。<br />
+                続きから再開できます。
+              </p>
+              <p className="savedMeta">
+                {workingDraft.propertyName || '物件名なし'}
+                {workingDraft.unit ? `　${workingDraft.unit}号室` : ''}
+              </p>
+              <button className="saveButton" type="button" onClick={restoreWorkingDraft}>
+                続きから再開
+              </button>
+              <button className="dangerButton" type="button" onClick={discardWorkingDraft}>
+                破棄して新規開始
+              </button>
+            </section>
+          </div>
         )}
         {showLeaveConfirmation && (
           <div className="leaveConfirmBackdrop">
