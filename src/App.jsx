@@ -3,8 +3,8 @@ import properties from './m-cross-properties.json'
 import './App.css'
 
 const defaultRooms = [
-  '居間', '台所', '洋間', '洋間2', '洋間3', '和室',
-  '脱衣所', 'トイレ', '玄関', '階段', 'ホール',
+  '居間', 'LDK', '台所', '洋間', '洋間2', '洋間3', '和室',
+  '階段', 'ホール', '玄関', '脱衣所', 'トイレ',
 ]
 const measurementTypes = ['天井', '収納天井', '壁', '収納壁']
 const storagePrefix = 'm-cross:'
@@ -50,7 +50,32 @@ function splitMeasurementType(type) {
   return type.startsWith('収納') ? ['収納', type.replace('収納', '')] : [type]
 }
 function buildEstimateRows(records, cfRecords, softRecords, rooms, factor, pricingSettings) {
-  const rows = []
+  const crossRows = []
+  const cfRows = []
+  const softRows = []
+  const roomPriority = ['居間', 'LDK', '台所', '洋間', '和室', '階段', 'ホール', '玄関', '脱衣所', 'トイレ']
+
+  function roomBaseName(roomName) {
+    if (/^洋間\d+$/.test(roomName)) return '洋間'
+    if (/^和室\d+$/.test(roomName)) return '和室'
+    return roomName
+  }
+
+  function roomNumber(roomName) {
+    const match = String(roomName).match(/(\d+)$/)
+    return match ? Number(match[1]) : 0
+  }
+
+  const orderedRooms = [...rooms].sort((a, b) => {
+    const aIndex = roomPriority.indexOf(roomBaseName(a))
+    const bIndex = roomPriority.indexOf(roomBaseName(b))
+    const aRank = aIndex === -1 ? roomPriority.length : aIndex
+    const bRank = bIndex === -1 ? roomPriority.length : bIndex
+    if (aRank !== bRank) return aRank - bRank
+    const numberDifference = roomNumber(a) - roomNumber(b)
+    if (numberDifference !== 0) return numberDifference
+    return String(a).localeCompare(String(b), 'ja')
+  })
 
   function groupByMemo(targetRecords) {
     const groups = new Map()
@@ -62,52 +87,36 @@ function buildEstimateRows(records, cfRecords, softRecords, rooms, factor, prici
     return groups
   }
 
-  rooms.forEach(roomName => {
-    const crossDefinitions = [
+  // 1. クロスを全部屋分、指定した部屋順で先に並べます。
+  orderedRooms.forEach(roomName => {
+    const definitions = [
       {
         parts: [roomName, '天井', 'クロス貼替'],
-        records: records.filter(record =>
-          record.room === roomName && record.type === '天井'
-        ),
-        amountForRecord: record =>
-          getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['天井'] || 0),
+        records: records.filter(record => record.room === roomName && record.type === '天井'),
+        amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['天井'] || 0),
       },
       {
         parts: [roomName, '壁', 'クロス貼替'],
-        records: records.filter(record =>
-          record.room === roomName && record.type === '壁'
-        ),
-        amountForRecord: record =>
-          getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['壁'] || 0),
+        records: records.filter(record => record.room === roomName && record.type === '壁'),
+        amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['壁'] || 0),
       },
       {
         parts: [roomName, '収納', 'クロス貼替'],
-        records: records.filter(record =>
-          record.room === roomName &&
-          (record.type === '収納天井' || record.type === '収納壁')
-        ),
-        amountForRecord: record =>
-          getRecordQuantity(record) * factor * Number(pricingSettings.crossRates[record.type] || 0),
+        records: records.filter(record => record.room === roomName && (record.type === '収納天井' || record.type === '収納壁')),
+        amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates[record.type] || 0),
         storage: true,
       },
     ]
 
-    crossDefinitions.forEach(definition => {
+    definitions.forEach(definition => {
       groupByMemo(definition.records).forEach((groupRecords, inputMemo) => {
-        const quantity = groupRecords.reduce(
-          (sum, record) => sum + getRecordQuantity(record), 0
-        ) * factor
+        const quantity = groupRecords.reduce((sum, record) => sum + getRecordQuantity(record), 0) * factor
         if (quantity <= 0) return
-        const amount = groupRecords.reduce(
-          (sum, record) => sum + definition.amountForRecord(record), 0
-        )
-        const memo = definition.storage
-          ? ['天井壁', inputMemo].filter(Boolean).join('・')
-          : inputMemo
-        rows.push({
+        const amount = groupRecords.reduce((sum, record) => sum + definition.amountForRecord(record), 0)
+        crossRows.push({
           room: roomName,
           parts: definition.parts,
-          memo,
+          memo: definition.storage ? ['天井壁', inputMemo].filter(Boolean).join('・') : inputMemo,
           category: 'cross',
           quantity,
           unit: '㎡',
@@ -116,15 +125,16 @@ function buildEstimateRows(records, cfRecords, softRecords, rooms, factor, prici
         })
       })
     })
+  })
 
+  // 2. クロスが終わった後に、CFを全部屋分並べます。
+  orderedRooms.forEach(roomName => {
     const roomCfRecords = cfRecords.filter(record => record.room === roomName)
     groupByMemo(roomCfRecords).forEach((groupRecords, memo) => {
-      const quantity = groupRecords.reduce(
-        (sum, record) => sum + getLengthQuantity(record), 0
-      )
+      const quantity = groupRecords.reduce((sum, record) => sum + getLengthQuantity(record), 0)
       if (quantity <= 0) return
       const rate = Number(pricingSettings.cfRate || 0)
-      rows.push({
+      cfRows.push({
         room: roomName,
         parts: [roomName, 'CF貼替'],
         memo,
@@ -137,14 +147,12 @@ function buildEstimateRows(records, cfRecords, softRecords, rooms, factor, prici
     })
   })
 
-  // ソフト巾木も、メモなしは全室合算、メモありはメモごとに別行にします。
+  // 3. 最後にソフト巾木。メモなしは全室合計、メモありはメモ別です。
   groupByMemo(softRecords).forEach((groupRecords, memo) => {
-    const quantity = groupRecords.reduce(
-      (sum, record) => sum + getSoftBaseboardQuantity(record), 0
-    )
+    const quantity = groupRecords.reduce((sum, record) => sum + getSoftBaseboardQuantity(record), 0)
     if (quantity <= 0) return
     const rate = Number(pricingSettings.softRate || 0)
-    rows.push({
+    softRows.push({
       room: '__ALL_ROOMS__',
       parts: ['ソフト巾木貼替'],
       memo,
@@ -156,7 +164,7 @@ function buildEstimateRows(records, cfRecords, softRecords, rooms, factor, prici
     })
   })
 
-  return rows.map(row => ({
+  return [...crossRows, ...cfRows, ...softRows].map(row => ({
     ...row,
     label: row.parts.join(' '),
   }))
@@ -743,9 +751,12 @@ const styles = `
   .copyFormatPreview { margin:10px 0 0; color:#8e8190; font-size:13px; line-height:1.7; }
   .copyStatus { margin:12px 0 0; color:#548c73; font-weight:800; text-align:center; }
   @media (max-width:520px) {
-    .estimateRow { grid-template-columns:minmax(0,1fr) auto; }
-    .estimateRow .estimateUnit,.estimateRow .estimateRate { grid-column:1 / -1; text-align:left; color:#958896; }
-    .estimateRow .estimateNumber { text-align:left; }
+    .estimateRow { grid-template-columns:minmax(0,1fr) 52px 68px 72px; gap:5px; align-items:center; }
+    .estimateRow .estimateUnit,.estimateRow .estimateRate { grid-column:auto; text-align:right; color:#958896; white-space:nowrap; }
+    .estimateRow .estimateNumber { text-align:right; white-space:nowrap; }
+    .estimateRow > strong { min-width:0; overflow-wrap:anywhere; font-size:12px; line-height:1.35; }
+    .estimateRow > .estimateNumber > strong { white-space:nowrap; font-size:12px; }
+    .estimateMemo { display:block; margin-top:3px; color:#b07c9c; font-size:11px; font-weight:700; line-height:1.25; }
   }
   .saveStatus { margin:8px 0 0; color:#548c73; font-size:15px; font-weight:700; text-align:center; }
   .leaveConfirmBackdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:20px; background:rgba(35,28,34,.48); }
@@ -2886,7 +2897,7 @@ export default function App() {
                         <h3>{roomName}</h3>
                         {roomRows.map((row, index) => (
                           <div className="estimateRow" key={row.category + '-' + row.label + '-' + index}>
-                            <strong>{row.label}</strong>
+                            <strong>{row.label}{row.memo && <small className="estimateMemo">{row.memo}</small>}</strong>
                             <span className="estimateNumber estimateUnit">{formatQuantity(row.quantity)}{row.unit}</span>
                             <span className="estimateNumber estimateRate">× {formatYen(row.rate)}</span>
                             <span className="estimateNumber"><strong>{formatYen(row.amount)}</strong></span>
