@@ -23,6 +23,7 @@ const defaultPricingSettings = {
   },
   cfRate: 2600,
   softRate: 0,
+  floorTrimRate: 0,
   crossFactor: 1,
 }
 
@@ -49,10 +50,11 @@ function formatYen(value) {
 function splitMeasurementType(type) {
   return type.startsWith('収納') ? ['収納', type.replace('収納', '')] : [type]
 }
-function buildEstimateRows(records, cfRecords, softRecords, rooms, factor, pricingSettings) {
+function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings) {
   const crossRows = []
   const cfRows = []
   const softRows = []
+  const floorTrimRows = []
   const roomPriority = ['居間', 'LDK', '台所', '洋間', '和室', '階段', 'ホール', '玄関', '脱衣所', 'トイレ']
 
   function roomBaseName(roomName) {
@@ -164,7 +166,33 @@ function buildEstimateRows(records, cfRecords, softRecords, rooms, factor, prici
     })
   })
 
-  return [...crossRows, ...cfRows, ...softRows].map(row => ({
+  const floorTrimGroups = new Map()
+  floorTrimRecords.forEach(record => {
+    const roomA = String(record.roomA || '').trim()
+    const roomB = String(record.roomB || '').trim()
+    const color = String(record.color || '').trim()
+    if (!roomA || !roomB || roomA === roomB) return
+    const key = [roomA, roomB, color].join('||')
+    const current = floorTrimGroups.get(key) || { roomA, roomB, color, quantity: 0 }
+    current.quantity += Math.max(0, Number(record.quantity) || 0)
+    floorTrimGroups.set(key, current)
+  })
+  floorTrimGroups.forEach(group => {
+    if (group.quantity <= 0) return
+    const rate = Number(pricingSettings.floorTrimRate || 0)
+    floorTrimRows.push({
+      room: '__FLOOR_TRIM__',
+      parts: [`${group.roomA}⇔${group.roomB}`, '床見切り取付'],
+      memo: group.color,
+      category: 'floorTrim',
+      quantity: group.quantity,
+      unit: '本',
+      rate,
+      amount: group.quantity * rate,
+    })
+  })
+
+  return [...crossRows, ...cfRows, ...softRows, ...floorTrimRows].map(row => ({
     ...row,
     label: row.parts.join(' '),
   }))
@@ -199,7 +227,11 @@ async function downloadEstimateExcel(entry, rows, format) {
       : 1
     const lastColumn = maxParts + 3
     const outputRows = rows.map(row => {
-      const splitParts = row.category === 'cf' ? [row.room, '床', 'CF貼替'] : row.parts
+      const splitParts = row.category === 'cf'
+        ? [row.room, '床', 'CF貼替']
+        : row.category === 'floorTrim'
+          ? [row.parts[0], '床', '見切り取付']
+          : row.parts
       const itemCells = format === 'split' ? splitParts : [row.parts.join(' ')]
       const emptyFill = Array(Math.max(0, maxParts - itemCells.length)).fill('')
       return [
@@ -275,25 +307,55 @@ async function downloadEstimateExcel(entry, rows, format) {
       dataRow.getCell(maxParts + 2).numFmt = '0.0'
     })
 
-    for (let columnIndex = 1; columnIndex <= lastColumn; columnIndex += 1) {
-      const maxLength = worksheet.getColumn(columnIndex).values.reduce((max, value) => {
-        const text = String(value ?? '')
-        const displayLength = [...text].reduce(
-          (length, character) => length + (character.charCodeAt(0) > 0xff ? 2 : 1),
-          0
-        )
-        return Math.max(max, displayLength)
+    function getDisplayLength(value) {
+      return [...String(value ?? '')].reduce((length, character) => {
+        const code = character.charCodeAt(0)
+        return length + (code > 0xff ? 2 : 1)
       }, 0)
-      const minimumWidth = columnIndex === maxParts + 1
-        ? 16
-        : columnIndex === maxParts + 2
-          ? 8
-          : columnIndex === maxParts + 3
-            ? 6
-            : 8
-      worksheet.getColumn(columnIndex).width = Math.max(minimumWidth, Math.min(maxLength + 2, 40))
     }
-    worksheet.getColumn(maxParts + 1).width = Math.max(16, worksheet.getColumn(maxParts + 1).width)
+
+    for (let columnIndex = 1; columnIndex <= lastColumn; columnIndex += 1) {
+      const column = worksheet.getColumn(columnIndex)
+      const maxLength = column.values.reduce(
+        (max, value) => Math.max(max, getDisplayLength(value)),
+        0
+      )
+      const isMemoColumn = columnIndex === maxParts + 1
+      const isQuantityColumn = columnIndex === maxParts + 2
+      const isUnitColumn = columnIndex === maxParts + 3
+
+      let minimumWidth = 6
+      let maximumWidth = 24
+      let extraWidth = 1.5
+
+      if (isMemoColumn) {
+        minimumWidth = 12
+        maximumWidth = 28
+        extraWidth = 2
+      } else if (isQuantityColumn) {
+        minimumWidth = 8
+        maximumWidth = 10
+        extraWidth = 1
+      } else if (isUnitColumn) {
+        minimumWidth = 5
+        maximumWidth = 6
+        extraWidth = 1
+      } else if (format === 'merged' && columnIndex === 1) {
+        minimumWidth = 18
+        maximumWidth = 36
+        extraWidth = 2
+      }
+
+      column.width = Math.max(
+        minimumWidth,
+        Math.min(maximumWidth, maxLength + extraWidth)
+      )
+      column.alignment = {
+        vertical: 'middle',
+        horizontal: isQuantityColumn ? 'right' : 'left',
+        wrapText: maxLength + extraWidth > maximumWidth,
+      }
+    }
 
     const buffer = await workbook.xlsx.writeBuffer()
     const blob = new Blob([buffer], {
@@ -748,6 +810,11 @@ const styles = `
   .estimateFactor input { width:100%; min-height:54px; padding:0 15px; border:2px solid #efe4dc; border-radius:14px; font:inherit; }
   .quickMemos { display:flex; flex-wrap:wrap; gap:8px; margin:-8px 0 18px; }
   .quickMemoButton { min-height:40px; padding:7px 11px; border:1px solid #efc7b4; border-radius:999px; color:#c96e69; background:#fff7f0; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+  .floorTrimSection { margin-top:20px; }
+  .floorTrimGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .floorTrimColorOptions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
+  .floorTrimColorButton { min-height:46px; border:1px solid #e9dce8; border-radius:13px; color:#75697a; background:#fff; font:inherit; font-weight:800; }
+  .floorTrimColorButton.active { border-color:#f3a18f; color:#fff; background:linear-gradient(180deg,#ffb49b,#f18c7d); }
   .copyFormatPreview { margin:10px 0 0; color:#8e8190; font-size:13px; line-height:1.7; }
   .copyStatus { margin:12px 0 0; color:#548c73; font-weight:800; text-align:center; }
   @media (max-width:520px) {
@@ -1243,19 +1310,60 @@ async function downloadExcel(entry) {
       })
     })
 
+    function getMeasurementDisplayLength(value) {
+      return [...String(value ?? '')].reduce((length, character) => {
+        const code = character.charCodeAt(0)
+        return length + (code > 0xff ? 2 : 1)
+      }, 0)
+    }
+
     for (let columnIndex = 1; columnIndex <= lastColumn; columnIndex += 1) {
-      const maxLength = worksheet.getColumn(columnIndex).values.reduce((max, value) => {
-        const text = String(value ?? '')
-        const displayLength = [...text].reduce(
-          (length, character) => length + (character.charCodeAt(0) > 0xff ? 2 : 1),
-          0
-        )
-        return Math.max(max, displayLength)
-      }, 10)
+      const column = worksheet.getColumn(columnIndex)
       const headerText = String(columns[columnIndex - 1] || '')
-      const minimumWidth = headerText === '数量' ? 8 : headerText === '単位' ? 6 : 6
-      worksheet.getColumn(columnIndex).width = Math.max(minimumWidth, Math.min(maxLength + 2, 40))
-      worksheet.getColumn(columnIndex).alignment = { vertical: 'middle', wrapText: maxLength > 40 }
+      const maxLength = column.values.reduce(
+        (max, value) => Math.max(max, getMeasurementDisplayLength(value)),
+        getMeasurementDisplayLength(headerText)
+      )
+
+      let minimumWidth = 6
+      let maximumWidth = 20
+      let extraWidth = 1.5
+
+      if (headerText === '部屋名') {
+        minimumWidth = 8
+        maximumWidth = 16
+      } else if (headerText === '採寸区分') {
+        minimumWidth = 10
+        maximumWidth = 16
+      } else if (headerText === 'メモ') {
+        minimumWidth = 14
+        maximumWidth = 30
+        extraWidth = 2
+      } else if (['長さ', '高さ', '本数', '枚数', '数量'].includes(headerText)) {
+        minimumWidth = 8
+        maximumWidth = 10
+        extraWidth = 1
+      } else if (headerText === '単位') {
+        minimumWidth = 5
+        maximumWidth = 6
+        extraWidth = 1
+      } else if (['部屋①', '部屋②'].includes(headerText)) {
+        minimumWidth = 10
+        maximumWidth = 18
+      } else if (headerText === 'カラー') {
+        minimumWidth = 10
+        maximumWidth = 14
+      }
+
+      column.width = Math.max(
+        minimumWidth,
+        Math.min(maximumWidth, maxLength + extraWidth)
+      )
+      column.alignment = {
+        vertical: 'middle',
+        horizontal: ['長さ', '高さ', '本数', '枚数', '数量'].includes(headerText) ? 'right' : 'left',
+        wrapText: maxLength + extraWidth > maximumWidth,
+      }
     }
   }
 
@@ -1282,6 +1390,8 @@ async function downloadExcel(entry) {
   addWorksheet('クロス', 'FFF08A79', ['部屋名', '採寸区分', 'メモ', '長さ', '本数', '数量'], crossRows)
   addWorksheet('CF', 'FF6E91E8', ['部屋名', 'メモ', '長さ', '本数', '数量'], cfRows)
   addWorksheet('ソフト巾木', 'FF63BEA1', ['部屋名', '枚数', '数量'], softRows)
+  const floorTrimRows = (entry.floorTrimRecords || []).map(record => [record.roomA || '', record.roomB || '', record.color || '', Number(record.quantity || 0), '本'])
+  if (floorTrimRows.length > 0) addWorksheet('床見切り', 'FFC6A4E8', ['部屋①', '部屋②', 'カラー', '数量', '単位'], floorTrimRows)
 
   const buffer = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buffer], {
@@ -1456,6 +1566,57 @@ function LengthMeasurementPage({
   )
 }
 
+function FloorTrimSection({ rooms, records, setRecords, onChanged }) {
+  const [roomA, setRoomA] = useState(rooms[0] || '')
+  const [roomB, setRoomB] = useState(rooms[1] || rooms[0] || '')
+  const [color, setColor] = useState('シルバー')
+  const [quantity, setQuantity] = useState('1')
+
+  useEffect(() => {
+    if (!rooms.includes(roomA)) setRoomA(rooms[0] || '')
+    if (!rooms.includes(roomB)) setRoomB(rooms[1] || rooms[0] || '')
+  }, [rooms, roomA, roomB])
+
+  function addFloorTrim(event) {
+    event.preventDefault()
+    const numericQuantity = Number(quantity)
+    if (!roomA || !roomB || roomA === roomB || !Number.isInteger(numericQuantity) || numericQuantity < 1) return
+    setRecords(previous => [...previous, {
+      id: createRecordId(), roomA, roomB, color, quantity: numericQuantity,
+    }])
+    setQuantity('1')
+    onChanged()
+  }
+
+  return (
+    <section className="card floorTrimSection">
+      <h2>床見切り</h2>
+      <form onSubmit={addFloorTrim}>
+        <div className="floorTrimGrid">
+          <label><span>部屋①</span><select value={roomA} onChange={event => setRoomA(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+          <label><span>部屋②</span><select value={roomB} onChange={event => setRoomB(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+        </div>
+        <label><span>カラー</span></label>
+        <div className="floorTrimColorOptions">
+          {['シルバー', 'アンバー'].map(value => <button key={value} type="button" className={`floorTrimColorButton${color === value ? ' active' : ''}`} onClick={() => setColor(value)}>{value}</button>)}
+        </div>
+        <label><span>数量（本）</span><input type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
+        {roomA === roomB && <p className="saveStatus" role="alert">異なる部屋を選んでください</p>}
+        <button className="add" type="submit">＋ 床見切りを登録</button>
+      </form>
+      <div className="records">
+        {records.length === 0 ? <p className="empty">床見切りの登録はありません</p> : records.map(item => (
+          <div className="record" key={item.id}>
+            <div><strong>{item.roomA}⇔{item.roomB}</strong><small>床見切り取付・{item.color}</small></div>
+            <b>{formatQuantity(item.quantity)}本</b>
+            <button type="button" onClick={() => { setRecords(previous => previous.filter(record => record.id !== item.id)); onChanged() }} aria-label="床見切りを削除">×</button>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [propertyMasterState, setPropertyMasterState] = useState(loadPropertyMaster)
@@ -1520,6 +1681,7 @@ export default function App() {
   const [softPageIndex, setSoftPageIndex] = useState(0)
   const [cfRecords, setCfRecords] = useState([])
   const [softRecords, setSoftRecords] = useState([])
+  const [floorTrimRecords, setFloorTrimRecords] = useState([])
   const rooms = projectRooms
 
   useEffect(() => {
@@ -1918,6 +2080,7 @@ export default function App() {
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
     setSoftRecords(Array.isArray(entry.softRecords) ? entry.softRecords : [])
+    setFloorTrimRecords(Array.isArray(entry.floorTrimRecords) ? entry.floorTrimRecords : [])
     setProjectRooms(Array.isArray(entry.rooms)
       ? entry.rooms
       : [...defaultRooms, ...(Array.isArray(entry.customRooms) ? entry.customRooms : [])])
@@ -1963,6 +2126,7 @@ export default function App() {
         records: Array.isArray(entry.records) ? entry.records : [],
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
         softRecords: Array.isArray(entry.softRecords) ? entry.softRecords : [],
+        floorTrimRecords: Array.isArray(entry.floorTrimRecords) ? entry.floorTrimRecords : [],
         rooms: Array.isArray(entry.rooms)
           ? entry.rooms
           : [...defaultRooms, ...(Array.isArray(entry.customRooms) ? entry.customRooms : [])],
@@ -2080,6 +2244,7 @@ export default function App() {
       setRecords(Array.isArray(savedData?.records) ? savedData.records : [])
       setCfRecords(Array.isArray(savedData?.cfRecords) ? savedData.cfRecords : [])
       setSoftRecords(Array.isArray(savedData?.softRecords) ? savedData.softRecords : [])
+      setFloorTrimRecords(Array.isArray(savedData?.floorTrimRecords) ? savedData.floorTrimRecords : [])
       setProjectRooms(Array.isArray(savedData?.rooms)
         ? savedData.rooms
         : [...defaultRooms, ...(Array.isArray(savedData?.customRooms) ? savedData.customRooms : [])])
@@ -2100,6 +2265,7 @@ export default function App() {
       setRecords([])
       setCfRecords([])
       setSoftRecords([])
+      setFloorTrimRecords([])
       setProjectRooms(defaultRooms)
       setRoomConfirmations({})
       setPageIndex(0)
@@ -2146,6 +2312,7 @@ export default function App() {
       records,
       cfRecords,
       softRecords,
+      floorTrimRecords,
       draftMemo: memo,
       rooms,
       roomConfirmations,
@@ -2196,6 +2363,11 @@ export default function App() {
     setSoftRecords(previous => previous.map(record =>
       record.room === oldName ? { ...record, room: newName } : record
     ))
+    setFloorTrimRecords(previous => previous.map(record => ({
+      ...record,
+      roomA: record.roomA === oldName ? newName : record.roomA,
+      roomB: record.roomB === oldName ? newName : record.roomB,
+    })))
     setRoomConfirmations(previous => {
       if (!previous[oldName]) return previous
       const next = { ...previous }
@@ -2210,6 +2382,7 @@ export default function App() {
     return records.some(record => record.room === roomName)
       || cfRecords.some(record => record.room === roomName)
       || softRecords.some(record => record.room === roomName)
+      || floorTrimRecords.some(record => record.roomA === roomName || record.roomB === roomName)
   }
 
   function deleteRoom(roomName) {
@@ -2224,6 +2397,7 @@ export default function App() {
     setRecords(previous => previous.filter(record => record.room !== roomName))
     setCfRecords(previous => previous.filter(record => record.room !== roomName))
     setSoftRecords(previous => previous.filter(record => record.room !== roomName))
+    setFloorTrimRecords(previous => previous.filter(record => record.roomA !== roomName && record.roomB !== roomName))
     setRoomConfirmations(previous => {
       const next = { ...previous }
       delete next[roomName]
@@ -2404,6 +2578,10 @@ export default function App() {
                   <label>
                     <span>ソフト巾木（円／枚）</span>
                     <input type="number" min="0" step="1" value={pricingSettings.softRate} onChange={event => updatePricingSetting('softRate', event.target.value)} />
+                  </label>
+                  <label>
+                    <span>床見切り（円／本）</span>
+                    <input type="number" min="0" step="1" value={pricingSettings.floorTrimRate} onChange={event => updatePricingSetting('floorTrimRate', event.target.value)} />
                   </label>
                   <label>
                     <span>クロス基本換算率</span>
@@ -2824,7 +3002,7 @@ export default function App() {
                   ? '部屋管理'
                   : activePage === 'cross'
                 ? isSummaryPage ? '全室の合計' : '採寸入力'
-                : activePage === 'cf' ? 'CF採寸' : 'ソフト巾木'}
+                : activePage === 'cf' ? 'CF採寸' : activePage === 'soft' ? 'ソフト巾木' : '床見切り'}
             </h1>
             <div className="measurementActions">
               <button className="saveButton" type="button" onClick={saveCurrentData}>保存する</button>
@@ -2839,6 +3017,7 @@ export default function App() {
                   records,
                   cfRecords,
                   softRecords,
+                  floorTrimRecords,
                 })}
               >
                 Excel出力
@@ -2864,6 +3043,7 @@ export default function App() {
                 <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
                 <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
                 <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
+                <button type="button" className={activePage === 'floorTrim' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('floorTrim')}>床見切り</button>
               </div>
             )}
 
@@ -2880,7 +3060,7 @@ export default function App() {
             {showEstimate ? (() => {
               // お客様向け画面には換算率を表示せず、設定済みの案件換算率だけを計算に使用します。
               const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
-              const estimateRows = buildEstimateRows(records, cfRecords, softRecords, rooms, factor, pricingSettings)
+              const estimateRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
               const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0)
               return (
                 <section className="card">
@@ -2889,14 +3069,17 @@ export default function App() {
 
                   {estimateRows.length === 0 ? (
                     <p className="empty">概算できる採寸データがありません</p>
-                  ) : rooms.map(roomName => {
-                    const roomRows = estimateRows.filter(row => row.room === roomName)
-                    if (roomRows.length === 0) return null
+                  ) : [
+                    ...rooms.map(roomName => ({ title: roomName, key: roomName, rows: estimateRows.filter(row => row.room === roomName) })),
+                    { title: 'ソフト巾木', key: '__ALL_ROOMS__', rows: estimateRows.filter(row => row.room === '__ALL_ROOMS__') },
+                    { title: '床見切り', key: '__FLOOR_TRIM__', rows: estimateRows.filter(row => row.room === '__FLOOR_TRIM__') },
+                  ].map(section => {
+                    if (section.rows.length === 0) return null
                     return (
-                      <section className="estimateRoom" key={roomName}>
-                        <h3>{roomName}</h3>
-                        {roomRows.map((row, index) => (
-                          <div className="estimateRow" key={row.category + '-' + row.label + '-' + index}>
+                      <section className="estimateRoom" key={section.key}>
+                        <h3>{section.title}</h3>
+                        {section.rows.map((row, index) => (
+                          <div className="estimateRow" key={row.category + '-' + row.label + '-' + row.memo + '-' + index}>
                             <strong>{row.label}{row.memo && <small className="estimateMemo">{row.memo}</small>}</strong>
                             <span className="estimateNumber estimateUnit">{formatQuantity(row.quantity)}{row.unit}</span>
                             <span className="estimateNumber estimateRate">× {formatYen(row.rate)}</span>
@@ -2936,6 +3119,8 @@ export default function App() {
                   roomHasData={roomHasData}
                 />
               </section>
+            ) : activePage === 'floorTrim' ? (
+              <FloorTrimSection rooms={rooms} records={floorTrimRecords} setRecords={setFloorTrimRecords} onChanged={markUnsaved} />
             ) : activePage === 'cf' ? (
               <LengthMeasurementPage
                 key="cf"
