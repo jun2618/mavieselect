@@ -1039,6 +1039,21 @@ const styles = `
     .crossInputArea .numberKeypad { gap:5px; padding:7px; }
     .crossInputArea .keypadButton { min-height:40px; }
   }
+  /* 現場入力改善: 入力完了を廃止し、テンキーと登録ボタンを大型化 */
+  .numberKeypad { gap:11px; padding:14px; }
+  .keypadButton { min-height:60px; font-size:23px; border-radius:14px; }
+  .crossInputArea .numberKeypad { gap:9px; padding:11px; }
+  .crossInputArea .keypadButton { min-height:58px; font-size:23px; }
+  .add.crossRegister { min-height:70px; margin:16px 0 22px; font-size:20px; }
+  .card form > .add { min-height:66px; font-size:19px; }
+  @media (max-width:600px) {
+    .numberKeypad { gap:9px; padding:10px; }
+    .keypadButton { min-height:60px; font-size:23px; }
+    .crossInputArea .numberKeypad { gap:8px; padding:10px; }
+    .crossInputArea .keypadButton { min-height:58px; font-size:23px; }
+    .add.crossRegister { min-height:70px; font-size:20px; }
+    .card form > .add { min-height:66px; font-size:19px; }
+  }
   @media (max-width:420px) {
     .main { width:min(100% - 24px,620px); margin-top:22px; }
     .propertyLine { font-size:19px; overflow-wrap:anywhere; }
@@ -1051,7 +1066,7 @@ const styles = `
   }
 `
 
-function NumberKeypad({ activeInput, onKey, onDone, decimalInput }) {
+function NumberKeypad({ activeInput, onKey, decimalInput }) {
   if (!activeInput) return null
 
   return (
@@ -1065,14 +1080,6 @@ function NumberKeypad({ activeInput, onKey, onDone, decimalInput }) {
       {decimalInput && (
         <button type="button" className="keypadButton" style={{ gridColumn: 'span 2' }} onClick={() => onKey('decimal')}>.</button>
       )}
-      <button
-        type="button"
-        className="keypadButton utility"
-        style={{ gridColumn: decimalInput ? 'span 1' : 'span 3' }}
-        onClick={onDone}
-      >
-        入力完了
-      </button>
     </div>
   )
 }
@@ -1724,7 +1731,7 @@ function LengthMeasurementPage({
                   <label><span>本数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
                 </div>
               )}
-              <NumberKeypad activeInput={activeInput} onKey={updateInput} onDone={() => setActiveInput('')} decimalInput={!countOnly && activeInput === 'length'} />
+              <NumberKeypad activeInput={activeInput} onKey={updateInput} decimalInput={!countOnly && activeInput === 'length'} />
               <label>
                 <span>メモ</span>
                 <input ref={memoInputRef} className="memoInput" type="text" value={memo} onChange={event => setMemo(event.target.value)} placeholder="例：窓面、収納内" />
@@ -3776,7 +3783,6 @@ export default function App() {
                           <NumberKeypad
                             activeInput={activeInput}
                             onKey={updateCrossInput}
-                            onDone={() => setActiveInput(activeInput === 'height' ? 'count' : '')}
                             decimalInput={activeInput === 'height'}
                           />
 
