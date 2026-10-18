@@ -19,6 +19,9 @@ const estimateCopyFormatKey = 'm-cross-estimate-copy-format'
 const commonAdditionalWorksKey = 'm-cross:common-additional-works:v1'
 const defaultRoomsKey = 'm-cross:default-rooms:v1'
 const quickMemosKey = 'm-cross:quick-memos:v1'
+const playSettingsKey = 'm-cross:play-settings:v1'
+const todayStatsKey = 'm-cross:today-stats:v1'
+const galaxyUnlockedKey = 'm-cross:galaxy-unlocked:v1'
 const defaultCommonAdditionalWorks = ['畳表替え', '電球交換', 'ドア簡易着色補修', '戸当たりゴム取付', '建具調整', 'コーキング']
 const quickMemos = ['窓面', '窓向かって右面', '窓向かって左面', '正面', '右面', '左面', 'シンク背面', 'シンク向かって右面', 'シンク向かって左面', '梁含む', '梁除く', '下がり天井']
 function loadStringList(key, fallback) {
@@ -30,6 +33,22 @@ function loadStringList(key, fallback) {
   } catch {
     return [...fallback]
   }
+}
+const defaultPlaySettings = { effects: true, sound: 'off', splash: false }
+function loadPlaySettings() {
+  try { return { ...defaultPlaySettings, ...(JSON.parse(localStorage.getItem(playSettingsKey) || 'null') || {}) } }
+  catch { return defaultPlaySettings }
+}
+function getLocalDateKey() {
+  const date = new Date()
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+function loadTodayStats() {
+  const today = getLocalDateKey()
+  try {
+    const stored = JSON.parse(localStorage.getItem(todayStatsKey) || 'null')
+    return stored?.date === today ? stored : { date: today, completed: 0, registrations: 0 }
+  } catch { return { date: today, completed: 0, registrations: 0 } }
 }
 const defaultPricingSettings = {
   crossRates: {
@@ -1155,6 +1174,34 @@ const styles = `
   .theme-forest .room.active,.theme-forest .measurementType.active,.theme-forest .settingsOption.active { color:#fff; background:linear-gradient(180deg,#6f9f72,#3e744d); }
   .theme-forest .savedUnit,.theme-forest .propertyLine,.theme-forest .summaryLine strong,.theme-forest .record b { color:#3f754e; }
   .theme-forest .address,.theme-forest .numberKeypad { background:#f4efe1; border-color:#b9aa8b; }
+  .todayStats { display:grid; grid-template-columns:auto 1fr 1fr; align-items:center; gap:10px; margin:14px 0 0; padding:12px 14px; border:1px solid rgba(155,114,207,.25); border-radius:16px; background:rgba(255,255,255,.58); text-align:center; }
+  .todayStats strong { color:#a77bd1; letter-spacing:.14em; } .todayStats span { font-size:13px; font-weight:800; }
+  .registrationEffect { position:fixed; z-index:1500; inset:0; overflow:hidden; pointer-events:none; }
+  .registrationEffect span { --angle:calc(var(--i) * 45deg); position:absolute; left:50%; top:55%; font-size:30px; animation:burstEffect .7s ease-out forwards; filter:drop-shadow(0 0 8px currentColor); }
+  @keyframes burstEffect { from { transform:translate(-50%,-50%) rotate(var(--angle)) translateY(0) scale(.4); opacity:1; } to { transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-145px) scale(1.25); opacity:0; } }
+  .completeBackdrop { position:fixed; z-index:1600; inset:0; display:grid; place-items:center; padding:20px; background:rgba(2,4,10,.72); backdrop-filter:blur(10px); }
+  .completeCard { width:min(100%,420px); padding:28px; border:1px solid #9ddfea; border-radius:24px; color:#294855; background:linear-gradient(145deg,#fff,#eafaff); box-shadow:0 0 28px rgba(75,210,236,.45); text-align:center; }
+  .completeCard small { letter-spacing:.2em; } .completeCard h2 { margin:8px 0 20px; font-size:28px; } .completeCard>div { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #cee9ef; } .completeCard p { font-weight:800; }
+  .splashScreen { position:fixed; z-index:2000; inset:0; display:grid; place-content:center; gap:14px; color:#fff; background:#111; text-align:center; animation:splashOut 1.5s ease forwards; }
+  .splashScreen strong { font-size:42px; letter-spacing:.18em; } .splashScreen span { font-size:12px; letter-spacing:.14em; }
+  .splash-cyber { color:#8fffff; background:#02040a; text-shadow:0 0 9px #00eaff,0 0 22px #ff25d8; }
+  .splash-luxury { color:#efd47f; background:#080808; font-family:"Cinzel",serif; }
+  .splash-sakura { color:#c65380; background:#fff1f6; font-family:"Zen Kurenaido",sans-serif; }
+  .splash-ice { color:#2589bf; background:#effbff; }
+  .splash-forest { color:#3e744d; background:#eef2e7; font-family:"Noto Serif JP",serif; }
+  .splash-galaxy { color:#d8c6ff; background:radial-gradient(circle,#33236d,#03020a); text-shadow:0 0 14px #7d5cff; }
+  @keyframes splashOut { 0%,70% { opacity:1; } 100% { opacity:0; visibility:hidden; } }
+  .galaxyUnlock { position:fixed; z-index:2100; inset:0; display:grid; place-content:center; gap:10px; color:#fff; background:radial-gradient(circle at center,#351c78,#05020d 65%); text-align:center; text-shadow:0 0 10px #8868ff; animation:splashOut 2.4s ease forwards; }
+  .galaxyUnlock strong { font-size:30px; letter-spacing:.12em; } .galaxyUnlock span { font-size:52px; }
+  .brandLogo { cursor:pointer; }
+  .theme-galaxy { color:#eee8ff; background:radial-gradient(circle at 15% 12%,rgba(110,74,255,.35),transparent 25%),radial-gradient(circle at 87% 25%,rgba(255,64,218,.24),transparent 26%),linear-gradient(#05020d,#090822); font-family:"M PLUS Rounded 1c",sans-serif; }
+  .theme-galaxy .brand,.theme-galaxy .main h1,.theme-galaxy .card h2,.theme-galaxy .card h3 { color:#d9ceff; text-shadow:0 0 8px #7d5cff; }
+  .theme-galaxy .mavieBrand,.theme-galaxy .eyebrow,.theme-galaxy .propertyLine,.theme-galaxy .savedUnit { color:#ff9bed; text-shadow:0 0 7px #ff42d6; }
+  .theme-galaxy .card,.theme-galaxy .savedItem,.theme-galaxy .roomSummary,.theme-galaxy .summary,.theme-galaxy .savedToolbar,.theme-galaxy .globalListEditor,.theme-galaxy .globalListItem { color:#f3efff; border-color:#765ce8; background:linear-gradient(145deg,rgba(11,8,35,.97),rgba(36,10,52,.94)); box-shadow:0 0 18px rgba(116,84,255,.38); }
+  .theme-galaxy .card input,.theme-galaxy .card select,.theme-galaxy .settingsOption { color:#fff; border-color:#765ce8; background:#0c0925; }
+  .theme-galaxy .subtitle,.theme-galaxy .savedMeta,.theme-galaxy .card label>span,.theme-galaxy .savedCardDate,.theme-galaxy .savedListSummary { color:#cdc4eb; }
+  .theme-galaxy .primary,.theme-galaxy .add,.theme-galaxy .saveButton,.theme-galaxy .secondaryButton,.theme-galaxy .room.active,.theme-galaxy .measurementType.active,.theme-galaxy .settingsOption.active { color:#fff; background:linear-gradient(135deg,#7058ed,#e047bc); box-shadow:0 5px 0 #3a287f,0 0 12px rgba(216,67,193,.35); }
+  .theme-galaxy .room,.theme-galaxy .measurementType,.theme-galaxy .keypadButton,.theme-galaxy .settingsMenuButton,.theme-galaxy .savedMoreButton { color:#ded7ff; border-color:#6955c9; background:#12102e; }
   @media (max-width:600px) {
     .measurementActions { gap:16px; margin:18px 0 22px; }
     .measurementTypes { grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr)); gap:12px; }
@@ -1728,6 +1775,7 @@ function LengthMeasurementPage({
   setPageIndex,
   countOnly = false,
   onRoomRecordsChanged,
+  onRegistered,
 }) {
   const [length, setLength] = useState('')
   const [count, setCount] = useState('')
@@ -1811,6 +1859,7 @@ function LengthMeasurementPage({
       }])
     }
     onRoomRecordsChanged(room)
+    onRegistered?.()
     setLength('')
     setCount('')
     setMemo('')
@@ -1899,7 +1948,7 @@ function LengthMeasurementPage({
   )
 }
 
-function FloorTrimSection({ rooms, records, setRecords, onChanged }) {
+function FloorTrimSection({ rooms, records, setRecords, onChanged, onRegistered }) {
   const [roomA, setRoomA] = useState(rooms[0] || '')
   const [roomB, setRoomB] = useState(rooms[1] || rooms[0] || '')
   const [color, setColor] = useState('シルバー')
@@ -1919,6 +1968,7 @@ function FloorTrimSection({ rooms, records, setRecords, onChanged }) {
     }])
     setQuantity('1')
     onChanged()
+    onRegistered?.()
   }
 
   return (
@@ -1961,6 +2011,7 @@ function FinalReviewPage({
   commonWorks,
   setCommonWorks,
   onChanged,
+  onRegistered,
 }) {
   const [room, setRoom] = useState(rooms[0] || '')
   const [work, setWork] = useState('')
@@ -1983,6 +2034,7 @@ function FinalReviewPage({
     setUnitPrice('')
     setMemo('')
     onChanged()
+    onRegistered?.()
   }
 
   function addCommonWork() {
@@ -2070,6 +2122,15 @@ export default function App() {
   const [masterStatus, setMasterStatus] = useState(propertyMasterState.error)
   const [fontSize, setFontSize] = useState(() => readPreference(fontSizeKey, 'medium'))
   const [theme, setTheme] = useState(() => readPreference(themeKey, 'beige'))
+  const [playSettings, setPlaySettings] = useState(loadPlaySettings)
+  const [todayStats, setTodayStats] = useState(loadTodayStats)
+  const [effectBurst, setEffectBurst] = useState(null)
+  const [showComplete, setShowComplete] = useState(false)
+  const [showSplash, setShowSplash] = useState(() => loadPlaySettings().splash)
+  const [galaxyUnlocked, setGalaxyUnlocked] = useState(() => readPreference(galaxyUnlockedKey, 'false') === 'true')
+  const [showGalaxyUnlock, setShowGalaxyUnlock] = useState(false)
+  const logoTapRef = useRef({ count: 0, last: 0 })
+  const completedStateRef = useRef(false)
   const [pricingSettings, setPricingSettings] = useState(loadPricingSettings)
 
   const [company, setCompany] = useState('')
@@ -2151,6 +2212,11 @@ export default function App() {
     window.addEventListener('pageshow', handlePageShow)
     return () => window.removeEventListener('pageshow', handlePageShow)
   }, [])
+  useEffect(() => {
+    if (!showSplash) return
+    const timer = window.setTimeout(() => setShowSplash(false), 1500)
+    return () => window.clearTimeout(timer)
+  }, [showSplash])
   useEffect(() => {
     try {
       const stored = localStorage.getItem(workingDraftKey)
@@ -2333,8 +2399,13 @@ export default function App() {
   function toggleRoomConfirmation(roomName) {
     setRoomConfirmations(previous => {
       const next = { ...previous }
+      const isConfirming = !next[roomName]
       if (next[roomName]) delete next[roomName]
       else next[roomName] = true
+      if (isConfirming && rooms.length > 0 && rooms.every(name => Boolean(next[name]))) {
+        setShowComplete(true)
+        updateTodayStats(stats => ({ ...stats, completed: stats.completed + 1 }))
+      }
       return next
     })
     markUnsaved()
@@ -2397,6 +2468,55 @@ export default function App() {
         <button className="secondaryButton" type="button" onClick={() => resetGlobalList(storageKey, setter, fallback, title)}>初期状態へ戻す</button>
       </section>
     )
+  }
+  function savePlaySettings(next) {
+    setPlaySettings(next)
+    try { localStorage.setItem(playSettingsKey, JSON.stringify(next)) } catch { /* 任意設定 */ }
+  }
+  function updateTodayStats(updater) {
+    setTodayStats(previous => {
+      const base = previous.date === getLocalDateKey() ? previous : loadTodayStats()
+      const next = updater(base)
+      try { localStorage.setItem(todayStatsKey, JSON.stringify(next)) } catch { /* 任意記録 */ }
+      return next
+    })
+  }
+  function playRegistrationSound() {
+    if (playSettings.sound === 'off') return
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext
+      if (!AudioContextClass) return
+      const context = new AudioContextClass()
+      const oscillator = context.createOscillator()
+      const gain = context.createGain()
+      const presets = { simple: [660, 'sine'], pop: [880, 'triangle'], cyber: [1240, 'square'] }
+      const [frequency, type] = presets[playSettings.sound] || presets.simple
+      oscillator.frequency.value = frequency
+      oscillator.type = type
+      gain.gain.setValueAtTime(0.055, context.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.13)
+      oscillator.connect(gain); gain.connect(context.destination)
+      oscillator.start(); oscillator.stop(context.currentTime + 0.14)
+      oscillator.onended = () => context.close()
+    } catch { /* 音が使えない端末では無音 */ }
+  }
+  function triggerRegisteredEffect() {
+    updateTodayStats(previous => ({ ...previous, registrations: previous.registrations + 1 }))
+    playRegistrationSound()
+    if (!playSettings.effects) return
+    const symbols = { beige: '✨', dark: '✦', pop: '🎉', cyber: '⚡', luxury: '✦', sakura: '🌸', ice: '❄', forest: '🍃', galaxy: '★' }
+    setEffectBurst({ id: Date.now(), symbol: symbols[theme] || '✨', theme })
+    window.setTimeout(() => setEffectBurst(null), 700)
+  }
+  function handleLogoTap() {
+    const now = Date.now()
+    const nextCount = now - logoTapRef.current.last > 1400 ? 1 : logoTapRef.current.count + 1
+    logoTapRef.current = { count: nextCount, last: now }
+    if (nextCount < 5 || galaxyUnlocked) return
+    setGalaxyUnlocked(true)
+    setShowGalaxyUnlock(true)
+    try { localStorage.setItem(galaxyUnlockedKey, 'true') } catch { /* 任意解除 */ }
+    window.setTimeout(() => setShowGalaxyUnlock(false), 2400)
   }
   function markUnsaved() {
     setIsDirty(true)
@@ -3282,17 +3402,18 @@ export default function App() {
   const themeOptions = [
     ['beige', 'ベージュ'], ['dark', 'ダーク'], ['pop', 'ポップ'], ['cyber', 'サイバー'],
     ['luxury', 'Luxury Black'], ['sakura', 'SAKURA'], ['ice', 'Ice'], ['forest', 'Forest'],
+    ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
   ]
   return (
     <>
       <style>{styles}</style>
       <div
-        className={`app${theme === 'dark' ? ' theme-dark' : theme === 'pop' ? ' theme-pop' : theme === 'cyber' ? ' theme-cyber' : theme === 'luxury' ? ' theme-luxury' : theme === 'sakura' ? ' theme-sakura' : theme === 'ice' ? ' theme-ice' : theme === 'forest' ? ' theme-forest' : ''}`}
+        className={`app${theme === 'dark' ? ' theme-dark' : theme === 'pop' ? ' theme-pop' : theme === 'cyber' ? ' theme-cyber' : theme === 'luxury' ? ' theme-luxury' : theme === 'sakura' ? ' theme-sakura' : theme === 'ice' ? ' theme-ice' : theme === 'forest' ? ' theme-forest' : theme === 'galaxy' ? ' theme-galaxy' : ''}`}
         style={{ zoom: fontScales[fontSize] || 1 }}
       >
         <header className="header">
           <div className="brandGroup">
-            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" />
+            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" onClick={handleLogoTap} />
             <div>
               <div className="mavieBrand">MavieSelect</div>
               <div className="brand">M-Cross</div>
@@ -3348,6 +3469,15 @@ export default function App() {
               <p className="copyFormatPreview">
                 {estimateCopyFormat === 'split' ? '社員用：居間｜収納｜壁｜クロス貼替｜8.6｜㎡' : '自分用：居間 収納 壁 クロス貼替｜8.6｜㎡'}
               </p>
+              <h2 style={{ marginTop: 28 }}>遊び設定</h2>
+              <div className="settingsOptions">
+                <button type="button" className={`settingsOption${playSettings.effects ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, effects: !playSettings.effects })}>登録エフェクト {playSettings.effects ? 'ON' : 'OFF'}</button>
+                <button type="button" className={`settingsOption${playSettings.splash ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, splash: !playSettings.splash })}>起動画面 {playSettings.splash ? 'ON' : 'OFF'}</button>
+              </div>
+              <h3 style={{ marginTop: 20 }}>操作音</h3>
+              <div className="settingsOptions">
+                {[['off','OFF'],['simple','シンプル'],['pop','ポップ'],['cyber','Cyber']].map(([value,label]) => <button key={value} type="button" className={`settingsOption${playSettings.sound === value ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, sound: value })}>{label}</button>)}
+              </div>
               <div className="settingsMenu" aria-label="詳細設定">
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('additional')}><span>🔧 よく使う追加作業</span><span>›</span></button>
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('memos')}><span>📝 よく使うメモ</span><span>›</span></button>
@@ -3717,6 +3847,9 @@ export default function App() {
             <p className="eyebrow">お部屋の採寸を、かんたんに</p>
             <h1>物件情報</h1>
             <p className="subtitle">採寸する物件を選択してください。</p>
+            <section className="todayStats" aria-label="今日の記録">
+              <strong>TODAY</strong><span>完了物件 {todayStats.completed}件</span><span>登録件数 {todayStats.registrations}件</span>
+            </section>
             <section className="card">
               <label>
                 <span>管理会社</span>
@@ -3961,9 +4094,10 @@ export default function App() {
                 commonWorks={commonAdditionalWorks}
                 setCommonWorks={setCommonAdditionalWorks}
                 onChanged={markUnsaved}
+                onRegistered={triggerRegisteredEffect}
               />
             ) : activePage === 'floorTrim' ? (
-              <FloorTrimSection rooms={rooms} records={floorTrimRecords} setRecords={setFloorTrimRecords} onChanged={markUnsaved} />
+              <FloorTrimSection rooms={rooms} records={floorTrimRecords} setRecords={setFloorTrimRecords} onChanged={markUnsaved} onRegistered={triggerRegisteredEffect} />
             ) : activePage === 'cf' ? (
               <LengthMeasurementPage
                 key="cf"
@@ -3974,6 +4108,7 @@ export default function App() {
                 pageIndex={cfPageIndex}
                 setPageIndex={setCfPageIndex}
                 onRoomRecordsChanged={markRoomUnconfirmed}
+                onRegistered={triggerRegisteredEffect}
               />
               ) : activePage === 'soft' ? (
               <LengthMeasurementPage
@@ -3986,6 +4121,7 @@ export default function App() {
                 setPageIndex={setSoftPageIndex}
                 countOnly
                 onRoomRecordsChanged={markRoomUnconfirmed}
+                onRegistered={triggerRegisteredEffect}
               />
             ) : (
               <>
@@ -4138,6 +4274,20 @@ export default function App() {
             )}
           </main>
         )}
+        {effectBurst && <div className={`registrationEffect effect-${effectBurst.theme}`} aria-hidden="true">{[0,1,2,3,4,5,6,7].map(index => <span key={index} style={{ '--i': index }}>{effectBurst.symbol}</span>)}</div>}
+        {showComplete && (
+          <div className="completeBackdrop" onClick={() => setShowComplete(false)}>
+            <section className="completeCard" onClick={event => event.stopPropagation()}>
+              <small>MEASUREMENT</small><h2>✓ 採寸 COMPLETE</h2>
+              <div><span>クロス</span><strong>{formatQuantity(records.reduce((sum,item) => sum + getRecordQuantity(item),0) * Math.max(0,Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0))}㎡</strong></div>
+              <div><span>CF</span><strong>{formatQuantity(cfRecords.reduce((sum,item) => sum + getLengthQuantity(item),0) * 1.8)}㎡</strong></div>
+              <div><span>巾木</span><strong>{formatQuantity(softRecords.reduce((sum,item) => sum + getSoftBaseboardQuantity(item),0))}枚</strong></div>
+              <p>お疲れさまでした！</p><button className="primary" type="button" onClick={() => setShowComplete(false)}>閉じる</button>
+            </section>
+          </div>
+        )}
+        {showSplash && <div className={`splashScreen splash-${theme}`}><strong>M-CROSS</strong><span>{theme === 'cyber' ? 'FIELD MEASUREMENT SYSTEM / READY' : 'MavieSelect Field Measurement'}</span></div>}
+        {showGalaxyUnlock && <div className="galaxyUnlock"><small>SECRET THEME</small><strong>GALAXY UNLOCKED</strong><span>★</span></div>}
         {showDraftRecovery && workingDraft && (
           <div className="leaveConfirmBackdrop">
             <section
