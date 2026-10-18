@@ -15,6 +15,8 @@ const pricingSettingsKey = 'm-cross:pricing-settings:v1'
 const pricingSettingsVersionKey = 'm-cross:pricing-settings-version'
 const currentPricingSettingsVersion = '2'
 const estimateCopyFormatKey = 'm-cross-estimate-copy-format'
+const commonAdditionalWorksKey = 'm-cross:common-additional-works:v1'
+const defaultCommonAdditionalWorks = ['畳表替え', '電球交換', 'ドア簡易着色補修', '戸当たりゴム取付', '建具調整', 'コーキング']
 const quickMemos = ['窓面', '窓向かって右面', '窓向かって左面', '正面', '右面', '左面', 'シンク背面', 'シンク向かって右面', 'シンク向かって左面', '梁含む', '梁除く', '下がり天井']
 const defaultPricingSettings = {
   crossRates: {
@@ -216,9 +218,9 @@ function estimateRowsToClipboardText(rows, format) {
 }
 
 
-async function downloadEstimateExcel(entry, rows, format) {
+async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) {
   try {
-    if (!rows.length) {
+    if (!rows.length && !additionalWorks.length) {
       window.alert('出力できる見積項目がありません。')
       return
     }
@@ -232,8 +234,21 @@ async function downloadEstimateExcel(entry, rows, format) {
     worksheet.properties.defaultRowHeight = 21
     worksheet.views = [{ showGridLines: false, state: 'frozen', ySplit: 8 }]
 
+    const estimateOutputRows = [
+      ...rows,
+      ...additionalWorks.map(item => ({
+        room: item.room || '',
+        parts: [item.room || '', item.work || '', ''],
+        memo: item.memo || '',
+        category: 'additionalWork',
+        quantity: Number(item.quantity || 0),
+        unit: item.unit || '式',
+        rate: Number(item.unitPrice || 0),
+        amount: Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)),
+      })),
+    ]
     const maxParts = format === 'split'
-      ? Math.max(...rows.map(row => row.parts.length))
+      ? Math.max(1, ...estimateOutputRows.map(row => row.parts.length))
       : 1
     // 「項目を分ける」場合だけ、項目3とメモの間へ空白の調整列を1列入れる。
     const spacerCount = format === 'split' ? 1 : 2
@@ -241,8 +256,10 @@ async function downloadEstimateExcel(entry, rows, format) {
     const memoColumnIndex = maxParts + spacerCount + 1
     const quantityColumnIndex = maxParts + spacerCount + 2
     const unitColumnIndex = maxParts + spacerCount + 3
-    const lastColumn = unitColumnIndex
-    const outputRows = rows.map(row => {
+    const unitPriceColumnIndex = unitColumnIndex + 1
+    const amountColumnIndex = unitColumnIndex + 2
+    const lastColumn = amountColumnIndex
+    const outputRows = estimateOutputRows.map(row => {
       const splitParts = row.category === 'cf'
         ? row.parts
         : row.category === 'floorTrim'
@@ -257,6 +274,8 @@ async function downloadEstimateExcel(entry, rows, format) {
         row.memo || '',
         Number(formatQuantity(row.quantity)),
         row.unit,
+        Number(row.rate || 0),
+        Number(row.amount || 0),
       ]
     })
 
@@ -290,7 +309,7 @@ async function downloadEstimateExcel(entry, rows, format) {
       ? [...Array(maxParts)].map((_, index) => '項目' + (index + 1))
       : ['工事項目']
     headers.push(...Array(spacerCount).fill(''))
-    headers.push('メモ', '数量', '単位')
+    headers.push('メモ', '数量', '単位', '単価', '金額')
     const headerRow = worksheet.getRow(8)
     headerRow.values = headers
     headerRow.height = 24
@@ -323,6 +342,8 @@ async function downloadEstimateExcel(entry, rows, format) {
         }
       })
       dataRow.getCell(quantityColumnIndex).numFmt = '0.0'
+      dataRow.getCell(unitPriceColumnIndex).numFmt = '#,##0'
+      dataRow.getCell(amountColumnIndex).numFmt = '#,##0'
     })
 
     function getDisplayLength(value) {
@@ -844,6 +865,17 @@ const styles = `
   .floorTrimColorOptions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
   .floorTrimColorButton { min-height:46px; border:1px solid #e9dce8; border-radius:13px; color:#75697a; background:#fff; font:inherit; font-weight:800; }
   .floorTrimColorButton.active { border-color:#f3a18f; color:#fff; background:linear-gradient(180deg,#ffb49b,#f18c7d); }
+  .reviewTotals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0 24px; }
+  .reviewTotal { padding:16px; border:1px solid #eadce9; border-radius:18px; background:#fffafc; box-shadow:0 5px 0 #eee2e9; }
+  .reviewTotal span { display:block; color:#8a7b8d; font-size:13px; font-weight:800; }
+  .reviewTotal strong { display:block; margin-top:5px; color:#cf716f; font-size:23px; }
+  .additionalWorkForm { margin-top:16px; padding:16px; border:1px dashed #efc7b4; border-radius:20px; background:#fffaf5; }
+  .additionalWorkGrid { display:grid; grid-template-columns:1fr 90px 90px; gap:10px; }
+  .commonWorkButtons { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 16px; }
+  .additionalWorkItem { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:10px; align-items:center; padding:14px 0; border-bottom:1px solid #eee5ec; }
+  .additionalWorkItem:last-child { border-bottom:0; }
+  .additionalWorkItem small { display:block; margin-top:4px; color:#988b99; }
+  @media (max-width:520px) { .reviewTotals { grid-template-columns:1fr 1fr; } .additionalWorkGrid { grid-template-columns:1fr 78px; } .additionalWorkGrid label:last-child { grid-column:1 / -1; } }
   .copyFormatPreview { margin:10px 0 0; color:#8e8190; font-size:13px; line-height:1.7; }
   .copyStatus { margin:12px 0 0; color:#548c73; font-weight:800; text-align:center; }
   @media (max-width:520px) {
@@ -1455,6 +1487,11 @@ async function downloadExcel(entry) {
   addWorksheet('ソフト巾木', 'FF63BEA1', ['部屋名', '枚数', '数量'], softRows)
   const floorTrimRows = (entry.floorTrimRecords || []).map(record => [record.roomA || '', record.roomB || '', record.color || '', Number(record.quantity || 0), '本'])
   if (floorTrimRows.length > 0) addWorksheet('床見切り', 'FFC6A4E8', ['部屋①', '部屋②', 'カラー', '数量', '単位'], floorTrimRows)
+  const additionalWorkRows = (entry.additionalWorks || []).map(item => [
+    item.room || '', item.work || '', Number(item.quantity || 0), item.unit || '式',
+    Number(item.unitPrice || 0), Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), item.memo || '',
+  ])
+  if (additionalWorkRows.length > 0) addWorksheet('追加作業', 'FFF0A36E', ['部屋', '作業内容', '数量', '単位', '単価', '金額', 'メモ'], additionalWorkRows)
 
   const buffer = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buffer], {
@@ -1707,6 +1744,104 @@ function FloorTrimSection({ rooms, records, setRecords, onChanged }) {
   )
 }
 
+function FinalReviewPage({
+  rooms,
+  crossTotal,
+  cfTotal,
+  softTotal,
+  floorTrimTotal,
+  additionalWorks,
+  setAdditionalWorks,
+  commonWorks,
+  setCommonWorks,
+  onChanged,
+}) {
+  const [room, setRoom] = useState(rooms[0] || '')
+  const [work, setWork] = useState('')
+  const [quantity, setQuantity] = useState('1')
+  const [unit, setUnit] = useState('式')
+  const [unitPrice, setUnitPrice] = useState('')
+  const [memo, setMemo] = useState('')
+
+  function addWork(event) {
+    event.preventDefault()
+    const numericQuantity = Number(quantity)
+    const numericUnitPrice = Math.max(0, Number(unitPrice) || 0)
+    if (!room || !work.trim() || !Number.isFinite(numericQuantity) || numericQuantity <= 0) return
+    setAdditionalWorks(previous => [...previous, {
+      id: createRecordId(), room, work: work.trim(), quantity: numericQuantity, unit,
+      unitPrice: numericUnitPrice, amount: numericQuantity * numericUnitPrice, memo: memo.trim(),
+    }])
+    setWork('')
+    setQuantity('1')
+    setUnitPrice('')
+    setMemo('')
+    onChanged()
+  }
+
+  function addCommonWork() {
+    const value = window.prompt('よく使う項目名を入力してください')?.trim()
+    if (!value || commonWorks.includes(value)) return
+    const next = [...commonWorks, value]
+    setCommonWorks(next)
+    localStorage.setItem(commonAdditionalWorksKey, JSON.stringify(next))
+  }
+
+  function deleteCommonWork(value) {
+    const next = commonWorks.filter(item => item !== value)
+    setCommonWorks(next)
+    localStorage.setItem(commonAdditionalWorksKey, JSON.stringify(next))
+  }
+
+  return (
+    <>
+      <section className="card">
+        <h2>✅ 最終確認</h2>
+        <p className="subtitle">内装数量と、内装以外の追加作業を確認してください。</p>
+        <div className="reviewTotals">
+          <div className="reviewTotal"><span>クロス合計</span><strong>{formatQuantity(crossTotal)}㎡</strong></div>
+          <div className="reviewTotal"><span>CF合計</span><strong>{formatQuantity(cfTotal)}㎡</strong></div>
+          <div className="reviewTotal"><span>ソフト巾木</span><strong>{formatQuantity(softTotal)}枚</strong></div>
+          <div className="reviewTotal"><span>床見切り</span><strong>{formatQuantity(floorTrimTotal)}本</strong></div>
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>🔧 内装以外の追加作業</h2>
+        <div className="commonWorkButtons" aria-label="よく使う追加作業">
+          {commonWorks.map(value => (
+            <button key={value} className="quickMemoButton" type="button" onClick={() => setWork(value)} onContextMenu={event => { event.preventDefault(); deleteCommonWork(value) }}>{value}</button>
+          ))}
+          <button className="quickMemoButton" type="button" onClick={addCommonWork}>＋ よく使う項目</button>
+        </div>
+
+        <form className="additionalWorkForm" onSubmit={addWork}>
+          <label><span>部屋</span><select value={room} onChange={event => setRoom(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+          <label><span>作業内容</span><input value={work} onChange={event => setWork(event.target.value)} placeholder="例：畳表替え、電球交換" /></label>
+          <div className="additionalWorkGrid">
+            <label><span>数量</span><input type="number" min="0.1" step="0.1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
+            <label><span>単位</span><select value={unit} onChange={event => setUnit(event.target.value)}>{['式','個','本','枚','台','箇所'].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+            <label><span>単価（円）</span><input type="number" min="0" step="1" value={unitPrice} onChange={event => setUnitPrice(event.target.value)} placeholder="0" /></label>
+            <label><span>金額</span><input type="text" readOnly value={formatYen((Number(quantity) || 0) * (Number(unitPrice) || 0))} /></label>
+            <label><span>メモ</span><input value={memo} onChange={event => setMemo(event.target.value)} placeholder="任意" /></label>
+          </div>
+          <button className="add" type="submit">＋ 追加作業を登録</button>
+        </form>
+
+        <div className="records">
+          {additionalWorks.length === 0 ? <p className="empty">追加作業はありません</p> : additionalWorks.map(item => (
+            <div className="additionalWorkItem" key={item.id}>
+              <div><strong>{item.room}　{item.work}</strong><small>{item.memo || 'メモなし'}</small></div>
+              <div><b>{formatQuantity(item.quantity)}{item.unit}</b><small>{formatYen(Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0))}</small></div>
+              <button type="button" onClick={() => { setAdditionalWorks(previous => previous.filter(record => record.id !== item.id)); onChanged() }} aria-label="追加作業を削除">×</button>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  )
+}
+
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [propertyMasterState, setPropertyMasterState] = useState(loadPropertyMaster)
@@ -1774,6 +1909,15 @@ export default function App() {
   const [cfRecords, setCfRecords] = useState([])
   const [softRecords, setSoftRecords] = useState([])
   const [floorTrimRecords, setFloorTrimRecords] = useState([])
+  const [additionalWorks, setAdditionalWorks] = useState([])
+  const [commonAdditionalWorks, setCommonAdditionalWorks] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(commonAdditionalWorksKey) || 'null')
+      return Array.isArray(stored) && stored.length ? stored : defaultCommonAdditionalWorks
+    } catch {
+      return defaultCommonAdditionalWorks
+    }
+  })
   const rooms = projectRooms
 
   useEffect(() => {
@@ -2193,6 +2337,7 @@ export default function App() {
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
     setSoftRecords(Array.isArray(entry.softRecords) ? entry.softRecords : [])
     setFloorTrimRecords(Array.isArray(entry.floorTrimRecords) ? entry.floorTrimRecords : [])
+    setAdditionalWorks(Array.isArray(entry.additionalWorks) ? entry.additionalWorks : [])
     setProjectRooms(Array.isArray(entry.rooms)
       ? entry.rooms
       : [...defaultRooms, ...(Array.isArray(entry.customRooms) ? entry.customRooms : [])])
@@ -2239,6 +2384,7 @@ export default function App() {
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
         softRecords: Array.isArray(entry.softRecords) ? entry.softRecords : [],
         floorTrimRecords: Array.isArray(entry.floorTrimRecords) ? entry.floorTrimRecords : [],
+        additionalWorks: Array.isArray(entry.additionalWorks) ? entry.additionalWorks : [],
         rooms: Array.isArray(entry.rooms)
           ? entry.rooms
           : [...defaultRooms, ...(Array.isArray(entry.customRooms) ? entry.customRooms : [])],
@@ -2357,6 +2503,7 @@ export default function App() {
       setCfRecords(Array.isArray(savedData?.cfRecords) ? savedData.cfRecords : [])
       setSoftRecords(Array.isArray(savedData?.softRecords) ? savedData.softRecords : [])
       setFloorTrimRecords(Array.isArray(savedData?.floorTrimRecords) ? savedData.floorTrimRecords : [])
+      setAdditionalWorks(Array.isArray(savedData?.additionalWorks) ? savedData.additionalWorks : [])
       setProjectRooms(Array.isArray(savedData?.rooms)
         ? savedData.rooms
         : [...defaultRooms, ...(Array.isArray(savedData?.customRooms) ? savedData.customRooms : [])])
@@ -2378,6 +2525,7 @@ export default function App() {
       setCfRecords([])
       setSoftRecords([])
       setFloorTrimRecords([])
+      setAdditionalWorks([])
       setProjectRooms(defaultRooms)
       setRoomConfirmations({})
       setPageIndex(0)
@@ -2425,6 +2573,7 @@ export default function App() {
       cfRecords,
       softRecords,
       floorTrimRecords,
+      additionalWorks,
       draftMemo: memo,
       rooms,
       roomConfirmations,
@@ -2480,6 +2629,7 @@ export default function App() {
       roomA: record.roomA === oldName ? newName : record.roomA,
       roomB: record.roomB === oldName ? newName : record.roomB,
     })))
+    setAdditionalWorks(previous => previous.map(record => record.room === oldName ? { ...record, room: newName } : record))
     setRoomConfirmations(previous => {
       if (!previous[oldName]) return previous
       const next = { ...previous }
@@ -2510,6 +2660,7 @@ export default function App() {
     setCfRecords(previous => previous.filter(record => record.room !== roomName))
     setSoftRecords(previous => previous.filter(record => record.room !== roomName))
     setFloorTrimRecords(previous => previous.filter(record => record.roomA !== roomName && record.roomB !== roomName))
+    setAdditionalWorks(previous => previous.filter(record => record.room !== roomName))
     setRoomConfirmations(previous => {
       const next = { ...previous }
       delete next[roomName]
@@ -3129,7 +3280,7 @@ export default function App() {
                   ? '部屋管理'
                   : activePage === 'cross'
                 ? isSummaryPage ? '全室の合計' : '採寸入力'
-                : activePage === 'cf' ? 'CF採寸' : activePage === 'soft' ? 'ソフト巾木' : '床見切り'}
+                : activePage === 'cf' ? 'CF採寸' : activePage === 'soft' ? 'ソフト巾木' : activePage === 'floorTrim' ? '床見切り' : '最終確認'}
             </h1>
             <div className="measurementActions">
               <button className="saveButton" type="button" onClick={saveCurrentData}>保存する</button>
@@ -3145,6 +3296,7 @@ export default function App() {
                   cfRecords,
                   softRecords,
                   floorTrimRecords,
+                  additionalWorks,
                 })}
               >
                 Excel出力
@@ -3178,6 +3330,7 @@ export default function App() {
                 <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
                 <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
                 <button type="button" className={activePage === 'floorTrim' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('floorTrim')}>床見切り</button>
+                <button type="button" className={activePage === 'review' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('review')}>✅ 最終確認</button>
               </div>
             )}
 
@@ -3195,18 +3348,32 @@ export default function App() {
               // お客様向け画面には換算率を表示せず、設定済みの案件換算率だけを計算に使用します。
               const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
               const estimateRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
-              const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0)
+              const additionalWorkTotal = additionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
+              const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0) + additionalWorkTotal
               return (
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室</h2>
                   <p className="estimateIntro">退去時にお客様へ提示するための概算です。正式見積ではありません。</p>
 
-                  {estimateRows.length === 0 ? (
+                  {estimateRows.length === 0 && additionalWorks.length === 0 ? (
                     <p className="empty">概算できる採寸データがありません</p>
                   ) : [
                     ...rooms.map(roomName => ({ title: roomName, key: roomName, rows: estimateRows.filter(row => row.room === roomName) })),
                     { title: 'ソフト巾木', key: '__ALL_ROOMS__', rows: estimateRows.filter(row => row.room === '__ALL_ROOMS__') },
                     { title: '床見切り', key: '__FLOOR_TRIM__', rows: estimateRows.filter(row => row.room === '__FLOOR_TRIM__') },
+                    {
+                      title: '内装工事以外',
+                      key: '__ADDITIONAL_WORKS__',
+                      rows: additionalWorks.map(item => ({
+                        category: 'additionalWork',
+                        label: [item.room, item.work].filter(Boolean).join(' '),
+                        memo: item.memo || '',
+                        quantity: Number(item.quantity || 0),
+                        unit: item.unit || '式',
+                        rate: Number(item.unitPrice || 0),
+                        amount: Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)),
+                      })),
+                    },
                   ].map(section => {
                     if (section.rows.length === 0) return null
                     return (
@@ -3231,7 +3398,7 @@ export default function App() {
                       propertyName: selectedProperty?.name || '',
                       address: selectedProperty?.address || '',
                       unit,
-                    }, estimateRows, estimateCopyFormat)}
+                    }, estimateRows, estimateCopyFormat, additionalWorks)}
                   >
                     📊 見積用Excel出力
                   </button>
@@ -3253,6 +3420,19 @@ export default function App() {
                   roomHasData={roomHasData}
                 />
               </section>
+            ) : activePage === 'review' ? (
+              <FinalReviewPage
+                rooms={rooms}
+                crossTotal={records.reduce((sum, record) => sum + getRecordQuantity(record), 0) * Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)}
+                cfTotal={cfRecords.reduce((sum, record) => sum + getLengthQuantity(record), 0) * 1.8}
+                softTotal={softRecords.reduce((sum, record) => sum + getSoftBaseboardQuantity(record), 0)}
+                floorTrimTotal={floorTrimRecords.reduce((sum, record) => sum + Math.max(0, Number(record.quantity) || 0), 0)}
+                additionalWorks={additionalWorks}
+                setAdditionalWorks={setAdditionalWorks}
+                commonWorks={commonAdditionalWorks}
+                setCommonWorks={setCommonAdditionalWorks}
+                onChanged={markUnsaved}
+              />
             ) : activePage === 'floorTrim' ? (
               <FloorTrimSection rooms={rooms} records={floorTrimRecords} setRecords={setFloorTrimRecords} onChanged={markUnsaved} />
             ) : activePage === 'cf' ? (
