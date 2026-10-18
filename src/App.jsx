@@ -772,6 +772,7 @@ const styles = `
   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
   .brandGroup { display:flex; align-items:center; justify-content:flex-start; gap:10px; line-height:1; min-width:0; }
   .brandLogo { width:62px; height:62px; object-fit:contain; flex:0 0 auto; filter:drop-shadow(0 5px 10px rgba(148,76,196,.18)); transition:filter .2s ease,transform .2s ease; }
+  .brandLogo,.retroCat img { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .theme-dark .brandLogo { filter:drop-shadow(0 0 8px rgba(240,160,141,.35)); }
   .theme-pop .brandLogo { filter:drop-shadow(0 5px 9px rgba(231,93,145,.22)); }
   .theme-cyber .brandLogo { filter:drop-shadow(0 0 7px rgba(0,234,255,.8)) drop-shadow(0 0 11px rgba(255,37,216,.45)); }
@@ -3535,8 +3536,7 @@ export default function App() {
   const themeOptions = [
     ['beige', 'ベージュ'], ['dark', 'ダーク'], ['pop', 'ポップ'], ['cyber', 'サイバー'],
     ['luxury', 'Luxury Black'], ['sakura', 'SAKURA'], ['ice', 'Ice'], ['forest', 'Forest'],
-    ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
-    ...(retroUnlocked ? [['retro', 'RETRO']] : []),
+    ['galaxy', 'GALAXY'], ['retro', 'RETRO'],
   ]
   return (
     <>
@@ -3547,7 +3547,7 @@ export default function App() {
       >
         <header className="header">
           <div className="brandGroup">
-            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" onClick={handleLogoTap} onPointerDown={startRetroHold} onPointerUp={cancelRetroHold} onPointerCancel={cancelRetroHold} onPointerLeave={cancelRetroHold} />
+            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" draggable="false" />
             <div>
               <div className="mavieBrand">MavieSelect</div>
               <div className="brand">M-Cross</div>
