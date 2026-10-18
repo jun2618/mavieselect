@@ -1279,6 +1279,7 @@ function escapeCsv(value) {
 
 const mCrossFileType = 'M-Cross saved property'
 const mCrossFileVersion = 1
+const mCrossSharePrefix = 'MCROSS_SHARE_V1:'
 
 function makeSafeFileName(value) {
   return String(value || '物件').replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim()
@@ -1334,19 +1335,39 @@ function downloadMCrossData(entry) {
 
 async function shareMCrossData(entry) {
   try {
-    const { data, file, fileName } = createMCrossShareFile(entry, 'txt')
+    const data = normalizeImportedEntry(entry)
+    const packageData = {
+      fileType: mCrossFileType,
+      version: mCrossFileVersion,
+      exportedAt: new Date().toISOString(),
+      data,
+    }
+    const shareCode = mCrossSharePrefix + JSON.stringify(packageData)
     const shareData = {
       title: `M-Cross ${data.propertyName} ${data.unit}号室`,
-      text: 'M-Crossの保存データです。M-Crossの「保存済み一覧」から読み込んでください。',
-      files: [file],
+      text: shareCode,
     }
-    if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
-      try { await navigator.share(shareData); return }
-      catch (error) { if (error?.name === 'AbortError') return; console.error(error) }
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share(shareData)
+        return
+      } catch (error) {
+        if (error?.name === 'AbortError') return
+        console.error('共有画面を開けませんでした。', error)
+      }
     }
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareCode)
+      window.alert('共有コードをコピーしました。LINEやメールのメッセージ欄へ貼り付けて送ってください。')
+      return
+    }
+    const { file, fileName } = createMCrossShareFile(entry, 'txt')
     downloadMCrossFile(file, fileName)
-    window.alert('この端末では共有画面を開けなかったため、ファイルを保存しました。LINEやメールへ添付して送ってください。')
-  } catch (error) { console.error(error); window.alert('M-Crossデータを共有できませんでした。') }
+    window.alert('共有コードを送れなかったため、ファイルを保存しました。LINEやメールへ添付してください。')
+  } catch (error) {
+    console.error('M-Crossデータを共有できませんでした。', error)
+    window.alert('M-Crossデータを共有できませんでした。')
+  }
 }
 
 function downloadCsv(entry) {
@@ -2477,6 +2498,37 @@ export default function App() {
     })
   }
 
+  function saveImportedMCrossData(packageData) {
+    if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) {
+      throw new Error('M-Cross用データではないか、対応していないバージョンです。')
+    }
+    const imported = normalizeImportedEntry(packageData.data)
+    const storageKey = getSaveKey(imported.company, { name: imported.propertyName, address: imported.address }, imported.unit)
+    if (localStorage.getItem(storageKey) !== null && !window.confirm(`「${imported.propertyName} ${imported.unit}号室」はすでに保存されています。\n\n上書きして読み込みますか？`)) {
+      return false
+    }
+    localStorage.setItem(storageKey, JSON.stringify(imported))
+    setSavedEntries(readSavedEntries())
+    setShowArchived(false)
+    setSelectedSavedKeys([])
+    window.alert(`「${imported.propertyName} ${imported.unit}号室」を読み込みました。`)
+    return true
+  }
+
+  function importMCrossShareCode() {
+    const input = window.prompt('LINEやメールで受け取った共有コードを貼り付けてください。')
+    if (!input) return
+    try {
+      const text = input.trim()
+      if (!text.startsWith(mCrossSharePrefix)) throw new Error('M-Crossの共有コードではありません。')
+      const packageData = JSON.parse(text.slice(mCrossSharePrefix.length))
+      saveImportedMCrossData(packageData)
+    } catch (error) {
+      console.error('共有コードを読み込めませんでした。', error)
+      window.alert(error instanceof Error ? error.message : '共有コードを読み込めませんでした。')
+    }
+  }
+
   async function importMCrossData(event) {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -2484,13 +2536,7 @@ export default function App() {
     if (!/\.(mcross|json|txt)$/i.test(file.name)) { window.alert('M-Crossから受け取った .mcross、.json、または .txt ファイルを選択してください。'); return }
     try {
       const packageData = JSON.parse(await file.text())
-      if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) throw new Error('M-Cross用ファイルではないか、対応していないバージョンです。')
-      const imported = normalizeImportedEntry(packageData.data)
-      const storageKey = getSaveKey(imported.company, { name: imported.propertyName, address: imported.address }, imported.unit)
-      if (localStorage.getItem(storageKey) !== null && !window.confirm(`「${imported.propertyName} ${imported.unit}号室」はすでに保存されています。\n\n上書きして読み込みますか？`)) return
-      localStorage.setItem(storageKey, JSON.stringify(imported))
-      setSavedEntries(readSavedEntries()); setShowArchived(false); setSelectedSavedKeys([])
-      window.alert(`「${imported.propertyName} ${imported.unit}号室」を読み込みました。`)
+      saveImportedMCrossData(packageData)
     } catch (error) { console.error(error); window.alert(error instanceof Error ? error.message : 'M-Crossデータを読み込めませんでした。') }
   }
 
@@ -3290,8 +3336,11 @@ export default function App() {
               </div>
 
               <input ref={importFileInputRef} type="file" accept=".mcross,.json,.txt,application/json,text/plain" onChange={importMCrossData} style={{ display: 'none' }} />
-              <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
-                📥 M-Crossデータを読み込む
+              <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 10 }}>
+                📥 M-Crossファイルを読み込む
+              </button>
+              <button className="secondaryButton" type="button" onClick={importMCrossShareCode} style={{ marginTop: 0, marginBottom: 18 }}>
+                📋 共有コードを読み込む
               </button>
               <p className="saveStatus">
                 {showArchived ? 'アーカイブ件数' : '保存済み件数'}：{savedCount}件
@@ -3392,7 +3441,7 @@ export default function App() {
                         <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>上書き保存</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadCsv(entry)}>CSV出力</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
-                        <button className="actionButton actionOverwrite" type="button" onClick={() => shareMCrossData(entry)}>📤 共有・送信</button>
+                        <button className="actionButton actionOverwrite" type="button" onClick={() => shareMCrossData(entry)}>📤 LINE・メールで送る</button>
                         <button className="actionButton actionOverwrite" type="button" onClick={() => downloadMCrossData(entry)}>📦 M-Cross保存</button>
                         <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
                         <button
