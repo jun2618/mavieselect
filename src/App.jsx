@@ -1310,11 +1310,12 @@ function normalizeImportedEntry(value) {
   }
 }
 
-function createMCrossShareFile(entry) {
+function createMCrossShareFile(entry, extension = 'mcross') {
   const data = normalizeImportedEntry(entry)
   const packageData = { fileType: mCrossFileType, version: mCrossFileVersion, exportedAt: new Date().toISOString(), data }
-  const fileName = `${makeSafeFileName(data.propertyName)}_${makeSafeFileName(data.unit)}号室.mcross`
-  const file = new File([JSON.stringify(packageData, null, 2)], fileName, { type: 'application/json;charset=utf-8' })
+  const safeExtension = extension === 'json' ? 'json' : 'mcross'
+  const fileName = `${makeSafeFileName(data.propertyName)}_${makeSafeFileName(data.unit)}号室.${safeExtension}`
+  const file = new File([JSON.stringify(packageData, null, 2)], fileName, { type: 'application/json' })
   return { data, file, fileName }
 }
 
@@ -1332,7 +1333,7 @@ function downloadMCrossData(entry) {
 
 async function shareMCrossData(entry) {
   try {
-    const { data, file, fileName } = createMCrossShareFile(entry)
+    const { data, file, fileName } = createMCrossShareFile(entry, 'json')
     const shareData = {
       title: `M-Cross ${data.propertyName} ${data.unit}号室`,
       text: 'M-Crossの保存データです。M-Crossの「保存済み一覧」から読み込んでください。',
@@ -1343,7 +1344,7 @@ async function shareMCrossData(entry) {
       catch (error) { if (error?.name === 'AbortError') return; console.error(error) }
     }
     downloadMCrossFile(file, fileName)
-    window.alert('共有画面を開けないためファイルを保存しました。LINEやメールへ添付して送ってください。')
+    window.alert('この端末では共有画面を開けなかったため、ファイルを保存しました。LINEやメールへ添付して送ってください。')
   } catch (error) { console.error(error); window.alert('M-Crossデータを共有できませんでした。') }
 }
 
@@ -2479,7 +2480,7 @@ export default function App() {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!file.name.toLocaleLowerCase().endsWith('.mcross')) { window.alert('拡張子が .mcross のファイルを選択してください。'); return }
+    if (!/\.(mcross|json)$/i.test(file.name)) { window.alert('M-Crossから受け取った .mcross または .json ファイルを選択してください。'); return }
     try {
       const packageData = JSON.parse(await file.text())
       if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) throw new Error('M-Cross用ファイルではないか、対応していないバージョンです。')
@@ -3287,7 +3288,7 @@ export default function App() {
                 </button>
               </div>
 
-              <input ref={importFileInputRef} type="file" accept=".mcross,application/json" onChange={importMCrossData} style={{ display: 'none' }} />
+              <input ref={importFileInputRef} type="file" accept=".mcross,.json,application/json" onChange={importMCrossData} style={{ display: 'none' }} />
               <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
                 📥 M-Crossデータを読み込む
               </button>
