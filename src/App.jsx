@@ -915,6 +915,18 @@ const styles = `
   .savedUnit { color:#d27f6d; font-size:16px; font-weight:800; }
   .savedMeta { color:#958896; font-size:14px; }
   .savedActions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:5px; }
+  .savedToolbar { display:grid; gap:12px; margin:16px 0 20px; padding:14px; border:1px solid #f0e3dc; border-radius:16px; background:#fffaf6; }
+  .savedToolbar label { margin:0; }
+  .savedToolbarGrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+  .savedListSummary { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 0 0; color:#806f7b; font-size:14px; font-weight:800; }
+  .savedCardTop { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; }
+  .savedCardTop input[type="checkbox"] { width:24px; min-height:24px; padding:0; margin:0; }
+  .savedCardTitle { min-width:0; }
+  .savedCardDate { color:#958896; font-size:12px; white-space:nowrap; }
+  .savedPrimaryActions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:8px; }
+  .savedMoreActions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed #ead8cb; }
+  .savedMoreButton { width:100%; min-height:42px; margin-top:4px; border:1px solid #e6d8e6; border-radius:11px; color:#75697a; background:#fff; font:inherit; font-weight:800; cursor:pointer; }
+  @media (max-width:520px) { .savedToolbarGrid { grid-template-columns:1fr; } .savedCardTop { grid-template-columns:auto minmax(0,1fr); } .savedCardDate { grid-column:2; white-space:normal; } }
   .actionButton { min-height:44px; padding:7px 6px; border:0; border-radius:11px; color:#fff; font-size:14px; }
   .actionOpen { background:#f08a79; }
   .actionOverwrite { background:#6e91e8; }
@@ -1993,6 +2005,7 @@ export default function App() {
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
   const [showArchived, setShowArchived] = useState(false)
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
+  const [expandedSavedKeys, setExpandedSavedKeys] = useState([])
   const [currentStorageKey, setCurrentStorageKey] = useState('')
   const [pageIndex, setPageIndex] = useState(0)
   const [projectRooms, setProjectRooms] = useState(() => loadStringList(defaultRoomsKey, defaultRooms))
@@ -2782,6 +2795,12 @@ export default function App() {
     }
   }
 
+  function toggleSavedMore(storageKey) {
+    setExpandedSavedKeys(previous => previous.includes(storageKey)
+      ? previous.filter(key => key !== storageKey)
+      : [...previous, storageKey])
+  }
+
   function toggleSavedSelection(storageKey) {
     if (!storageKey) return
     setSelectedSavedKeys(prev =>
@@ -3521,69 +3540,42 @@ export default function App() {
               <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
                 📥 M-Crossファイルを読み込む
               </button>
-              <p className="saveStatus">
-                {showArchived ? 'アーカイブ件数' : '保存済み件数'}：{savedCount}件
-              </p>
-              <p className="savedMeta" style={{ textAlign: 'center', margin: '6px 0 18px' }}>
-                表示中：{visibleSavedEntries.length}件
-              </p>
+              <div className="savedToolbar">
+                <label>
+                  <span>🔎 物件を検索</span>
+                  <input type="search" value={savedSearch} onChange={event => setSavedSearch(event.target.value)} placeholder="物件名を入力" />
+                </label>
+                <div className="savedToolbarGrid">
+                  <label>
+                    <span>管理会社</span>
+                    <select value={savedCompanyFilter} onChange={event => setSavedCompanyFilter(event.target.value)}>
+                      <option value="">すべて</option>
+                      {savedCompanyOptions.map(name => <option key={name} value={name}>{name}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>並び順</span>
+                    <select value={savedSortOrder} onChange={event => setSavedSortOrder(event.target.value)}>
+                      <option value="newest">最近更新した順</option>
+                      <option value="oldest">古い順</option>
+                      <option value="property">物件名順</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="savedListSummary">
+                  <span>{showArchived ? 'アーカイブ' : '保存済み'} {savedCount}件</span>
+                  <span>表示 {visibleSavedEntries.length}件</span>
+                </div>
+              </div>
 
-              <label>
-                <span>物件名検索</span>
-                <input
-                  type="search"
-                  value={savedSearch}
-                  onChange={event => setSavedSearch(event.target.value)}
-                  placeholder="物件名で検索"
-                />
-              </label>
-
-              <label>
-                <span>管理会社で絞り込み</span>
-                <select
-                  value={savedCompanyFilter}
-                  onChange={event => setSavedCompanyFilter(event.target.value)}
-                >
-                  <option value="">すべての管理会社</option>
-                  {savedCompanyOptions.map(name => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span>並び替え</span>
-                <select
-                  value={savedSortOrder}
-                  onChange={event => setSavedSortOrder(event.target.value)}
-                >
-                  <option value="newest">最新更新順</option>
-                  <option value="oldest">古い更新順</option>
-                  <option value="property">物件名順</option>
-                </select>
-              </label>
-
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '12px 0 18px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '0 0 18px' }}>
                 <button className="actionButton actionOverwrite" type="button" onClick={toggleSelectAllVisible}>
-                  {visibleSavedEntries.length > 0 &&
-                  visibleSavedEntries.every(entry => selectedSavedKeys.includes(entry.storageKey))
-                    ? '表示中の選択解除'
-                    : '表示中を全選択'}
+                  {visibleSavedEntries.length > 0 && visibleSavedEntries.every(entry => selectedSavedKeys.includes(entry.storageKey)) ? '選択解除' : '表示中を全選択'}
                 </button>
-                <button
-                  className="actionButton actionCsv"
-                  type="button"
-                  onClick={bulkArchiveSelected}
-                  disabled={selectedSavedKeys.length === 0}
-                >
-                  {showArchived ? '選択を通常一覧へ戻す' : '選択をアーカイブ'}
+                <button className="actionButton actionCsv" type="button" onClick={bulkArchiveSelected} disabled={selectedSavedKeys.length === 0}>
+                  {showArchived ? '選択を一覧へ戻す' : '選択をアーカイブ'}
                 </button>
-                <button
-                  className="actionButton actionDelete"
-                  type="button"
-                  onClick={bulkDeleteSelected}
-                  disabled={selectedSavedKeys.length === 0}
-                >
+                <button className="actionButton actionDelete" type="button" onClick={bulkDeleteSelected} disabled={selectedSavedKeys.length === 0}>
                   選択を削除（{selectedSavedKeys.length}）
                 </button>
               </div>
@@ -3599,36 +3591,30 @@ export default function App() {
                       className="savedItem"
                       key={entry.storageKey || `${entry.propertyName}-${entry.unit}-${index}`}
                     >
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, margin: 0 }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedSavedKeys.includes(entry.storageKey)}
-                          onChange={() => toggleSavedSelection(entry.storageKey)}
-                          aria-label={`${entry.propertyName || '物件名なし'}を選択`}
-                          style={{ width: 22, minHeight: 22, padding: 0, flex: '0 0 22px' }}
-                        />
-                        <span className="savedProperty">{entry.propertyName || '物件名なし'}</span>
-                      </label>
-
-                      <span className="savedMeta">管理会社：{entry.company || '未設定'}</span>
-                      <span className="savedUnit">{entry.unit || ''}号室</span>
-                      <span className="savedMeta">保存日時：{formatSavedDate(entry.updatedAt)}</span>
-
-                      <div className="savedActions">
-                        <button className="actionButton actionOpen" type="button" onClick={() => openSavedEntry(entry)}>開く</button>
-                        <button className="actionButton actionOverwrite" type="button" onClick={() => openSavedEntry(entry)}>編集</button>
-                        <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>上書き保存</button>
-                        <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
-                        <button className="actionButton actionOverwrite" type="button" onClick={() => shareMCrossData(entry)}>📤 M-Crossファイルを送る</button>
-                        <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
-                        <button
-                          className="actionButton actionOverwrite"
-                          type="button"
-                          onClick={() => setEntryArchived(entry, !showArchived)}
-                        >
-                          {showArchived ? '一覧に戻す' : 'アーカイブ'}
-                        </button>
+                      <div className="savedCardTop">
+                        <input type="checkbox" checked={selectedSavedKeys.includes(entry.storageKey)} onChange={() => toggleSavedSelection(entry.storageKey)} aria-label={`${entry.propertyName || '物件名なし'}を選択`} />
+                        <div className="savedCardTitle">
+                          <div className="savedProperty">{entry.propertyName || '物件名なし'}</div>
+                          <div className="savedUnit">{entry.unit || ''}号室</div>
+                          <div className="savedMeta">{entry.company || '管理会社未設定'}</div>
+                        </div>
+                        <span className="savedCardDate">更新 {formatSavedDate(entry.updatedAt)}</span>
                       </div>
+                      <div className="savedPrimaryActions">
+                        <button className="actionButton actionOpen" type="button" onClick={() => openSavedEntry(entry)}>開く</button>
+                        <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
+                      </div>
+                      <button className="savedMoreButton" type="button" onClick={() => toggleSavedMore(entry.storageKey)}>
+                        {expandedSavedKeys.includes(entry.storageKey) ? '▲ 操作を閉じる' : '▼ その他の操作'}
+                      </button>
+                      {expandedSavedKeys.includes(entry.storageKey) && (
+                        <div className="savedMoreActions">
+                          <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>上書き保存</button>
+                          <button className="actionButton actionOverwrite" type="button" onClick={() => shareMCrossData(entry)}>📤 M-Crossファイルを送る</button>
+                          <button className="actionButton actionOverwrite" type="button" onClick={() => setEntryArchived(entry, !showArchived)}>{showArchived ? '一覧に戻す' : 'アーカイブ'}</button>
+                          <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
