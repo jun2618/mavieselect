@@ -17,8 +17,20 @@ const pricingSettingsVersionKey = 'm-cross:pricing-settings-version'
 const currentPricingSettingsVersion = '2'
 const estimateCopyFormatKey = 'm-cross-estimate-copy-format'
 const commonAdditionalWorksKey = 'm-cross:common-additional-works:v1'
+const defaultRoomsKey = 'm-cross:default-rooms:v1'
+const quickMemosKey = 'm-cross:quick-memos:v1'
 const defaultCommonAdditionalWorks = ['畳表替え', '電球交換', 'ドア簡易着色補修', '戸当たりゴム取付', '建具調整', 'コーキング']
 const quickMemos = ['窓面', '窓向かって右面', '窓向かって左面', '正面', '右面', '左面', 'シンク背面', 'シンク向かって右面', 'シンク向かって左面', '梁含む', '梁除く', '下がり天井']
+function loadStringList(key, fallback) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(key) || 'null')
+    return Array.isArray(stored) && stored.length
+      ? stored.map(value => String(value).trim()).filter(Boolean)
+      : [...fallback]
+  } catch {
+    return [...fallback]
+  }
+}
 const defaultPricingSettings = {
   crossRates: {
     '天井': 990,
@@ -909,6 +921,18 @@ const styles = `
   .actionCsv { background:#63bea1; }
   .actionDelete { background:#d87883; }
   .settingsOptions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .settingsMenu { display:grid; gap:12px; margin-top:24px; }
+  .settingsMenuButton { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:62px; padding:14px 16px; border:1px solid #efc7d4; border-radius:15px; color:#65596a; background:linear-gradient(180deg,#fff,#fff8fa); box-shadow:0 4px 0 #ead8e0; font:inherit; font-size:17px; font-weight:800; text-align:left; cursor:pointer; }
+  .settingsMenuButton span:last-child { color:#d27f91; font-size:22px; }
+  .settingsPageIntro { margin:0 0 18px; color:#8e8190; line-height:1.7; text-align:center; }
+  .globalListEditor { display:grid; gap:12px; margin-top:28px; padding:16px; border:1px solid #f0d6c8; border-radius:18px; background:rgba(255,255,255,.65); }
+  .globalListEditor h3 { margin:0; color:#514751; font-size:20px; }
+  .globalListEditor .primary,.globalListEditor .secondaryButton { margin:0; }
+  .globalListItems { display:grid; gap:8px; }
+  .globalListItem { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; padding:10px 12px; border:1px solid #f0e3dc; border-radius:12px; background:#fffdfa; }
+  .globalListItem > span { min-width:0; overflow-wrap:anywhere; font-weight:800; }
+  .globalListItem .masterActions { display:flex; gap:6px; }
+  .globalListItem .masterActions button { width:auto; min-width:64px; min-height:40px; margin:0; padding:6px 10px; font-size:13px; }
   .settingsOption { min-height:50px; border:1px solid #e9dce8; border-radius:14px; color:#75697a; background:#fff; font-size:16px; }
   .settingsOption.active { border-color:#f3a18f; color:#fff; background:linear-gradient(180deg,#ffb49b,#f18c7d); }
   .theme-dark { color:#eee8e2; background:#211f22; }
@@ -1924,6 +1948,7 @@ function FinalReviewPage({
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsPage, setSettingsPage] = useState('home')
   const [propertyMasterState, setPropertyMasterState] = useState(loadPropertyMaster)
   const [masterCompanyName, setMasterCompanyName] = useState('')
   const [editingCompanyId, setEditingCompanyId] = useState('')
@@ -1965,7 +1990,7 @@ export default function App() {
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
   const [currentStorageKey, setCurrentStorageKey] = useState('')
   const [pageIndex, setPageIndex] = useState(0)
-  const [projectRooms, setProjectRooms] = useState(defaultRooms)
+  const [projectRooms, setProjectRooms] = useState(() => loadStringList(defaultRoomsKey, defaultRooms))
   const [roomConfirmations, setRoomConfirmations] = useState({})
   const [showMeasurementCheck, setShowMeasurementCheck] = useState(false)
   const [showRoomManagement, setShowRoomManagement] = useState(false)
@@ -1993,14 +2018,9 @@ export default function App() {
   const [softRecords, setSoftRecords] = useState([])
   const [floorTrimRecords, setFloorTrimRecords] = useState([])
   const [additionalWorks, setAdditionalWorks] = useState([])
-  const [commonAdditionalWorks, setCommonAdditionalWorks] = useState(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(commonAdditionalWorksKey) || 'null')
-      return Array.isArray(stored) && stored.length ? stored : defaultCommonAdditionalWorks
-    } catch {
-      return defaultCommonAdditionalWorks
-    }
-  })
+  const [commonAdditionalWorks, setCommonAdditionalWorks] = useState(() => loadStringList(commonAdditionalWorksKey, defaultCommonAdditionalWorks))
+  const [configuredQuickMemos, setConfiguredQuickMemos] = useState(() => loadStringList(quickMemosKey, quickMemos))
+  const [configuredDefaultRooms, setConfiguredDefaultRooms] = useState(() => loadStringList(defaultRoomsKey, defaultRooms))
   const rooms = projectRooms
 
   useEffect(() => {
@@ -2212,6 +2232,64 @@ export default function App() {
     markUnsaved()
   }
 
+  function updateGlobalList(key, setter, currentItems, action, currentValue = '') {
+    let next = [...currentItems]
+    if (action === 'add') {
+      const value = window.prompt('追加する項目名を入力してください')?.trim()
+      if (!value || next.includes(value)) return
+      next.push(value)
+    } else if (action === 'edit') {
+      const value = window.prompt('項目名を編集してください', currentValue)?.trim()
+      if (!value || (value !== currentValue && next.includes(value))) return
+      next = next.map(item => item === currentValue ? value : item)
+    } else if (action === 'delete') {
+      if (next.length <= 1) {
+        window.alert('最低1項目は残してください。')
+        return
+      }
+      if (!window.confirm(`「${currentValue}」を削除しますか？`)) return
+      next = next.filter(item => item !== currentValue)
+    }
+    try {
+      localStorage.setItem(key, JSON.stringify(next))
+      setter(next)
+      setMasterStatus('設定を保存しました。')
+    } catch {
+      setMasterStatus('設定を保存できませんでした。')
+    }
+  }
+  function resetGlobalList(key, setter, fallback, label) {
+    if (!window.confirm(`${label}を初期状態へ戻しますか？`)) return
+    const next = [...fallback]
+    try {
+      localStorage.setItem(key, JSON.stringify(next))
+      setter(next)
+      setMasterStatus(`${label}を初期状態へ戻しました。`)
+    } catch {
+      setMasterStatus('設定を保存できませんでした。')
+    }
+  }
+  function GlobalListEditor({ title, description, items, storageKey, setter, fallback }) {
+    return (
+      <section className="globalListEditor">
+        <h3>{title}</h3>
+        <p className="copyFormatPreview">{description}</p>
+        <div className="globalListItems">
+          {items.map(item => (
+            <div className="globalListItem" key={item}>
+              <span>{item}</span>
+              <div className="masterActions">
+                <button className="secondaryButton" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'edit', item)}>編集</button>
+                <button className="dangerButton" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'delete', item)}>削除</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button className="primary" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'add')}>＋ 項目を追加</button>
+        <button className="secondaryButton" type="button" onClick={() => resetGlobalList(storageKey, setter, fallback, title)}>初期状態へ戻す</button>
+      </section>
+    )
+  }
   function markUnsaved() {
     setIsDirty(true)
     setSaveStatus('')
@@ -2680,7 +2758,7 @@ export default function App() {
       setAdditionalWorks(Array.isArray(savedData?.additionalWorks) ? savedData.additionalWorks : [])
       setProjectRooms(Array.isArray(savedData?.rooms)
         ? savedData.rooms
-        : [...defaultRooms, ...(Array.isArray(savedData?.customRooms) ? savedData.customRooms : [])])
+        : savedData?.customRooms?.length ? [...configuredDefaultRooms, ...savedData.customRooms] : [...configuredDefaultRooms])
       setRoomConfirmations(
         savedData?.roomConfirmations && typeof savedData.roomConfirmations === 'object'
           ? savedData.roomConfirmations
@@ -2700,7 +2778,7 @@ export default function App() {
       setSoftRecords([])
       setFloorTrimRecords([])
       setAdditionalWorks([])
-      setProjectRooms(defaultRooms)
+      setProjectRooms([...configuredDefaultRooms])
       setRoomConfirmations({})
       setPageIndex(0)
       setCfPageIndex(0)
@@ -3014,15 +3092,20 @@ export default function App() {
               <div className="brand">M-Cross</div>
             </div>
           </div>
-          <button className="settingsButton" type="button" aria-label="設定" onClick={() => setSettingsOpen(true)}>⚙️</button>
+          <button className="settingsButton" type="button" aria-label="設定" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙️</button>
         </header>
 
         {settingsOpen ? (
           <main className={`main settingsMain${masterPropertyCompanyId ? ' managementPropertyOpen' : ''}`}>
-            <button className="back" type="button" onClick={() => setSettingsOpen(false)}>← 戻る</button>
-            <p className="eyebrow">アプリの表示設定</p>
-            <h1>設定</h1>
+            <button className="back" type="button" onClick={() => {
+              if (settingsPage === 'home') setSettingsOpen(false)
+              else { setSettingsPage('home'); setMasterPropertyCompanyId(''); setShowPropertyForm(false) }
+            }}>{settingsPage === 'home' ? '← 戻る' : '← 設定へ戻る'}</button>
+            <p className="eyebrow">M-Cross設定</p>
+            <h1>{settingsPage === 'home' ? '設定' : settingsPage === 'additional' ? '追加作業設定' : settingsPage === 'memos' ? 'メモ設定' : settingsPage === 'rooms' ? '初期部屋設定' : settingsPage === 'pricing' ? '単価・概算設定' : '管理会社・物件管理'}</h1>
             <section className="card">
+              {settingsPage === 'home' && (<>
+              <h2>表示設定</h2>
               <h2>フォントサイズ</h2>
               <div className="settingsOptions">
                 {fontOptions.map(([value, label]) => (
@@ -3059,7 +3142,46 @@ export default function App() {
               <p className="copyFormatPreview">
                 {estimateCopyFormat === 'split' ? '社員用：居間｜収納｜壁｜クロス貼替｜8.6｜㎡' : '自分用：居間 収納 壁 クロス貼替｜8.6｜㎡'}
               </p>
-              <h2 style={{ marginTop: 28 }}>概算金額の基本設定</h2>
+              <div className="settingsMenu" aria-label="詳細設定">
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('additional')}><span>🔧 よく使う追加作業</span><span>›</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('memos')}><span>📝 よく使うメモ</span><span>›</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('rooms')}><span>🏠 新規物件の初期部屋</span><span>›</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('pricing')}><span>💰 単価・概算設定</span><span>›</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('management')}><span>🏢 管理会社・物件管理</span><span>›</span></button>
+              </div>
+              </>)}
+              {settingsPage === 'additional' && (<>
+              <GlobalListEditor
+                title="🔧 よく使う追加作業"
+                description="最終確認画面に表示する追加作業を編集します。変更は全案件で使用されます。"
+                items={commonAdditionalWorks}
+                storageKey={commonAdditionalWorksKey}
+                setter={setCommonAdditionalWorks}
+                fallback={defaultCommonAdditionalWorks}
+              />
+              </>)}
+              {settingsPage === 'memos' && (<>
+              <GlobalListEditor
+                title="📝 よく使うメモ"
+                description="クロス採寸画面に表示するメモ候補を編集します。"
+                items={configuredQuickMemos}
+                storageKey={quickMemosKey}
+                setter={setConfiguredQuickMemos}
+                fallback={quickMemos}
+              />
+              </>)}
+              {settingsPage === 'rooms' && (<>
+              <GlobalListEditor
+                title="🏠 新規物件の初期部屋"
+                description="これから新しく開始する物件に表示する部屋を編集します。既存の保存物件は変更しません。"
+                items={configuredDefaultRooms}
+                storageKey={defaultRoomsKey}
+                setter={setConfiguredDefaultRooms}
+                fallback={defaultRooms}
+              />
+              </>)}
+              {settingsPage === 'pricing' && (<>
+              <h2>単価・概算設定</h2>
               <div className="estimateSettings">
                 <p className="estimateIntro">ここで設定した単価と換算率を、新しい案件の概算金額に使用します。</p>
                 <div className="estimateSettingsGrid">
@@ -3094,7 +3216,9 @@ export default function App() {
                 </div>
               </div>
 
-              <h2 style={{ marginTop: 28 }}>管理会社・物件管理</h2>
+              </>)}
+              {settingsPage === 'management' && (<>
+              <h2>管理会社・物件管理</h2>
               {masterStatus && <p className="saveStatus" role="status">{masterStatus}</p>}
               <form
                 className="masterCompanyForm"
@@ -3262,6 +3386,7 @@ export default function App() {
                   )}
                 </section>
               )}
+              </>)}
             </section>
           </main>
         ) : showSavedList && !started ? (
@@ -3487,6 +3612,7 @@ export default function App() {
               </label>
               <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>採寸を開始する →</button>
               <button className="secondaryButton" type="button" onClick={openSavedList}>保存済み一覧を見る</button>
+              <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙ M-Cross設定</button>
             </section>
           </main>
         ) : (
@@ -3806,7 +3932,7 @@ export default function App() {
                           />
                         </label>
                         <div className="quickMemos" aria-label="よく使うメモ">
-                          {quickMemos.map(text => <button key={text} className="quickMemoButton" type="button" onClick={() => addQuickMemo(text)}>{text}</button>)}
+                          {configuredQuickMemos.map(text => <button key={text} className="quickMemoButton" type="button" onClick={() => addQuickMemo(text)}>{text}</button>)}
                           <button className="quickMemoButton" type="button" onClick={() => memoInputRef.current?.focus()}>その他</button>
                         </div>
                       </form>
