@@ -765,7 +765,7 @@ function getMergedPropertyMaster(master) {
 }
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&family=DotGothic16&display=swap');
   .app { min-height:100vh; padding-bottom:max(36px,env(safe-area-inset-bottom)); color:#514751; background:radial-gradient(circle at 8% 10%,rgba(255,211,180,.45),transparent 24%),radial-gradient(circle at 95% 30%,rgba(202,224,255,.55),transparent 27%),#fff9f1; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:16px; }
   .app * { box-sizing:border-box; }
   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
@@ -1202,6 +1202,44 @@ const styles = `
   .theme-galaxy .subtitle,.theme-galaxy .savedMeta,.theme-galaxy .card label>span,.theme-galaxy .savedCardDate,.theme-galaxy .savedListSummary { color:#cdc4eb; }
   .theme-galaxy .primary,.theme-galaxy .add,.theme-galaxy .saveButton,.theme-galaxy .secondaryButton,.theme-galaxy .room.active,.theme-galaxy .measurementType.active,.theme-galaxy .settingsOption.active { color:#fff; background:linear-gradient(135deg,#7058ed,#e047bc); box-shadow:0 5px 0 #3a287f,0 0 12px rgba(216,67,193,.35); }
   .theme-galaxy .room,.theme-galaxy .measurementType,.theme-galaxy .keypadButton,.theme-galaxy .settingsMenuButton,.theme-galaxy .savedMoreButton { color:#ded7ff; border-color:#6955c9; background:#12102e; }
+  /* RETRO SAFE: visual theme only. No event handlers or animation state. */
+  .theme-retro {
+    color:#f7fbff;
+    background-color:#02040c;
+    background-image:linear-gradient(180deg,rgba(1,3,12,.05),rgba(1,3,12,.28)),url('/retro-ny-bg.png');
+    background-size:cover;
+    background-position:center top;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+    font-family:"DotGothic16","MS Gothic",monospace;
+    image-rendering:pixelated;
+  }
+  .theme-retro .header { border-bottom:4px solid #00efff; box-shadow:0 4px 0 #ff2bd1; }
+  .theme-retro .brandLogo { image-rendering:pixelated; filter:drop-shadow(3px 0 #ff2bd1) drop-shadow(-3px 0 #00efff); }
+  .theme-retro .brand,.theme-retro .main h1,.theme-retro .card h2,.theme-retro .card h3 { color:#fff; font-family:"DotGothic16",monospace; text-shadow:3px 0 #00dffa,-3px 0 #ff27cc; }
+  .theme-retro .mavieBrand { color:#ff67df; font-family:"DotGothic16",monospace; text-shadow:2px 2px #45104e; }
+  .theme-retro .eyebrow,.theme-retro .propertyLine,.theme-retro .savedUnit { color:#36f6ff; text-shadow:2px 2px #064554; }
+  .theme-retro .subtitle,.theme-retro .savedMeta,.theme-retro .record small,.theme-retro .card label>span,.theme-retro .summaryLine,.theme-retro .copyFormatPreview,.theme-retro .estimateIntro,.theme-retro .savedCardDate,.theme-retro .savedListSummary { color:#c8ddec; }
+  .theme-retro .card,.theme-retro .savedItem,.theme-retro .roomSummary,.theme-retro .summary,.theme-retro .estimateRoom,.theme-retro .globalListEditor,.theme-retro .globalListItem,.theme-retro .savedToolbar,.theme-retro .additionalWorkForm,.theme-retro .todayStats { color:#f7fbff; border:3px solid #00eaff; border-radius:0; background:rgba(2,7,17,.87); box-shadow:4px 4px 0 #ff2bc9,-3px -3px 0 #19315d; backdrop-filter:blur(2px); }
+  .theme-retro .card input,.theme-retro .card select,.theme-retro .propertyOption,.theme-retro .settingsOption,.theme-retro .estimateFactor input { color:#fff; border:2px solid #00eaff; border-radius:0; background:#030817; box-shadow:3px 3px 0 #14254b; font-family:"DotGothic16",monospace; }
+  .theme-retro .primary,.theme-retro .add,.theme-retro .saveButton,.theme-retro .secondaryButton,.theme-retro .measurementCheckButton { color:#07101b; border:3px solid #00eaff; border-radius:0; background:#fff11c; box-shadow:5px 5px 0 #7b6600; font-family:"DotGothic16",monospace; text-shadow:none; }
+  .theme-retro .secondaryButton,.theme-retro .saveButton { color:#f5ffff; background:#051125; box-shadow:5px 5px 0 #072f45; }
+  .theme-retro .room,.theme-retro .measurementType,.theme-retro .keypadButton,.theme-retro .settingsMenuButton,.theme-retro .savedMoreButton,.theme-retro .quickMemoButton,.theme-retro .floorTrimColorButton,.theme-retro .roomConfirmButton { color:#fff; border:2px solid #00eaff; border-radius:0; background:#061020; box-shadow:4px 4px 0 #102048; font-family:"DotGothic16",monospace; text-shadow:2px 2px #07101f; }
+  .theme-retro .room.active,.theme-retro .measurementType.active,.theme-retro .settingsOption.active { color:#fff; border-color:#ff32d2; background:#531044; box-shadow:4px 4px 0 #00eaff; }
+  .theme-retro .keypadButton.utility { color:#ff70df; border-color:#ff32d2; }
+  .theme-retro .add.crossRegister { color:#00160b; border-color:#5cff8d; background:#37f36f; box-shadow:5px 5px 0 #09712e; }
+  .theme-retro .numberKeypad,.theme-retro .address { border:3px solid #00eaff; border-radius:0; background:rgba(2,7,20,.92); box-shadow:inset 0 0 0 2px #122047; }
+  .theme-retro .record { color:#fff; border-color:#1b6f86; }
+  .theme-retro .record b,.theme-retro .summaryLine strong,.theme-retro .estimateTotal strong { color:#fff11c; text-shadow:2px 2px #6d5800; }
+  .theme-retro .settingsButton,.theme-retro .measurementBackButton,.theme-retro .back { color:#45f8ff; border-color:#00eaff; border-radius:0; background:#041020; box-shadow:3px 3px 0 #ff2bc9; font-family:"DotGothic16",monospace; }
+  .theme-retro .propertyOption { position:relative; min-height:64px; padding-left:60px; }
+  .theme-retro .propertyOption::before { content:""; position:absolute; left:9px; top:50%; width:42px; height:46px; transform:translateY(-50%); background:url('/retro-building-icon.png') center/contain no-repeat; image-rendering:pixelated; filter:drop-shadow(2px 2px 0 #ff2bc9); }
+  .theme-retro .savedItem { position:relative; min-height:118px; padding-left:78px; }
+  .theme-retro .savedItem::before { content:""; position:absolute; left:12px; top:17px; width:58px; height:68px; background:url('/retro-building-icon.png') center/contain no-repeat; image-rendering:pixelated; filter:drop-shadow(3px 3px 0 #ff2bc9) drop-shadow(-1px -1px 0 #00eaff); }
+  .theme-retro .measurementTypes::before { content:"★ FIELD QUEST ★"; grid-column:1/-1; padding:7px; border:2px solid #fff22b; color:#fff22b; background:#0c0820; box-shadow:3px 3px 0 #ff2bc9; text-align:center; letter-spacing:.12em; }
+  .theme-retro .completeCard { color:#fff; border:4px solid #00eaff; border-radius:0; background:#030817; box-shadow:6px 6px 0 #ff29cc; font-family:"DotGothic16",monospace; }
+  .theme-retro .completeCard::before { content:"STAGE CLEAR!"; display:block; margin-bottom:12px; color:#ffef24; font-size:30px; text-shadow:3px 3px #ce238f; }
+  @media(max-width:700px) { .theme-retro { background-size:auto 100vh; background-position:center top; } }
   @media (max-width:600px) {
     .measurementActions { gap:16px; margin:18px 0 22px; }
     .measurementTypes { grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr)); gap:12px; }
@@ -3402,13 +3440,14 @@ export default function App() {
   const themeOptions = [
     ['beige', 'ベージュ'], ['dark', 'ダーク'], ['pop', 'ポップ'], ['cyber', 'サイバー'],
     ['luxury', 'Luxury Black'], ['sakura', 'SAKURA'], ['ice', 'Ice'], ['forest', 'Forest'],
+    ['retro', 'RETRO'],
     ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
   ]
   return (
     <>
       <style>{styles}</style>
       <div
-        className={`app${theme === 'dark' ? ' theme-dark' : theme === 'pop' ? ' theme-pop' : theme === 'cyber' ? ' theme-cyber' : theme === 'luxury' ? ' theme-luxury' : theme === 'sakura' ? ' theme-sakura' : theme === 'ice' ? ' theme-ice' : theme === 'forest' ? ' theme-forest' : theme === 'galaxy' ? ' theme-galaxy' : ''}`}
+        className={`app${theme === 'dark' ? ' theme-dark' : theme === 'pop' ? ' theme-pop' : theme === 'cyber' ? ' theme-cyber' : theme === 'luxury' ? ' theme-luxury' : theme === 'sakura' ? ' theme-sakura' : theme === 'ice' ? ' theme-ice' : theme === 'forest' ? ' theme-forest' : theme === 'galaxy' ? ' theme-galaxy' : theme === 'retro' ? ' theme-retro' : ''}`}
         style={{ zoom: fontScales[fontSize] || 1 }}
       >
         <header className="header">
