@@ -1065,6 +1065,46 @@ const styles = `
   .theme-cyber .actionCsv { background:#09251e; color:#8cffe0; }
   .theme-cyber .actionDelete { background:#260a20; color:#ff98df; border-color:#ff3ccf; }
   .theme-cyber .empty { color:#668d98; }
+  /* Dark theme readability refinements */
+  .theme-dark .subtitle,.theme-dark .eyebrow,.theme-dark .copyFormatPreview,.theme-dark .estimateIntro,.theme-dark .savedCardDate,.theme-dark .savedListSummary,.theme-dark .roomCheckDetails,.theme-dark .additionalWorkItem small { color:#ddd4dc; }
+  .theme-dark .globalListEditor,.theme-dark .globalListItem,.theme-dark .savedToolbar,.theme-dark .settingsMenuButton,.theme-dark .savedMoreButton,.theme-dark .estimateRoom,.theme-dark .additionalWorkForm { color:#f7f3f6; border-color:#675c65; background:#302c31; }
+  .theme-dark .globalListEditor h3,.theme-dark .globalListItem>span,.theme-dark .estimateRoom h3,.theme-dark .additionalWorkItem strong { color:#fff; }
+  .theme-dark .settingsMenuButton,.theme-dark .savedMoreButton { color:#f4edf3; }
+  .theme-dark .settingsMenuButton span:last-child { color:#ffb3c8; }
+  .theme-dark .quickMemoButton,.theme-dark .floorTrimColorButton,.theme-dark .roomConfirmButton { color:#f2eaf0; border-color:#70646d; background:#3b353b; }
+  .theme-dark .estimateTotal,.theme-dark .estimateNote { color:#f0e7ed; border-color:#675c65; background:#342e33; }
+  .theme-dark .estimateMemo { color:#ffc0d3; }
+  .theme-dark .savedUnit { color:#ffb3a2; }
+  .theme-dark input::placeholder { color:#aaa0a8; opacity:1; }
+
+  /* Cyber theme: higher contrast + stronger neon */
+  .theme-cyber { color:#edffff; background:linear-gradient(rgba(0,255,255,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(255,0,220,.055) 1px,transparent 1px),radial-gradient(circle at 12% 8%,rgba(0,246,255,.27),transparent 28%),radial-gradient(circle at 90% 25%,rgba(255,0,214,.24),transparent 30%),#02040a; background-size:25px 25px,25px 25px,auto,auto,auto; }
+  .theme-cyber .brandLogo { filter:drop-shadow(0 0 6px #00f6ff) drop-shadow(0 0 16px #00f6ff) drop-shadow(0 0 20px #ff25d8); }
+  .theme-cyber .header { border-color:#00f6ff; box-shadow:0 2px 0 rgba(255,37,216,.65); filter:drop-shadow(0 0 9px #00eaff); }
+  .theme-cyber .brand { color:#d7ffff; text-shadow:1px 0 #ff25d8,-1px 0 #00f6ff,0 0 7px #00f6ff,0 0 18px rgba(0,246,255,.95); }
+  .theme-cyber .mavieBrand { color:#ff8deb; text-shadow:0 0 6px #ff00d4,0 0 14px #ff00d4; }
+  .theme-cyber .main h1,.theme-cyber .card h2,.theme-cyber .card h3,.theme-cyber .savedProperty,.theme-cyber .roomSummary h3,.theme-cyber .record,.theme-cyber .globalListItem>span,.theme-cyber .additionalWorkItem strong { color:#f4ffff; text-shadow:0 0 5px rgba(0,246,255,.65); }
+  .theme-cyber .eyebrow,.theme-cyber .propertyLine,.theme-cyber .savedUnit { color:#6fffff; text-shadow:0 0 6px #00eaff,0 0 13px rgba(0,234,255,.75); }
+  .theme-cyber .subtitle,.theme-cyber .savedMeta,.theme-cyber .savedCardDate,.theme-cyber .record small,.theme-cyber .card label>span,.theme-cyber .summaryLine,.theme-cyber .copyFormatPreview,.theme-cyber .estimateIntro,.theme-cyber .savedListSummary,.theme-cyber .roomCheckDetails,.theme-cyber .additionalWorkItem small { color:#c8f8ff; }
+  .theme-cyber .card,.theme-cyber .savedItem,.theme-cyber .roomSummary,.theme-cyber .summary,.theme-cyber .customRoomForm,.theme-cyber .customRoomItem,.theme-cyber .estimateRoom,.theme-cyber .globalListEditor,.theme-cyber .globalListItem,.theme-cyber .savedToolbar,.theme-cyber .additionalWorkForm { border-color:#00eaff; background:linear-gradient(145deg,rgba(3,13,24,.98),rgba(21,3,26,.97)); box-shadow:0 0 0 1px rgba(255,0,214,.42),0 0 12px rgba(0,238,255,.5),0 0 28px rgba(255,0,214,.16),inset 0 0 24px rgba(0,238,255,.05); }
+  .theme-cyber .card input,.theme-cyber .card select,.theme-cyber .propertyOption,.theme-cyber .settingsOption,.theme-cyber .estimateFactor input { color:#f3ffff; border-color:#00eaff; background:#020b13; box-shadow:inset 0 0 10px rgba(0,237,255,.13),0 0 8px rgba(0,237,255,.32); }
+  .theme-cyber input::placeholder { color:#82b8c2; opacity:1; }
+  .theme-cyber .settingsMenuButton,.theme-cyber .savedMoreButton { color:#dfffff; border:1px solid #00eaff; background:linear-gradient(135deg,#04121c,#130820); box-shadow:0 0 8px rgba(0,238,255,.5),inset 0 0 9px rgba(255,0,214,.08); text-shadow:0 0 5px rgba(0,238,255,.65); }
+  .theme-cyber .settingsMenuButton span:last-child { color:#ff7be5; text-shadow:0 0 7px #ff25d8; }
+  .theme-cyber .primary,.theme-cyber .add,.theme-cyber .saveButton,.theme-cyber .secondaryButton { color:#fff; border-color:#00f6ff; background:linear-gradient(135deg,#03212b,#101632 55%,#370b38); box-shadow:0 0 0 1px rgba(255,0,214,.5),0 0 10px #00dcea,0 0 22px rgba(255,0,214,.25),0 5px 0 #00151c; text-shadow:0 0 5px #00eaff; }
+  .theme-cyber .room,.theme-cyber .measurementType,.theme-cyber .keypadButton { color:#d9ffff; border-color:#00dfee; background:linear-gradient(180deg,#061722,#060812); box-shadow:0 3px 0 #00151c,0 0 9px rgba(0,230,247,.46),inset 0 0 7px rgba(0,230,247,.08); text-shadow:0 0 4px rgba(0,238,255,.7); }
+  .theme-cyber .room.active,.theme-cyber .measurementType.active,.theme-cyber .settingsOption.active { color:#fff; border-color:#ff38d9; background:linear-gradient(135deg,#062a35,#43103e); box-shadow:0 0 8px #ff25d8,0 0 18px rgba(255,52,214,.65),inset 0 0 12px rgba(0,238,255,.18); text-shadow:0 0 7px #ff80e6; }
+  .theme-cyber .numberKeypad,.theme-cyber .address { border-color:#00cfe1; background:#020a11; box-shadow:inset 0 0 20px rgba(0,238,255,.12),0 0 10px rgba(0,238,255,.25); }
+  .theme-cyber .keypadButton.utility,.theme-cyber .quickMemoButton,.theme-cyber .floorTrimColorButton,.theme-cyber .roomConfirmButton { color:#ffb6f2; border-color:#ff3bd7; background:#1c071d; box-shadow:0 0 8px rgba(255,42,203,.42); text-shadow:0 0 5px rgba(255,42,203,.85); }
+  .theme-cyber .summaryLine strong,.theme-cyber .record b,.theme-cyber .estimateTotal strong { color:#86ffff; text-shadow:0 0 6px #00efff,0 0 14px rgba(0,238,255,.8); }
+  .theme-cyber .estimateMemo { color:#ff9be9; text-shadow:0 0 4px rgba(255,42,203,.7); }
+  .theme-cyber .estimateNote,.theme-cyber .estimateTotal { color:#e8fdff; border-color:#ff3ad5; background:linear-gradient(135deg,rgba(0,233,255,.12),rgba(255,38,207,.16)); }
+  .theme-cyber .actionButton { border-color:#00eaff; box-shadow:0 0 8px rgba(0,238,255,.58); text-shadow:0 0 4px rgba(255,255,255,.55); }
+  .theme-cyber .actionOpen,.theme-cyber .actionOverwrite { color:#dfffff; background:#071b35; }
+  .theme-cyber .actionCsv { color:#b8ffe9; background:#073126; }
+  .theme-cyber .actionDelete { color:#ffc5f1; border-color:#ff3ccf; background:#310829; box-shadow:0 0 9px rgba(255,60,207,.55); }
+  .theme-cyber .back,.theme-cyber .measurementBackButton { color:#9effff; text-shadow:0 0 6px #00eaff; }
+  .theme-cyber .empty { color:#9ccbd3; }
   @media (max-width:600px) {
     .measurementActions { gap:16px; margin:18px 0 22px; }
     .measurementTypes { grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr)); gap:12px; }
