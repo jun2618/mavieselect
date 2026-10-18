@@ -772,7 +772,7 @@ const styles = `
   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
   .brandGroup { display:flex; align-items:center; justify-content:flex-start; gap:10px; line-height:1; min-width:0; }
   .brandLogo { width:62px; height:62px; object-fit:contain; flex:0 0 auto; filter:drop-shadow(0 5px 10px rgba(148,76,196,.18)); transition:filter .2s ease,transform .2s ease; }
-  .brandLogo,.retroCat img { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .brandLogo,.retroCat img,.catWalkAcross img { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .theme-dark .brandLogo { filter:drop-shadow(0 0 8px rgba(240,160,141,.35)); }
   .theme-pop .brandLogo { filter:drop-shadow(0 5px 9px rgba(231,93,145,.22)); }
   .theme-cyber .brandLogo { filter:drop-shadow(0 0 7px rgba(0,234,255,.8)) drop-shadow(0 0 11px rgba(255,37,216,.45)); }
@@ -1250,6 +1250,12 @@ const styles = `
   .theme-retro .measurementTypes::before { content:"★ FIELD QUEST ★"; grid-column:1/-1; padding:7px; border:2px solid #fff22b; color:#fff22b; background:#0c0820; box-shadow:3px 3px 0 #ff2bc9; text-align:center; letter-spacing:.12em; }
   .theme-retro .card:first-of-type::after { content:"★ ★ ★"; display:block; margin-top:14px; color:#ff40d8; text-align:center; letter-spacing:1.1em; text-shadow:0 0 7px #00eaff; }
   .retroCity,.retroCat { display:none; }
+  .theme-retro .retroCat { display:none !important; }
+  .catWalkAcross { position:fixed; z-index:2200; left:-130px; bottom:max(14px,env(safe-area-inset-bottom)); width:104px; height:116px; pointer-events:none; animation:catCrossScreen 4.2s linear forwards; }
+  .catWalkAcross img { width:100%; height:100%; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(4px 4px 0 rgba(255,43,201,.85)); transform-origin:center bottom; animation:catWalkBob .34s steps(2,end) infinite; }
+  @keyframes catCrossScreen { from { transform:translateX(0); } to { transform:translateX(calc(100vw + 260px)); } }
+  @keyframes catWalkBob { 50% { transform:translateY(-7px) rotate(-2deg); } }
+  @media(max-width:520px){ .catWalkAcross { width:82px; height:92px; bottom:max(10px,env(safe-area-inset-bottom)); animation-duration:3.6s; } }
   .theme-retro .retroCity { display:block; position:fixed; z-index:0; left:0; right:0; bottom:0; height:280px; overflow:hidden; pointer-events:none; background:linear-gradient(transparent 0%,rgba(4,6,20,.28) 20%,#02040c 96%); filter:saturate(1.35); }
   .theme-retro .retroMoon { position:absolute; right:9%; top:12px; width:62px; height:62px; border-radius:50%; background:#fff32b; box-shadow:0 0 18px rgba(255,245,50,.55); }
   .theme-retro .retroMoon::after { content:""; position:absolute; left:19px; top:-7px; width:60px; height:60px; border-radius:50%; background:#02040c; }
@@ -2208,6 +2214,8 @@ export default function App() {
   const [galaxyUnlocked, setGalaxyUnlocked] = useState(() => readPreference(galaxyUnlockedKey, 'false') === 'true')
   const [retroUnlocked, setRetroUnlocked] = useState(() => readPreference(retroUnlockedKey, 'false') === 'true')
   const [showRetroUnlock, setShowRetroUnlock] = useState(false)
+  const [catWalkKey, setCatWalkKey] = useState(0)
+  const msTapRef = useRef({ count: 0, last: 0 })
   const retroHoldTimerRef = useRef(null)
   const [showGalaxyUnlock, setShowGalaxyUnlock] = useState(false)
   const logoTapRef = useRef({ count: 0, last: 0 })
@@ -2549,6 +2557,15 @@ export default function App() {
         <button className="secondaryButton" type="button" onClick={() => resetGlobalList(storageKey, setter, fallback, title)}>初期状態へ戻す</button>
       </section>
     )
+  }
+  function handleMsMarkTap() {
+    const now = Date.now()
+    const count = now - msTapRef.current.last > 1500 ? 1 : msTapRef.current.count + 1
+    msTapRef.current = { count, last: now }
+    if (count < 5) return
+    msTapRef.current = { count: 0, last: 0 }
+    setCatWalkKey(previous => previous + 1)
+    window.setTimeout(() => setCatWalkKey(0), 4300)
   }
   function savePlaySettings(next) {
     setPlaySettings(next)
@@ -3547,7 +3564,7 @@ export default function App() {
       >
         <header className="header">
           <div className="brandGroup">
-            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" draggable="false" />
+            <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" draggable="false" onClick={handleMsMarkTap} />
             <div>
               <div className="mavieBrand">MavieSelect</div>
               <div className="brand">M-Cross</div>
@@ -4408,13 +4425,17 @@ export default function App() {
             )}
           </main>
         )}
+        {catWalkKey > 0 && (
+          <div key={catWalkKey} className="catWalkAcross" aria-hidden="true">
+            <img src="/retro-cat-final.png" alt="" />
+          </div>
+        )}
         <div className="retroCity" aria-hidden="true">
           <div className="retroMoon" />
           <div className="retroBuildings">
             {[['72%','#00eaff'],['48%','#ff2bc9'],['88%','#00eaff'],['62%','#fff22b'],['96%','#ff2bc9'],['55%','#00eaff'],['78%','#ff2bc9'],['44%','#fff22b'],['84%','#00eaff'],['66%','#ff2bc9']].map(([height,color],index) => <span key={index} className="retroBuilding" style={{ '--h': height, '--c': color }} />)}
           </div>
         </div>
-        <div className="retroCat" aria-hidden="true"><img src="/retro-cat-final.png" alt="" /></div>
         {showRetroUnlock && <div className="galaxyUnlock retroUnlock"><small>SECRET THEME</small><strong>RETRO MODE UNLOCKED!</strong><span>🐱</span><p>設定のテーマカラーからRETROを選べます</p></div>}
         {effectBurst && <div className={`registrationEffect effect-${effectBurst.theme}`} aria-hidden="true">{[0,1,2,3,4,5,6,7].map(index => <span key={index} style={{ '--i': index }}>{effectBurst.symbol}</span>)}</div>}
         {showComplete && (
