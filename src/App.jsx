@@ -1491,6 +1491,9 @@ function LengthMeasurementPage({
   const [memo, setMemo] = useState('')
   const [activeInput, setActiveInput] = useState('')
   const memoInputRef = useRef(null)
+  const lengthRoomAreaRef = useRef(null)
+  const lengthEntryAreaRef = useRef(null)
+  const lengthInputAreaRef = useRef(null)
   const isSummaryPage = pageIndex === rooms.length
   const room = isSummaryPage ? '' : rooms[pageIndex]
   const roomRecords = records.filter(item => item.room === room)
@@ -1504,12 +1507,36 @@ function LengthMeasurementPage({
   }, {})
   const total = Object.values(roomTotals).reduce((sum, value) => sum + value, 0)
 
+  useEffect(() => {
+    const firstFrame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        lengthRoomAreaRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+      })
+    })
+    return () => cancelAnimationFrame(firstFrame)
+  }, [])
+
   function goToPage(index) {
-    setPageIndex(Math.max(0, Math.min(index, rooms.length)))
+    const nextIndex = Math.max(0, Math.min(index, rooms.length))
+    setPageIndex(nextIndex)
     setActiveInput('')
     setLength('')
     setCount('')
     setMemo('')
+
+    if (nextIndex < rooms.length) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          lengthEntryAreaRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+        })
+      })
+    }
   }
 
   function updateInput(key) {
@@ -1552,7 +1579,7 @@ function LengthMeasurementPage({
   }
   return (
     <>
-      <nav className="roomTabs" aria-label={`${title}の部屋`}>
+      <nav ref={lengthRoomAreaRef} className="roomTabs" aria-label={`${title}の部屋`}>
         {rooms.map((name, index) => (
           <button key={name} type="button" className={pageIndex === index ? 'room active' : 'room'} onClick={() => goToPage(index)}>{name}</button>
         ))}
@@ -1574,9 +1601,9 @@ function LengthMeasurementPage({
         </section>
       ) : (
         <>
-          <section className="card">
+          <section ref={lengthEntryAreaRef} className="card">
             <h2>{room}</h2>
-            <form onSubmit={addRecord}>
+            <form ref={lengthInputAreaRef} onSubmit={addRecord}>
               {countOnly ? (
                 <div className="inputRow" style={{ gridTemplateColumns: '1fr' }}>
                   <label><span>枚数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
@@ -1736,6 +1763,8 @@ export default function App() {
   const heightInputRef = useRef(null)
   const countInputRef = useRef(null)
   const crossInputAreaRef = useRef(null)
+  const crossRoomAreaRef = useRef(null)
+  const crossTypeAreaRef = useRef(null)
   const memoInputRef = useRef(null)
   const [records, setRecords] = useState([])
   const [saveStatus, setSaveStatus] = useState('')
@@ -2498,11 +2527,23 @@ export default function App() {
   }
 
   function goToPage(index) {
-    setPageIndex(Math.max(0, Math.min(index, rooms.length)))
+    const nextIndex = Math.max(0, Math.min(index, rooms.length))
+    setPageIndex(nextIndex)
     setActiveInput('')
     setHeight('')
     setCount('')
     setMemo('')
+
+    if (nextIndex < rooms.length) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          crossTypeAreaRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+        })
+      })
+    }
   }
 
   function updateCrossInput(key) {
@@ -3126,7 +3167,14 @@ export default function App() {
 
             {!showRoomManagement && !showEstimate && (
               <div className="measurementTypes" aria-label="採寸機能">
-                <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cross')}>クロス採寸</button>
+                <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => {
+                  setActivePage('cross')
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      crossRoomAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    })
+                  })
+                }}>クロス採寸</button>
                 <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
                 <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
                 <button type="button" className={activePage === 'floorTrim' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('floorTrim')}>床見切り</button>
@@ -3232,7 +3280,7 @@ export default function App() {
               />
             ) : (
               <>
-                <nav className="roomTabs" aria-label="クロスの部屋">
+                <nav ref={crossRoomAreaRef} className="roomTabs" aria-label="クロスの部屋">
                   {rooms.map((name, index) => (
                     <button key={name} type="button" className={pageIndex === index ? 'room active' : 'room'} onClick={() => goToPage(index)}>{name}</button>
                   ))}
@@ -3282,7 +3330,7 @@ export default function App() {
                   <>
                     <section className="card">
                       <h2>{room}</h2>
-                      <div className="measurementTypes" aria-label="採寸区分">
+                      <div ref={crossTypeAreaRef} className="measurementTypes" aria-label="採寸区分">
                         {measurementTypes.map(type => (
                           <button key={type} type="button" className={measurementType === type ? 'measurementType active' : 'measurementType'} onClick={() => {
                             setMeasurementType(type)
