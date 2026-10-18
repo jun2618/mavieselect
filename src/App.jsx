@@ -1984,6 +1984,8 @@ export default function App() {
   const appHistoryRef = useRef([])
   const applyingBrowserBackRef = useRef(false)
   const historySequenceRef = useRef(0)
+  const startedRef = useRef(false)
+  const isDirtyRef = useRef(false)
   const importFileInputRef = useRef(null)
   const [savedEntries, setSavedEntries] = useState([])
   const [savedSearch, setSavedSearch] = useState('')
@@ -2582,6 +2584,9 @@ export default function App() {
     window.history.pushState({ mCross: true, sequence: entry.sequence }, '', window.location.href)
   }
 
+  useEffect(() => { startedRef.current = started }, [started])
+  useEffect(() => { isDirtyRef.current = isDirty }, [isDirty])
+
   useEffect(() => {
     const initialView = captureAppView()
     const initial = { view: initialView, serialized: JSON.stringify(initialView), sequence: 0 }
@@ -2592,7 +2597,7 @@ export default function App() {
       appHistoryRef.current.pop()
       const previous = appHistoryRef.current.at(-1)
       const navigateBack = () => applyAppView(previous?.view)
-      if (started && isDirty) {
+      if (startedRef.current && isDirtyRef.current) {
         pendingNavigationRef.current = navigateBack
         setShowLeaveConfirmation(true)
         window.history.pushState({ mCross: true, sequence: historySequenceRef.current }, '', window.location.href)
@@ -2602,7 +2607,7 @@ export default function App() {
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [started, isDirty])
+  }, [])
 
   useEffect(() => {
     if (applyingBrowserBackRef.current) return
