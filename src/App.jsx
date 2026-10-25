@@ -3447,6 +3447,95 @@ export default function App() {
     <>
       <style>{styles}</style>
       <style>{`
+/* M-CROSS_MOBILE_ESTIMATE_LAYOUT_V5 */
+/* スマホ概算見積 V5
+   1行目: 工事項目
+   2行目: 数量 × 単価 ＝ 金額
+   横スクロールなし
+*/
+@media (max-width:700px) {
+  .estimateRoom {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .estimateRow {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: grid !important;
+    grid-template-columns: auto auto 1fr !important;
+    grid-template-areas:
+      "item item item"
+      "quantity rate amount" !important;
+    column-gap: 5px !important;
+    row-gap: 5px !important;
+    align-items: baseline !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .estimateRow > strong {
+    grid-area: item !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 15px !important;
+    line-height: 1.45 !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .estimateRow > strong .estimateMemo {
+    display: inline !important;
+    margin-left: 6px !important;
+    font-size: 14px !important;
+    line-height: inherit !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .estimateRow .estimateUnit {
+    grid-area: quantity !important;
+    text-align: left !important;
+  }
+
+  .estimateRow .estimateRate {
+    grid-area: rate !important;
+    text-align: left !important;
+  }
+
+  .estimateRow > .estimateNumber:last-child {
+    grid-area: amount !important;
+    justify-self: end !important;
+    text-align: right !important;
+  }
+
+  .estimateNumber {
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+  }
+
+  .estimateRate::after {
+    content: " =";
+  }
+
+  .estimateRoom h3 {
+    font-size: 18px !important;
+    line-height: 1.35 !important;
+  }
+}
+`}</style>
+      <style>{`
 /* M-CROSS_MOBILE_ESTIMATE_LAYOUT_V4 */
 /* スマホ概算見積V4：横スクロールなし。項目名はカード幅で自然に2～3行へ折り返す。 */
 @media (max-width: 700px) {
