@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import properties from './m-cross-properties.json'
+import OneDriveSyncPanel from './OneDriveSyncPanel'
 import './App.css'
 
 const defaultRooms = [
@@ -4850,6 +4851,7 @@ return savedEntries
 
               <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>採寸を開始する →</button>
               <button className="secondaryButton" type="button" onClick={openSavedList}>保存済み一覧を見る</button>
+              <OneDriveSyncPanel />
               <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙ M-Cross設定</button>
             </section>
           </main>
