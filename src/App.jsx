@@ -1876,7 +1876,7 @@ function LengthMeasurementPage({
     if (key === 'clear') return setValue('')
     if (key === 'backspace') return setValue(currentValue.slice(0, -1))
     if (key === 'decimal') {
-      if (!isLengthInput || currentValue.includes('.')) return
+      if (countOnly || currentValue.includes('.')) return
       return setValue(currentValue ? `${currentValue}.` : '0.')
     }
     setValue(`${currentValue}${key}`)
@@ -1891,7 +1891,7 @@ function LengthMeasurementPage({
     } else {
       const numericLength = Number(length.replace(/[。．]/g, '.'))
       const numericCount = Number(count)
-      if (!Number.isFinite(numericLength) || numericLength <= 0 || !Number.isInteger(numericCount) || numericCount < 1) return
+      if (!Number.isFinite(numericLength) || numericLength <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
       setRecords(prev => [...prev, {
         id: createRecordId(), room, length: numericLength, count: numericCount, memo: memo.trim(),
       }])
@@ -1944,7 +1944,7 @@ function LengthMeasurementPage({
                   <label><span>本数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
                 </div>
               )}
-              <NumberKeypad activeInput={activeInput} onKey={updateInput} decimalInput={!countOnly && activeInput === 'length'} />
+              <NumberKeypad activeInput={activeInput} onKey={updateInput} decimalInput={!countOnly && (activeInput === 'length' || activeInput === 'count')} />
               <label>
                 <span>メモ</span>
                 <input ref={memoInputRef} className="memoInput" type="text" value={memo} onChange={event => setMemo(event.target.value)} placeholder="例：窓面、収納内" />
@@ -3372,7 +3372,7 @@ export default function App() {
     if (key === 'clear') return setValue('')
     if (key === 'backspace') return setValue(currentValue.slice(0, -1))
     if (key === 'decimal') {
-      if (!isHeight || currentValue.includes('.')) return
+      if (currentValue.includes('.')) return
       return setValue(currentValue ? `${currentValue}.` : '0.')
     }
     setValue(`${currentValue}${key}`)
@@ -3389,7 +3389,7 @@ export default function App() {
     event.preventDefault()
     const numericHeight = Number(height.replace(/[。．]/g, '.'))
     const numericCount = Number(count)
-    if (!Number.isFinite(numericHeight) || numericHeight <= 0 || !Number.isInteger(numericCount) || numericCount < 1) return
+    if (!Number.isFinite(numericHeight) || numericHeight <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
 
     setRecords(prev => [...prev, {
       id: createRecordId(),
@@ -4257,7 +4257,7 @@ export default function App() {
                           <NumberKeypad
                             activeInput={activeInput}
                             onKey={updateCrossInput}
-                            decimalInput={activeInput === 'height'}
+                            decimalInput={activeInput === 'height' || activeInput === 'count'}
                           />
 
                           <button className="add crossRegister" type="submit">
