@@ -4440,6 +4440,22 @@ function mCrossGetAudioContext() {
 
 let mCrossIsFirstButtonSound = true
 
+function mCrossCreateTone(audioContext, sound, gainValue, duration, delay = 0) {
+  const at = audioContext.currentTime + delay
+  const oscillator = audioContext.createOscillator()
+  const gain = audioContext.createGain()
+
+  oscillator.type = sound.type
+  oscillator.frequency.setValueAtTime(sound.frequency, at)
+  gain.gain.setValueAtTime(Math.min(gainValue, 0.22), at)
+  gain.gain.exponentialRampToValueAtTime(0.001, at + duration)
+
+  oscillator.connect(gain)
+  gain.connect(audioContext.destination)
+  oscillator.start(at)
+  oscillator.stop(at + duration)
+}
+
 async function mCrossPlayButtonSound() {
   const sounds = {
     beige:  { frequency: 620,  type: 'sine',     gain: 0.090, duration: 0.070 },
@@ -4459,33 +4475,23 @@ async function mCrossPlayButtonSound() {
   if (!audioContext) return
 
   try {
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume()
-    }
+    if (audioContext.state === 'suspended') await audioContext.resume()
     if (audioContext.state !== 'running') return
 
-    const now = audioContext.currentTime
-    const oscillator = audioContext.createOscillator()
-    const gain = audioContext.createGain()
-    const volumeMultiplier = mCrossIsFirstButtonSound ? 1.6 : 1
-    const adjustedGain = Math.min(sound.gain * volumeMultiplier, 0.18)
+    if (mCrossIsFirstButtonSound) {
+      mCrossCreateTone(audioContext, sound, sound.gain * 2.0, Math.max(sound.duration, 0.11), 0)
+      mCrossCreateTone(audioContext, sound, sound.gain * 1.25, 0.060, 0.020)
+      mCrossIsFirstButtonSound = false
+      return
+    }
 
-    oscillator.type = sound.type
-    oscillator.frequency.setValueAtTime(sound.frequency, now)
-    gain.gain.setValueAtTime(adjustedGain, now)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + sound.duration)
-
-    oscillator.connect(gain)
-    gain.connect(audioContext.destination)
-    oscillator.start(now)
-    oscillator.stop(now + sound.duration)
-    mCrossIsFirstButtonSound = false
+    mCrossCreateTone(audioContext, sound, sound.gain, sound.duration)
   } catch (error) {
     console.debug('M-Cross button sound skipped', error)
   }
 }
 
-/* M-CROSS_FIRST_TAP_VOLUME_BOOST_APPLIED */
+/* M-CROSS_FIRST_TAP_MOBILE_DEDICATED_V2_APPLIED */
 
 function mCrossHandleButtonSound(event) {
   const target = event.target
