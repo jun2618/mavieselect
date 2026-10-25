@@ -1277,7 +1277,7 @@ const styles = `
   }
 `
 
-function NumberKeypad({ activeInput, onKey, decimalInput }) {
+function NumberKeypad({ activeInput, onKey, decimalInput, showEnter = false, onEnter }) {
   if (!activeInput) return null
 
   return (
@@ -1289,7 +1289,10 @@ function NumberKeypad({ activeInput, onKey, decimalInput }) {
       <button type="button" className="keypadButton" onClick={() => onKey('0')}>0</button>
       <button type="button" className="keypadButton utility" onClick={() => onKey('backspace')} aria-label="1文字削除">⌫</button>
       {decimalInput && (
-        <button type="button" className="keypadButton" style={{ gridColumn: 'span 2' }} onClick={() => onKey('decimal')}>.</button>
+        <div className="keypadEnterRow">
+          <button type="button" className="keypadButton" onClick={() => onKey('decimal')}>.</button>
+          {showEnter && <button type="button" className="keypadButton keypadEnterButton" onClick={onEnter}>Enter</button>}
+        </div>
       )}
     </div>
   )
@@ -1882,6 +1885,25 @@ function LengthMeasurementPage({
     setValue(`${currentValue}${key}`)
   }
 
+  function handleMeasurementEnter() {
+    if (countOnly) return
+
+    if (activeInput === 'length') {
+      const numericLength = Number(length.replace(/[。．]/g, '.'))
+      if (!Number.isFinite(numericLength) || numericLength <= 0) return
+      setActiveInput('count')
+      return
+    }
+
+    if (activeInput === 'count') {
+      const numericLength = Number(length.replace(/[。．]/g, '.'))
+      const numericCount = Number(count)
+      if (!Number.isFinite(numericLength) || numericLength <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
+      addRecord({ preventDefault() {} })
+      setActiveInput('length')
+    }
+  }
+
   function addRecord(event) {
     event.preventDefault()
     if (countOnly) {
@@ -1944,12 +1966,18 @@ function LengthMeasurementPage({
                   <label><span>本数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
                 </div>
               )}
-              <NumberKeypad activeInput={activeInput} onKey={updateInput} decimalInput={!countOnly && (activeInput === 'length' || activeInput === 'count')} />
+              <NumberKeypad
+                activeInput={activeInput}
+                onKey={updateInput}
+                decimalInput={!countOnly && (activeInput === 'length' || activeInput === 'count')}
+                showEnter={!countOnly}
+                onEnter={handleMeasurementEnter}
+              />
               <label>
                 <span>メモ</span>
                 <input ref={memoInputRef} className="memoInput" type="text" value={memo} onChange={event => setMemo(event.target.value)} placeholder="例：窓面、収納内" />
               </label>
-              <button className="add" type="submit">{countOnly ? '＋ ソフト巾木登録' : `＋ ${title}の内容を登録`}</button>
+              {countOnly && <button className="add" type="submit">＋ ソフト巾木登録</button>}
             </form>
             <div className="records">
               {!countOnly && <h2>{room}の{title}登録</h2>}
@@ -3385,6 +3413,23 @@ export default function App() {
       markUnsaved()
     }
   }
+  function handleCrossEnter() {
+    if (activeInput === 'height') {
+      const numericHeight = Number(height.replace(/[。．]/g, '.'))
+      if (!Number.isFinite(numericHeight) || numericHeight <= 0) return
+      setActiveInput('count')
+      return
+    }
+
+    if (activeInput === 'count') {
+      const numericHeight = Number(height.replace(/[。．]/g, '.'))
+      const numericCount = Number(count)
+      if (!Number.isFinite(numericHeight) || numericHeight <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
+      addCrossRecord({ preventDefault() {} })
+      setActiveInput('height')
+    }
+  }
+
   function addCrossRecord(event) {
     event.preventDefault()
     const numericHeight = Number(height.replace(/[。．]/g, '.'))
@@ -3446,6 +3491,22 @@ export default function App() {
   return (
     <>
       <style>{styles}</style>
+      <style>{`
+/* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
+.keypadEnterRow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.keypadEnterRow .keypadButton {
+  width: 100%;
+  min-width: 0;
+}
+.keypadEnterButton {
+  font-weight: 800;
+}
+`}</style>
       <style>{`
 /* M-CROSS_ESTIMATE_THEME_COLORS_V1 */
 /* 概算見積専用のテーマ別配色。レイアウトには触れない。 */
@@ -4463,11 +4524,9 @@ export default function App() {
                             activeInput={activeInput}
                             onKey={updateCrossInput}
                             decimalInput={activeInput === 'height' || activeInput === 'count'}
+                            showEnter
+                            onEnter={handleCrossEnter}
                           />
-
-                          <button className="add crossRegister" type="submit">
-                            ＋ {measurementType}の内容を登録
-                          </button>
                         </div>
 
                         <label>
