@@ -3513,10 +3513,6 @@ export default function App() {
                 <button type="button" className={`settingsOption${playSettings.effects ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, effects: !playSettings.effects })}>登録エフェクト {playSettings.effects ? 'ON' : 'OFF'}</button>
                 <button type="button" className={`settingsOption${playSettings.splash ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, splash: !playSettings.splash })}>起動画面 {playSettings.splash ? 'ON' : 'OFF'}</button>
               </div>
-              <h3 style={{ marginTop: 20 }}>操作音</h3>
-              <div className="settingsOptions">
-                {[['off','OFF'],['simple','シンプル'],['pop','ポップ'],['cyber','Cyber']].map(([value,label]) => <button key={value} type="button" className={`settingsOption${playSettings.sound === value ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, sound: value })}>{label}</button>)}
-              </div>
               <div className="settingsMenu" aria-label="詳細設定">
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('additional')}><span>🔧 よく使う追加作業</span><span>›</span></button>
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('memos')}><span>📝 よく使うメモ</span><span>›</span></button>
@@ -4391,3 +4387,92 @@ export default function App() {
     </>
   )
 }
+
+/* M-CROSS_THEME_BUTTON_SOUNDS_V2_START */
+function mCrossGetThemeName() {
+  const className = document.querySelector('.app')?.className || ''
+  if (className.includes('theme-cyber')) return 'cyber'
+  if (className.includes('theme-retro')) return 'retro'
+  if (className.includes('theme-galaxy')) return 'galaxy'
+  if (className.includes('theme-sakura')) return 'sakura'
+  if (className.includes('theme-ice')) return 'ice'
+  if (className.includes('theme-forest')) return 'forest'
+  if (className.includes('theme-luxury')) return 'luxury'
+  if (className.includes('theme-pop')) return 'pop'
+  if (className.includes('theme-dark')) return 'dark'
+  return 'beige'
+}
+
+function mCrossIsSoundOff() {
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index)
+      if (!key) continue
+      const raw = localStorage.getItem(key)
+      if (!raw || raw[0] !== '{') continue
+      try {
+        const value = JSON.parse(raw)
+        if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'sound')) {
+          return value.sound === 'off'
+        }
+      } catch {}
+    }
+  } catch {}
+  return false
+}
+
+function mCrossPlayButtonSound() {
+
+  const sounds = {
+    beige:  { frequency: 620,  type: 'sine',     gain: 0.035, duration: 0.055 },
+    dark:   { frequency: 360,  type: 'triangle', gain: 0.040, duration: 0.060 },
+    pop:    { frequency: 880,  type: 'triangle', gain: 0.045, duration: 0.075 },
+    cyber:  { frequency: 1240, type: 'square',   gain: 0.025, duration: 0.050 },
+    luxury: { frequency: 520,  type: 'sine',     gain: 0.030, duration: 0.070 },
+    sakura: { frequency: 760,  type: 'sine',     gain: 0.032, duration: 0.080 },
+    ice:    { frequency: 1080, type: 'sine',     gain: 0.028, duration: 0.090 },
+    forest: { frequency: 440,  type: 'triangle', gain: 0.035, duration: 0.080 },
+    retro:  { frequency: 960,  type: 'square',   gain: 0.025, duration: 0.055 },
+    galaxy: { frequency: 1380, type: 'sine',     gain: 0.028, duration: 0.100 },
+  }
+
+  const sound = sounds[mCrossGetThemeName()] || sounds.beige
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext
+  if (!AudioContextClass) return
+
+  try {
+    const audioContext = new AudioContextClass()
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+
+    oscillator.type = sound.type
+    oscillator.frequency.setValueAtTime(sound.frequency, audioContext.currentTime)
+    gain.gain.setValueAtTime(sound.gain, audioContext.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + sound.duration)
+
+    oscillator.connect(gain)
+    gain.connect(audioContext.destination)
+    oscillator.start()
+    oscillator.stop(audioContext.currentTime + sound.duration)
+    oscillator.addEventListener('ended', () => audioContext.close(), { once: true })
+  } catch (error) {
+    console.debug('M-Cross button sound skipped', error)
+  }
+}
+
+function mCrossHandleButtonSound(event) {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  const button = target.closest('button')
+  if (!button || button.disabled) return
+  mCrossPlayButtonSound()
+}
+
+if (!globalThis.__mCrossThemeButtonSoundsV2Installed) {
+  globalThis.__mCrossThemeButtonSoundsV2Installed = true
+  document.addEventListener('click', mCrossHandleButtonSound, true)
+}
+/* M-CROSS_THEME_BUTTON_SOUNDS_V2_END */
+
+
+/* M-CROSS_AUTO_THEME_SOUNDS_APPLIED */
