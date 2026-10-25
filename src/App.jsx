@@ -3447,6 +3447,33 @@ export default function App() {
     <>
       <style>{styles}</style>
       <style>{`
+/* M-CROSS_ESTIMATE_NUMBERS_LARGE_V1 */
+/* 全テーマ共通：スマホ概算の数量・単価・金額を読みやすく拡大 */
+@media (max-width:700px) {
+  .estimateRow .estimateNumber {
+    font-size: 1.12em !important;
+    line-height: 1.5 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  .estimateRow > .estimateNumber:last-child {
+    font-size: 1.18em !important;
+    font-weight: 800 !important;
+  }
+
+  .estimateTotal {
+    font-size: 1.18em !important;
+    font-weight: 700 !important;
+  }
+
+  .estimateTotal strong {
+    font-size: 1.28em !important;
+    font-weight: 900 !important;
+  }
+}
+`}</style>
+      <style>{`
 /* M-CROSS_MOBILE_ESTIMATE_FINAL */
 /* Final mobile estimate layout: no horizontal scrolling. */
 @media (max-width:700px) {
