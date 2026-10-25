@@ -3447,6 +3447,105 @@ export default function App() {
     <>
       <style>{styles}</style>
       <style>{`
+/* M-CROSS_MOBILE_ESTIMATE_LAYOUT_V6 */
+/* スマホ概算見積 V6
+   項目名
+   数量 × 単価 ＝ 金額
+   画面内に完全収容。大サイズでは必要に応じて自然に折り返す。
+*/
+@media (max-width:700px) {
+  .estimateRoom {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .estimateRow {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: baseline !important;
+    justify-content: flex-start !important;
+    gap: 5px 6px !important;
+    overflow: visible !important;
+  }
+
+  .estimateRow > strong:first-child {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 15px !important;
+    line-height: 1.45 !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .estimateRow > strong:first-child .estimateMemo {
+    display: inline !important;
+    margin-left: 6px !important;
+    font-size: 14px !important;
+    line-height: inherit !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .estimateRow .estimateNumber {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+    text-align: left !important;
+    justify-self: auto !important;
+  }
+
+  .estimateRow > .estimateNumber:last-child {
+    margin-left: 0 !important;
+    text-align: left !important;
+  }
+
+  .estimateRow > .estimateNumber:last-child::before {
+    content: "＝ " !important;
+  }
+
+  /* V5以前で追加した = を重複表示しない */
+  .estimateRate::after {
+    content: "" !important;
+  }
+
+  .estimateTotal {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+    gap: 6px 12px !important;
+    overflow: visible !important;
+    font-size: 17px !important;
+    line-height: 1.45 !important;
+  }
+
+  .estimateTotal strong {
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    font-size: 19px !important;
+  }
+}
+`}</style>
+      <style>{`
 /* M-CROSS_MOBILE_ESTIMATE_LAYOUT_V5 */
 /* スマホ概算見積 V5
    1行目: 工事項目
