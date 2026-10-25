@@ -4438,7 +4438,9 @@ function mCrossGetAudioContext() {
   return mCrossSharedAudioContext
 }
 
-function mCrossPlayButtonSound() {
+let mCrossIsFirstButtonSound = true
+
+async function mCrossPlayButtonSound() {
   const sounds = {
     beige:  { frequency: 620,  type: 'sine',     gain: 0.090, duration: 0.070 },
     dark:   { frequency: 360,  type: 'triangle', gain: 0.100, duration: 0.075 },
@@ -4454,28 +4456,36 @@ function mCrossPlayButtonSound() {
 
   const sound = sounds[mCrossGetThemeName()] || sounds.beige
   const audioContext = mCrossGetAudioContext()
-  if (!audioContext || audioContext.state !== 'running') return
+  if (!audioContext) return
 
   try {
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume()
+    }
+    if (audioContext.state !== 'running') return
+
     const now = audioContext.currentTime
     const oscillator = audioContext.createOscillator()
     const gain = audioContext.createGain()
+    const volumeMultiplier = mCrossIsFirstButtonSound ? 1.6 : 1
+    const adjustedGain = Math.min(sound.gain * volumeMultiplier, 0.18)
 
     oscillator.type = sound.type
     oscillator.frequency.setValueAtTime(sound.frequency, now)
-    gain.gain.setValueAtTime(sound.gain, now)
+    gain.gain.setValueAtTime(adjustedGain, now)
     gain.gain.exponentialRampToValueAtTime(0.001, now + sound.duration)
 
     oscillator.connect(gain)
     gain.connect(audioContext.destination)
     oscillator.start(now)
     oscillator.stop(now + sound.duration)
+    mCrossIsFirstButtonSound = false
   } catch (error) {
     console.debug('M-Cross button sound skipped', error)
   }
 }
 
-/* M-CROSS_MOBILE_SOUND_FIX_APPLIED */
+/* M-CROSS_FIRST_TAP_VOLUME_BOOST_APPLIED */
 
 function mCrossHandleButtonSound(event) {
   const target = event.target
