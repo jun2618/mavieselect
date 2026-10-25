@@ -2143,6 +2143,9 @@ function FinalReviewPage({
   const [unit, setUnit] = useState('式')
   const [unitPrice, setUnitPrice] = useState('')
   const [memo, setMemo] = useState('')
+  const [editingAdditionalWorkId, setEditingAdditionalWorkId] = useState('')
+
+  /* M-CROSS_ADDITIONAL_WORK_TAP_EDIT_V3 */
 
   /* M-CROSS_PAST_UNIT_PRICE_SUGGESTIONS_V3 */
   const pastUnitPriceSuggestions = useMemo(() => {
@@ -2179,19 +2182,51 @@ function FinalReviewPage({
     return [...unique.values()].slice(0, 5)
   }, [work])
 
+  function resetAdditionalWorkEditor() {
+    setEditingAdditionalWorkId('')
+    setRoom(rooms[0] || '')
+    setWork('')
+    setQuantity('1')
+    setUnit('式')
+    setUnitPrice('')
+    setMemo('')
+  }
+
+  function startEditingAdditionalWork(item) {
+    setEditingAdditionalWorkId(item.id)
+    setRoom(item.room || rooms[0] || '')
+    setWork(item.work || '')
+    setQuantity(String(item.quantity ?? '1'))
+    setUnit(item.unit || '式')
+    setUnitPrice(String(item.unitPrice ?? ''))
+    setMemo(item.memo || '')
+    window.setTimeout(() => {
+      document.querySelector('.additionalWorkForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 0)
+  }
+
   function addWork(event) {
     event.preventDefault()
     const numericQuantity = Number(quantity)
     const numericUnitPrice = Math.max(0, Number(unitPrice) || 0)
     if (!room || !work.trim() || !Number.isFinite(numericQuantity) || numericQuantity <= 0) return
-    setAdditionalWorks(previous => [...previous, {
-      id: createRecordId(), room, work: work.trim(), quantity: numericQuantity, unit,
-      unitPrice: numericUnitPrice, amount: numericQuantity * numericUnitPrice, memo: memo.trim(),
-    }])
-    setWork('')
-    setQuantity('1')
-    setUnitPrice('')
-    setMemo('')
+
+    const nextItem = {
+      id: editingAdditionalWorkId || createRecordId(),
+      room,
+      work: work.trim(),
+      quantity: numericQuantity,
+      unit,
+      unitPrice: numericUnitPrice,
+      amount: numericQuantity * numericUnitPrice,
+      memo: memo.trim(),
+    }
+
+    setAdditionalWorks(previous => editingAdditionalWorkId
+      ? previous.map(item => item.id === editingAdditionalWorkId ? nextItem : item)
+      : [...previous, nextItem]
+    )
+    resetAdditionalWorkEditor()
     onChanged()
     onRegistered?.()
   }
@@ -2354,6 +2389,12 @@ function FinalReviewPage({
         </section>
 
         <form className="additionalWorkForm" onSubmit={addWork}>
+          {editingAdditionalWorkId && (
+            <div className="additionalWorkEditNotice">
+              <strong>✏️ 追加作業を編集中</strong>
+              <button type="button" onClick={resetAdditionalWorkEditor}>編集をキャンセル</button>
+            </div>
+          )}
           <label><span>部屋</span><select value={room} onChange={event => setRoom(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
           <label><span>作業内容</span><input value={work} onChange={event => setWork(event.target.value)} placeholder="例：畳表替え、電球交換" /></label>
           {pastUnitPriceSuggestions.length > 0 && (
@@ -2387,15 +2428,30 @@ function FinalReviewPage({
             <label><span>金額</span><input type="text" readOnly value={formatYen((Number(quantity) || 0) * (Number(unitPrice) || 0))} /></label>
             <label><span>メモ</span><input value={memo} onChange={event => setMemo(event.target.value)} placeholder="任意" /></label>
           </div>
-          <button className="add" type="submit">＋ 追加作業を登録</button>
+          <button className="add" type="submit">
+            {editingAdditionalWorkId ? '✓ 追加作業を更新' : '＋ 追加作業を登録'}
+          </button>
         </form>
 
         <div className="records">
           {additionalWorks.length === 0 ? <p className="empty">追加作業はありません</p> : additionalWorks.map(item => (
-            <div className="additionalWorkItem" key={item.id}>
+            <div
+              className={`additionalWorkItem additionalWorkEditable ${editingAdditionalWorkId === item.id ? 'editing' : ''}`}
+              key={item.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => startEditingAdditionalWork(item)}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  startEditingAdditionalWork(item)
+                }
+              }}
+              aria-label={item.room + 'の' + item.work + 'を編集'}
+            >
               <div><strong>{item.room}　{item.work}</strong><small>{item.memo || 'メモなし'}</small></div>
               <div><b>{formatQuantity(item.quantity)}{item.unit}</b><small>{formatYen(Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0))}</small></div>
-              <button type="button" onClick={() => { setAdditionalWorks(previous => previous.filter(record => record.id !== item.id)); onChanged() }} aria-label="追加作業を削除">×</button>
+              <button type="button" onClick={event => { event.stopPropagation(); if (editingAdditionalWorkId === item.id) resetAdditionalWorkEditor(); setAdditionalWorks(previous => previous.filter(record => record.id !== item.id)); onChanged() }} aria-label="追加作業を削除">×</button>
             </div>
           ))}
         </div>
@@ -3883,6 +3939,14 @@ return savedEntries
     <>
       <style>{styles}</style>
       <style>{`
+.additionalWorkEditable{cursor:pointer;border-radius:11px;padding-left:8px;padding-right:8px;transition:background .16s,outline-color .16s}
+.additionalWorkEditable:hover,.additionalWorkEditable:focus-visible{background:rgba(110,145,232,.09);outline:2px solid rgba(110,145,232,.42);outline-offset:2px}
+.additionalWorkEditable.editing{background:rgba(99,190,161,.13);outline:2px solid rgba(99,190,161,.62);outline-offset:2px}
+.additionalWorkEditNotice{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding:10px 12px;border:1px solid rgba(99,190,161,.55);border-radius:12px;background:rgba(99,190,161,.11)}
+.additionalWorkEditNotice button{min-height:38px;padding:6px 10px;border:1px solid rgba(99,190,161,.55);border-radius:9px;background:rgba(255,255,255,.84);color:inherit;font:inherit;font-weight:800;cursor:pointer}
+.theme-dark .additionalWorkEditNotice button,.theme-cyber .additionalWorkEditNotice button,.theme-luxury .additionalWorkEditNotice button,.theme-retro .additionalWorkEditNotice button,.theme-galaxy .additionalWorkEditNotice button{background:rgba(5,12,24,.82)}
+`}</style>
+      <style>{`
 .propertyHistoryControls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.propertyHistoryControls button,.propertyHistoryControls select{min-height:42px;border:1px solid rgba(99,190,161,.48);border-radius:10px;background:rgba(255,255,255,.82);color:inherit;font:inherit;font-weight:800;padding:7px 10px}.theme-dark .propertyHistoryControls button,.theme-dark .propertyHistoryControls select,.theme-cyber .propertyHistoryControls button,.theme-cyber .propertyHistoryControls select,.theme-luxury .propertyHistoryControls button,.theme-luxury .propertyHistoryControls select,.theme-retro .propertyHistoryControls button,.theme-retro .propertyHistoryControls select,.theme-galaxy .propertyHistoryControls button,.theme-galaxy .propertyHistoryControls select{background:rgba(5,12,24,.82)}@media(max-width:520px){.propertyHistoryControls{grid-template-columns:1fr}.propertyHistoryControls select{width:100%}}
 `}</style>
       <style>{`
@@ -4739,7 +4803,7 @@ return savedEntries
                 </section>
               )}
 
-                            /* M-CROSS_PREVIOUS_PROPERTY_REFERENCE_V2 */
+                            
               {selectedProperty && previousPropertyEntries.length > 0 && (
                 <section className="previousPropertyPanel">
                   <div className="previousPropertyHeading">
