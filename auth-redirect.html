@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="UTF-8" /><title>Microsoft Sign-in</title></head>
+<body>
+<p>Microsoft認証を処理しています…</p>
+<script type="module">
+  import { broadcastResponseToMainFrame } from '@azure/msal-browser/redirect-bridge'
+  broadcastResponseToMainFrame().catch(error => console.error('Redirect bridge error:', error))
+</script>
+</body>
+</html>

@@ -1,8 +1,19 @@
+import { resolve } from 'path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // M-CROSS_ONEDRIVE_AUTH_SANDBOX_V1
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        authTest: resolve(__dirname, 'auth-test.html'),
+        authRedirect: resolve(__dirname, 'auth-redirect.html'),
+      },
+    },
+  },
   plugins: [
     react(),
 
