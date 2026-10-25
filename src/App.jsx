@@ -3447,6 +3447,80 @@ export default function App() {
     <>
       <style>{styles}</style>
       <style>{`
+/* M-CROSS_MOBILE_ESTIMATE_LAYOUT_V4 */
+/* スマホ概算見積V4：横スクロールなし。項目名はカード幅で自然に2～3行へ折り返す。 */
+@media (max-width: 700px) {
+  .estimateRoom {
+    overflow-x: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .estimateRow {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.15fr) !important;
+    grid-template-areas:
+      "item item item"
+      "quantity rate amount" !important;
+    gap: 8px 6px !important;
+    align-items: start !important;
+    box-sizing: border-box !important;
+  }
+
+  .estimateRow > strong {
+    grid-area: item !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .estimateRow > strong .estimateMemo {
+    display: inline !important;
+    margin-left: 8px !important;
+    font-size: 15px !important;
+    line-height: inherit !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .estimateRow .estimateUnit {
+    grid-area: quantity !important;
+  }
+
+  .estimateRow .estimateRate {
+    grid-area: rate !important;
+  }
+
+  .estimateRow > .estimateNumber:last-child {
+    grid-area: amount !important;
+  }
+
+  .estimateNumber {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    text-align: right !important;
+  }
+
+  .estimateRoom h3 {
+    font-size: 19px !important;
+    line-height: 1.35 !important;
+  }
+}
+`}</style>
+      <style>{`
 /* M-CROSS_MOBILE_ESTIMATE_LAYOUT_V3 */
 .app { --est-accent:#c7783e; --est-border:rgba(199,120,62,.55); --est-surface:rgba(255,255,255,.78); }
 .app.theme-dark { --est-accent:#93c5fd; --est-border:rgba(147,197,253,.55); --est-surface:rgba(15,23,42,.78); }
