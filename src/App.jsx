@@ -4421,44 +4421,61 @@ function mCrossIsSoundOff() {
   return false
 }
 
-function mCrossPlayButtonSound() {
+let mCrossSharedAudioContext = null
 
+function mCrossGetAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext
+  if (!AudioContextClass) return null
+
+  if (!mCrossSharedAudioContext || mCrossSharedAudioContext.state === 'closed') {
+    mCrossSharedAudioContext = new AudioContextClass()
+  }
+
+  if (mCrossSharedAudioContext.state === 'suspended') {
+    mCrossSharedAudioContext.resume().catch(() => {})
+  }
+
+  return mCrossSharedAudioContext
+}
+
+function mCrossPlayButtonSound() {
   const sounds = {
-    beige:  { frequency: 620,  type: 'sine',     gain: 0.035, duration: 0.055 },
-    dark:   { frequency: 360,  type: 'triangle', gain: 0.040, duration: 0.060 },
-    pop:    { frequency: 880,  type: 'triangle', gain: 0.045, duration: 0.075 },
-    cyber:  { frequency: 1240, type: 'square',   gain: 0.025, duration: 0.050 },
-    luxury: { frequency: 520,  type: 'sine',     gain: 0.030, duration: 0.070 },
-    sakura: { frequency: 760,  type: 'sine',     gain: 0.032, duration: 0.080 },
-    ice:    { frequency: 1080, type: 'sine',     gain: 0.028, duration: 0.090 },
-    forest: { frequency: 440,  type: 'triangle', gain: 0.035, duration: 0.080 },
-    retro:  { frequency: 960,  type: 'square',   gain: 0.025, duration: 0.055 },
-    galaxy: { frequency: 1380, type: 'sine',     gain: 0.028, duration: 0.100 },
+    beige:  { frequency: 620,  type: 'sine',     gain: 0.090, duration: 0.070 },
+    dark:   { frequency: 360,  type: 'triangle', gain: 0.100, duration: 0.075 },
+    pop:    { frequency: 880,  type: 'triangle', gain: 0.110, duration: 0.090 },
+    cyber:  { frequency: 1240, type: 'square',   gain: 0.065, duration: 0.065 },
+    luxury: { frequency: 520,  type: 'sine',     gain: 0.085, duration: 0.085 },
+    sakura: { frequency: 760,  type: 'sine',     gain: 0.085, duration: 0.095 },
+    ice:    { frequency: 1080, type: 'sine',     gain: 0.080, duration: 0.100 },
+    forest: { frequency: 440,  type: 'triangle', gain: 0.095, duration: 0.090 },
+    retro:  { frequency: 960,  type: 'square',   gain: 0.065, duration: 0.070 },
+    galaxy: { frequency: 1380, type: 'sine',     gain: 0.080, duration: 0.110 },
   }
 
   const sound = sounds[mCrossGetThemeName()] || sounds.beige
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext
-  if (!AudioContextClass) return
+  const audioContext = mCrossGetAudioContext()
+  if (!audioContext || audioContext.state !== 'running') return
 
   try {
-    const audioContext = new AudioContextClass()
+    const now = audioContext.currentTime
     const oscillator = audioContext.createOscillator()
     const gain = audioContext.createGain()
 
     oscillator.type = sound.type
-    oscillator.frequency.setValueAtTime(sound.frequency, audioContext.currentTime)
-    gain.gain.setValueAtTime(sound.gain, audioContext.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + sound.duration)
+    oscillator.frequency.setValueAtTime(sound.frequency, now)
+    gain.gain.setValueAtTime(sound.gain, now)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + sound.duration)
 
     oscillator.connect(gain)
     gain.connect(audioContext.destination)
-    oscillator.start()
-    oscillator.stop(audioContext.currentTime + sound.duration)
-    oscillator.addEventListener('ended', () => audioContext.close(), { once: true })
+    oscillator.start(now)
+    oscillator.stop(now + sound.duration)
   } catch (error) {
     console.debug('M-Cross button sound skipped', error)
   }
 }
+
+/* M-CROSS_MOBILE_SOUND_FIX_APPLIED */
 
 function mCrossHandleButtonSound(event) {
   const target = event.target
