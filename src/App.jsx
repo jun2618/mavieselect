@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import properties from './m-cross-properties.json'
+import { initializeMicrosoftAuth, signInMicrosoft, signOutMicrosoft } from './microsoftAuth'
 import './App.css'
 
 const defaultRooms = [
@@ -2486,6 +2487,38 @@ export default function App() {
   const [todayStats, setTodayStats] = useState(loadTodayStats)
   const [effectBurst, setEffectBurst] = useState(null)
   const [showComplete, setShowComplete] = useState(false)
+  /* M-CROSS_MICROSOFT_SIGNIN_TEST_V2 */
+  useEffect(() => {
+    let active = true
+    initializeMicrosoftAuth()
+      .then(account => { if (active) setMicrosoftAccount(account) })
+      .catch(error => { console.error(error); if (active) setMicrosoftAuthStatus('Microsoft認証の初期化に失敗しました') })
+    return () => { active = false }
+  }, [])
+
+  async function handleMicrosoftSignIn() {
+    try {
+      setMicrosoftAuthStatus('Microsoftに接続しています…')
+      const account = await signInMicrosoft()
+      setMicrosoftAccount(account)
+      setMicrosoftAuthStatus('Microsoftにサインインしました')
+    } catch (error) {
+      console.error(error)
+      setMicrosoftAuthStatus(error?.errorCode === 'user_cancelled' ? 'サインインをキャンセルしました' : 'Microsoftサインインに失敗しました')
+    }
+  }
+
+  async function handleMicrosoftSignOut() {
+    try {
+      await signOutMicrosoft()
+      setMicrosoftAccount(null)
+      setMicrosoftAuthStatus('Microsoftからサインアウトしました')
+    } catch (error) {
+      console.error(error)
+      setMicrosoftAuthStatus('Microsoftサインアウトに失敗しました')
+    }
+  }
+
   const [showSplash, setShowSplash] = useState(() => loadPlaySettings().splash)
   const [galaxyUnlocked, setGalaxyUnlocked] = useState(() => readPreference(galaxyUnlockedKey, 'false') === 'true')
   const [showGalaxyUnlock, setShowGalaxyUnlock] = useState(false)
@@ -2503,6 +2536,8 @@ export default function App() {
   const [propertyHistoryOrder, setPropertyHistoryOrder] = useState('newest')
   const [started, setStarted] = useState(false)
   const [showSavedList, setShowSavedList] = useState(false)
+  const [microsoftAccount, setMicrosoftAccount] = useState(null)
+  const [microsoftAuthStatus, setMicrosoftAuthStatus] = useState('')
   const [isDirty, setIsDirty] = useState(false)
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
   const [workingDraft, setWorkingDraft] = useState(null)
@@ -3939,6 +3974,10 @@ return savedEntries
     <>
       <style>{styles}</style>
       <style>{`
+.microsoftConnectPanel{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;margin:14px 0;padding:13px;border:1px solid rgba(70,140,220,.42);border-radius:16px;background:rgba(70,140,220,.08)}
+.microsoftConnectPanel strong,.microsoftConnectPanel small{display:block}.microsoftConnectPanel small{margin-top:4px;opacity:.72;font-size:11px;overflow-wrap:anywhere}.microsoftConnectPanel button{min-height:42px;padding:8px 12px;border:0;border-radius:10px;background:#2672ec;color:#fff;font:inherit;font-weight:800;cursor:pointer}.microsoftConnectPanel p,.microsoftConnectPanel em{grid-column:1/-1;margin:0;font-size:11px;line-height:1.45}.microsoftConnectPanel em{opacity:.68;font-style:normal}.theme-dark .microsoftConnectPanel,.theme-cyber .microsoftConnectPanel,.theme-luxury .microsoftConnectPanel,.theme-retro .microsoftConnectPanel,.theme-galaxy .microsoftConnectPanel{background:rgba(5,12,24,.78)}@media(max-width:520px){.microsoftConnectPanel{grid-template-columns:1fr}.microsoftConnectPanel button{width:100%}}
+`}</style>
+      <style>{`
 .additionalWorkEditable{cursor:pointer;border-radius:11px;padding-left:8px;padding-right:8px;transition:background .16s,outline-color .16s}
 .additionalWorkEditable:hover,.additionalWorkEditable:focus-visible{background:rgba(110,145,232,.09);outline:2px solid rgba(110,145,232,.42);outline-offset:2px}
 .additionalWorkEditable.editing{background:rgba(99,190,161,.13);outline:2px solid rgba(99,190,161,.62);outline-offset:2px}
@@ -4850,6 +4889,19 @@ return savedEntries
 
               <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>採寸を開始する →</button>
               <button className="secondaryButton" type="button" onClick={openSavedList}>保存済み一覧を見る</button>
+              <section className="microsoftConnectPanel">
+                <div>
+                  <strong>☁ OneDrive同期</strong>
+                  <small>{microsoftAccount ? microsoftAccount.username : '同期を使う人だけMicrosoftへサインイン'}</small>
+                </div>
+                {microsoftAccount ? (
+                  <button type="button" onClick={handleMicrosoftSignOut}>サインアウト</button>
+                ) : (
+                  <button type="button" onClick={handleMicrosoftSignIn}>Microsoftでサインイン</button>
+                )}
+                {microsoftAuthStatus && <p>{microsoftAuthStatus}</p>}
+                <em>現在はサインイン確認だけです。保存データの送受信はまだ行いません。</em>
+              </section>
               <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙ M-Cross設定</button>
             </section>
           </main>
