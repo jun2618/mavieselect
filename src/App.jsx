@@ -671,6 +671,22 @@ function matchesProperty(property, queryForms) {
   )
 }
 
+/* M-CROSS_SMART_SAVED_SEARCH_V4 */
+const smartSearchSynonyms = [['cf','クッションフロア'],['クロス','壁紙'],['ソフト巾木','巾木'],['床見切り','見切り']]
+function normalizeSmartSearchText(value) { return String(value ?? '').toLocaleLowerCase('ja').replace(/[\s　]+/g,'').replace(/[()（）［］\[\]・,，.。:：/\\_-]+/g,'') }
+function expandSmartSearchToken(token) { const n=normalizeSmartSearchText(token); if(!n)return[]; const r=new Set([n]); smartSearchSynonyms.forEach(g=>{const v=g.map(normalizeSmartSearchText); if(v.includes(n))v.forEach(x=>r.add(x))}); return [...r] }
+function getSavedEntrySearchParts(entry) { const p=[]; const add=(label,value)=>{const text=String(value??'').trim(); if(text)p.push({label,text})}; add('物件名',entry.propertyName); add('管理会社',entry.company); add('住所',entry.address); add('号室',entry.unit); add('メモ',entry.draftMemo); add('現場メモ',entry.siteMemo); buildAutoTags(entry).forEach(tag=>add('タグ',tag)); (entry.rooms||[]).forEach(v=>add('部屋',v)); (entry.records||[]).forEach(r=>{add('部屋',r.room);add('クロス',r.type);add('メモ',r.memo)}); (entry.cfRecords||[]).forEach(r=>{add('部屋',r.room);add('工事','CF クッションフロア');add('メモ',r.memo)}); (entry.softRecords||[]).forEach(r=>{add('部屋',r.room);add('工事','ソフト巾木 巾木');add('メモ',r.memo)}); (entry.floorTrimRecords||[]).forEach(r=>{add('部屋',r.roomA);add('部屋',r.roomB);add('工事','床見切り 見切り');add('カラー',r.color)}); (entry.additionalWorks||[]).forEach(r=>{add('部屋',r.room);add('追加作業',r.work);add('メモ',r.memo)}); return p }
+function smartSavedEntryMatch(entry, query) { const tokens=String(query||'').trim().split(/[\s　]+/).filter(Boolean); if(!tokens.length)return true; const parts=getSavedEntrySearchParts(entry).map(x=>({...x,normalized:normalizeSmartSearchText(x.text)})); return tokens.every(token=>{const alternatives=expandSmartSearchToken(token); return parts.some(part=>alternatives.some(term=>part.normalized.includes(term)))}) }
+
+/* M-CROSS_AUTO_TAGS_V2 */
+function buildAutoTags(entry) {
+  const tags=new Set(); const cross=entry.records||[]; const cf=entry.cfRecords||[]; const soft=entry.softRecords||[]; const trim=entry.floorTrimRecords||[]; const works=entry.additionalWorks||[];
+  if(cross.length)tags.add('クロスあり'); if(cf.length)tags.add('CFあり'); if(soft.length)tags.add('ソフト巾木あり'); if(trim.length)tags.add('床見切りあり'); if(works.length)tags.add('追加作業あり');
+  const text=[entry.siteMemo||'',...cross.flatMap(r=>[r.room||'',r.type||'',r.memo||'']),...cf.flatMap(r=>[r.room||'',r.memo||'']),...soft.flatMap(r=>[r.room||'',r.memo||'']),...works.flatMap(r=>[r.room||'',r.work||'',r.memo||''])].join(' ').toLocaleLowerCase('ja');
+  [['換気扇','換気扇'],['畳','畳'],['トイレ','トイレ'],['エアコン','エアコン'],['網戸','網戸'],['照明','照明'],['電球','電球'],['水漏れ','水漏れ'],['窓台','窓台'],['カーテン','カーテン'],['コーキング','コーキング']].forEach(([w,t])=>{if(text.includes(w))tags.add(t)});
+  return [...tags]
+}
+
 function emptyPropertyMaster() {
   return {
     addedCompanies: [],
@@ -1519,6 +1535,7 @@ function normalizeImportedEntry(value) {
     floorTrimRecords: Array.isArray(value.floorTrimRecords) ? value.floorTrimRecords : [],
     additionalWorks: Array.isArray(value.additionalWorks) ? value.additionalWorks : [],
     draftMemo: typeof value.draftMemo === 'string' ? value.draftMemo : '',
+    siteMemo: typeof value.siteMemo === 'string' ? value.siteMemo : '',
     rooms: Array.isArray(value.rooms) && value.rooms.length ? value.rooms : defaultRooms,
     roomConfirmations: value.roomConfirmations && typeof value.roomConfirmations === 'object' && !Array.isArray(value.roomConfirmations) ? value.roomConfirmations : {},
     pageIndex: Number.isInteger(value.pageIndex) ? value.pageIndex : 0,
@@ -1904,6 +1921,47 @@ function LengthMeasurementPage({
     }
   }
 
+  useEffect(() => {
+    if (countOnly || !activeInput) return undefined
+
+    function handlePhysicalNumpad(event) {
+      const target = event.target
+      const isEditable = target instanceof HTMLInputElement && !target.readOnly
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || target instanceof HTMLElement && target.isContentEditable
+      if (isEditable) return
+
+      if (/^Numpad[0-9]$/.test(event.code)) {
+        event.preventDefault()
+        updateInput(event.code.slice(-1))
+        return
+      }
+      if (event.code === 'NumpadDecimal' || event.key === '.') {
+        event.preventDefault()
+        updateInput('decimal')
+        return
+      }
+      if (event.code === 'NumpadEnter' || event.key === 'Enter') {
+        event.preventDefault()
+        handleMeasurementEnter()
+        return
+      }
+      if (event.key === 'Backspace') {
+        event.preventDefault()
+        updateInput('backspace')
+        return
+      }
+      if (event.key === 'Escape' || event.key === 'Delete') {
+        event.preventDefault()
+        updateInput('clear')
+      }
+    }
+
+    window.addEventListener('keydown', handlePhysicalNumpad)
+    return () => window.removeEventListener('keydown', handlePhysicalNumpad)
+  }, [countOnly, activeInput, length, count])
+
   function addRecord(event) {
     event.preventDefault()
     if (countOnly) {
@@ -2086,6 +2144,41 @@ function FinalReviewPage({
   const [unitPrice, setUnitPrice] = useState('')
   const [memo, setMemo] = useState('')
 
+  /* M-CROSS_PAST_UNIT_PRICE_SUGGESTIONS_V3 */
+  const pastUnitPriceSuggestions = useMemo(() => {
+    const query = work.trim().toLocaleLowerCase('ja')
+    if (!query) return []
+
+    const found = []
+    readSavedEntries().forEach(entry => {
+      ;(entry.additionalWorks || []).forEach(record => {
+        const recordWork = String(record.work || '').trim()
+        const normalizedWork = recordWork.toLocaleLowerCase('ja')
+        const price = Number(record.unitPrice || 0)
+        if (!recordWork || !Number.isFinite(price) || price <= 0) return
+        if (!normalizedWork.includes(query) && !query.includes(normalizedWork)) return
+        found.push({
+          work: recordWork,
+          price,
+          unit: record.unit || '式',
+          propertyName: entry.propertyName || '物件名なし',
+          room: record.room || '',
+          updatedAt: entry.updatedAt || '',
+        })
+      })
+    })
+
+    const unique = new Map()
+    found
+      .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+      .forEach(item => {
+        const key = item.work + '|' + item.price + '|' + item.unit
+        if (!unique.has(key)) unique.set(key, item)
+      })
+
+    return [...unique.values()].slice(0, 5)
+  }, [work])
+
   function addWork(event) {
     event.preventDefault()
     const numericQuantity = Number(quantity)
@@ -2102,6 +2195,83 @@ function FinalReviewPage({
     onChanged()
     onRegistered?.()
   }
+
+  /* M-CROSS_AUTO_FREQUENT_WORK_SUGGESTIONS_V3 */
+  const autoFrequentWorks = useMemo(() => {
+    const stats = new Map()
+
+    readSavedEntries().forEach(entry => {
+      const updatedTime = new Date(entry.updatedAt || 0).getTime() || 0
+      ;(entry.additionalWorks || []).forEach(record => {
+        const name = String(record.work || '').trim()
+        if (!name) return
+
+        const key = name.toLocaleLowerCase('ja')
+        const current = stats.get(key) || {
+          name,
+          count: 0,
+          latestTime: 0,
+          latestPrice: 0,
+          latestUnit: '式',
+        }
+
+        current.count += 1
+        if (updatedTime >= current.latestTime) {
+          current.name = name
+          current.latestTime = updatedTime
+          current.latestPrice = Number(record.unitPrice || 0)
+          current.latestUnit = record.unit || '式'
+        }
+        stats.set(key, current)
+      })
+    })
+
+    return [...stats.values()]
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count
+        return b.latestTime - a.latestTime
+      })
+      .slice(0, 8)
+  }, [additionalWorks])
+
+  /* M-CROSS_INPUT_ESTIMATE_CHECK_V3 */
+  const estimateCheckWarnings = useMemo(() => {
+    const warnings = []
+
+    ;(additionalWorks || []).forEach(item => {
+      const label = (item.room || '部屋未設定') + '・' + (item.work || '作業名未設定')
+      const quantity = Number(item.quantity || 0)
+      const unitPriceValue = Number(item.unitPrice || 0)
+
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        warnings.push('数量を確認：' + label)
+      }
+      if (!Number.isFinite(unitPriceValue) || unitPriceValue <= 0) {
+        warnings.push('単価0円：' + label)
+      }
+      if (quantity >= 1000) {
+        warnings.push('数量が大きい：' + label + '（' + quantity + (item.unit || '') + '）')
+      }
+    })
+
+    const duplicateMap = new Map()
+    ;(additionalWorks || []).forEach(item => {
+      const workName = String(item.work || '').trim()
+      if (!workName) return
+      const key = String(item.room || '').trim() + '|' + workName.toLocaleLowerCase('ja')
+      duplicateMap.set(key, (duplicateMap.get(key) || 0) + 1)
+    })
+
+    duplicateMap.forEach((value, key) => {
+      if (value <= 1) return
+      const separatorIndex = key.indexOf('|')
+      const duplicateRoom = key.slice(0, separatorIndex)
+      const duplicateWork = key.slice(separatorIndex + 1)
+      warnings.push('重複の可能性：' + (duplicateRoom || '部屋未設定') + '・' + duplicateWork + ' × ' + value + '件')
+    })
+
+    return [...new Set(warnings)]
+  }, [additionalWorks])
 
   function addCommonWork() {
     const value = window.prompt('よく使う項目名を入力してください')?.trim()
@@ -2139,9 +2309,77 @@ function FinalReviewPage({
           <button className="quickMemoButton" type="button" onClick={addCommonWork}>＋ よく使う項目</button>
         </div>
 
+        {autoFrequentWorks.length > 0 && (
+          <section className="autoFrequentWorks" aria-label="最近よく使う項目">
+            <div className="autoFrequentWorksTitle">
+              <strong>✨ 最近よく使う項目</strong>
+              <small>保存済みデータから自動表示</small>
+            </div>
+            <div className="autoFrequentWorkButtons">
+              {autoFrequentWorks.map(item => (
+                <button
+                  key={item.name}
+                  type="button"
+                  className="autoFrequentWorkButton"
+                  onClick={() => {
+                    setWork(item.name)
+                    if (item.latestPrice > 0) setUnitPrice(String(item.latestPrice))
+                    if (item.latestUnit) setUnit(item.latestUnit)
+                  }}
+                  title={'使用回数 ' + item.count + '回'}
+                >
+                  <span>{item.name}</span>
+                  <small>{item.count}回{item.latestPrice > 0 ? '・直近 ' + formatYen(item.latestPrice) : ''}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className={`estimateCheckPanel ${estimateCheckWarnings.length ? 'hasWarnings' : 'allClear'}`}>
+          <div className="estimateCheckHeader">
+            <strong>🧠 入力・見積チェック</strong>
+            <span>{estimateCheckWarnings.length ? estimateCheckWarnings.length + '件確認' : 'OK'}</span>
+          </div>
+          {estimateCheckWarnings.length > 0 ? (
+            <ul>
+              {estimateCheckWarnings.map((warning, index) => (
+                <li key={warning + index}>{warning}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>追加作業に明らかな数量0・単価0・重複は見つかりません。</p>
+          )}
+          <small>確認補助です。工事内容や金額の正否を自動決定するものではありません。</small>
+        </section>
+
         <form className="additionalWorkForm" onSubmit={addWork}>
           <label><span>部屋</span><select value={room} onChange={event => setRoom(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
           <label><span>作業内容</span><input value={work} onChange={event => setWork(event.target.value)} placeholder="例：畳表替え、電球交換" /></label>
+          {pastUnitPriceSuggestions.length > 0 && (
+            <section className="pastPriceSuggestions" aria-label="過去の単価候補">
+              <strong>💡 過去の単価候補</strong>
+              <div className="pastPriceSuggestionList">
+                {pastUnitPriceSuggestions.map(item => (
+                  <button
+                    key={item.work + '-' + item.price + '-' + item.unit}
+                    type="button"
+                    className="pastPriceSuggestionButton"
+                    onClick={() => {
+                      setWork(item.work)
+                      setUnitPrice(String(item.price))
+                      setUnit(item.unit)
+                    }}
+                  >
+                    <span>{item.work}</span>
+                    <b>{formatYen(item.price)}／{item.unit}</b>
+                    <small>{item.propertyName}{item.room ? '・' + item.room : ''}</small>
+                  </button>
+                ))}
+              </div>
+              <small>候補を押した場合だけ、作業名・単価・単位へ反映します。</small>
+            </section>
+          )}
           <div className="additionalWorkGrid">
             <label><span>数量</span><input type="number" min="0.1" step="0.1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
             <label><span>単位</span><select value={unit} onChange={event => setUnit(event.target.value)}>{['式','個','本','枚','台','箇所'].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
@@ -2203,6 +2441,10 @@ export default function App() {
   const [propertySearch, setPropertySearch] = useState('')
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [unit, setUnit] = useState('')
+  const [siteMemo, setSiteMemo] = useState('')
+  const [showSimilarSites, setShowSimilarSites] = useState(false)
+  const [showAllPropertyHistory, setShowAllPropertyHistory] = useState(false)
+  const [propertyHistoryOrder, setPropertyHistoryOrder] = useState('newest')
   const [started, setStarted] = useState(false)
   const [showSavedList, setShowSavedList] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
@@ -2270,6 +2512,10 @@ export default function App() {
       setPropertySearch('')
       setSelectedProperty(null)
       setUnit('')
+      setSiteMemo('')
+      setShowSimilarSites(false)
+      setShowAllPropertyHistory(false)
+      setPropertyHistoryOrder('newest')
       setCurrentStorageKey('')
       setIsDirty(false)
     }
@@ -2309,6 +2555,7 @@ export default function App() {
       propertyName: selectedProperty.name || '',
       address: selectedProperty.address || '',
       unit: unit.trim(),
+      siteMemo: siteMemo.trim(),
       records,
       cfRecords,
       softRecords,
@@ -2423,15 +2670,114 @@ export default function App() {
   }, {})
   const grandTotal = Object.values(totalsByType).reduce((sum, value) => sum + value, 0)
 
-  const visibleSavedEntries = useMemo(() => {
-    const query = savedSearch.trim().toLocaleLowerCase()
+  /* M-CROSS_SIMILAR_SITES_V1 */
+  const similarSiteCandidates = useMemo(() => {
+    const currentPropertyName = String(selectedProperty?.name || propertySearch || '').trim()
+    const currentAddress = String(selectedProperty?.address || '').trim()
+    const currentCompany = String(company || '').trim()
+    const currentMemo = String(siteMemo || '').trim()
 
-    return savedEntries
+    const normalize = value => String(value || '')
+      .toLocaleLowerCase('ja')
+      .replace(/[\s　]+/g, '')
+      .replace(/[()（）［］\[\]・,，.。:：/\\_-]+/g, '')
+
+    const memoTokens = currentMemo
+      .split(/[\s　,，、。・/]+/)
+      .map(normalize)
+      .filter(token => token.length >= 2)
+
+    return readSavedEntries()
+      .map(entry => {
+        let score = 0
+        const reasons = []
+        const entryName = normalize(entry.propertyName)
+        const entryAddress = normalize(entry.address)
+        const entryCompany = normalize(entry.company)
+        const entryMemo = normalize(entry.siteMemo)
+
+        if (currentPropertyName && entryName === normalize(currentPropertyName)) {
+          score += 8
+          reasons.push('同じ物件')
+        } else if (currentPropertyName && (entryName.includes(normalize(currentPropertyName)) || normalize(currentPropertyName).includes(entryName))) {
+          score += 5
+          reasons.push('物件名が近い')
+        }
+
+        if (currentCompany && entryCompany === normalize(currentCompany)) {
+          score += 3
+          reasons.push('同じ管理会社')
+        }
+
+        if (currentAddress && entryAddress === normalize(currentAddress)) {
+          score += 5
+          reasons.push('同じ住所')
+        }
+
+        const matchedMemoTokens = memoTokens.filter(token => entryMemo.includes(token))
+        if (matchedMemoTokens.length > 0) {
+          score += Math.min(matchedMemoTokens.length * 2, 6)
+          reasons.push('現場メモ: ' + matchedMemoTokens.slice(0, 3).join('・'))
+        }
+
+        const hasCross = (entry.records || []).length > 0
+        const hasCf = (entry.cfRecords || []).length > 0
+        const hasSoft = (entry.softRecords || []).length > 0
+        const hasTrim = (entry.floorTrimRecords || []).length > 0
+        const workCount = (entry.additionalWorks || []).length
+        const summary = [
+          hasCross ? 'クロス' : '',
+          hasCf ? 'CF' : '',
+          hasSoft ? 'ソフト巾木' : '',
+          hasTrim ? '床見切り' : '',
+          workCount ? '追加作業' + workCount + '件' : '',
+        ].filter(Boolean)
+
+        return { entry, score, reasons, summary }
+      })
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score || new Date(b.entry.updatedAt || 0) - new Date(a.entry.updatedAt || 0))
+      .slice(0, 5)
+  }, [company, propertySearch, selectedProperty, siteMemo, savedEntries])
+
+  /* M-CROSS_PREVIOUS_PROPERTY_REFERENCE_V1 */
+  const previousPropertyEntries = useMemo(() => {
+    const currentName = String(selectedProperty?.name || propertySearch || '').trim().toLocaleLowerCase('ja')
+    const currentAddress = String(selectedProperty?.address || '').trim().toLocaleLowerCase('ja')
+    if (!currentName && !currentAddress) return []
+
+    return readSavedEntries()
+      .filter(entry => {
+        const entryName = String(entry.propertyName || '').trim().toLocaleLowerCase('ja')
+        const entryAddress = String(entry.address || '').trim().toLocaleLowerCase('ja')
+        const sameName = currentName && entryName === currentName
+        const sameAddress = currentAddress && entryAddress === currentAddress
+        return sameName || sameAddress
+      })
+      .filter(entry => !unit.trim() || String(entry.unit || '').trim() !== unit.trim())
+      .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+      .map(entry => {
+        const crossTotalValue = (entry.records || []).reduce((sum, record) => sum + getRecordQuantity(record), 0)
+        const cfTotalValue = (entry.cfRecords || []).reduce((sum, record) => sum + getLengthQuantity(record), 0)
+        const softTotalValue = (entry.softRecords || []).reduce((sum, record) => sum + (Number(record.quantity) || 0), 0)
+        const trimTotalValue = (entry.floorTrimRecords || []).reduce((sum, record) => sum + (Number(record.quantity) || 0), 0)
+        const workNames = [...new Set((entry.additionalWorks || []).map(item => String(item.work || '').trim()).filter(Boolean))]
+        return {
+          entry,
+          crossTotalValue,
+          cfTotalValue,
+          softTotalValue,
+          trimTotalValue,
+          workNames: workNames.slice(0, 4),
+        }
+      })
+  }, [propertySearch, selectedProperty, unit, savedEntries])
+
+  const visibleSavedEntries = useMemo(() => {
+return savedEntries
       .filter(entry => Boolean(entry.archived) === showArchived)
       .filter(entry => !savedCompanyFilter || entry.company === savedCompanyFilter)
-      .filter(entry =>
-        !query || String(entry.propertyName || '').toLocaleLowerCase().includes(query)
-      )
+      .filter(entry => smartSavedEntryMatch(entry, savedSearch))
       .sort((a, b) => {
         if (savedSortOrder === 'property') {
           return String(a.propertyName || '').localeCompare(String(b.propertyName || ''), 'ja')
@@ -2970,6 +3316,7 @@ export default function App() {
     setPropertySearch(entry.propertyName || '')
     setSelectedProperty({ name: entry.propertyName || '', address: entry.address || '' })
     setUnit(entry.unit || '')
+    setSiteMemo(entry.siteMemo || '')
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
     setSoftRecords(Array.isArray(entry.softRecords) ? entry.softRecords : [])
@@ -3017,6 +3364,7 @@ export default function App() {
         propertyName: entry.propertyName || '',
         address: entry.address || '',
         unit: entry.unit || '',
+        siteMemo: entry.siteMemo || '',
         records: Array.isArray(entry.records) ? entry.records : [],
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
         softRecords: Array.isArray(entry.softRecords) ? entry.softRecords : [],
@@ -3202,6 +3550,7 @@ export default function App() {
       address: draft.address || '',
     })
     setUnit(draft.unit || '')
+    setSiteMemo(draft.siteMemo || '')
     setRecords(Array.isArray(draft.records) ? draft.records : [])
     setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
     setSoftRecords(Array.isArray(draft.softRecords) ? draft.softRecords : [])
@@ -3262,6 +3611,7 @@ export default function App() {
       propertyName: selectedProperty.name,
       address: selectedProperty.address,
       unit: unit.trim(),
+      siteMemo: siteMemo.trim(),
       records,
       cfRecords,
       softRecords,
@@ -3430,6 +3780,47 @@ export default function App() {
     }
   }
 
+  useEffect(() => {
+    if (!activeInput) return undefined
+
+    function handlePhysicalNumpad(event) {
+      const target = event.target
+      const isEditable = target instanceof HTMLInputElement && !target.readOnly
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || target instanceof HTMLElement && target.isContentEditable
+      if (isEditable) return
+
+      if (/^Numpad[0-9]$/.test(event.code)) {
+        event.preventDefault()
+        updateCrossInput(event.code.slice(-1))
+        return
+      }
+      if (event.code === 'NumpadDecimal' || event.key === '.') {
+        event.preventDefault()
+        updateCrossInput('decimal')
+        return
+      }
+      if (event.code === 'NumpadEnter' || event.key === 'Enter') {
+        event.preventDefault()
+        handleCrossEnter()
+        return
+      }
+      if (event.key === 'Backspace') {
+        event.preventDefault()
+        updateCrossInput('backspace')
+        return
+      }
+      if (event.key === 'Escape' || event.key === 'Delete') {
+        event.preventDefault()
+        updateCrossInput('clear')
+      }
+    }
+
+    window.addEventListener('keydown', handlePhysicalNumpad)
+    return () => window.removeEventListener('keydown', handlePhysicalNumpad)
+  }, [activeInput, height, count])
+
   function addCrossRecord(event) {
     event.preventDefault()
     const numericHeight = Number(height.replace(/[。．]/g, '.'))
@@ -3491,6 +3882,77 @@ export default function App() {
   return (
     <>
       <style>{styles}</style>
+      <style>{`
+.propertyHistoryControls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.propertyHistoryControls button,.propertyHistoryControls select{min-height:42px;border:1px solid rgba(99,190,161,.48);border-radius:10px;background:rgba(255,255,255,.82);color:inherit;font:inherit;font-weight:800;padding:7px 10px}.theme-dark .propertyHistoryControls button,.theme-dark .propertyHistoryControls select,.theme-cyber .propertyHistoryControls button,.theme-cyber .propertyHistoryControls select,.theme-luxury .propertyHistoryControls button,.theme-luxury .propertyHistoryControls select,.theme-retro .propertyHistoryControls button,.theme-retro .propertyHistoryControls select,.theme-galaxy .propertyHistoryControls button,.theme-galaxy .propertyHistoryControls select{background:rgba(5,12,24,.82)}@media(max-width:520px){.propertyHistoryControls{grid-template-columns:1fr}.propertyHistoryControls select{width:100%}}
+`}</style>
+      <style>{`
+.previousPropertyPanel{display:grid;gap:10px;margin:12px 0;padding:13px;border:1px solid rgba(99,190,161,.45);border-radius:16px;background:rgba(99,190,161,.08)}
+.previousPropertyHeading{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:5px 10px}
+.previousPropertyHeading small,.previousPropertyPanel>p{margin:0;opacity:.72;font-size:11px;line-height:1.45}
+.previousPropertyList{display:grid;gap:9px}
+.previousPropertyItem{display:grid;gap:8px;padding:11px;border:1px solid rgba(99,190,161,.42);border-radius:12px;background:rgba(255,255,255,.82)}
+.previousPropertyTop{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.previousPropertyTop small{opacity:.7;font-size:11px}
+.previousPropertyTotals{display:flex;flex-wrap:wrap;gap:6px}.previousPropertyTotals span{padding:3px 8px;border-radius:999px;background:rgba(99,190,161,.12);font-size:11px;font-weight:800}
+.previousPropertyItem>small{opacity:.78;font-size:11px;line-height:1.45}
+.previousPropertyItem>button{min-height:38px;border:0;border-radius:9px;background:#63bea1;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.theme-dark .previousPropertyItem,.theme-cyber .previousPropertyItem,.theme-luxury .previousPropertyItem,.theme-retro .previousPropertyItem,.theme-galaxy .previousPropertyItem{background:rgba(5,12,24,.8)}
+`}</style>
+      <style>{`
+.autoTagList{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.autoTag{display:inline-flex;align-items:center;min-height:26px;padding:3px 9px;border:1px solid rgba(110,145,232,.4);border-radius:999px;background:rgba(110,145,232,.1);color:inherit;font-size:11px;font-weight:800}.theme-cyber .autoTag{border-color:#00eaff;color:#8cffff;background:rgba(0,234,255,.08);text-shadow:0 0 5px rgba(0,234,255,.7)}.theme-luxury .autoTag{border-color:#d8b76a;color:#f1d88d}.theme-sakura .autoTag{border-color:#efbfd0;color:#b64670}.theme-ice .autoTag{border-color:#76d8ff;color:#176b9a}.theme-forest .autoTag{border-color:#72c98a;color:#285c3a}.theme-retro .autoTag{border-color:#00eaff;color:#fff11c;border-radius:0;background:#061020}.theme-galaxy .autoTag{border-color:#bda4ff;color:#e4d9ff}
+`}</style>
+      <style>{`
+.estimateCheckPanel{display:grid;gap:8px;margin:14px 0;padding:12px 14px;border:1px solid rgba(80,160,120,.45);border-radius:14px;background:rgba(80,160,120,.08)}
+.estimateCheckPanel.hasWarnings{border-color:rgba(232,160,70,.72);background:rgba(232,160,70,.1)}
+.estimateCheckHeader{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.estimateCheckHeader span{font-size:12px;font-weight:900}
+.estimateCheckPanel ul{margin:0;padding-left:20px}
+.estimateCheckPanel li{margin:5px 0;line-height:1.45}
+.estimateCheckPanel p{margin:0;line-height:1.5}
+.estimateCheckPanel small{opacity:.7;font-size:11px;line-height:1.45}
+.theme-dark .estimateCheckPanel,.theme-cyber .estimateCheckPanel,.theme-luxury .estimateCheckPanel,.theme-retro .estimateCheckPanel,.theme-galaxy .estimateCheckPanel{background:rgba(5,12,24,.76)}
+`}</style>
+      <style>{`
+.similarSitesButton{margin-top:0}
+.similarSitesPanel{display:grid;gap:10px;margin:12px 0;padding:13px;border:1px solid rgba(110,145,232,.4);border-radius:16px;background:rgba(110,145,232,.08)}
+.similarSitesHeading{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:5px 10px}
+.similarSitesHeading small,.similarSitesNote{opacity:.72;font-size:11px;line-height:1.45}
+.similarSitesList{display:grid;gap:9px}
+.similarSiteItem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:11px;border:1px solid rgba(110,145,232,.38);border-radius:12px;background:rgba(255,255,255,.8)}
+.similarSiteItem strong,.similarSiteItem small{display:block}
+.similarSiteItem small{margin-top:3px;opacity:.76;font-size:11px;line-height:1.4}
+.similarSiteActions{display:grid;align-content:space-between;justify-items:end;gap:8px}
+.similarSiteActions span{font-size:11px;font-weight:800;opacity:.75}
+.similarSiteActions button{min-height:36px;padding:6px 12px;border:0;border-radius:9px;background:#6e91e8;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.theme-dark .similarSiteItem,.theme-cyber .similarSiteItem,.theme-luxury .similarSiteItem,.theme-retro .similarSiteItem,.theme-galaxy .similarSiteItem{background:rgba(5,12,24,.8)}
+@media(max-width:520px){.similarSiteItem{grid-template-columns:1fr}.similarSiteActions{grid-template-columns:1fr auto;align-items:center;justify-items:start}.similarSiteActions button{justify-self:end}}
+`}</style>
+      <style>{`
+.autoFrequentWorks{display:grid;gap:10px;margin:14px 0;padding:12px;border:1px solid rgba(167,123,209,.34);border-radius:14px;background:rgba(167,123,209,.08)}
+.autoFrequentWorksTitle{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:5px 10px}
+.autoFrequentWorksTitle strong{font-size:15px}
+.autoFrequentWorksTitle small{opacity:.7;font-size:11px}
+.autoFrequentWorkButtons{display:flex;flex-wrap:wrap;gap:8px}
+.autoFrequentWorkButton{display:grid;gap:2px;min-height:44px;padding:8px 12px;border:1px solid rgba(167,123,209,.42);border-radius:999px;background:rgba(255,255,255,.84);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.autoFrequentWorkButton span{font-weight:800}
+.autoFrequentWorkButton small{opacity:.68;font-size:10px}
+.theme-dark .autoFrequentWorkButton,.theme-cyber .autoFrequentWorkButton,.theme-luxury .autoFrequentWorkButton,.theme-retro .autoFrequentWorkButton,.theme-galaxy .autoFrequentWorkButton{background:rgba(5,12,24,.78)}
+`}</style>
+      <style>{`
+.pastPriceSuggestions{display:grid;gap:8px;padding:12px;border:1px solid rgba(110,145,232,.38);border-radius:14px;background:rgba(110,145,232,.08)}
+.pastPriceSuggestions>strong{font-size:15px}
+.pastPriceSuggestionList{display:grid;gap:8px}
+.pastPriceSuggestionButton{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;width:100%;padding:10px 12px;border:1px solid rgba(110,145,232,.42);border-radius:11px;background:rgba(255,255,255,.82);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.pastPriceSuggestionButton span{min-width:0;font-weight:800;overflow-wrap:anywhere}
+.pastPriceSuggestionButton b{white-space:nowrap}
+.pastPriceSuggestionButton small{grid-column:1/-1;opacity:.72;font-size:12px}
+.pastPriceSuggestions>small{opacity:.72;font-size:12px;line-height:1.45}
+.theme-dark .pastPriceSuggestionButton,.theme-cyber .pastPriceSuggestionButton,.theme-luxury .pastPriceSuggestionButton,.theme-retro .pastPriceSuggestionButton,.theme-galaxy .pastPriceSuggestionButton{background:rgba(5,12,24,.78)}
+`}</style>
+      <style>{`
+/* M-CROSS_SITE_MEMO_V2 */
+.siteMemoField textarea{width:100%;min-height:92px;resize:vertical;font:inherit;line-height:1.55;box-sizing:border-box}.siteMemoField small{display:block;margin-top:6px;opacity:.72;font-size:12px;line-height:1.45}
+`}</style>
+      <style>{`/* M-CROSS_PC_PHYSICAL_NUMPAD_V1 */`}</style>
       <style>{`
 /* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
 .keypadEnterRow {
@@ -4068,8 +4530,8 @@ export default function App() {
               </button>
               <div className="savedToolbar">
                 <label>
-                  <span>🔎 物件を検索</span>
-                  <input type="search" value={savedSearch} onChange={event => setSavedSearch(event.target.value)} placeholder="物件名を入力" />
+                  <span>🔎 かしこい検索</span>
+                  <input type="search" value={savedSearch} onChange={event => setSavedSearch(event.target.value)} placeholder="物件名・住所・号室・部屋・工事・メモを検索" />
                 </label>
                 <div className="savedToolbarGrid">
                   <label>
@@ -4126,6 +4588,11 @@ export default function App() {
                         </div>
                         <span className="savedCardDate">更新 {formatSavedDate(entry.updatedAt)}</span>
                       </div>
+                      {buildAutoTags(entry).length > 0 && (
+                        <div className="autoTagList" aria-label="自動タグ">
+                          {buildAutoTags(entry).map(tag => <span className="autoTag" key={tag}>#{tag}</span>)}
+                        </div>
+                      )}
                       <div className="savedPrimaryActions">
                         <button className="actionButton actionOpen" type="button" onClick={() => openSavedEntry(entry)}>開く</button>
                         <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
@@ -4221,6 +4688,102 @@ export default function App() {
                 <span>号室</span>
                 <input value={unit} onChange={event => setUnit(event.target.value)} placeholder="例：501" />
               </label>
+
+              <label className="siteMemoField">
+                <span>現場メモ</span>
+                <textarea
+                  value={siteMemo}
+                  onChange={event => setSiteMemo(event.target.value)}
+                  placeholder="例：赤い外壁、角地、駐車場狭い、入口に自販機"
+                  rows={3}
+                />
+                <small>建物の特徴・駐車場所・鍵・次回確認事項など。かしこい検索にも使えます。</small>
+              </label>
+
+                            <button
+                className="secondaryButton similarSitesButton"
+                type="button"
+                disabled={!selectedProperty}
+                onClick={() => setShowSimilarSites(value => !value)}
+              >
+                🔍 似た現場を探す
+              </button>
+
+              {showSimilarSites && (
+                <section className="similarSitesPanel">
+                  <div className="similarSitesHeading">
+                    <strong>似た現場候補</strong>
+                    <small>保存済みデータから参考候補を表示</small>
+                  </div>
+                  {similarSiteCandidates.length === 0 ? (
+                    <p className="empty">一致する過去現場がありません</p>
+                  ) : (
+                    <div className="similarSitesList">
+                      {similarSiteCandidates.map(({ entry, score, reasons, summary }) => (
+                        <article className="similarSiteItem" key={entry.storageKey || entry.id || entry.propertyName + entry.unit}>
+                          <div>
+                            <strong>{entry.propertyName || '物件名なし'}　{entry.unit || ''}</strong>
+                            <small>{entry.company || '管理会社未設定'}</small>
+                            <small>一致理由：{reasons.join(' / ')}</small>
+                            {summary.length > 0 && <small>内容：{summary.join('・')}</small>}
+                          </div>
+                          <div className="similarSiteActions">
+                            <span>近さ {score}</span>
+                            <button type="button" onClick={() => loadSavedEntry(entry)}>開く</button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                  <p className="similarSitesNote">過去の数量や工事内容は自動コピーしません。参考表示のみです。</p>
+                </section>
+              )}
+
+                            /* M-CROSS_PREVIOUS_PROPERTY_REFERENCE_V2 */
+              {selectedProperty && previousPropertyEntries.length > 0 && (
+                <section className="previousPropertyPanel">
+                  <div className="previousPropertyHeading">
+                    <strong>💡 前回この物件では</strong>
+                    <small>{previousPropertyEntries.length}件の履歴</small>
+                  </div>
+                  <div className="propertyHistoryControls">
+                    <button type="button" onClick={() => setShowAllPropertyHistory(value => !value)}>
+                      {showAllPropertyHistory ? '直近3件だけ表示' : '過去の履歴をすべて見る'}
+                    </button>
+                    {showAllPropertyHistory && (
+                      <select value={propertyHistoryOrder} onChange={event => setPropertyHistoryOrder(event.target.value)} aria-label="履歴の並び順">
+                        <option value="newest">新しい順</option>
+                        <option value="oldest">古い順</option>
+                      </select>
+                    )}
+                  </div>
+                  <div className="previousPropertyList">
+                    {(showAllPropertyHistory
+                      ? [...previousPropertyEntries].sort((a, b) => propertyHistoryOrder === 'oldest'
+                          ? new Date(a.entry.updatedAt || 0) - new Date(b.entry.updatedAt || 0)
+                          : new Date(b.entry.updatedAt || 0) - new Date(a.entry.updatedAt || 0))
+                      : previousPropertyEntries.slice(0, 3)
+                    ).map(({ entry, crossTotalValue, cfTotalValue, softTotalValue, trimTotalValue, workNames }) => (
+                      <article className="previousPropertyItem" key={entry.storageKey || entry.propertyName + entry.unit + entry.updatedAt}>
+                        <div className="previousPropertyTop">
+                          <strong>{entry.unit || '号室未設定'}号室</strong>
+                          <small>更新 {formatSavedDate(entry.updatedAt)}</small>
+                        </div>
+                        <div className="previousPropertyTotals">
+                          {crossTotalValue > 0 && <span>クロス {formatQuantity(crossTotalValue)}㎡</span>}
+                          {cfTotalValue > 0 && <span>CF {formatQuantity(cfTotalValue)}㎡</span>}
+                          {softTotalValue > 0 && <span>ソフト巾木 {formatQuantity(softTotalValue)}枚</span>}
+                          {trimTotalValue > 0 && <span>床見切り {formatQuantity(trimTotalValue)}本</span>}
+                        </div>
+                        {workNames.length > 0 && <small>追加作業：{workNames.join('・')}</small>}
+                        <button type="button" onClick={() => loadSavedEntry(entry)}>過去データを開く</button>
+                      </article>
+                    ))}
+                  </div>
+                  <p>参考表示のみです。過去の数量・単価・工事内容は今回へ自動コピーしません。</p>
+                </section>
+              )}
+
               <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>採寸を開始する →</button>
               <button className="secondaryButton" type="button" onClick={openSavedList}>保存済み一覧を見る</button>
               <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙ M-Cross設定</button>
