@@ -1782,12 +1782,114 @@ async function downloadExcel(entry) {
     Number(record.count || 0),
     Number(formatQuantity(getRecordQuantity(record))),
   ])
-  const cfRows = (entry.cfRecords || []).map(record => [
-    record.room || '',
-    record.memo || '',
-    Number(record.length || 0),
-    Number(record.count || 0),
-    Number(formatQuantity(getLengthQuantity(record))),
+  /* M-CROSS_CF_EXCEL_ORDER_QUANTITY_V6 */
+  const normalizedCfMaterialGroupsForExcel = normalizeCfMaterialGroups(
+    entry.cfMaterialGroups || [],
+    entry.cfRecords || []
+  )
+
+  const cfMaterialSummaryForExcel = getCfMaterialAllocationSummary(
+    entry.cfRecords || [],
+    normalizedCfMaterialGroupsForExcel
+  )
+
+  const cfExcelRoomPriority = [
+    '居間', 'LDK', '台所', '洋間', '和室', '階段', 'ホール',
+    '玄関', '脱衣所', '洗面所', 'トイレ', '収納', '土間'
+  ]
+
+  const getCfRoomIndexForExcel = roomName => {
+    const priorityIndex = cfExcelRoomPriority.indexOf(roomName)
+    if (priorityIndex >= 0) return priorityIndex
+
+    const projectRooms = Array.isArray(entry.rooms) ? entry.rooms : []
+    const projectIndex = projectRooms.indexOf(roomName)
+    return projectIndex >= 0
+      ? cfExcelRoomPriority.length + projectIndex
+      : Number.MAX_SAFE_INTEGER
+  }
+
+  const compareCfOrdersForExcel = (left, right) => {
+    const sharedLength = Math.min(left.roomIndexes.length, right.roomIndexes.length)
+
+    for (let index = 0; index < sharedLength; index += 1) {
+      if (left.roomIndexes[index] !== right.roomIndexes[index]) {
+        return left.roomIndexes[index] - right.roomIndexes[index]
+      }
+    }
+
+    if (left.roomIndexes.length !== right.roomIndexes.length) {
+      return left.roomIndexes.length - right.roomIndexes.length
+    }
+
+    if (left.usage !== right.usage) {
+      return left.usage.localeCompare(right.usage, 'ja')
+    }
+
+    return left.orderLength - right.orderLength
+  }
+
+  const cfOrderItemsForExcel = [
+    ...normalizedCfMaterialGroupsForExcel.map(group => {
+      const pieces = getCfMaterialGroupPieces(group, entry.cfRecords || [])
+      const roomNames = [
+        ...new Set(pieces.map(piece => piece.room).filter(Boolean)),
+      ].sort((left, right) =>
+        getCfRoomIndexForExcel(left) - getCfRoomIndexForExcel(right)
+      )
+
+      const calculatedLength = getCfMaterialGroupLength(group, entry.cfRecords || [])
+      const numericOrderLength = Number(group.orderLength)
+      const orderLength =
+        Number.isFinite(numericOrderLength) && numericOrderLength > 0
+          ? numericOrderLength
+          : calculatedLength
+
+      return {
+        usage: roomNames.join('＋') || '使用箇所未設定',
+        roomIndexes: roomNames.map(getCfRoomIndexForExcel),
+        breakdown: pieces
+          .map(piece => formatQuantity(piece.pieceLength) + 'm')
+          .join('＋'),
+        orderLength: Number(formatQuantity(orderLength)),
+        productCode: group.productCode || '',
+      }
+    }),
+    ...cfMaterialSummaryForExcel.unallocatedPieces.map(piece => ({
+      usage: piece.room || '使用箇所未設定',
+      roomIndexes: [getCfRoomIndexForExcel(piece.room || '')],
+      breakdown: formatQuantity(piece.pieceLength) + 'm',
+      orderLength: Number(formatQuantity(piece.pieceLength)),
+      productCode: '',
+    })),
+  ].sort(compareCfOrdersForExcel)
+
+  const combinedCfOrdersForExcel = []
+
+  cfOrderItemsForExcel.forEach(item => {
+    const existing = combinedCfOrdersForExcel.find(row =>
+      row.usage === item.usage
+      && row.breakdown === item.breakdown
+      && row.orderLength === item.orderLength
+      && row.productCode === item.productCode
+    )
+
+    if (existing) {
+      existing.count += 1
+      return
+    }
+
+    combinedCfOrdersForExcel.push({ ...item, count: 1 })
+  })
+
+  /* M-CROSS_CF_PRODUCT_FIRST_SOFT_NUMPAD_V3 */
+  const cfRows = combinedCfOrdersForExcel.map(item => [
+    item.productCode,
+    item.usage,
+    item.breakdown,
+    item.orderLength,
+    item.count,
+    Number(formatQuantity(item.orderLength * item.count)),
   ])
   const softRows = (entry.softRecords || []).map(record => {
     const quantity = Number(formatQuantity(getSoftBaseboardQuantity(record)))
@@ -1795,7 +1897,7 @@ async function downloadExcel(entry) {
   })
 
   addWorksheet('クロス', 'FFF08A79', ['部屋名', '採寸区分', 'メモ', '長さ', '本数', '数量'], crossRows)
-  addWorksheet('CF', 'FF6E91E8', ['部屋名', 'メモ', '長さ', '本数', '数量'], cfRows)
+  addWorksheet('CF', 'FF6E91E8', ['品番・商品名', '使用箇所', '長さ内訳', '注文長(m)', '本数', '注文数量(m)'], cfRows)
   addWorksheet('ソフト巾木', 'FF63BEA1', ['部屋名', '枚数', '数量'], softRows)
   const floorTrimRows = (entry.floorTrimRecords || []).map(record => [record.roomA || '', record.roomB || '', record.color || '', Number(record.quantity || 0), '本'])
   if (floorTrimRows.length > 0) addWorksheet('床見切り', 'FFC6A4E8', ['部屋①', '部屋②', 'カラー', '数量', '単位'], floorTrimRows)
@@ -1825,6 +1927,250 @@ async function downloadExcel(entry) {
   }
 }
 
+/* M-CROSS_CF_MATERIAL_STEP4D1 */
+
+function normalizeCfMaterialNumber(value) {
+  const number = Number(value)
+  if (!Number.isFinite(number) || number <= 0) return 0
+  return number
+}
+
+function roundCfMaterialNumber(value) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return 0
+  return Math.round((number + Number.EPSILON) * 10000) / 10000
+}
+
+function getCfPieceKey(recordId, pieceIndex) {
+  return String(recordId || '') + ':' + String(pieceIndex)
+}
+
+function buildCfPieces(records) {
+  if (!Array.isArray(records)) return []
+
+  return records.flatMap(record => {
+    if (!record || !record.id) return []
+
+    const baseLength = normalizeCfMaterialNumber(record.length)
+    const count = normalizeCfMaterialNumber(record.count)
+    if (baseLength <= 0 || count <= 0) return []
+
+    const wholeCount = Math.floor(count)
+    const fractionalCount = roundCfMaterialNumber(count - wholeCount)
+    const pieces = []
+
+    for (let pieceIndex = 0; pieceIndex < wholeCount; pieceIndex += 1) {
+      pieces.push({
+        pieceKey: getCfPieceKey(record.id, pieceIndex),
+        recordId: record.id,
+        pieceIndex,
+        room: record.room || '',
+        memo: record.memo || '',
+        sourceLength: baseLength,
+        sourceCount: count,
+        quantity: 1,
+        pieceLength: roundCfMaterialNumber(baseLength),
+        label: String(pieceIndex + 1) + '本目',
+        isFractional: false,
+      })
+    }
+
+    if (fractionalCount > 0) {
+      const pieceIndex = wholeCount
+      pieces.push({
+        pieceKey: getCfPieceKey(record.id, pieceIndex),
+        recordId: record.id,
+        pieceIndex,
+        room: record.room || '',
+        memo: record.memo || '',
+        sourceLength: baseLength,
+        sourceCount: count,
+        quantity: fractionalCount,
+        pieceLength: roundCfMaterialNumber(baseLength * fractionalCount),
+        label: '端数' + formatQuantity(fractionalCount) + '本',
+        isFractional: true,
+      })
+    }
+
+    return pieces
+  })
+}
+
+function getCfAllocationPieceKey(allocation) {
+  if (!allocation || !allocation.recordId) return ''
+  const pieceIndex = Number(allocation.pieceIndex)
+  if (!Number.isInteger(pieceIndex) || pieceIndex < 0) return ''
+  return getCfPieceKey(allocation.recordId, pieceIndex)
+}
+
+function getAllocatedCfPieceKeys(materialGroups) {
+  const allocatedKeys = new Set()
+  if (!Array.isArray(materialGroups)) return allocatedKeys
+
+  materialGroups.forEach(group => {
+    const allocations = Array.isArray(group?.allocations) ? group.allocations : []
+    allocations.forEach(allocation => {
+      const pieceKey = getCfAllocationPieceKey(allocation)
+      if (pieceKey) allocatedKeys.add(pieceKey)
+    })
+  })
+
+  return allocatedKeys
+}
+
+function getCfMaterialAllocationSummary(records, materialGroups) {
+  const allPieces = buildCfPieces(records)
+  const allocatedKeys = getAllocatedCfPieceKeys(materialGroups)
+  const allocatedPieces = allPieces.filter(piece => allocatedKeys.has(piece.pieceKey))
+  const unallocatedPieces = allPieces.filter(piece => !allocatedKeys.has(piece.pieceKey))
+
+  const requiredLength = allPieces.reduce((sum, piece) => sum + piece.pieceLength, 0)
+  const allocatedLength = allocatedPieces.reduce((sum, piece) => sum + piece.pieceLength, 0)
+  const unallocatedLength = unallocatedPieces.reduce((sum, piece) => sum + piece.pieceLength, 0)
+
+  return {
+    allPieces,
+    allocatedPieces,
+    unallocatedPieces,
+    requiredLength: roundCfMaterialNumber(requiredLength),
+    allocatedLength: roundCfMaterialNumber(allocatedLength),
+    unallocatedLength: roundCfMaterialNumber(unallocatedLength),
+    isFullyAllocated: allPieces.length > 0 && unallocatedPieces.length === 0,
+  }
+}
+
+/* M-CROSS_CF_MATERIAL_STEP4D2 */
+
+/*
+  新しい材料グループ形式：
+  {
+    id,
+    allocations: [
+      { recordId, pieceIndex, quantity }
+    ],
+    orderLength,
+    productCode
+  }
+
+  古いrecordIds形式は、該当する採寸行の全本数を
+  allocationsへ展開して互換性を保ちます。
+*/
+
+function buildCfAllocationsFromRecordIds(recordIds, records) {
+  const wantedIds = new Set(
+    Array.isArray(recordIds) ? recordIds.filter(Boolean) : []
+  )
+
+  return buildCfPieces(records)
+    .filter(piece => wantedIds.has(piece.recordId))
+    .map(piece => ({
+      recordId: piece.recordId,
+      pieceIndex: piece.pieceIndex,
+      quantity: piece.quantity,
+    }))
+}
+
+function normalizeCfMaterialAllocation(allocation, pieceMap) {
+  if (!allocation || !allocation.recordId) return null
+
+  const pieceIndex = Number(allocation.pieceIndex)
+  if (!Number.isInteger(pieceIndex) || pieceIndex < 0) return null
+
+  const pieceKey = getCfPieceKey(allocation.recordId, pieceIndex)
+  const piece = pieceMap.get(pieceKey)
+  if (!piece) return null
+
+  return {
+    recordId: piece.recordId,
+    pieceIndex: piece.pieceIndex,
+    quantity: piece.quantity,
+  }
+}
+
+function normalizeCfMaterialGroups(groups, records) {
+  const sourceGroups = Array.isArray(groups) ? groups : []
+  const allPieces = buildCfPieces(records)
+  const pieceMap = new Map(
+    allPieces.map(piece => [piece.pieceKey, piece])
+  )
+  const alreadyAllocated = new Set()
+
+  return sourceGroups
+    .map(group => {
+      if (!group || typeof group !== 'object') return null
+
+      const sourceAllocations = Array.isArray(group.allocations)
+        ? group.allocations
+        : buildCfAllocationsFromRecordIds(group.recordIds, records)
+
+      const allocations = []
+
+      sourceAllocations.forEach(allocation => {
+        const normalized = normalizeCfMaterialAllocation(
+          allocation,
+          pieceMap
+        )
+
+        if (!normalized) return
+
+        const pieceKey = getCfPieceKey(
+          normalized.recordId,
+          normalized.pieceIndex
+        )
+
+        // 同じ1本が複数グループへ重複しないよう、先に出たグループを優先します。
+        if (alreadyAllocated.has(pieceKey)) return
+
+        alreadyAllocated.add(pieceKey)
+        allocations.push(normalized)
+      })
+
+      if (allocations.length === 0) return null
+
+      return {
+        id: group.id || createRecordId(),
+        allocations,
+        orderLength: group.orderLength ?? '',
+        productCode: group.productCode || '',
+      }
+    })
+    .filter(Boolean)
+}
+
+function areCfMaterialGroupsEqual(left, right) {
+  try {
+    return JSON.stringify(left) === JSON.stringify(right)
+  } catch {
+    return false
+  }
+}
+
+function getCfMaterialGroupPieces(group, records) {
+  const pieceMap = new Map(
+    buildCfPieces(records).map(piece => [piece.pieceKey, piece])
+  )
+
+  const allocations = Array.isArray(group?.allocations)
+    ? group.allocations
+    : buildCfAllocationsFromRecordIds(group?.recordIds, records)
+
+  return allocations
+    .map(allocation => {
+      const pieceKey = getCfAllocationPieceKey(allocation)
+      return pieceKey ? pieceMap.get(pieceKey) : null
+    })
+    .filter(Boolean)
+}
+
+function getCfMaterialGroupLength(group, records) {
+  return roundCfMaterialNumber(
+    getCfMaterialGroupPieces(group, records).reduce(
+      (sum, piece) => sum + piece.pieceLength,
+      0
+    )
+  )
+}
+
 function LengthMeasurementPage({
   title,
   rooms,
@@ -1835,11 +2181,128 @@ function LengthMeasurementPage({
   countOnly = false,
   onRoomRecordsChanged,
   onRegistered,
+  materialGroups = [],
+  setMaterialGroups,
+  onMaterialGroupsChanged,
 }) {
+  /* M-CROSS_CF_MATERIAL_STEP4A */
   const [length, setLength] = useState('')
   const [count, setCount] = useState('')
   const [memo, setMemo] = useState('')
   const [activeInput, setActiveInput] = useState('')
+
+  /* M-CROSS_CF_MATERIAL_STEP4D3 */
+  const [selectedMaterialPieceKeys, setSelectedMaterialPieceKeys] = useState([])
+  const [materialOrderLength, setMaterialOrderLength] = useState('')
+  const [materialProductCode, setMaterialProductCode] = useState('')
+
+  const normalizedMaterialGroups = normalizeCfMaterialGroups(
+    materialGroups,
+    records
+  )
+
+  const materialSummary = getCfMaterialAllocationSummary(
+    records,
+    normalizedMaterialGroups
+  )
+
+  const availableMaterialPieces = materialSummary.unallocatedPieces
+  const selectedMaterialPieces = availableMaterialPieces.filter(piece =>
+    selectedMaterialPieceKeys.includes(piece.pieceKey)
+  )
+
+  const selectedMaterialLength = roundCfMaterialNumber(
+    selectedMaterialPieces.reduce(
+      (sum, piece) => sum + piece.pieceLength,
+      0
+    )
+  )
+
+  useEffect(() => {
+    if (!setMaterialGroups) return
+    if (areCfMaterialGroupsEqual(materialGroups, normalizedMaterialGroups)) return
+
+    setMaterialGroups(normalizedMaterialGroups)
+    onMaterialGroupsChanged?.()
+  }, [records, materialGroups, setMaterialGroups])
+
+  useEffect(() => {
+    const availableKeys = new Set(
+      availableMaterialPieces.map(piece => piece.pieceKey)
+    )
+
+    setSelectedMaterialPieceKeys(previous => {
+      const next = previous.filter(key => availableKeys.has(key))
+      return next.length === previous.length ? previous : next
+    })
+  }, [records, materialGroups])
+
+  function toggleMaterialPiece(pieceKey) {
+    setSelectedMaterialPieceKeys(previous =>
+      previous.includes(pieceKey)
+        ? previous.filter(key => key !== pieceKey)
+        : [...previous, pieceKey]
+    )
+  }
+
+  function createMaterialGroup() {
+    if (!setMaterialGroups || selectedMaterialPieces.length === 0) return
+
+    const allocations = selectedMaterialPieces.map(piece => ({
+      recordId: piece.recordId,
+      pieceIndex: piece.pieceIndex,
+      quantity: piece.quantity,
+    }))
+
+    const numericOrderLength = Number(
+      String(materialOrderLength).replace(/[。．]/g, '.')
+    )
+
+    const nextOrderLength =
+      Number.isFinite(numericOrderLength) && numericOrderLength > 0
+        ? numericOrderLength
+        : selectedMaterialLength
+
+    setMaterialGroups(previous => [
+      ...normalizeCfMaterialGroups(previous, records),
+      {
+        id: createRecordId(),
+        allocations,
+        orderLength: nextOrderLength,
+        productCode: materialProductCode.trim(),
+      },
+    ])
+
+    setSelectedMaterialPieceKeys([])
+    setMaterialOrderLength('')
+    setMaterialProductCode('')
+    onMaterialGroupsChanged?.()
+  }
+
+  function updateMaterialGroup(groupId, patch) {
+    if (!setMaterialGroups) return
+
+    setMaterialGroups(previous =>
+      normalizeCfMaterialGroups(previous, records).map(group =>
+        group.id === groupId ? { ...group, ...patch } : group
+      )
+    )
+
+    onMaterialGroupsChanged?.()
+  }
+
+  function releaseMaterialGroup(groupId) {
+    if (!setMaterialGroups) return
+
+    setMaterialGroups(previous =>
+      normalizeCfMaterialGroups(previous, records).filter(
+        group => group.id !== groupId
+      )
+    )
+
+    onMaterialGroupsChanged?.()
+  }
+
   const memoInputRef = useRef(null)
   const lengthRoomAreaRef = useRef(null)
   const lengthEntryAreaRef = useRef(null)
@@ -1903,27 +2366,36 @@ function LengthMeasurementPage({
     setValue(`${currentValue}${key}`)
   }
 
+  /* M-CROSS_CF_UI_ENTER_FIX_V1 */
   function handleMeasurementEnter() {
     if (countOnly) return
 
     if (activeInput === 'length') {
-      const numericLength = Number(length.replace(/[。．]/g, '.'))
+      const numericLength = Number(String(length).replace(/[。．]/g, '.'))
       if (!Number.isFinite(numericLength) || numericLength <= 0) return
+
       setActiveInput('count')
+      requestAnimationFrame(() => {
+        lengthInputAreaRef.current
+          ?.querySelector('input[aria-label="CF本数入力"], input[data-length-count="count"]')
+          ?.focus()
+      })
       return
     }
 
     if (activeInput === 'count') {
-      const numericLength = Number(length.replace(/[。．]/g, '.'))
-      const numericCount = Number(count)
-      if (!Number.isFinite(numericLength) || numericLength <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
+      const numericLength = Number(String(length).replace(/[。．]/g, '.'))
+      const numericCount = Number(String(count).replace(/[。．]/g, '.'))
+      if (!Number.isFinite(numericLength) || numericLength <= 0) return
+      if (!Number.isFinite(numericCount) || numericCount <= 0) return
+
       addRecord({ preventDefault() {} })
-      setActiveInput('length')
+      requestAnimationFrame(() => setActiveInput('length'))
     }
   }
 
   useEffect(() => {
-    if (countOnly || !activeInput) return undefined
+    if (!activeInput) return undefined
 
     function handlePhysicalNumpad(event) {
       const target = event.target
@@ -1945,6 +2417,15 @@ function LengthMeasurementPage({
       }
       if (event.code === 'NumpadEnter' || event.key === 'Enter') {
         event.preventDefault()
+
+        if (countOnly) {
+          const numericQuantity = Number(count)
+          if (!Number.isInteger(numericQuantity) || numericQuantity < 1) return
+          addRecord({ preventDefault() {} })
+          requestAnimationFrame(() => setActiveInput('count'))
+          return
+        }
+
         handleMeasurementEnter()
         return
       }
@@ -2008,6 +2489,190 @@ function LengthMeasurementPage({
           ))}
           <div className="summary">
             <div className="summaryLine summaryGrand"><span>全室{title}合計</span><strong>{formatQuantity(total)}{unit}</strong></div>
+
+          {/* M-CROSS_CF_MATERIAL_STEP4D3_UI */}
+          {title === 'CF' && setMaterialGroups && (
+            <div className="cfMaterialPanel">
+              <h2>CF材料割当</h2>
+              <p className="subtitle">
+                CFを1本ずつ選び、つないで注文する組み合わせを作ります。
+              </p>
+
+              <div className="cfMaterialAllocationSummary">
+                <div className="summaryLine">
+                  <span>必要長合計</span>
+                  <strong>{formatQuantity(materialSummary.requiredLength)}m</strong>
+                </div>
+                <div className="summaryLine">
+                  <span>割当済み</span>
+                  <strong>{formatQuantity(materialSummary.allocatedLength)}m</strong>
+                </div>
+                <div className="summaryLine">
+                  <span>未割当</span>
+                  <strong>{formatQuantity(materialSummary.unallocatedLength)}m</strong>
+                </div>
+              </div>
+
+              <h3>未割当のCF</h3>
+
+              {availableMaterialPieces.length === 0 ? (
+                <p className="empty">
+                  {materialSummary.allPieces.length > 0
+                    ? 'すべてのCFが材料へ割り当てられています'
+                    : 'CF登録がありません'}
+                </p>
+              ) : (
+                <div className="cfMaterialChoices">
+                  {availableMaterialPieces.map(piece => (
+                    <label className="cfMaterialChoice" key={piece.pieceKey}>
+                      <input
+                        type="checkbox"
+                        checked={selectedMaterialPieceKeys.includes(piece.pieceKey)}
+                        onChange={() => toggleMaterialPiece(piece.pieceKey)}
+                      />
+                      <span>
+                        <strong>{piece.room || '部屋未設定'}　{piece.label}</strong>
+                        <small>
+                          {piece.isFractional
+                            ? formatQuantity(piece.sourceLength) + 'm × ' + formatQuantity(piece.quantity) + '本 = ' + formatQuantity(piece.pieceLength) + 'm'
+                            : formatQuantity(piece.pieceLength) + 'm × 1本'}
+                        </small>
+                        {piece.memo && <small>メモ：{piece.memo}</small>}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {selectedMaterialPieces.length > 0 && (
+                <div className="cfMaterialCreate">
+                  <h3>選択中の内訳</h3>
+                  {selectedMaterialPieces.map(piece => (
+                    <div className="summaryLine" key={piece.pieceKey}>
+                      <span>{piece.room || '部屋未設定'}　{piece.label}</span>
+                      <strong>{formatQuantity(piece.pieceLength)}m</strong>
+                    </div>
+                  ))}
+
+                  <div className="summaryLine summaryGrand">
+                    <span>計算長</span>
+                    <strong>{formatQuantity(selectedMaterialLength)}m</strong>
+                  </div>
+
+                  <label>
+                    <span>注文長（m）</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={materialOrderLength}
+                      onChange={event => setMaterialOrderLength(event.target.value)}
+                      placeholder={formatQuantity(selectedMaterialLength)}
+                    />
+                  </label>
+
+                  <label>
+                    <span>品番・商品名</span>
+                    <input
+                      type="text"
+                      value={materialProductCode}
+                      onChange={event => setMaterialProductCode(event.target.value)}
+                      placeholder="例：HM-12001"
+                    />
+                  </label>
+
+                  <button className="add" type="button" onClick={createMaterialGroup}>
+                    選択したCFを材料にする
+                  </button>
+                </div>
+              )}
+
+              {normalizedMaterialGroups.length > 0 && (
+                <div className="cfMaterialGroupList">
+                  <h3>材料発注グループ</h3>
+
+                  {normalizedMaterialGroups.map((group, index) => {
+                    const groupPieces = getCfMaterialGroupPieces(group, records)
+                    const calculatedLength = getCfMaterialGroupLength(group, records)
+                    const roomNames = [
+                      ...new Set(groupPieces.map(piece => piece.room).filter(Boolean)),
+                    ]
+                    const numericOrderLength = Number(group.orderLength)
+                    const hasDifference = Number.isFinite(numericOrderLength)
+                      && roundCfMaterialNumber(numericOrderLength) !== calculatedLength
+
+                    return (
+                      <div className="cfMaterialGroup" key={group.id}>
+                        <div className="cfMaterialGroupHeader">
+                          <strong>CF材料 {index + 1}</strong>
+                          <button
+                            type="button"
+                            onClick={() => releaseMaterialGroup(group.id)}
+                            aria-label={'CF材料' + (index + 1) + 'の割当を解除'}
+                          >
+                            ×
+                          </button>
+                        </div>
+
+                        <p>{roomNames.join(' ＋ ') || '対象データなし'}</p>
+
+                        {groupPieces.map(piece => (
+                          <div className="summaryLine" key={piece.pieceKey}>
+                            <span>{piece.room || '部屋未設定'}　{piece.label}</span>
+                            <strong>{formatQuantity(piece.pieceLength)}m</strong>
+                          </div>
+                        ))}
+
+                        <div className="summaryLine summaryGrand">
+                          <span>計算長</span>
+                          <strong>{formatQuantity(calculatedLength)}m</strong>
+                        </div>
+
+                        {hasDifference && (
+                          <p className="saveStatus" role="status">
+                            計算長と注文長が異なります。ロス分を含む場合はそのままで問題ありません。
+                          </p>
+                        )}
+
+                        <label>
+                          <span>注文長（m）</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={group.orderLength ?? ''}
+                            onChange={event => updateMaterialGroup(group.id, {
+                              orderLength: event.target.value,
+                            })}
+                          />
+                        </label>
+
+                        <label>
+                          <span>品番・商品名</span>
+                          <input
+                            type="text"
+                            value={group.productCode || ''}
+                            onChange={event => updateMaterialGroup(group.id, {
+                              productCode: event.target.value,
+                            })}
+                            placeholder="例：HM-12001"
+                          />
+                        </label>
+
+                        <button
+                          className="secondaryButton"
+                          type="button"
+                          onClick={() => releaseMaterialGroup(group.id)}
+                        >
+                          この材料の割当を解除
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           </div>
         </section>
       ) : (
@@ -2017,11 +2682,11 @@ function LengthMeasurementPage({
             <form ref={lengthInputAreaRef} onSubmit={addRecord}>
               {countOnly ? (
                 <div className="inputRow" style={{ gridTemplateColumns: '1fr' }}>
-                  <label><span>枚数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
+                  <label><span>枚数</span><input type="text" inputMode="none" readOnly data-length-count="count" aria-label="CF本数入力" value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
                 </div>
               ) : (
                 <div className="inputRow">
-                  <label><span>長さ（メートル）</span><input type="text" inputMode="none" readOnly value={length} onFocus={() => setActiveInput('length')} onClick={() => setActiveInput('length')} placeholder="タップ" /></label>
+                  <label><span>長さ（メートル）</span><input type="text" inputMode="none" readOnly data-length-count="length" aria-label="CF長さ入力" value={length} onFocus={() => setActiveInput('length')} onClick={() => setActiveInput('length')} placeholder="タップ" /></label>
                   <label><span>本数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
                 </div>
               )}
@@ -2549,6 +3214,9 @@ export default function App() {
   const [cfPageIndex, setCfPageIndex] = useState(0)
   const [softPageIndex, setSoftPageIndex] = useState(0)
   const [cfRecords, setCfRecords] = useState([])
+  /* M-CROSS_CF_MATERIAL_SAVE_V1 */
+  /* M-CROSS_CF_MATERIAL_LOAD_V1 */
+  const [cfMaterialGroups, setCfMaterialGroups] = useState([])
   const [softRecords, setSoftRecords] = useState([])
   const [floorTrimRecords, setFloorTrimRecords] = useState([])
   const [additionalWorks, setAdditionalWorks] = useState([])
@@ -2615,6 +3283,8 @@ export default function App() {
       siteMemo: siteMemo.trim(),
       records,
       cfRecords,
+
+      cfMaterialGroups,
       softRecords,
       floorTrimRecords,
       additionalWorks,
@@ -2645,6 +3315,8 @@ export default function App() {
     unit,
     records,
     cfRecords,
+
+    cfMaterialGroups,
     softRecords,
     floorTrimRecords,
     additionalWorks,
@@ -3376,6 +4048,7 @@ return savedEntries
     setSiteMemo(entry.siteMemo || '')
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
+    setCfMaterialGroups(Array.isArray(entry.cfMaterialGroups) ? entry.cfMaterialGroups : [])
     setSoftRecords(Array.isArray(entry.softRecords) ? entry.softRecords : [])
     setFloorTrimRecords(Array.isArray(entry.floorTrimRecords) ? entry.floorTrimRecords : [])
     setAdditionalWorks(Array.isArray(entry.additionalWorks) ? entry.additionalWorks : [])
@@ -3549,6 +4222,7 @@ return savedEntries
       const savedData = saved ? JSON.parse(saved) : null
       setRecords(Array.isArray(savedData?.records) ? savedData.records : [])
       setCfRecords(Array.isArray(savedData?.cfRecords) ? savedData.cfRecords : [])
+      setCfMaterialGroups(Array.isArray(savedData?.cfMaterialGroups) ? savedData.cfMaterialGroups : [])
       setSoftRecords(Array.isArray(savedData?.softRecords) ? savedData.softRecords : [])
       setFloorTrimRecords(Array.isArray(savedData?.floorTrimRecords) ? savedData.floorTrimRecords : [])
       setAdditionalWorks(Array.isArray(savedData?.additionalWorks) ? savedData.additionalWorks : [])
@@ -3571,6 +4245,7 @@ return savedEntries
     } catch {
       setRecords([])
       setCfRecords([])
+      setCfMaterialGroups([])
       setSoftRecords([])
       setFloorTrimRecords([])
       setAdditionalWorks([])
@@ -3610,6 +4285,7 @@ return savedEntries
     setSiteMemo(draft.siteMemo || '')
     setRecords(Array.isArray(draft.records) ? draft.records : [])
     setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
+    setCfMaterialGroups(Array.isArray(draft.cfMaterialGroups) ? draft.cfMaterialGroups : [])
     setSoftRecords(Array.isArray(draft.softRecords) ? draft.softRecords : [])
     setFloorTrimRecords(Array.isArray(draft.floorTrimRecords) ? draft.floorTrimRecords : [])
     setAdditionalWorks(Array.isArray(draft.additionalWorks) ? draft.additionalWorks : [])
@@ -3671,6 +4347,8 @@ return savedEntries
       siteMemo: siteMemo.trim(),
       records,
       cfRecords,
+
+      cfMaterialGroups,
       softRecords,
       floorTrimRecords,
       additionalWorks,
@@ -4019,6 +4697,19 @@ return savedEntries
 `}</style>
       <style>{`/* M-CROSS_PC_PHYSICAL_NUMPAD_V1 */`}</style>
       <style>{`
+/* M-CROSS_CF_UI_POLISH_V1 */
+.cfMaterialPanel{margin-top:18px;padding:16px;border:1px solid rgba(89,130,210,.28);border-radius:20px;background:linear-gradient(180deg,rgba(248,251,255,.98),rgba(239,245,255,.94));box-shadow:0 8px 24px rgba(34,74,130,.08)}
+.cfMaterialPanel>h2{margin:0 0 6px;font-size:20px}.cfMaterialPanel>h3{margin:16px 0 8px;font-size:15px}
+.cfMaterialAllocationSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 16px}
+.cfMaterialAllocationSummary .summaryLine{display:grid;gap:3px;padding:10px;border-radius:12px;background:rgba(255,255,255,.85);text-align:center}.cfMaterialAllocationSummary .summaryLine span{font-size:11px}.cfMaterialAllocationSummary .summaryLine strong{font-size:18px}
+.cfMaterialChoices{display:grid;gap:8px}.cfMaterialChoice{display:flex;align-items:center;gap:12px;padding:12px 13px;border:1px solid rgba(95,130,190,.24);border-radius:14px;background:#fff;cursor:pointer}.cfMaterialChoice:has(input:checked){border-color:#688ee8;background:#eef4ff;box-shadow:0 0 0 2px rgba(104,142,232,.12)}
+.cfMaterialChoice input{width:22px;height:22px;accent-color:#688ee8}.cfMaterialChoice span{display:grid;gap:2px}.cfMaterialChoice strong{font-size:15px}.cfMaterialChoice small{color:#687386}
+.cfMaterialCreate,.cfMaterialGroup{display:grid;gap:10px;margin-top:12px;padding:14px;border:1px solid rgba(95,130,190,.25);border-radius:16px;background:rgba(255,255,255,.9)}
+.cfMaterialGroupHeader{display:flex;align-items:center;justify-content:space-between}.cfMaterialGroupHeader strong{font-size:17px}.cfMaterialGroupHeader button{width:34px;height:34px;border:1px solid #e7a9ad;border-radius:50%;background:#fff2f3;color:#b33d47;font-size:19px;font-weight:900}
+.cfMaterialGroup .summaryGrand,.cfMaterialCreate .summaryGrand{padding-top:8px;border-top:1px dashed rgba(90,120,170,.3)}
+@media(max-width:520px){.cfMaterialPanel{padding:12px}.cfMaterialAllocationSummary{gap:6px}.cfMaterialAllocationSummary .summaryLine{padding:8px 4px}.cfMaterialAllocationSummary .summaryLine strong{font-size:16px}.cfMaterialChoice{padding:11px}.cfMaterialCreate,.cfMaterialGroup{padding:12px}}
+.theme-dark .cfMaterialPanel,.theme-cyber .cfMaterialPanel,.theme-luxury .cfMaterialPanel,.theme-retro .cfMaterialPanel,.theme-galaxy .cfMaterialPanel{background:rgba(5,12,24,.9);color:inherit}.theme-dark .cfMaterialChoice,.theme-dark .cfMaterialCreate,.theme-dark .cfMaterialGroup,.theme-cyber .cfMaterialChoice,.theme-cyber .cfMaterialCreate,.theme-cyber .cfMaterialGroup,.theme-luxury .cfMaterialChoice,.theme-luxury .cfMaterialCreate,.theme-luxury .cfMaterialGroup,.theme-retro .cfMaterialChoice,.theme-retro .cfMaterialCreate,.theme-retro .cfMaterialGroup,.theme-galaxy .cfMaterialChoice,.theme-galaxy .cfMaterialCreate,.theme-galaxy .cfMaterialGroup{background:rgba(9,17,30,.88);color:inherit}
+
 /* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
 .keypadEnterRow {
   grid-column: 1 / -1;
@@ -4890,6 +5581,8 @@ return savedEntries
                   unit,
                   records,
                   cfRecords,
+
+                  cfMaterialGroups,
                   softRecords,
                   floorTrimRecords,
                   additionalWorks,
@@ -5039,6 +5732,10 @@ return savedEntries
                 rooms={rooms.includes('土間') ? rooms : [...rooms, '土間']}
                 records={cfRecords}
                 setRecords={setCfRecords}
+                materialGroups={cfMaterialGroups}
+                setMaterialGroups={setCfMaterialGroups}
+                onMaterialGroupsChanged={markUnsaved}
+                /* M-CROSS_CF_MATERIAL_STEP4B */
                 pageIndex={cfPageIndex}
                 setPageIndex={setCfPageIndex}
                 onRoomRecordsChanged={markRoomUnconfirmed}
