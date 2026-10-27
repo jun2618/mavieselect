@@ -3,6 +3,8 @@ import { PublicClientApplication } from '@azure/msal-browser'
 
 const MARKER = 'M-CROSS_ONEDRIVE_SYNC_INTEGRATION_V1'
 const storagePrefix = 'm-cross:'
+const residentCasesStorageKey = 'mcross_resident_cases_v1'
+const RESIDENT_SYNC_MARKER = 'M-CROSS_RESIDENT_ONEDRIVE_SYNC_V1'
 const graphScopes = ['User.Read', 'Files.ReadWrite.AppFolder']
 const backupFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-backup.json:/content'
 
@@ -40,6 +42,39 @@ function readLocalEntries() {
 
 function entryKey(entry) {
   return entry.storageKey || [entry.company, entry.propertyName, entry.unit].join('|')
+}
+
+function readResidentCases() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(residentCasesStorageKey) || '[]')
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function residentCaseKey(item) {
+  return item?.id || [item?.propertyName, item?.unit, item?.requestDate, item?.requestDetails].join('|')
+}
+
+function mergeResidentCases(localCases, cloudCases) {
+  const merged = new Map()
+  ;[...(Array.isArray(cloudCases) ? cloudCases : []), ...(Array.isArray(localCases) ? localCases : [])].forEach(item => {
+    if (!item || typeof item !== 'object') return
+    const key = residentCaseKey(item)
+    if (!key) return
+    const existing = merged.get(key)
+    if (!existing) {
+      merged.set(key, item)
+      return
+    }
+    const existingTime = new Date(existing.updatedAt || existing.lastActionAt || existing.createdAt || 0).getTime()
+    const itemTime = new Date(item.updatedAt || item.lastActionAt || item.createdAt || 0).getTime()
+    if (itemTime >= existingTime) merged.set(key, item)
+  })
+  return [...merged.values()].sort((a, b) =>
+    new Date(b.updatedAt || b.lastActionAt || b.createdAt || 0) - new Date(a.updatedAt || a.lastActionAt || a.createdAt || 0)
+  )
 }
 
 function compareEntries(localEntries, cloudEntries) {
@@ -134,6 +169,44 @@ export default function OneDriveSyncPanel() {
     return data
   }
 
+  async function syncResidentCases() {
+    try {
+      setStatus('入居中案件をOneDriveと同期しています…')
+      const token = await getToken()
+      const localCases = readResidentCases()
+      const cloud = await fetchCloudBackup()
+      const cloudCases = Array.isArray(cloud.residentCases) ? cloud.residentCases : []
+      const mergedCases = mergeResidentCases(localCases, cloudCases)
+
+      const payload = {
+        ...cloud,
+        fileType: 'm-cross-backup',
+        version: Math.max(Number(cloud.version) || 1, 2),
+        exportedAt: new Date().toISOString(),
+        entries: Array.isArray(cloud.entries) ? cloud.entries : [],
+        entryCount: Array.isArray(cloud.entries) ? cloud.entries.length : 0,
+        residentCases: mergedCases,
+        residentCaseCount: mergedCases.length,
+        residentSyncMarker: RESIDENT_SYNC_MARKER,
+      }
+
+      const response = await fetch(backupFileUrl, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(payload, null, 2),
+      })
+      if (!response.ok) throw new Error('入居中案件同期失敗 HTTP ' + response.status)
+
+      localStorage.setItem(residentCasesStorageKey, JSON.stringify(mergedCases))
+      setCloudBackup(payload)
+      setStatus('入居中案件同期成功: ' + mergedCases.length + '件。画面を更新します。')
+      window.setTimeout(() => window.location.reload(), 500)
+    } catch (error) {
+      console.error(error)
+      setStatus('入居中案件同期失敗: ' + (error?.message || String(error)))
+    }
+  }
+
   async function backupToOneDrive() {
     try {
       const entries = readLocalEntries()
@@ -207,10 +280,11 @@ export default function OneDriveSyncPanel() {
             <>
               <button className="oneDriveAction" type="button" onClick={backupToOneDrive}>端末 → OneDriveへバックアップ</button>
               <button className="oneDriveAction" type="button" onClick={compareWithOneDrive}>端末とOneDriveを比較</button>
+              <button className="oneDriveAction residentSyncAction" type="button" onClick={syncResidentCases}>入居中案件をPC・スマホで同期</button>
             </>
           )}
           {status && <div className="oneDriveStatus">{status}</div>}
-          {cloudBackup && <small className="oneDriveMeta">OneDrive: {cloudBackup.entries.length}件 / 保存日時 {cloudBackup.exportedAt || '未保存'}</small>}
+          {cloudBackup && <small className="oneDriveMeta">OneDrive: {cloudBackup.entries.length}件 / 入居中案件 {Array.isArray(cloudBackup.residentCases) ? cloudBackup.residentCases.length : 0}件 / 保存日時 {cloudBackup.exportedAt || '未保存'}</small>}
           {comparison.length > 0 && (
             <div className="oneDriveCompareList">
               {comparison.map(item => (
