@@ -90,6 +90,228 @@ function loadPricingSettings() {
 function formatYen(value) {
   return new Intl.NumberFormat('ja-JP').format(Math.round(Number(value) || 0)) + '円'
 }
+/* M-CROSS_RESIDENT_CASES_STEP1 */
+const residentCasesStorageKey = 'mcross_resident_cases_v1'
+
+const residentCaseStatuses = [
+  '未連絡',
+  '不通',
+  '不通（メール送信）',
+  '連絡済（現調日確定）',
+  '連絡済（作業日確定）',
+  '連絡済（入居者のスケジュール確認待ち）',
+  '見積提出済（発注待ち）',
+  '保留',
+  '発注（未連絡）',
+  '発注（不通）',
+  '発注（工事日確定）',
+  '完了（未報告）',
+  '完了',
+]
+
+function createResidentCaseId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return 'resident-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10)
+}
+
+/* M-CROSS_RESIDENT_CASES_STEP9 */
+function getResidentNextAction(status) {
+  const map = {
+    '未連絡': '入居者へ連絡',
+    '不通': '入居者へ再連絡',
+    '不通（メール送信）': '入居者からの連絡を確認',
+    '連絡済（現調日確定）': '現調へ訪問',
+    '連絡済（作業日確定）': '工事へ訪問',
+    '連絡済（入居者のスケジュール確認待ち）': '入居者から日程回答を確認',
+    '見積提出済（発注待ち）': '発注状況を確認',
+    '保留': '保留中',
+    '発注（未連絡）': '入居者へ工事日を連絡',
+    '発注（不通）': '入居者へ再連絡',
+    '発注（工事日確定）': '工事へ訪問',
+    '完了（未報告）': '管理会社へ完了報告',
+    '完了': '対応完了',
+  }
+  return map[status] || ''
+}
+
+/* M-CROSS_RESIDENT_CASES_STEP12_QUICK_PASTE */
+/* M-CROSS_RESIDENT_STEP12_COMPLETE_V1 */
+function parseResidentRequestText(rawText, propertyMaster) {
+  const source = String(rawText || '').split('\r\n').join('\n').trim()
+  const lines = source.split('\n').map(line => line.trim()).filter(Boolean)
+  const readLabel = labels => {
+    for (const line of lines) {
+      for (const label of labels) {
+        for (const separator of ['：', ':']) {
+          const prefix = label + separator
+          if (line.startsWith(prefix)) return line.slice(prefix.length).trim()
+        }
+      }
+    }
+    return ''
+  }
+  const rawProperty = readLabel(['物件', '物件名'])
+  const typedAddress = readLabel(['住所'])
+  const residentName = readLabel(['氏名', '入居者', 'お名前'])
+  const residentContact = readLabel(['連絡先', '電話', '電話番号'])
+  const properties = Array.isArray(propertyMaster?.properties) ? propertyMaster.properties : []
+  const matched = properties.find(item => item.name === rawProperty)
+    || properties.filter(item => rawProperty && rawProperty.startsWith(item.name)).sort((a,b) => String(b.name||'').length - String(a.name||'').length)[0]
+  let propertyName = matched?.name || rawProperty
+  let unit = ''
+  if (matched && rawProperty) unit = rawProperty.slice(matched.name.length).trim().replace(/号室$/u, '')
+  else if (rawProperty) {
+    const parts = rawProperty.split(' ').join('　').split('　').filter(Boolean)
+    if (parts.length > 1) { unit = parts.pop().replace(/号室$/u, ''); propertyName = parts.join(' ') }
+  }
+  const labels = ['物件：','物件:','物件名：','物件名:','住所：','住所:','氏名：','氏名:','入居者：','入居者:','お名前：','お名前:','連絡先：','連絡先:','電話：','電話:','電話番号：','電話番号:']
+  const ignorePrefixes = ['いつもお世話','株式会社','表題の件','お忙しいところ','よろしくお願い','ご対応のほど','今週中','来週中','本日中','また、','別で','工事費']
+  const body = lines.filter(line => !labels.some(x => line.startsWith(x)) && !ignorePrefixes.some(x => line.startsWith(x)))
+  const requestDetails = body.slice(0, 3).join('\n')
+  const deadline = ['今週中','来週中','本日中','明日まで'].find(word => source.includes(word)) || ''
+  const approvalLine = lines.find(line => (line.includes('工事費') || line.includes('金額')) && line.includes('以内') && line.includes('発注')) || ''
+  const noteParts = []
+  if (residentName) noteParts.push('入居者：' + residentName)
+  if (deadline) noteParts.push('連絡期限：' + deadline)
+  if (approvalLine) noteParts.push('先行発注条件：' + approvalLine)
+  return {
+    requestDate: new Date().toLocaleDateString('sv-SE'), company: matched?.company || '',
+    propertyName, unit, address: matched?.address || typedAddress, residentContact, requestDetails,
+    note: noteParts.join('\n'), status: '未連絡',
+    nextAction: deadline ? '入居者へ連絡（' + deadline + '）' : '入居者へ連絡',
+    actionDueDate: '', caution: approvalLine, priority: 'normal'
+  }
+}
+
+function normalizeResidentCase(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+  return {
+    id: source.id || createResidentCaseId(),
+    requestDate: source.requestDate || '',
+    company: source.company || '',
+    propertyName: source.propertyName || '',
+    unit: source.unit || '',
+    address: source.address || '',
+    residentContact: source.residentContact || '',
+    requestDetails: source.requestDetails || '',
+    note: source.note || '',
+    status: residentCaseStatuses.includes(source.status) ? source.status : '未連絡',
+    nextAction: source.nextAction || getResidentNextAction(source.status || '未連絡'),
+    actionDueDate: source.actionDueDate || '',
+    waitingFor: source.waitingFor || '',
+    priority: ['urgent', 'normal', 'low'].includes(source.priority) ? source.priority : 'normal',
+    isOnHold: Boolean(source.isOnHold) || source.status === '保留',
+    holdReason: source.holdReason || '',
+    lastActionAt: source.lastActionAt || source.updatedAt || source.createdAt || '',
+    siteVisitAt: source.siteVisitAt || '',
+    siteVisitEndAt: source.siteVisitEndAt || '',
+    workVisitAt: source.workVisitAt || '',
+    workVisitEndAt: source.workVisitEndAt || '',
+    caution: source.caution || '',
+    history: Array.isArray(source.history) ? source.history : [],
+    completed: Boolean(source.completed),
+    createdAt: source.createdAt || new Date().toISOString(),
+    updatedAt: source.updatedAt || new Date().toISOString(),
+  }
+}
+
+function loadResidentCases() {
+  try {
+    const raw = localStorage.getItem(residentCasesStorageKey)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.map(normalizeResidentCase) : []
+  } catch (error) {
+    console.error('入居中案件を読み込めませんでした。', error)
+    return []
+  }
+}
+
+function saveResidentCases(cases) {
+  try {
+    localStorage.setItem(
+      residentCasesStorageKey,
+      JSON.stringify(Array.isArray(cases) ? cases : [])
+    )
+    return true
+  } catch (error) {
+    console.error('入居中案件を保存できませんでした。', error)
+    return false
+  }
+}
+
+/* M-CROSS_RESIDENT_CASES_STEP6 */
+function escapeIcsText(value) {
+  return String(value || '')
+    .split('\\').join('\\\\')
+    .split('\r\n').join('\\n')
+    .split('\n').join('\\n')
+    .split(',').join('\\,')
+    .split(';').join('\\;')
+}
+
+function formatIcsLocalDateTime(value) {
+  const text = String(value || '').replace(/[-:]/g, '')
+  return text ? text + '00' : ''
+}
+
+function addMinutesToLocalDateTime(value, minutes) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  date.setMinutes(date.getMinutes() + minutes)
+  const pad = number => String(number).padStart(2, '0')
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate())
+    + 'T' + pad(date.getHours()) + ':' + pad(date.getMinutes())
+}
+
+function downloadResidentCaseCalendar(item, visitType) {
+  const isWork = visitType === 'work'
+  const startValue = isWork ? item.workVisitAt : item.siteVisitAt
+  const endValue = isWork ? item.workVisitEndAt : item.siteVisitEndAt
+  if (!startValue || !endValue || new Date(endValue) <= new Date(startValue)) return false
+  const title = '【入居中・' + (isWork ? '工事' : '現調') + '】'
+    + (item.propertyName || '物件名未設定')
+    + (item.unit ? ' ' + item.unit + '号室' : '')
+
+  const description = [
+    item.requestDetails ? '依頼内容：' + item.requestDetails : '',
+    item.residentContact ? '入居者連絡先：' + item.residentContact : '',
+    item.note ? '備考：' + item.note : '',
+    item.caution ? '注意事項：' + item.caution : '',
+  ].filter(Boolean).join('\n')
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//M-Cross//Resident Case//JA',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:' + escapeIcsText(item.id) + '-' + visitType + '@mcross.local',
+    'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z'),
+    'DTSTART:' + formatIcsLocalDateTime(startValue),
+    'DTEND:' + formatIcsLocalDateTime(endValue),
+    'SUMMARY:' + escapeIcsText(title),
+    'LOCATION:' + escapeIcsText(item.address || ''),
+    'DESCRIPTION:' + escapeIcsText(description),
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = (title + '.ics').replace(/[\/:*?"<>|]/g, '_')
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+  return true
+}
+
 function splitMeasurementType(type) {
   return type.startsWith('収納') ? ['収納', type.replace('収納', '')] : [type]
 }
@@ -3220,10 +3442,43 @@ export default function App() {
   const [softRecords, setSoftRecords] = useState([])
   const [floorTrimRecords, setFloorTrimRecords] = useState([])
   const [additionalWorks, setAdditionalWorks] = useState([])
+  const [residentCases, setResidentCases] = useState(() => loadResidentCases())
+  /* M-CROSS_RESIDENT_CASES_STEP2_V2 */
+  const [showResidentCases, setShowResidentCases] = useState(false)
+  /* M-CROSS_RESIDENT_CASES_STEP4 */
+  const [showResidentCaseForm, setShowResidentCaseForm] = useState(false)
+  const [residentCaseForm, setResidentCaseForm] = useState(() => ({
+    requestDate: new Date().toLocaleDateString('sv-SE'),
+    company: '', propertyName: '', unit: '', address: '', residentContact: '',
+    requestDetails: '', note: '', status: '未連絡', nextAction: '入居者へ連絡',
+    actionDueDate: '', caution: '',
+  }))
+  const [residentCaseFormError, setResidentCaseFormError] = useState('')
+  /* M-CROSS_RESIDENT_CASES_STEP4_1 */
+  const [residentCaseCompanyId, setResidentCaseCompanyId] = useState('')
+  /* M-CROSS_RESIDENT_CASES_STEP5 */
+  const [selectedResidentCaseId, setSelectedResidentCaseId] = useState('')
+  const [residentHistoryMemo, setResidentHistoryMemo] = useState('')
+  /* M-CROSS_RESIDENT_CASES_STEP7 */
+  const residentExcelInputRef = useRef(null)
+  /* M-CROSS_RESIDENT_CASES_STEP8 */
+  const [residentCaseSearch, setResidentCaseSearch] = useState('')
+  const [residentCaseFilter, setResidentCaseFilter] = useState('all')
+  const [residentCaseVisibleCount, setResidentCaseVisibleCount] = useState(10)
+  const [showResidentQuickPaste, setShowResidentQuickPaste] = useState(false)
+  const [residentQuickPasteText, setResidentQuickPasteText] = useState('')
+  const [residentQuickPreview, setResidentQuickPreview] = useState(null)
+  const [residentQuickError, setResidentQuickError] = useState('')
+  /* M-CROSS_RESIDENT_STEP12_MASTER_LINK_V1 */
+  const [residentQuickCompanyId, setResidentQuickCompanyId] = useState('')
   const [commonAdditionalWorks, setCommonAdditionalWorks] = useState(() => loadStringList(commonAdditionalWorksKey, defaultCommonAdditionalWorks))
   const [configuredQuickMemos, setConfiguredQuickMemos] = useState(() => loadStringList(quickMemosKey, quickMemos))
   const [configuredDefaultRooms, setConfiguredDefaultRooms] = useState(() => loadStringList(defaultRoomsKey, defaultRooms))
   const rooms = projectRooms
+
+  useEffect(() => {
+    saveResidentCases(residentCases)
+  }, [residentCases])
 
   useEffect(() => {
     const showNewPropertyScreen = () => {
@@ -3382,6 +3637,10 @@ export default function App() {
     [propertyMasterState.master]
   )
   const companies = mergedPropertyMaster.companies.map(item => item.name)
+  const residentCaseCompany = mergedPropertyMaster.companies.find(item => item.id === residentCaseCompanyId)
+  const residentCaseProperties = residentCaseCompanyId
+    ? mergedPropertyMaster.properties.filter(item => item.companyId === residentCaseCompanyId)
+    : []
   const companyProperties = company
     ? mergedPropertyMaster.properties.filter(item => item.company === company)
     : []
@@ -3673,6 +3932,216 @@ return savedEntries
       try { localStorage.setItem(pricingSettingsKey, JSON.stringify(next)) } catch { /* 任意設定 */ }
       return next
     })
+  }
+
+  async function importResidentCasesExcel(fileValue) {
+    if (!fileValue) return
+    try {
+      const { default: ExcelJS } = await import('exceljs')
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.load(await fileValue.arrayBuffer())
+
+      const text = value => {
+        if (value == null) return ''
+        if (typeof value === 'object' && value.text != null) return String(value.text).trim()
+        if (typeof value === 'object' && value.result != null) return String(value.result).trim()
+        return String(value).trim()
+      }
+      const dateText = value => {
+        if (value instanceof Date && !Number.isNaN(value.getTime())) {
+          const pad = n => String(n).padStart(2, '0')
+          return value.getFullYear() + '-' + pad(value.getMonth() + 1) + '-' + pad(value.getDate())
+        }
+        return text(value).replace(/\//g, '-').replace(/\./g, '-')
+      }
+      const normalizeHeader = value => text(value).replace(/[\s　\r\n]+/g, '')
+      const findSheet = names => names.map(name => workbook.getWorksheet(name)).find(Boolean)
+
+      const importedCases = []
+      const duplicateKeys = new Set(residentCases.map(item => [item.propertyName, item.unit, item.requestDate, item.requestDetails].join('|')))
+
+      function readCases(sheet, fallbackStatus = '') {
+        if (!sheet) return 0
+        let headerRowNumber = 0
+        let headers = []
+        const headerAliases = {
+          requestDate: ['依頼日', '受付日'], company: ['管理会社'], propertyName: ['物件名', '物件'], unit: ['号室'],
+          address: ['住所'], residentContact: ['連絡先', '電話番号', '入居者連絡先'], status: ['進捗', 'ステータス'],
+          requestDetails: ['内容', '依頼内容'], note: ['備考'], siteVisitAt: ['現調日', '現地調査日'], workVisitAt: ['工事日', '作業日'], caution: ['注意事項']
+        }
+        sheet.eachRow((row, rowNumber) => {
+          if (headerRowNumber) return
+          const values = row.values.slice(1).map(normalizeHeader)
+          const hits = values.filter(value => Object.values(headerAliases).flat().includes(value)).length
+          if (hits >= 3) { headerRowNumber = rowNumber; headers = values }
+        })
+        if (!headerRowNumber) return 0
+        const indexFor = key => {
+          const aliases = headerAliases[key]
+          const index = headers.findIndex(header => aliases.includes(header))
+          return index >= 0 ? index + 1 : 0
+        }
+        let count = 0
+        for (let rowNumber = headerRowNumber + 1; rowNumber <= sheet.rowCount; rowNumber += 1) {
+          const row = sheet.getRow(rowNumber)
+          const propertyName = text(indexFor('propertyName') ? row.getCell(indexFor('propertyName')).value : '')
+          const unit = text(indexFor('unit') ? row.getCell(indexFor('unit')).value : '').replace(/号室$/u, '')
+          const requestDetails = text(indexFor('requestDetails') ? row.getCell(indexFor('requestDetails')).value : '')
+          if (!propertyName && !unit && !requestDetails) continue
+          const requestDate = dateText(indexFor('requestDate') ? row.getCell(indexFor('requestDate')).value : '')
+          const rawStatus = text(indexFor('status') ? row.getCell(indexFor('status')).value : '')
+          const status = residentCaseStatuses.includes(rawStatus) ? rawStatus : (fallbackStatus || '未連絡')
+          const key = [propertyName, unit, requestDate, requestDetails].join('|')
+          if (duplicateKeys.has(key)) continue
+          duplicateKeys.add(key)
+          const now = new Date().toISOString()
+          importedCases.push(normalizeResidentCase({
+            id: createResidentCaseId(), requestDate,
+            company: text(indexFor('company') ? row.getCell(indexFor('company')).value : ''),
+            propertyName, unit,
+            address: text(indexFor('address') ? row.getCell(indexFor('address')).value : ''),
+            residentContact: text(indexFor('residentContact') ? row.getCell(indexFor('residentContact')).value : ''),
+            requestDetails,
+            note: text(indexFor('note') ? row.getCell(indexFor('note')).value : ''),
+            status, nextAction: getResidentNextAction(status),
+            siteVisitAt: dateText(indexFor('siteVisitAt') ? row.getCell(indexFor('siteVisitAt')).value : ''),
+            workVisitAt: dateText(indexFor('workVisitAt') ? row.getCell(indexFor('workVisitAt')).value : ''),
+            caution: text(indexFor('caution') ? row.getCell(indexFor('caution')).value : ''),
+            completed: status === '完了',
+            history: [{ id: createResidentCaseId(), at: now, status: 'Excel移行', memo: sheet.name + 'から移行' }],
+            createdAt: now, updatedAt: now,
+          }))
+          count += 1
+        }
+        return count
+      }
+
+      const activeCount = readCases(findSheet(['依頼一覧']), '')
+      const orderCount = readCases(findSheet(['発注待ち一覧']), '見積提出済（発注待ち）')
+      const completedCount = readCases(findSheet(['完了一覧']), '完了')
+
+      // LogData の対応履歴を物件名＋号室で紐付けます。
+      let historyCount = 0
+      const logSheet = findSheet(['LogData', 'ログデータ'])
+      if (logSheet) {
+        let logHeaderRow = 0
+        let logHeaders = []
+        logSheet.eachRow((row, rowNumber) => {
+          if (logHeaderRow) return
+          const values = row.values.slice(1).map(normalizeHeader)
+          const hits = values.filter(value => ['日時', '日付', '物件名', '物件', '号室', 'ステータス', '進捗', 'メモ', '内容'].includes(value)).length
+          if (hits >= 3) { logHeaderRow = rowNumber; logHeaders = values }
+        })
+        if (logHeaderRow) {
+          const logIndex = aliases => {
+            const index = logHeaders.findIndex(header => aliases.includes(header))
+            return index >= 0 ? index + 1 : 0
+          }
+          const dateIndex = logIndex(['日時', '日付'])
+          const propertyIndex = logIndex(['物件名', '物件'])
+          const unitIndex = logIndex(['号室'])
+          const statusIndex = logIndex(['ステータス', '進捗'])
+          const memoIndex = logIndex(['メモ', '内容', '備考'])
+
+          for (let rowNumber = logHeaderRow + 1; rowNumber <= logSheet.rowCount; rowNumber += 1) {
+            const row = logSheet.getRow(rowNumber)
+            const propertyName = text(propertyIndex ? row.getCell(propertyIndex).value : '')
+            const unit = text(unitIndex ? row.getCell(unitIndex).value : '').replace(/号室$/u, '')
+            const statusText = text(statusIndex ? row.getCell(statusIndex).value : '')
+            const memoText = text(memoIndex ? row.getCell(memoIndex).value : '')
+            if (!propertyName && !unit && !statusText && !memoText) continue
+            const rawDate = dateIndex ? row.getCell(dateIndex).value : null
+            let at = new Date().toISOString()
+            if (rawDate instanceof Date && !Number.isNaN(rawDate.getTime())) at = rawDate.toISOString()
+            else {
+              const parsed = new Date(text(rawDate))
+              if (!Number.isNaN(parsed.getTime())) at = parsed.toISOString()
+            }
+            const match = importedCases.find(item => item.propertyName === propertyName && item.unit === unit)
+            if (!match) continue
+            match.history = [...(match.history || []), {
+              id: createResidentCaseId(), at, status: statusText || '対応履歴', memo: memoText,
+            }]
+            historyCount += 1
+          }
+        }
+      }
+
+      if (importedCases.length === 0) {
+        window.alert('取り込める案件が見つかりませんでした。シート名と見出しをご確認ください。')
+        return
+      }
+
+      const message = 'Excelから ' + importedCases.length + '件を検出しました。\n\n依頼一覧: ' + activeCount + '件\n発注待ち一覧: ' + orderCount + '件\n完了一覧: ' + completedCount + '件\n対応履歴: ' + historyCount + '件\n\nM-Crossへ登録しますか？'
+      if (!window.confirm(message)) return
+
+      setResidentCases(previous => [...importedCases, ...previous])
+      window.alert(importedCases.length + '件をM-Crossへ登録しました。')
+    } catch (error) {
+      console.error(error)
+      window.alert('Excelを読み込めませんでした。元の入居中案件Excelをご確認ください。')
+    } finally {
+      if (residentExcelInputRef.current) residentExcelInputRef.current.value = ''
+    }
+  }
+
+  function updateResidentCase(caseId, patch, historyStatus = '', historyMemo = '') {
+    const now = new Date().toISOString()
+    setResidentCases(previous => previous.map(item => {
+      if (item.id !== caseId) return item
+      const nextHistory = historyStatus
+        ? [...(Array.isArray(item.history) ? item.history : []), {
+            id: createResidentCaseId(), at: now, status: historyStatus, memo: historyMemo,
+          }]
+        : (Array.isArray(item.history) ? item.history : [])
+      return normalizeResidentCase({
+        ...item,
+        ...patch,
+        history: nextHistory,
+        lastActionAt: historyStatus || historyMemo ? now : (item.lastActionAt || now),
+        updatedAt: now,
+      })
+    }))
+  }
+
+  /* M-CROSS_RESIDENT_STEP6_DOWNLOAD_DELETE_V1 */
+  function deleteResidentCase(caseId) {
+    const target = residentCases.find(item => item.id === caseId)
+    if (!target) return
+    const label = (target.propertyName || '物件名未設定') + (target.unit ? ' ' + target.unit + '号室' : '')
+    if (!window.confirm('「' + label + '」の入居中案件を削除しますか？\n\nこの操作は元に戻せません。')) return
+    setResidentCases(previous => previous.filter(item => item.id !== caseId))
+    setSelectedResidentCaseId('')
+    setResidentHistoryMemo('')
+  }
+
+  /* M-CROSS_RESIDENT_CASES_STEP11_ALL_IN */
+  function holdResidentCase(caseId, reason) {
+    updateResidentCase(caseId, {
+      status: '保留',
+      isOnHold: true,
+      holdReason: reason || '時期未定',
+      nextAction: '保留中',
+      actionDueDate: '',
+      waitingFor: '',
+    }, '保留', reason || '時期未定')
+  }
+
+  function resumeResidentCase(caseId) {
+    updateResidentCase(caseId, {
+      status: '発注（未連絡）',
+      isOnHold: false,
+      holdReason: '',
+      nextAction: '入居者へ工事日を連絡',
+    }, '保留解除', '対応中へ戻しました')
+  }
+
+  function applyResidentQuickStatus(caseId, status) {
+    updateResidentCase(caseId, {
+      status,
+      nextAction: getResidentNextAction(status),
+      completed: status === '完了',
+    }, status, '')
   }
 
   function changeFontSize(value) {
@@ -4710,6 +5179,52 @@ return savedEntries
 @media(max-width:520px){.cfMaterialPanel{padding:12px}.cfMaterialAllocationSummary{gap:6px}.cfMaterialAllocationSummary .summaryLine{padding:8px 4px}.cfMaterialAllocationSummary .summaryLine strong{font-size:16px}.cfMaterialChoice{padding:11px}.cfMaterialCreate,.cfMaterialGroup{padding:12px}}
 .theme-dark .cfMaterialPanel,.theme-cyber .cfMaterialPanel,.theme-luxury .cfMaterialPanel,.theme-retro .cfMaterialPanel,.theme-galaxy .cfMaterialPanel{background:rgba(5,12,24,.9);color:inherit}.theme-dark .cfMaterialChoice,.theme-dark .cfMaterialCreate,.theme-dark .cfMaterialGroup,.theme-cyber .cfMaterialChoice,.theme-cyber .cfMaterialCreate,.theme-cyber .cfMaterialGroup,.theme-luxury .cfMaterialChoice,.theme-luxury .cfMaterialCreate,.theme-luxury .cfMaterialGroup,.theme-retro .cfMaterialChoice,.theme-retro .cfMaterialCreate,.theme-retro .cfMaterialGroup,.theme-galaxy .cfMaterialChoice,.theme-galaxy .cfMaterialCreate,.theme-galaxy .cfMaterialGroup{background:rgba(9,17,30,.88);color:inherit}
 
+/* M-CROSS_RESIDENT_CASES_STEP3_STYLE */
+.residentCasesHome{display:grid;gap:14px}.residentCasesTopbar{display:flex;align-items:center;justify-content:space-between;gap:10px}.residentNewCaseButton{width:auto;margin:0}.residentDashboardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.residentDashboardCard{display:grid;gap:3px;padding:13px;border:1px solid rgba(100,120,150,.18);border-radius:15px;background:#fff;box-shadow:0 5px 15px rgba(50,70,100,.06)}.residentDashboardCard span{font-size:12px;font-weight:800;color:#656e7d}.residentDashboardCard strong{font-size:25px}.residentDashboardCard.urgent strong{color:#c84242}.residentDashboardCard.today strong{color:#d57c16}.residentDashboardCard.visit strong{color:#377fd1}.residentDashboardCard.contact strong{color:#8b5cc7}.residentDashboardCard.order strong{color:#348b69}.residentDashboardCard.report strong{color:#bb5a78}.residentCasesListHeader{display:flex;align-items:end;justify-content:space-between;margin-top:5px}.residentCasesListHeader h2{margin:0}.residentCasesListHeader span{font-weight:900;color:#687386}.residentCaseList{display:grid;gap:10px}.residentCaseCard{display:grid;gap:8px;padding:14px;border:1px solid rgba(100,120,150,.2);border-radius:17px;background:#fff;box-shadow:0 6px 18px rgba(50,70,100,.07)}.residentCaseCardTop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.residentCaseCardTop>strong{font-size:16px}.residentCaseCardTop>span{flex:0 0 auto;padding:4px 8px;border-radius:999px;background:#edf3ff;color:#4d6fae;font-size:11px;font-weight:900}.residentCaseCard p{margin:0;color:inherit}.residentCaseNext{display:grid;gap:2px;padding:9px 10px;border-radius:11px;background:#fff7e8}.residentCaseNext span{font-size:11px;color:#8a7450;font-weight:800}.residentCaseNext strong{font-size:14px}.residentCaseCard small{color:#777}.residentEmptyCard{display:grid;gap:5px;text-align:center}.residentEmptyCard span{color:#777}@media(min-width:760px){.residentDashboardGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.theme-dark .residentDashboardCard,.theme-dark .residentCaseCard,.theme-cyber .residentDashboardCard,.theme-cyber .residentCaseCard,.theme-luxury .residentDashboardCard,.theme-luxury .residentCaseCard,.theme-retro .residentDashboardCard,.theme-retro .residentCaseCard,.theme-galaxy .residentDashboardCard,.theme-galaxy .residentCaseCard{background:rgba(7,14,27,.9);color:inherit}.theme-dark .residentCaseNext,.theme-cyber .residentCaseNext,.theme-luxury .residentCaseNext,.theme-retro .residentCaseNext,.theme-galaxy .residentCaseNext{background:rgba(110,85,20,.18)}
+
+/* M-CROSS_RESIDENT_CASES_STEP4_STYLE */
+.residentCaseFormCard{display:grid;gap:12px;border:2px solid rgba(85,125,205,.25)}.residentCaseFormTitle{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.residentCaseFormTitle h2,.residentCaseFormTitle p{margin:0}.residentCaseFormGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:10px 0 14px}.residentCaseFormGrid label{display:grid;gap:5px}.residentCaseFormGrid label>span{font-size:12px;font-weight:850;color:#687386}.residentCaseFormGrid input,.residentCaseFormGrid select,.residentCaseFormGrid textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(100,120,150,.28);border-radius:12px;background:#fff;color:inherit;font:inherit}.residentCaseFormGrid textarea{resize:vertical}.residentCaseFormGrid .wide{grid-column:1/-1}@media(max-width:560px){.residentCaseFormGrid{grid-template-columns:1fr}.residentCaseFormGrid .wide{grid-column:auto}}.theme-dark .residentCaseFormGrid input,.theme-dark .residentCaseFormGrid select,.theme-dark .residentCaseFormGrid textarea,.theme-cyber .residentCaseFormGrid input,.theme-cyber .residentCaseFormGrid select,.theme-cyber .residentCaseFormGrid textarea,.theme-luxury .residentCaseFormGrid input,.theme-luxury .residentCaseFormGrid select,.theme-luxury .residentCaseFormGrid textarea,.theme-retro .residentCaseFormGrid input,.theme-retro .residentCaseFormGrid select,.theme-retro .residentCaseFormGrid textarea,.theme-galaxy .residentCaseFormGrid input,.theme-galaxy .residentCaseFormGrid select,.theme-galaxy .residentCaseFormGrid textarea{background:rgba(6,14,26,.9);color:inherit}
+
+/* M-CROSS_RESIDENT_CASES_STEP4_1_STYLE */
+.residentMasterShortcut{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px dashed rgba(90,120,170,.35);border-radius:12px;background:rgba(90,130,200,.06)}.residentMasterShortcut>span{font-size:12px;font-weight:800;color:#687386}.residentMasterShortcut .secondaryButton{width:auto;margin:0;padding:9px 12px}.residentCaseFormGrid input[readonly]{background:rgba(120,130,145,.08);color:#687386}@media(max-width:560px){.residentMasterShortcut{align-items:stretch;flex-direction:column}.residentMasterShortcut .secondaryButton{width:100%}}
+
+/* M-CROSS_RESIDENT_CASES_STEP5_STYLE */
+.residentCaseCard{cursor:pointer}.residentCaseCard:focus-visible{outline:3px solid #78a4ee;outline-offset:2px}.residentCaseDetail{display:grid;gap:13px;margin-top:8px}.residentCaseDetailTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.residentCaseDetailTop h2,.residentCaseDetailTop p{margin:0}.residentCaseDetailRequest{margin:0;padding:12px;border-radius:12px;background:rgba(90,130,200,.07);font-weight:750}.residentCallButton{display:block;text-decoration:none;text-align:center}.residentQuickActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.residentQuickActions button{min-height:44px;padding:9px;border:1px solid rgba(95,125,180,.28);border-radius:12px;background:#fff;color:inherit;font-weight:850}.residentCaseDetailGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.residentCaseDetailGrid label{display:grid;gap:5px}.residentCaseDetailGrid label>span{font-size:12px;font-weight:850;color:#687386}.residentCaseDetailGrid input,.residentCaseDetailGrid select,.residentCaseDetailGrid textarea,.residentHistoryAdd input{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid rgba(100,120,150,.28);border-radius:11px;background:#fff;color:inherit;font:inherit}.residentCaseDetailGrid .wide{grid-column:1/-1}.residentHistoryAdd{display:grid;grid-template-columns:1fr auto;gap:8px}.residentHistoryAdd .secondaryButton{width:auto;margin:0}.residentHistoryList{display:grid;gap:8px}.residentHistoryList h3{margin:5px 0}.residentHistoryItem{display:grid;gap:5px;padding:10px 12px;border-left:4px solid #7f9fe3;border-radius:10px;background:rgba(105,135,200,.07)}.residentHistoryItem>div{display:flex;align-items:center;justify-content:space-between;gap:8px}.residentHistoryItem small{color:#777}.residentHistoryItem p{margin:0}@media(max-width:560px){.residentCaseDetailGrid{grid-template-columns:1fr}.residentCaseDetailGrid .wide{grid-column:auto}.residentHistoryAdd{grid-template-columns:1fr}.residentHistoryAdd .secondaryButton{width:100%}}
+
+/* M-CROSS_RESIDENT_CASES_STEP6_STYLE */
+.residentVisitEditor{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:9px;padding:11px;border:1px solid rgba(80,135,205,.25);border-radius:13px;background:rgba(80,135,205,.06)}.residentVisitEditor label{display:grid;gap:5px}.residentVisitEditor .secondaryButton{width:auto;margin:0;white-space:nowrap}.residentVisitEditor .secondaryButton:disabled{opacity:.45;cursor:not-allowed}@media(max-width:620px){.residentVisitEditor{grid-template-columns:1fr}.residentVisitEditor .secondaryButton{width:100%}}
+
+/* M-CROSS_RESIDENT_CASES_STEP6_TIME_RANGE_STYLE */
+.residentVisitTimeFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.residentVisitEditor{display:grid;grid-template-columns:minmax(0,1fr) auto}.residentVisitEditor>.saveStatus{grid-column:1/-1;margin:0}@media(max-width:620px){.residentVisitTimeFields{grid-template-columns:1fr}.residentVisitEditor{grid-template-columns:1fr}}
+
+/* M-CROSS_RESIDENT_STEP6_LAYOUT_FIX_V1 */
+.residentVisitEditor{display:grid!important;grid-template-columns:1fr!important;gap:10px;padding:12px!important}.residentVisitEditor h3{margin:0;font-size:15px}.residentVisitDateRow{display:grid;grid-template-columns:minmax(150px,1.35fr) minmax(105px,.8fr) minmax(105px,.8fr);gap:8px;align-items:end}.residentVisitDateRow label{min-width:0}.residentVisitDateRow input{min-width:0;width:100%;box-sizing:border-box}.residentCalendarButton{width:100%!important;margin:0!important;min-height:44px}.residentVisitEditor>.saveStatus{margin:0}@media(max-width:620px){.residentVisitDateRow{grid-template-columns:1fr 1fr}.residentVisitDateRow label:first-child{grid-column:1/-1}.residentVisitDateRow input{font-size:16px}.residentCalendarButton{white-space:normal}}
+
+/* M-CROSS_RESIDENT_STEP6_DOWNLOAD_DELETE_V1_STYLE */
+.residentCalendarNote{margin:0;color:#6e7580;font-size:11px;line-height:1.5}.residentDangerZone{margin-top:8px;padding-top:14px;border-top:1px dashed rgba(190,75,85,.35)}.residentDeleteCaseButton{width:100%;min-height:44px;margin:0}
+
+/* M-CROSS_RESIDENT_CASES_STEP7_STYLE */
+.residentImportActions{display:flex;align-items:center;gap:8px}.residentImportActions .residentNewCaseButton,.residentImportActions .residentImportButton{width:auto;margin:0}@media(max-width:620px){.residentCasesTopbar{align-items:stretch}.residentImportActions{display:grid;grid-template-columns:1fr}.residentImportActions .residentNewCaseButton,.residentImportActions .residentImportButton{width:100%}}
+
+/* M-CROSS_RESIDENT_CASES_STEP8_STYLE */
+.residentOverallCounts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.residentOverallCounts>button,.residentOverallCounts>div{display:grid;gap:2px;padding:11px;border:1px solid rgba(100,120,150,.2);border-radius:14px;background:#fff;color:inherit;text-align:center}.residentOverallCounts button{font:inherit;cursor:pointer}.residentOverallCounts .active,.residentDashboardCard.active{outline:3px solid rgba(90,135,220,.25);border-color:#6b8fd8}.residentOverallCounts span{font-size:11px;font-weight:850;color:#687386}.residentOverallCounts strong{font-size:22px}.residentSectionTitle{margin:4px 0 -4px}.residentDashboardCard{font:inherit;text-align:left;cursor:pointer}.residentCaseSearchBar{display:grid;grid-template-columns:1fr auto;gap:8px}.residentCaseSearchBar input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(100,120,150,.3);border-radius:12px;background:#fff;color:inherit;font:inherit}.residentCaseSearchBar button{padding:8px 12px;border:1px solid rgba(100,120,150,.25);border-radius:11px;background:#fff;color:inherit;font-weight:800}.residentMoreButton{width:100%;margin:2px 0 8px}@media(max-width:520px){.residentOverallCounts{grid-template-columns:repeat(3,1fr)}.residentOverallCounts>button,.residentOverallCounts>div{padding:9px 4px}.residentCaseSearchBar{grid-template-columns:1fr}.residentCaseSearchBar button{width:100%}}
+
+/* M-CROSS_RESIDENT_CASES_STEP9_STYLE */
+.residentNoDue{display:inline-flex;width:fit-content;padding:4px 8px;border:1px solid rgba(211,132,35,.35);border-radius:999px;background:rgba(255,184,67,.12);color:#a96610!important;font-weight:850}.theme-dark .residentNoDue,.theme-cyber .residentNoDue,.theme-luxury .residentNoDue,.theme-retro .residentNoDue,.theme-galaxy .residentNoDue{color:#ffd27d!important}
+
+/* M-CROSS_RESIDENT_CASES_STEP10_STYLE */
+.residentAttentionBanner{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid rgba(80,150,105,.25);border-radius:15px;background:rgba(80,150,105,.07)}.residentAttentionBanner.hasAttention{border-color:rgba(214,105,58,.4);background:rgba(255,154,85,.10)}.residentAttentionBanner>div{display:grid;gap:2px}.residentAttentionBanner span{font-size:11px;font-weight:850;color:#697386}.residentAttentionBanner strong{font-size:17px}.residentAttentionBanner button{padding:8px 10px;border:1px solid rgba(210,130,55,.35);border-radius:10px;background:#fff7e8;color:#9a621d;font-weight:850}.residentCaseCard.overdue{border-color:rgba(210,70,70,.5);box-shadow:inset 4px 0 #d24b4b,0 6px 18px rgba(50,70,100,.07)}.residentCaseCard.todayVisit{box-shadow:inset 4px 0 #4f8fd9,0 6px 18px rgba(50,70,100,.07)}@media(max-width:560px){.residentAttentionBanner{align-items:stretch;flex-direction:column}.residentAttentionBanner button{width:100%}}
+
+/* M-CROSS_RESIDENT_CASES_STEP11_ALL_IN_STYLE */
+.residentOverallCountsFour{grid-template-columns:repeat(4,minmax(0,1fr))}.residentAttentionButtons{display:flex;flex-wrap:wrap;gap:6px}.residentCaseMetaBadges,.residentCardBadges{display:flex;flex-wrap:wrap;gap:6px}.residentCaseMetaBadges span,.residentCardBadges span{padding:4px 8px;border-radius:999px;background:rgba(95,125,180,.1);font-size:11px;font-weight:850}.residentCaseMetaBadges .priority-urgent,.residentCardBadges .urgent{background:rgba(210,70,70,.12);color:#bd3e3e}.residentCaseMetaBadges .priority-low{background:rgba(120,130,145,.10);color:#6d7480}.residentCaseMetaBadges .hold,.residentCardBadges .hold{background:rgba(120,105,155,.13);color:#735a9c}.residentQuickActions button:last-child{border-color:rgba(120,105,155,.35);background:rgba(120,105,155,.08)}@media(max-width:560px){.residentOverallCountsFour{grid-template-columns:repeat(2,1fr)}.residentAttentionButtons{display:grid;width:100%}.residentAttentionButtons button{width:100%}}
+
+/* M-CROSS_RESIDENT_STEP12_COMPLETE_V1_STYLE */
+.residentQuickPasteCard{display:grid;gap:12px;border:2px solid rgba(76,135,204,.28)}.residentQuickPasteCard>textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid rgba(100,120,150,.3);border-radius:13px;background:#fff;color:inherit;font:inherit;line-height:1.6}.residentQuickPreview{display:grid;gap:10px;padding-top:12px;border-top:1px dashed rgba(100,120,150,.3)}.residentImportActions{flex-wrap:wrap}.residentImportActions .residentQuickPasteButton{width:auto;margin:0}@media(max-width:620px){.residentImportActions{display:grid;grid-template-columns:1fr}.residentImportActions .residentQuickPasteButton{width:100%}.residentQuickPasteCard>textarea{font-size:16px}}
+
+/* M-CROSS_RESIDENT_STEP12_MASTER_LINK_V1_STYLE */
+.residentQuickPreview select{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(100,120,150,.28);border-radius:12px;background:#fff;color:inherit;font:inherit}
+
 /* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
 .keypadEnterRow {
   grid-column: 1 / -1;
@@ -5372,6 +5887,423 @@ return savedEntries
           </main>
         ) : !started ? (
           <main className="main">
+            {showResidentCases ? (
+              <section className="residentCasesHome" aria-label="入居中案件">
+                {/* M-CROSS_RESIDENT_CASES_STEP3 */}
+                <div className="residentCasesTopbar">
+                  <button className="back" type="button" onClick={() => setShowResidentCases(false)}>← 戻る</button>
+                  <div className="residentImportActions">
+                    <button className="primary residentNewCaseButton" type="button" onClick={() => { setResidentCaseFormError(''); setShowResidentCaseForm(true) }}>＋ 新規案件</button>
+                    <button className="secondaryButton residentImportButton" type="button" onClick={() => residentExcelInputRef.current?.click()}>📥 Excelから取り込む</button>
+                    <button className="secondaryButton residentQuickPasteButton" type="button" onClick={() => {
+                      setResidentQuickPasteText(''); setResidentQuickPreview(null); setResidentQuickError(''); setShowResidentQuickPaste(true)
+                    }}>📋 依頼文から簡単入力</button>
+                    <input ref={residentExcelInputRef} type="file" accept=".xlsx,.xlsm" hidden onChange={event => importResidentCasesExcel(event.target.files?.[0])} />
+                  </div>
+                </div>
+                <p className="eyebrow">M-Cross WORK</p>
+                <h1>入居中案件</h1>
+                <p className="subtitle">次に対応する案件を先に確認できる一覧です。</p>
+                {showResidentQuickPaste && (
+                  <section className="card residentQuickPasteCard">
+                    <div className="residentCaseFormTitle"><div><p className="eyebrow">QUICK INPUT</p><h2>依頼文から簡単入力</h2></div><button className="back" type="button" onClick={() => setShowResidentQuickPaste(false)}>閉じる</button></div>
+                    <p className="subtitle">依頼メールやメッセージをそのまま貼り付けます。</p>
+                    <textarea rows="11" value={residentQuickPasteText} onChange={e => { setResidentQuickPasteText(e.target.value); setResidentQuickPreview(null); setResidentQuickError('') }} placeholder="依頼文を貼り付け" />
+                    <button className="secondaryButton" type="button" onClick={() => {
+                      const parsed = parseResidentRequestText(residentQuickPasteText, mergedPropertyMaster)
+                      setResidentQuickPreview(parsed)
+                      setResidentQuickCompanyId(mergedPropertyMaster.companies.find(companyItem => companyItem.name === parsed.company)?.id || '')
+                      setResidentQuickError(!parsed.propertyName || !parsed.requestDetails ? '読み取れない項目があります。確認して修正してください。' : '')
+                    }}>内容を読み取る</button>
+                    {residentQuickError && <p className="saveStatus">{residentQuickError}</p>}
+                    {residentQuickPreview && <div className="residentQuickPreview">
+                      <h3>登録前の確認</h3>
+                      <div className="residentCaseFormGrid">
+                        <label><span>管理会社</span><select value={residentQuickCompanyId || mergedPropertyMaster.companies.find(companyItem => companyItem.name === residentQuickPreview.company)?.id || ''} onChange={e => {
+                          const companyId = e.target.value
+                          const selectedCompany = mergedPropertyMaster.companies.find(companyItem => companyItem.id === companyId)
+                          setResidentQuickCompanyId(companyId)
+                          setResidentQuickPreview(v => ({ ...v, company: selectedCompany?.name || '', propertyName: '', address: '' }))
+                        }}><option value="">管理会社を選択</option>{mergedPropertyMaster.companies.map(companyItem => <option key={companyItem.id} value={companyItem.id}>{companyItem.name}</option>)}</select></label>
+                        <label><span>物件名 *</span><select value={residentQuickPreview.propertyName || ''} onChange={e => {
+                          const propertyName = e.target.value
+                          const selectedCompanyId = residentQuickCompanyId || mergedPropertyMaster.companies.find(companyItem => companyItem.name === residentQuickPreview.company)?.id || ''
+                          const selectedProperty = mergedPropertyMaster.properties.find(propertyItem => propertyItem.companyId === selectedCompanyId && propertyItem.name === propertyName)
+                          setResidentQuickPreview(v => ({ ...v, propertyName, address: selectedProperty?.address || v.address || '' }))
+                        }}><option value="">物件を選択</option>{mergedPropertyMaster.properties.filter(propertyItem => {
+                          const selectedCompanyId = residentQuickCompanyId || mergedPropertyMaster.companies.find(companyItem => companyItem.name === residentQuickPreview.company)?.id || ''
+                          return !selectedCompanyId || propertyItem.companyId === selectedCompanyId
+                        }).map(propertyItem => <option key={propertyItem.id} value={propertyItem.name}>{propertyItem.name}</option>)}</select></label>
+                        <label><span>号室</span><input value={residentQuickPreview.unit || ''} onChange={e => setResidentQuickPreview(v => ({...v, unit:e.target.value}))} /></label>
+                        <label><span>連絡先</span><input value={residentQuickPreview.residentContact || ''} onChange={e => setResidentQuickPreview(v => ({...v, residentContact:e.target.value}))} /></label>
+                        <label className="wide"><span>住所</span><input value={residentQuickPreview.address || ''} onChange={e => setResidentQuickPreview(v => ({...v, address:e.target.value}))} /></label>
+                        <label className="wide"><span>依頼内容 *</span><textarea rows="4" value={residentQuickPreview.requestDetails || ''} onChange={e => setResidentQuickPreview(v => ({...v, requestDetails:e.target.value}))} /></label>
+                        <label className="wide"><span>備考</span><textarea rows="3" value={residentQuickPreview.note || ''} onChange={e => setResidentQuickPreview(v => ({...v, note:e.target.value}))} /></label>
+                        <label><span>次にやること</span><input value={residentQuickPreview.nextAction || ''} onChange={e => setResidentQuickPreview(v => ({...v, nextAction:e.target.value}))} /></label>
+                        <label className="wide"><span>注意事項</span><textarea rows="2" value={residentQuickPreview.caution || ''} onChange={e => setResidentQuickPreview(v => ({...v, caution:e.target.value}))} /></label>
+                      </div>
+                      <button className="primary" type="button" onClick={() => {
+                        const propertyName = String(residentQuickPreview.propertyName || '').trim()
+                        const requestDetails = String(residentQuickPreview.requestDetails || '').trim()
+                        if (!propertyName || !requestDetails) { setResidentQuickError('物件名と依頼内容を確認してください。'); return }
+                        const now = new Date().toISOString()
+                        const item = normalizeResidentCase({...residentQuickPreview, id:createResidentCaseId(), propertyName, requestDetails, history:[{id:createResidentCaseId(),at:now,status:'簡単入力',memo:'依頼文から登録'}], createdAt:now, updatedAt:now, lastActionAt:now})
+                        setResidentCases(prev => [item, ...prev]); setResidentQuickPasteText(''); setResidentQuickPreview(null); setResidentQuickError(''); setShowResidentQuickPaste(false)
+                      }}>この内容で案件登録</button>
+                    </div>}
+                  </section>
+                )}
+
+                {showResidentCaseForm && (
+                  <section className="card residentCaseFormCard">
+                    <div className="residentCaseFormTitle">
+                      <div><p className="eyebrow">NEW CASE</p><h2>新規案件</h2></div>
+                      <button type="button" className="back" onClick={() => setShowResidentCaseForm(false)}>閉じる</button>
+                    </div>
+                    <form onSubmit={event => {
+                      event.preventDefault()
+                      const propertyName = residentCaseForm.propertyName.trim()
+                      const unitValue = residentCaseForm.unit.trim()
+                      const details = residentCaseForm.requestDetails.trim()
+                      if (!propertyName || !unitValue || !details) {
+                        setResidentCaseFormError('物件名・号室・依頼内容を入力してください')
+                        return
+                      }
+                      const now = new Date().toISOString()
+                      const nextCase = normalizeResidentCase({
+                        ...residentCaseForm,
+                        propertyName,
+                        unit: unitValue,
+                        requestDetails: details,
+                        id: createResidentCaseId(),
+                        history: [{ id: createResidentCaseId(), at: now, status: residentCaseForm.status || '未連絡', memo: '案件登録' }],
+                        createdAt: now,
+                        updatedAt: now,
+                      })
+                      setResidentCases(previous => [nextCase, ...previous])
+                      setResidentCaseForm({
+                        requestDate: new Date().toLocaleDateString('sv-SE'),
+                        company: '', propertyName: '', unit: '', address: '', residentContact: '',
+                        requestDetails: '', note: '', status: '未連絡', nextAction: '入居者へ連絡',
+                        actionDueDate: '', caution: '',
+                      })
+                      setResidentCaseCompanyId('')
+                      setResidentCaseFormError('')
+                      setShowResidentCaseForm(false)
+                    }}>
+                      <div className="residentCaseFormGrid">
+                        <label><span>依頼日</span><input type="date" value={residentCaseForm.requestDate} onChange={e => setResidentCaseForm(v => ({ ...v, requestDate: e.target.value }))} /></label>
+                        <label><span>管理会社</span><select value={residentCaseCompanyId} onChange={e => {
+                          const companyId = e.target.value
+                          const selectedCompany = mergedPropertyMaster.companies.find(item => item.id === companyId)
+                          setResidentCaseCompanyId(companyId)
+                          setResidentCaseForm(v => ({
+                            ...v,
+                            company: selectedCompany?.name || '',
+                            propertyName: '',
+                            address: '',
+                          }))
+                        }}>
+                          <option value="">管理会社を選択</option>
+                          {mergedPropertyMaster.companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </select></label>
+                        <label className="wide"><span>物件名 *</span><select value={residentCaseForm.propertyName} disabled={!residentCaseCompanyId} onChange={e => {
+                          const propertyName = e.target.value
+                          const selectedProperty = residentCaseProperties.find(item => item.name === propertyName)
+                          setResidentCaseForm(v => ({
+                            ...v,
+                            propertyName,
+                            address: selectedProperty?.address || '',
+                          }))
+                        }}>
+                          <option value="">{residentCaseCompanyId ? '物件を選択' : '先に管理会社を選択'}</option>
+                          {residentCaseProperties.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}
+                        </select></label>
+                        <div className="residentMasterShortcut wide">
+                          <span>管理会社・物件が見つからない場合</span>
+                          <button type="button" className="secondaryButton" onClick={() => {
+                            setShowResidentCaseForm(false)
+                            setShowResidentCases(false)
+                            setSettingsPage('management')
+                            setSettingsOpen(true)
+                          }}>管理会社・物件管理を開く</button>
+                        </div>
+                        <label><span>号室 *</span><input type="text" value={residentCaseForm.unit} onChange={e => setResidentCaseForm(v => ({ ...v, unit: e.target.value }))} placeholder="101" /></label>
+                        <label><span>入居者連絡先</span><input type="tel" inputMode="tel" value={residentCaseForm.residentContact} onChange={e => setResidentCaseForm(v => ({ ...v, residentContact: e.target.value }))} placeholder="電話番号" /></label>
+                        <label className="wide"><span>住所（物件マスターから自動入力）</span><input type="text" readOnly value={residentCaseForm.address} placeholder="物件を選択すると表示されます" /></label>
+                        <label className="wide"><span>依頼内容 *</span><textarea rows="3" value={residentCaseForm.requestDetails} onChange={e => setResidentCaseForm(v => ({ ...v, requestDetails: e.target.value }))} placeholder="例：台所水栓から漏水" /></label>
+                        <label className="wide"><span>備考</span><textarea rows="2" value={residentCaseForm.note} onChange={e => setResidentCaseForm(v => ({ ...v, note: e.target.value }))} /></label>
+                        <label><span>進捗</span><select value={residentCaseForm.status} onChange={e => setResidentCaseForm(v => ({ ...v, status: e.target.value }))}>{residentCaseStatuses.map(status => <option key={status} value={status}>{status}</option>)}</select></label>
+                        <label><span>次にやること</span><input type="text" value={residentCaseForm.nextAction} onChange={e => setResidentCaseForm(v => ({ ...v, nextAction: e.target.value }))} /></label>
+                        <label><span>対応期限</span><input type="date" value={residentCaseForm.actionDueDate} onChange={e => setResidentCaseForm(v => ({ ...v, actionDueDate: e.target.value }))} /></label>
+                        <label className="wide"><span>注意事項</span><textarea rows="2" value={residentCaseForm.caution} onChange={e => setResidentCaseForm(v => ({ ...v, caution: e.target.value }))} /></label>
+                      </div>
+                      {residentCaseFormError && <p className="saveStatus" role="alert">{residentCaseFormError}</p>}
+                      <button className="primary" type="submit">この案件を登録</button>
+                    </form>
+                  </section>
+                )}
+
+                {(() => {
+                  const todayKey = new Date().toLocaleDateString('sv-SE')
+                  const holdCases = residentCases.filter(item => item.isOnHold || item.status === '保留')
+                  const activeCases = residentCases.filter(item => !item.completed && item.status !== '完了' && !item.isOnHold && item.status !== '保留')
+                  const overdueCases = activeCases.filter(item => item.actionDueDate && item.actionDueDate < todayKey)
+                  const todayActionCases = activeCases.filter(item => item.actionDueDate === todayKey)
+                  const todayVisitCases = activeCases.filter(item =>
+                    String(item.siteVisitAt || '').startsWith(todayKey) || String(item.workVisitAt || '').startsWith(todayKey)
+                  )
+                  /* M-CROSS_RESIDENT_CASES_STEP10 */
+                  const noDueCases = activeCases.filter(item => !item.actionDueDate && !item.siteVisitAt && !item.workVisitAt)
+                  const staleBorder = Date.now() - 30 * 24 * 60 * 60 * 1000
+                  const staleCases = activeCases.filter(item => {
+                    const lastValue = item.lastActionAt || item.updatedAt || item.createdAt
+                    const lastDate = lastValue ? new Date(lastValue) : null
+                    return lastDate && !Number.isNaN(lastDate.getTime()) && lastDate.getTime() < staleBorder
+                  })
+                  const attentionCaseIds = new Set([
+                    ...overdueCases.map(item => item.id),
+                    ...todayActionCases.map(item => item.id),
+                    ...todayVisitCases.map(item => item.id),
+                    ...noDueCases.map(item => item.id),
+                  ])
+                  const attentionCases = activeCases.filter(item => attentionCaseIds.has(item.id))
+                  const contactCases = activeCases.filter(item => ['未連絡', '不通', '不通（メール送信）', '発注（未連絡）', '発注（不通）'].includes(item.status))
+                  const orderCases = activeCases.filter(item => item.status === '見積提出済（発注待ち）')
+                  const unreportedCases = activeCases.filter(item => item.status === '完了（未報告）')
+                  const completedCases = residentCases.filter(item => item.completed || item.status === '完了')
+                  const normalizeResidentSearch = value => String(value || '').toLocaleLowerCase('ja').replace(/[\s　]+/g, '')
+                  const searchToken = normalizeResidentSearch(residentCaseSearch)
+                  const sourceCases = residentCaseFilter === 'completed'
+                    ? completedCases
+                    : residentCaseFilter === 'hold'
+                      ? holdCases
+                      : activeCases
+                  const filteredResidentCases = sourceCases.filter(item => {
+                    if (residentCaseFilter === 'contact' && !contactCases.some(caseItem => caseItem.id === item.id)) return false
+                    if (residentCaseFilter === 'visit' && !(item.siteVisitAt || item.workVisitAt)) return false
+                    if (residentCaseFilter === 'order' && item.status !== '見積提出済（発注待ち）') return false
+                    if (residentCaseFilter === 'unreported' && item.status !== '完了（未報告）') return false
+                    if (residentCaseFilter === 'overdue' && !overdueCases.some(caseItem => caseItem.id === item.id)) return false
+                    if (residentCaseFilter === 'today' && !todayActionCases.some(caseItem => caseItem.id === item.id)) return false
+                    if (residentCaseFilter === 'nodue' && !noDueCases.some(caseItem => caseItem.id === item.id)) return false
+                    if (residentCaseFilter === 'stale' && !staleCases.some(caseItem => caseItem.id === item.id)) return false
+                    if (residentCaseFilter === 'waiting' && !item.waitingFor) return false
+                    if (residentCaseFilter === 'urgent' && item.priority !== 'urgent') return false
+                    if (!searchToken) return true
+                    const haystack = normalizeResidentSearch([
+                      item.company, item.propertyName, item.unit, item.address,
+                      item.residentContact, item.requestDetails, item.note,
+                      item.status, item.nextAction, item.caution,
+                    ].join(' '))
+                    return haystack.includes(searchToken)
+                  })
+                  const priorityCases = [...filteredResidentCases].sort((a, b) => {
+                    const aDue = a.actionDueDate || '9999-12-31'
+                    const bDue = b.actionDueDate || '9999-12-31'
+                    if (aDue !== bDue) return aDue.localeCompare(bDue)
+                    return String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))
+                  })
+                  const visibleResidentCases = priorityCases.slice(0, residentCaseVisibleCount)
+
+                  return <>
+                    <div className="residentOverallCounts residentOverallCountsFour">
+                      <button type="button" className={residentCaseFilter === 'all' ? 'active' : ''} onClick={() => { setResidentCaseFilter('all'); setResidentCaseVisibleCount(10) }}><span>対応中</span><strong>{activeCases.length}</strong></button>
+                      <button type="button" className={residentCaseFilter === 'hold' ? 'active' : ''} onClick={() => { setResidentCaseFilter('hold'); setResidentCaseVisibleCount(10) }}><span>保留</span><strong>{holdCases.length}</strong></button>
+                      <button type="button" className={residentCaseFilter === 'completed' ? 'active' : ''} onClick={() => { setResidentCaseFilter('completed'); setResidentCaseVisibleCount(10) }}><span>完了</span><strong>{completedCases.length}</strong></button>
+                      <div><span>全案件</span><strong>{residentCases.length}</strong></div>
+                    </div>
+                    <div className={`residentAttentionBanner${attentionCases.length ? ' hasAttention' : ''}`}>
+                      <div><span>見落としチェック</span><strong>{attentionCases.length ? attentionCases.length + '件 要確認' : '現在なし'}</strong></div>
+                      <div className="residentAttentionButtons">
+                        {noDueCases.length > 0 && <button type="button" onClick={() => { setResidentCaseFilter('nodue'); setResidentCaseVisibleCount(10) }}>次回対応日なし {noDueCases.length}件</button>}
+                        {staleCases.length > 0 && <button type="button" onClick={() => { setResidentCaseFilter('stale'); setResidentCaseVisibleCount(10) }}>30日以上動きなし {staleCases.length}件</button>}
+                      </div>
+                    </div>
+                    <h2 className="residentSectionTitle">要対応</h2>
+                    <div className="residentDashboardGrid">
+                      <button type="button" className={`residentDashboardCard urgent${residentCaseFilter === 'overdue' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('overdue'); setResidentCaseVisibleCount(10) }}><span>期限超過</span><strong>{overdueCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard today${residentCaseFilter === 'today' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('today'); setResidentCaseVisibleCount(10) }}><span>今日やる</span><strong>{todayActionCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard visit${residentCaseFilter === 'visit' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('visit'); setResidentCaseVisibleCount(10) }}><span>予定あり</span><strong>{activeCases.filter(item => item.siteVisitAt || item.workVisitAt).length}</strong></button>
+                      <button type="button" className={`residentDashboardCard contact${residentCaseFilter === 'contact' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('contact'); setResidentCaseVisibleCount(10) }}><span>未連絡・再連絡</span><strong>{contactCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard order${residentCaseFilter === 'order' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('order'); setResidentCaseVisibleCount(10) }}><span>発注待ち</span><strong>{orderCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard report${residentCaseFilter === 'unreported' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('unreported'); setResidentCaseVisibleCount(10) }}><span>完了・未報告</span><strong>{unreportedCases.length}</strong></button>
+                    </div>
+
+                    <div className="residentCasesListHeader">
+                      <h2>案件一覧</h2>
+                      <span>{priorityCases.length}件</span>
+                    </div>
+                    <div className="residentCaseSearchBar">
+                      <input type="search" value={residentCaseSearch} onChange={event => { setResidentCaseSearch(event.target.value); setResidentCaseVisibleCount(10) }} placeholder="物件名・号室・依頼内容などを検索" />
+                      {(residentCaseSearch || residentCaseFilter !== 'all') && <button type="button" onClick={() => { setResidentCaseSearch(''); setResidentCaseFilter('all'); setResidentCaseVisibleCount(10) }}>解除</button>}
+                    </div>
+
+                    {priorityCases.length === 0 ? (
+                      <div className="card residentEmptyCard">
+                        <strong>現在の入居中案件はありません</strong>
+                        <span>「＋ 新規案件」から登録できます。</span>
+                      </div>
+                    ) : (
+                      <div className="residentCaseList">
+                        {visibleResidentCases.map(item => (
+                          <article className={`residentCaseCard${overdueCases.some(caseItem => caseItem.id === item.id) ? ' overdue' : ''}${todayVisitCases.some(caseItem => caseItem.id === item.id) ? ' todayVisit' : ''}`} key={item.id} role="button" tabIndex={0} onClick={() => { setSelectedResidentCaseId(item.id); setResidentHistoryMemo('') }} onKeyDown={event => { if (event.key === 'Enter') { setSelectedResidentCaseId(item.id); setResidentHistoryMemo('') } }}>
+                            <div className="residentCaseCardTop">
+                              <strong>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</strong>
+                              <span>{item.status || '未連絡'}</span>
+                            </div>
+                            <p>{item.requestDetails || '依頼内容未入力'}</p>
+                            <div className="residentCardBadges">
+                              {item.priority === 'urgent' && <span className="urgent">🔴 急ぎ</span>}
+                              {item.waitingFor && <span>⏳ {item.waitingFor}待ち</span>}
+                              {(item.isOnHold || item.status === '保留') && <span className="hold">保留</span>}
+                            </div>
+                            <div className="residentCaseNext">
+                              <span>次にやること</span>
+                              <strong>{item.nextAction || '未設定'}</strong>
+                            </div>
+                            {item.siteVisitAt && <small>現調：{new Date(item.siteVisitAt).toLocaleString('ja-JP')}{item.siteVisitEndAt ? ' ～ ' + new Date(item.siteVisitEndAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''}</small>}
+                            {item.workVisitAt && <small>工事：{new Date(item.workVisitAt).toLocaleString('ja-JP')}{item.workVisitEndAt ? ' ～ ' + new Date(item.workVisitEndAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''}</small>}
+                            {item.actionDueDate ? <small>期限：{item.actionDueDate}</small> : (!item.completed && item.status !== '完了' && <small className="residentNoDue">⚠ 次回対応日が未設定</small>)}
+                            {item.lastActionAt && <small>最終対応：{new Date(item.lastActionAt).toLocaleDateString('ja-JP')}</small>}
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                    {residentCaseVisibleCount < priorityCases.length && (
+                      <button className="secondaryButton residentMoreButton" type="button" onClick={() => setResidentCaseVisibleCount(previous => previous + 10)}>もっと見る（残り {priorityCases.length - residentCaseVisibleCount}件）</button>
+                    )}
+
+                    {selectedResidentCaseId && (() => {
+                      const item = residentCases.find(caseItem => caseItem.id === selectedResidentCaseId)
+                      if (!item) return null
+                      const history = [...(item.history || [])].sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))
+                      return <section className="card residentCaseDetail">
+                        <div className="residentCaseDetailTop">
+                          <div><p className="eyebrow">CASE DETAIL</p><h2>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</h2></div>
+                          <button className="back" type="button" onClick={() => setSelectedResidentCaseId('')}>閉じる</button>
+                        </div>
+                        <p className="residentCaseDetailRequest">{item.requestDetails || '依頼内容未入力'}</p>
+                        <div className="residentCaseMetaBadges">
+                          <span className={`priority-${item.priority || 'normal'}`}>{item.priority === 'urgent' ? '🔴 急ぎ' : item.priority === 'low' ? '⚪ 低' : '🟡 通常'}</span>
+                          {item.waitingFor && <span>⏳ {item.waitingFor}待ち</span>}
+                          {item.lastActionAt && <span>最終対応：{new Date(item.lastActionAt).toLocaleDateString('ja-JP')}</span>}
+                          {(item.isOnHold || item.status === '保留') && <span className="hold">保留：{item.holdReason || '理由未設定'}</span>}
+                        </div>
+                        {item.residentContact && <a className="primary residentCallButton" href={'tel:' + item.residentContact}>📞 入居者へ電話する</a>}
+                        <div className="residentQuickActions">
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '不通')}>不通</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '不通（メール送信）')}>メール送信済</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '連絡済（入居者のスケジュール確認待ち）')}>日程回答待ち</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '見積提出済（発注待ち）')}>発注待ち</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '完了（未報告）')}>完了・未報告</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '完了')}>完了</button>
+                          {item.isOnHold || item.status === '保留' ? (
+                            <button type="button" onClick={() => resumeResidentCase(item.id)}>対応中へ戻す</button>
+                          ) : (
+                            <button type="button" onClick={() => {
+                              const reason = window.prompt('保留理由を入力してください', '管理会社判断待ち')
+                              if (reason === null) return
+                              holdResidentCase(item.id, reason.trim() || '時期未定')
+                            }}>保留にする</button>
+                          )}
+                        </div>
+                        <div className="residentCaseDetailGrid">
+                          <label><span>進捗</span><select value={item.status} onChange={event => applyResidentQuickStatus(item.id, event.target.value)}>{residentCaseStatuses.map(status => <option key={status} value={status}>{status}</option>)}</select></label>
+                          <label><span>次にやること</span><input value={item.nextAction || ''} onChange={event => updateResidentCase(item.id, { nextAction: event.target.value })} /></label>
+                          <label><span>対応期限</span><input type="date" value={item.actionDueDate || ''} onChange={event => updateResidentCase(item.id, { actionDueDate: event.target.value })} /></label>
+                          <label><span>誰待ち</span><select value={item.waitingFor || ''} onChange={event => updateResidentCase(item.id, { waitingFor: event.target.value })}>
+                            <option value="">自社対応</option><option value="入居者">入居者待ち</option><option value="管理会社">管理会社待ち</option><option value="オーナー">オーナー待ち</option><option value="業者">業者待ち</option>
+                          </select></label>
+                          <label><span>優先度</span><select value={item.priority || 'normal'} onChange={event => updateResidentCase(item.id, { priority: event.target.value })}>
+                            <option value="urgent">🔴 急ぎ</option><option value="normal">🟡 通常</option><option value="low">⚪ 低</option>
+                          </select></label>
+                          <label><span>連絡先</span><input value={item.residentContact || ''} onChange={event => updateResidentCase(item.id, { residentContact: event.target.value })} /></label>
+                          {/* M-CROSS_RESIDENT_CASES_STEP6_TIME_RANGE */}
+                          <div className="residentVisitEditor wide">
+                            <h3>現調予定</h3>
+                            <div className="residentVisitDateRow">
+                              <label><span>日付</span><input type="date" value={(item.siteVisitAt || '').slice(0, 10)} onChange={event => {
+                                const dateValue = event.target.value
+                                const currentTime = (item.siteVisitAt || '').slice(11, 16) || '09:00'
+                                const startValue = dateValue ? dateValue + 'T' + currentTime : ''
+                                const endTime = (item.siteVisitEndAt || '').slice(11, 16) || '10:00'
+                                const endValue = dateValue ? dateValue + 'T' + endTime : ''
+                                updateResidentCase(item.id, {
+                                  siteVisitAt: startValue,
+                                  siteVisitEndAt: endValue,
+                                  status: dateValue ? '連絡済（現調日確定）' : item.status,
+                                  nextAction: dateValue ? '現調へ訪問' : item.nextAction,
+                                }, dateValue ? '連絡済（現調日確定）' : '', dateValue ? '現調日を登録' : '')
+                              }} /></label>
+                              <label><span>開始</span><input type="time" value={(item.siteVisitAt || '').slice(11, 16)} disabled={!item.siteVisitAt} onChange={event => {
+                                const dateValue = (item.siteVisitAt || '').slice(0, 10)
+                                updateResidentCase(item.id, { siteVisitAt: dateValue && event.target.value ? dateValue + 'T' + event.target.value : '' })
+                              }} /></label>
+                              <label><span>終了</span><input type="time" value={(item.siteVisitEndAt || '').slice(11, 16)} disabled={!item.siteVisitAt} onChange={event => {
+                                const dateValue = (item.siteVisitAt || '').slice(0, 10)
+                                updateResidentCase(item.id, { siteVisitEndAt: dateValue && event.target.value ? dateValue + 'T' + event.target.value : '' })
+                              }} /></label>
+                            </div>
+                            {item.siteVisitAt && item.siteVisitEndAt && new Date(item.siteVisitEndAt) <= new Date(item.siteVisitAt) && <p className="saveStatus" role="alert">終了時刻は開始時刻より後にしてください</p>}
+                            <p className="residentCalendarNote">予定ファイル（.ics）をダウンロードします。ダウンロード後に開いてカレンダーへ追加してください。</p>
+                            <button className="secondaryButton residentCalendarButton" type="button" disabled={!item.siteVisitAt || !item.siteVisitEndAt || new Date(item.siteVisitEndAt) <= new Date(item.siteVisitAt)} onClick={() => downloadResidentCaseCalendar(item, 'site')}>📅 現調をカレンダーへ追加</button>
+                          </div>
+                          <div className="residentVisitEditor wide">
+                            <h3>工事予定</h3>
+                            <div className="residentVisitDateRow">
+                              <label><span>日付</span><input type="date" value={(item.workVisitAt || '').slice(0, 10)} onChange={event => {
+                                const dateValue = event.target.value
+                                const currentTime = (item.workVisitAt || '').slice(11, 16) || '09:00'
+                                const startValue = dateValue ? dateValue + 'T' + currentTime : ''
+                                const endTime = (item.workVisitEndAt || '').slice(11, 16) || '10:00'
+                                const endValue = dateValue ? dateValue + 'T' + endTime : ''
+                                updateResidentCase(item.id, {
+                                  workVisitAt: startValue,
+                                  workVisitEndAt: endValue,
+                                  status: dateValue ? '連絡済（作業日確定）' : item.status,
+                                  nextAction: dateValue ? '工事へ訪問' : item.nextAction,
+                                }, dateValue ? '連絡済（作業日確定）' : '', dateValue ? '工事日を登録' : '')
+                              }} /></label>
+                              <label><span>開始</span><input type="time" value={(item.workVisitAt || '').slice(11, 16)} disabled={!item.workVisitAt} onChange={event => {
+                                const dateValue = (item.workVisitAt || '').slice(0, 10)
+                                updateResidentCase(item.id, { workVisitAt: dateValue && event.target.value ? dateValue + 'T' + event.target.value : '' })
+                              }} /></label>
+                              <label><span>終了</span><input type="time" value={(item.workVisitEndAt || '').slice(11, 16)} disabled={!item.workVisitAt} onChange={event => {
+                                const dateValue = (item.workVisitAt || '').slice(0, 10)
+                                updateResidentCase(item.id, { workVisitEndAt: dateValue && event.target.value ? dateValue + 'T' + event.target.value : '' })
+                              }} /></label>
+                            </div>
+                            {item.workVisitAt && item.workVisitEndAt && new Date(item.workVisitEndAt) <= new Date(item.workVisitAt) && <p className="saveStatus" role="alert">終了時刻は開始時刻より後にしてください</p>}
+                            <p className="residentCalendarNote">予定ファイル（.ics）をダウンロードします。ダウンロード後に開いてカレンダーへ追加してください。</p>
+                            <button className="secondaryButton residentCalendarButton" type="button" disabled={!item.workVisitAt || !item.workVisitEndAt || new Date(item.workVisitEndAt) <= new Date(item.workVisitAt)} onClick={() => downloadResidentCaseCalendar(item, 'work')}>📅 工事をカレンダーへ追加</button>
+                          </div>
+                          <label className="wide"><span>備考</span><textarea rows="2" value={item.note || ''} onChange={event => updateResidentCase(item.id, { note: event.target.value })} /></label>
+                        </div>
+                        <div className="residentHistoryAdd">
+                          <input type="text" value={residentHistoryMemo} onChange={event => setResidentHistoryMemo(event.target.value)} placeholder="対応メモを入力" />
+                          <button className="secondaryButton" type="button" onClick={() => {
+                            const memoText = residentHistoryMemo.trim()
+                            if (!memoText) return
+                            updateResidentCase(item.id, {}, item.status || '対応メモ', memoText)
+                            setResidentHistoryMemo('')
+                          }}>履歴に追加</button>
+                        </div>
+                        <div className="residentHistoryList">
+                          <h3>対応履歴</h3>
+                          {history.length === 0 ? <p className="empty">履歴はありません</p> : history.map(log => <div className="residentHistoryItem" key={log.id || log.at}><div><strong>{log.status || '対応'}</strong><small>{log.at ? new Date(log.at).toLocaleString('ja-JP') : ''}</small></div>{log.memo && <p>{log.memo}</p>}</div>)}
+                        </div>
+                        <div className="residentDangerZone">
+                          <button className="dangerButton residentDeleteCaseButton" type="button" onClick={() => deleteResidentCase(item.id)}>この案件を削除</button>
+                        </div>
+                      </section>
+                    })()}
+                  </>
+                })()}
+              </section>
+            ) : (
+              <>
+
             <p className="eyebrow">お部屋の採寸を、かんたんに</p>
             <h1>物件情報</h1>
             <p className="subtitle">採寸する物件を選択してください。</p>
@@ -5543,8 +6475,18 @@ return savedEntries
               <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>採寸を開始する →</button>
               <button className="secondaryButton" type="button" onClick={openSavedList}>保存済み一覧を見る</button>
               <OneDriveSyncPanel />
+              <button
+                className="secondaryButton residentCasesEntryButton"
+                type="button"
+                onClick={() => setShowResidentCases(true)}
+              >
+                入居中案件
+              </button>
               <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙ M-Cross設定</button>
             </section>
+
+              </>
+            )}
           </main>
         ) : (
           <main className="main">
