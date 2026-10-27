@@ -5845,6 +5845,48 @@ return savedEntries
   .residentCaseList{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 
+/* M-CROSS_STEP18_1_SPLIT_WINDOW_CENTER_FIX */
+/* PCフル画面はワイド、Windowsの2分割程度では中央寄せして横スクロールを防ぐ */
+@media (min-width:980px) and (max-width:1249px){
+  html,body,#root,.app{max-width:100%;overflow-x:hidden!important}
+  .main,.settingsMain{width:calc(100% - 32px)!important;max-width:1120px!important;margin-left:auto!important;margin-right:auto!important;padding-left:0!important;padding-right:0!important;box-sizing:border-box!important}
+  .main>.card{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+  .residentCasesHome{width:calc(100% - 32px)!important;max-width:1120px!important;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}
+  .residentDashboardGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .residentOverallCounts{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .residentCaseList{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .residentImportActions button{min-width:0!important}
+  .residentCaseSearchBar{grid-template-columns:minmax(0,1fr) auto!important}
+}
+@media (min-width:980px){
+  .main,.residentCasesHome,.settingsMain{left:auto!important;right:auto!important;transform:none!important}
+}
+
+/* M-CROSS_STEP18_2_TRUE_CENTER_FIX */
+/* PCでは親要素の既存オフセットを打ち消し、現在のウィンドウ幅の中央に固定 */
+@media (min-width:980px){
+  html,body,#root{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;overflow-x:hidden!important}
+  #root>.app,.app{width:100%!important;max-width:none!important;margin:0!important;padding-left:0!important;padding-right:0!important;box-sizing:border-box!important}
+  .app>.main,.main,.settingsMain{
+    position:relative!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-sizing:border-box!important;
+  }
+}
+@media (min-width:980px) and (max-width:1249px){
+  .app>.main,.main,.settingsMain{width:calc(100vw - 40px)!important;max-width:1080px!important;padding-left:0!important;padding-right:0!important}
+  .residentCasesHome{width:100%!important;max-width:1080px!important;margin-left:auto!important;margin-right:auto!important}
+  .main>.card{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}
+}
+@media (min-width:1250px){
+  .app>.main,.main{width:min(1480px,calc(100vw - 80px))!important}
+  .settingsMain{width:min(1260px,calc(100vw - 80px))!important}
+}
+
 /* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
 .keypadEnterRow {
   grid-column: 1 / -1;
