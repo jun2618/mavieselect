@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "@azure/msal-browser": "^5.26.0",
+    "buffer": "^6.0.3",
     "exceljs": "^4.4.0",
     "pdfjs-dist": "^6.4.299",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tesseract.js": "^7.0.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "xlsx-populate": "^1.21.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

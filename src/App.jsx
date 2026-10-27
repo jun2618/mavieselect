@@ -410,6 +410,46 @@ function findResidentDuplicate(cases, candidate) {
   return ranked[0] || null
 }
 
+/* M-CROSS_STEP19_WORK_ORDERS_BASE */
+const workOrdersStorageKey = 'm-cross:work-orders:v1'
+
+function normalizeWorkOrder(value) {
+  const source = value && typeof value === 'object' ? value : {}
+  const sales = Math.max(0, Number(source.estimateAmount) || 0)
+  const contractorCost = Math.max(0, Number(source.contractorCost) || 0)
+  const materialCost = Math.max(0, Number(source.materialCost) || 0)
+  const otherCost = Math.max(0, Number(source.otherCost) || 0)
+  const costTotal = contractorCost + materialCost + otherCost
+  const profit = sales - costTotal
+  return {
+    id: source.id || createResidentCaseId(),
+    company: source.company || '', propertyName: source.propertyName || '', unit: source.unit || '', address: source.address || '',
+    workDetails: source.workDetails || '',
+    estimateItems: Array.isArray(source.estimateItems) ? source.estimateItems : [],
+    estimateAmount: sales,
+    estimateStatus: source.estimateStatus || '未作成',
+    orderStatus: source.orderStatus || '未発注',
+    contractor: source.contractor || '',
+    startDate: source.startDate || '', completionDueDate: source.completionDueDate || '', completedDate: source.completedDate || '',
+    contractorCost, materialCost, otherCost, costTotal, profit,
+    profitRate: sales > 0 ? Number(((profit / sales) * 100).toFixed(1)) : 0,
+    billingStatus: source.billingStatus || '未請求',
+    sourceType: source.sourceType || '', sourceId: source.sourceId || '',
+    createdAt: source.createdAt || new Date().toISOString(), updatedAt: source.updatedAt || new Date().toISOString(),
+  }
+}
+
+function loadWorkOrders() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(workOrdersStorageKey) || '[]')
+    return Array.isArray(parsed) ? parsed.map(normalizeWorkOrder) : []
+  } catch { return [] }
+}
+
+function saveWorkOrders(items) {
+  try { localStorage.setItem(workOrdersStorageKey, JSON.stringify(items)); return true } catch { return false }
+}
+
 function normalizeResidentCase(value) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
   return {
@@ -3668,6 +3708,10 @@ export default function App() {
   const [floorTrimRecords, setFloorTrimRecords] = useState([])
   const [additionalWorks, setAdditionalWorks] = useState([])
   const [residentCases, setResidentCases] = useState(() => loadResidentCases())
+  const [workOrders, setWorkOrders] = useState(() => loadWorkOrders())
+  const [showWorkOrders, setShowWorkOrders] = useState(false)
+  /* M-CROSS_STEP19_3_WORKORDER_DETAIL */
+  const [selectedWorkOrderId, setSelectedWorkOrderId] = useState('')
   /* M-CROSS_RESIDENT_CASES_STEP2_V2 */
   const [showResidentCases, setShowResidentCases] = useState(false)
   /* M-CROSS_RESIDENT_CASES_STEP4 */
@@ -3713,6 +3757,10 @@ export default function App() {
   useEffect(() => {
     saveResidentCases(residentCases)
   }, [residentCases])
+
+  useEffect(() => {
+    saveWorkOrders(workOrders)
+  }, [workOrders])
 
   useEffect(() => {
     const showNewPropertyScreen = () => {
@@ -4607,6 +4655,206 @@ return savedEntries
     } finally {
       setResidentAiLoading(false)
     }
+  }
+
+  /* M-CROSS_STEP19_1_RESIDENT_TO_WORKORDER */
+  /* M-CROSS_STEP19_2_RESTORATION_TO_WORKORDER */
+  /* M-CROSS_STEP20_ESTIMATE_EXPORT */
+  /* M-CROSS_STEP20_TEMPLATE_STYLE_FIX */
+  /* M-CROSS_STEP20_8_FIXED_HEADER */
+  /* M-CROSS_STEP20_9_HEADER_RUNTIME */
+  /* M-CROSS_STEP20_10_SAFE_NEW_WORKBOOK */
+  /* M-CROSS_STEP20_11_ORIGINAL_TEMPLATE_XLSX_POPULATE */
+  async function exportWorkOrderEstimate(workOrder) {
+    if (!workOrder) return
+    const items = Array.isArray(workOrder.estimateItems) ? workOrder.estimateItems : []
+    if (!items.length) {
+      window.alert('見積明細がありません。')
+      return
+    }
+    if (items.length > 32) {
+      window.alert('見積明細は32行まで出力できます。')
+      return
+    }
+
+    try {
+      // ExcelJSは元テンプレートの画像・描画情報を壊すため使用しません。
+      // xlsx-populateでユーザーのテンプレートを保ったままセル値だけ差し替えます。
+      /* M-CROSS_STEP20_12_BUFFER_FIX */
+      /* M-CROSS_STEP20_13_XLSX_POPULATE_BROWSER_BUILD */
+      // Node.js版ではなく、fs・crypto・processを要求しない公式ブラウザビルドを使います。
+      const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
+      const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
+      if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+      const templateResponse = await fetch(new URL('/mcross-estimate-template.xlsx', window.location.origin), { cache: 'no-store' })
+      if (!templateResponse.ok) throw new Error('見積書テンプレートを読み込めません HTTP ' + templateResponse.status)
+
+      const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
+      const ws = workbook.sheet('見積書')
+      if (!ws) throw new Error('「見積書」シートが見つかりません')
+
+      // ユーザーのテンプレート、MSロゴ、会社情報、罫線、行高、列幅は一切作り直しません。
+      // 無記載項目は空白にします。
+      ws.cell('B5').value(workOrder.company ? workOrder.company + '　御中' : '')
+      ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy年m月d日')
+      ws.cell('D13').value(workOrder.propertyName || '')
+      ws.cell('F13').value(workOrder.unit || '')
+      ws.cell('G13').value(workOrder.unit ? '号室' : '')
+      ws.cell('D14').value(workOrder.address || '')
+
+      for (let rowNumber = 23; rowNumber <= 54; rowNumber += 1) {
+        ws.cell('C' + rowNumber).value('')
+        ws.cell('F' + rowNumber).value('')
+        ws.cell('H' + rowNumber).value('')
+        ws.cell('I' + rowNumber).value('')
+        ws.cell('J' + rowNumber).value('')
+        ws.cell('K' + rowNumber).value('')
+      }
+
+      items.forEach((item, index) => {
+        const rowNumber = 23 + index
+        ws.cell('C' + rowNumber).value(item.name || '')
+        ws.cell('F' + rowNumber).value(item.specification || '')
+        ws.cell('H' + rowNumber).value(Number(item.quantity || 0))
+        ws.cell('I' + rowNumber).value(item.unit || '')
+        ws.cell('J' + rowNumber).value(Number(item.unitPrice || 0))
+        ws.cell('K' + rowNumber).value(Number(item.amount || 0))
+      })
+
+      const subtotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
+      const tax = Math.floor(subtotal * 0.1)
+      const total = subtotal + tax
+      ws.cell('K55').value(subtotal)
+      ws.cell('K56').value(tax)
+      ws.cell('K57').value(total)
+      ws.cell('E19').value(total)
+
+      const output = await workbook.outputAsync()
+      const blob = output instanceof Blob
+        ? output
+        : new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = ['見積書', workOrder.propertyName || '物件', workOrder.unit ? workOrder.unit + '号室' : ''].filter(Boolean).join('_') + '.xlsx'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      updateWorkOrder(workOrder.id, { estimateStatus: '提出済' })
+    } catch (error) {
+      console.error(error)
+      window.alert('見積書を出力できませんでした：' + (error?.message || String(error)))
+    }
+  }
+
+  function updateWorkOrder(workOrderId, patch) {
+    const now = new Date().toISOString()
+    setWorkOrders(previous => previous.map(item => item.id === workOrderId
+      ? normalizeWorkOrder({ ...item, ...patch, updatedAt: now })
+      : item
+    ))
+  }
+
+  /* M-CROSS_STEP19_2_USE_ACTUAL_ESTIMATE */
+  function createWorkOrderFromRestoration(actualEstimateRows = [], actualTotalAmount = 0) {
+    const propertyName = selectedProperty?.name || ''
+    const unitValue = String(unit || '').trim()
+    if (!propertyName || !unitValue) {
+      window.alert('物件名と号室を確認してください。')
+      return
+    }
+
+    const sourceId = [selectedProperty?.id || propertyName, unitValue].join('|')
+    const existing = workOrders.find(item => item.sourceType === 'restoration' && item.sourceId === sourceId)
+    if (existing) {
+      window.alert('この原状回復案件はすでに工事案件へ登録されています。')
+      setStarted(false)
+      setShowWorkOrders(true)
+      return
+    }
+
+    const workNames = [
+      records?.length ? 'クロス' : '',
+      cfRecords?.length ? 'CF' : '',
+      softRecords?.length ? 'ソフト巾木' : '',
+      floorTrimRecords?.length ? '床見切り' : '',
+      ...(additionalWorks || []).map(item => item.work || item.name || '').filter(Boolean),
+    ].filter(Boolean)
+
+    const estimateItems = (Array.isArray(actualEstimateRows) ? actualEstimateRows : []).map((row, index) => ({
+      id: row.id || 'estimate-' + index,
+      category: row.category || row.group || row.room || row.type || '',
+      name: row.name || row.label || row.work || row.item || row.displayName || row.type || '工事項目',
+      specification: row.specification || row.spec || row.memo || row.note || '',
+      quantity: Number(row.quantity ?? row.qty ?? row.count ?? 0) || 0,
+      unit: row.unit || '',
+      unitPrice: Number(row.unitPrice ?? row.price ?? row.rate ?? 0) || 0,
+      amount: Number(row.amount ?? row.total ?? row.subtotal ?? 0) || 0,
+      sourceType: 'mcrossActualEstimate',
+    }))
+
+    const estimateAmount = Math.max(0, Number(actualTotalAmount) || 0)
+
+    const now = new Date().toISOString()
+    const workOrder = normalizeWorkOrder({
+      id: createResidentCaseId(),
+      company: company || '',
+      propertyName,
+      unit: unitValue,
+      address: selectedProperty?.address || '',
+      workDetails: [...new Set(workNames)].join('・') || '原状回復工事',
+      estimateItems,
+      estimateAmount,
+      estimateStatus: estimateItems.length > 0 || estimateAmount > 0 ? '作成中' : '未作成',
+      orderStatus: '未発注',
+      billingStatus: '未請求',
+      sourceType: 'restoration',
+      sourceId,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    setWorkOrders(previous => [workOrder, ...previous])
+    setStarted(false)
+    setShowWorkOrders(true)
+  }
+
+  function createWorkOrderFromResidentCase(residentCase) {
+    if (!residentCase) return
+    const existing = workOrders.find(item => item.sourceType === 'resident' && item.sourceId === residentCase.id)
+    if (existing) {
+      window.alert('この入居中案件はすでに工事案件へ登録されています。')
+      setSelectedResidentCaseId('')
+      setShowResidentCases(false)
+      setShowWorkOrders(true)
+      return
+    }
+
+    const now = new Date().toISOString()
+    const workOrder = normalizeWorkOrder({
+      id: createResidentCaseId(),
+      company: residentCase.company || '',
+      propertyName: residentCase.propertyName || '',
+      unit: residentCase.unit || '',
+      address: residentCase.address || '',
+      workDetails: residentCase.requestDetails || '',
+      estimateStatus: '未作成',
+      orderStatus: '未発注',
+      billingStatus: '未請求',
+      sourceType: 'resident',
+      sourceId: residentCase.id,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    setWorkOrders(previous => [workOrder, ...previous])
+    updateResidentCase(residentCase.id, {
+      nextAction: '工事案件で見積・発注を進める',
+    }, '工事案件へ移行', '工事案件を作成')
+    setSelectedResidentCaseId('')
+    setShowResidentCases(false)
+    setShowWorkOrders(true)
   }
 
   function updateResidentCase(caseId, patch, historyStatus = '', historyMemo = '') {
@@ -5957,6 +6205,34 @@ return savedEntries
   .residentCasesHome{width:min(1540px,calc(100vw - 80px))!important;max-width:1540px!important}
 }
 
+/* M-CROSS_STEP19_WORK_ORDERS_BASE_STYLE */
+.workOrdersHome{display:grid;gap:16px;width:min(1200px,calc(100% - 24px));margin:0 auto}.workOrdersTopbar{display:flex;align-items:center;gap:18px}.workOrdersTopbar h1,.workOrdersTopbar p{margin:0}.workOrderStats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.workOrderStats>div{display:grid;gap:4px;padding:14px;border:1px solid rgba(100,120,150,.2);border-radius:14px;background:#fff;text-align:center}.workOrderStats span{font-size:12px;font-weight:800;color:#687386}.workOrderStats strong{font-size:24px}.workOrdersEmpty{display:grid;gap:6px;text-align:center}.workOrdersList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:700px){.workOrdersHome{width:100%}.workOrdersList{grid-template-columns:1fr}.workOrderStats{grid-template-columns:repeat(3,1fr)}}
+
+/* M-CROSS_STEP19_1_RESIDENT_TO_WORKORDER_STYLE */
+.residentWorkOrderTransfer{display:grid;gap:8px;margin-top:10px;padding-top:14px;border-top:1px solid rgba(90,130,190,.25)}.residentWorkOrderTransfer .primary,.residentWorkOrderTransfer .secondaryButton{width:100%;margin:0;min-height:48px}
+
+/* M-CROSS_STEP19_2_RESTORATION_TO_WORKORDER_STYLE */
+.restorationWorkOrderAction{display:grid;gap:8px;margin:12px 0 16px}.restorationWorkOrderAction .primary,.restorationWorkOrderAction .secondaryButton{width:100%;margin:0;min-height:48px}
+
+/* M-CROSS_STEP19_3_WORKORDER_DETAIL_STYLE */
+.workOrderCard{cursor:pointer}.workOrderCard:focus-visible{outline:3px solid #7fa6ef;outline-offset:2px}.workOrderDetailPage{position:fixed;inset:0;z-index:9999;overflow:auto;background:#eef1f6;padding:22px}.workOrderDetail{width:min(1180px,calc(100vw - 44px));margin:0 auto;display:grid;gap:16px;padding:24px!important}.workOrderDetailTop{display:flex;align-items:center;gap:18px}.workOrderDetailTop h1,.workOrderDetailTop p{margin:0}.workOrderSection{display:grid;gap:12px;padding:16px;border:1px solid rgba(100,120,150,.18);border-radius:14px;background:rgba(255,255,255,.5)}.workOrderSection h2{margin:0}.workOrderFormGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.workOrderFormGrid label{display:grid;gap:5px}.workOrderFormGrid label>span{font-size:12px;font-weight:850;color:#687386}.workOrderFormGrid input,.workOrderFormGrid select,.workOrderFormGrid textarea{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid rgba(100,120,150,.28);border-radius:10px;background:#fff;color:inherit;font:inherit}.workOrderFormGrid .wide{grid-column:1/-1}.workOrderMoneyGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.workOrderMoneyGrid>div{display:grid;gap:3px;padding:12px;border-radius:12px;background:rgba(90,130,200,.07);text-align:center}.workOrderMoneyGrid span{font-size:11px;font-weight:800;color:#687386}.workOrderMoneyGrid strong{font-size:20px}@media(max-width:700px){.workOrderDetailPage{padding:8px}.workOrderDetail{width:calc(100vw - 16px);padding:14px!important}.workOrderDetailTop{align-items:flex-start;flex-direction:column}.workOrderFormGrid{grid-template-columns:1fr}.workOrderFormGrid .wide{grid-column:auto}.workOrderMoneyGrid{grid-template-columns:repeat(2,1fr)}}
+
+/* M-CROSS_STEP19_2_ESTIMATE_TRANSFER_FIX_STYLE */
+.workOrderEstimateItems{display:grid;gap:7px}.workOrderEstimateItem{display:grid;grid-template-columns:minmax(0,1fr) 110px 120px 130px;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(100,120,150,.18);border-radius:10px;background:rgba(255,255,255,.62)}.workOrderEstimateItem>div{display:grid;gap:2px}.workOrderEstimateItem small{color:#737b87}.workOrderEstimateItem>span,.workOrderEstimateItem>strong{text-align:right}@media(max-width:700px){.workOrderEstimateItem{grid-template-columns:1fr 1fr}.workOrderEstimateItem>div{grid-column:1/-1}.workOrderEstimateItem>span,.workOrderEstimateItem>strong{text-align:left}}
+
+/* M-CROSS_STEP20_2_LOGO_PRINT_DETAIL_HEIGHT_STYLE */
+.workOrderDetailPage{min-height:100vh!important;box-sizing:border-box!important;padding-bottom:28px!important}
+.workOrderDetailPage>.workOrderDetail{min-height:calc(100vh - 44px)!important;box-sizing:border-box!important;padding-bottom:32px!important}
+@media(min-width:980px){.workOrderDetailPage>.workOrderDetail{width:min(1180px,calc(100vw - 64px))!important;max-width:1180px!important}}
+@media(max-width:700px){.workOrderDetailPage{padding-bottom:10px!important}.workOrderDetailPage>.workOrderDetail{min-height:calc(100vh - 16px)!important;padding-bottom:20px!important}}
+
+/* M-CROSS_STEP20_3_FIXED_TEMPLATE */
+.workOrderDetailPage{padding-top:12px!important;padding-bottom:0!important;background:#eef1f6!important}
+.workOrderDetailPage>.workOrderDetail{min-height:calc(100vh - 12px)!important;margin-bottom:0!important;border-bottom-left-radius:0!important;border-bottom-right-radius:0!important}
+@media(max-width:700px){.workOrderDetailPage{padding-top:6px!important}.workOrderDetailPage>.workOrderDetail{min-height:calc(100vh - 6px)!important}}
+
+/* M-CROSS_STEP20_4_CLEAN_WORKBOOK */
+/* M-CROSS_STEP20_14_TEMPLATE_NO_BUTTONS */
 /* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
 .keypadEnterRow {
   grid-column: 1 / -1;
@@ -6619,7 +6895,74 @@ return savedEntries
           </main>
         ) : !started ? (
           <main className="main">
-            {showResidentCases ? (
+            {showWorkOrders ? (
+              <section className="workOrdersHome">
+                <div className="workOrdersTopbar"><button className="back" type="button" onClick={() => setShowWorkOrders(false)}>← 戻る</button><div><p className="eyebrow">M-Cross WORK</p><h1>工事案件</h1></div></div>
+                <div className="workOrderStats">
+                  <div><span>全案件</span><strong>{workOrders.length}</strong></div>
+                  <div><span>未請求</span><strong>{workOrders.filter(item => item.billingStatus !== '請求済').length}</strong></div>
+                  <div><span>完了</span><strong>{workOrders.filter(item => item.completedDate).length}</strong></div>
+                </div>
+                {workOrders.length === 0 ? <div className="card workOrdersEmpty"><strong>工事案件はまだありません</strong><span>次のSTEPで採寸案件・入居中案件から工事案件へ進める機能を追加します。</span></div> : <div className="workOrdersList">{workOrders.map(item => <article className="card workOrderCard" key={item.id} role="button" tabIndex={0} onClick={() => setSelectedWorkOrderId(item.id)} onKeyDown={event => { if (event.key === 'Enter') setSelectedWorkOrderId(item.id) }}><strong>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</strong><p>{item.workDetails || '工事内容未入力'}</p><div className="summaryLine"><span>見積</span><strong>¥{item.estimateAmount.toLocaleString()}</strong></div><div className="summaryLine"><span>原価</span><strong>¥{item.costTotal.toLocaleString()}</strong></div><div className="summaryLine"><span>利益</span><strong>¥{item.profit.toLocaleString()} / {item.profitRate}%</strong></div><small>{item.orderStatus} / {item.billingStatus}</small></article>)}</div>}
+                {selectedWorkOrderId && (() => {
+                  const item = workOrders.find(workItem => workItem.id === selectedWorkOrderId)
+                  if (!item) return null
+                  return <section className="workOrderDetailPage">
+                    <div className="card workOrderDetail">
+                      <div className="workOrderDetailTop">
+                        <button className="back" type="button" onClick={() => setSelectedWorkOrderId('')}>← 工事案件一覧へ</button>
+                        <div><p className="eyebrow">M-Cross WORK</p><h1>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</h1></div>
+                      </div>
+
+                      <section className="workOrderSection"><h2>基本情報</h2><div className="workOrderFormGrid">
+                        <label><span>管理会社</span><input value={item.company || ''} onChange={e => updateWorkOrder(item.id,{company:e.target.value})}/></label>
+                        <label><span>物件名</span><input value={item.propertyName || ''} onChange={e => updateWorkOrder(item.id,{propertyName:e.target.value})}/></label>
+                        <label><span>号室</span><input value={item.unit || ''} onChange={e => updateWorkOrder(item.id,{unit:e.target.value})}/></label>
+                        <label className="wide"><span>住所</span><input value={item.address || ''} onChange={e => updateWorkOrder(item.id,{address:e.target.value})}/></label>
+                        <label className="wide"><span>工事内容</span><textarea rows="3" value={item.workDetails || ''} onChange={e => updateWorkOrder(item.id,{workDetails:e.target.value})}/></label>
+                      </div></section>
+
+                      <section className="workOrderSection"><h2>見積</h2>
+                      {Array.isArray(item.estimateItems) && item.estimateItems.length > 0 && (
+                        <div className="workOrderEstimateItems">
+                          {item.estimateItems.map((estimateItem, estimateIndex) => (
+                            <div className="workOrderEstimateItem" key={estimateItem.id || estimateIndex}>
+                              <div><strong>{estimateItem.name || '工事項目'}</strong>{estimateItem.specification && <small>{estimateItem.specification}</small>}</div>
+                              <span>{Number(estimateItem.quantity || 0).toLocaleString()} {estimateItem.unit || ''}</span>
+                              <span>¥{Number(estimateItem.unitPrice || 0).toLocaleString()}</span>
+                              <strong>¥{Number(estimateItem.amount || 0).toLocaleString()}</strong>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="workOrderFormGrid">
+                        <label><span>見積金額</span><input type="number" min="0" value={item.estimateAmount || 0} onChange={e => updateWorkOrder(item.id,{estimateAmount:Number(e.target.value)||0})}/></label>
+                        <label><span>見積状態</span><select value={item.estimateStatus || '未作成'} onChange={e => updateWorkOrder(item.id,{estimateStatus:e.target.value})}><option>未作成</option><option>作成中</option><option>提出済</option><option>承認</option></select></label>
+                      </div><button className="secondaryButton" type="button" onClick={() => exportWorkOrderEstimate(item)}>📊 見積書を出力</button></section>
+
+                      <section className="workOrderSection"><h2>発注</h2><div className="workOrderFormGrid">
+                        <label><span>発注状態</span><select value={item.orderStatus || '未発注'} onChange={e => updateWorkOrder(item.id,{orderStatus:e.target.value})}><option>未発注</option><option>発注準備</option><option>発注済み</option><option>施工中</option></select></label>
+                        <label><span>発注先</span><input value={item.contractor || ''} onChange={e => updateWorkOrder(item.id,{contractor:e.target.value})}/></label>
+                      </div></section>
+
+                      <section className="workOrderSection"><h2>工程</h2><div className="workOrderFormGrid">
+                        <label><span>着工予定</span><input type="date" value={item.startDate || ''} onChange={e => updateWorkOrder(item.id,{startDate:e.target.value})}/></label>
+                        <label><span>完了予定</span><input type="date" value={item.completionDueDate || ''} onChange={e => updateWorkOrder(item.id,{completionDueDate:e.target.value})}/></label>
+                        <label><span>完了日</span><input type="date" value={item.completedDate || ''} onChange={e => updateWorkOrder(item.id,{completedDate:e.target.value})}/></label>
+                      </div></section>
+
+                      <section className="workOrderSection"><h2>原価・利益</h2><div className="workOrderFormGrid">
+                        <label><span>業者支払</span><input type="number" min="0" value={item.contractorCost || 0} onChange={e => updateWorkOrder(item.id,{contractorCost:Number(e.target.value)||0})}/></label>
+                        <label><span>資材費</span><input type="number" min="0" value={item.materialCost || 0} onChange={e => updateWorkOrder(item.id,{materialCost:Number(e.target.value)||0})}/></label>
+                        <label><span>その他経費</span><input type="number" min="0" value={item.otherCost || 0} onChange={e => updateWorkOrder(item.id,{otherCost:Number(e.target.value)||0})}/></label>
+                      </div><div className="workOrderMoneyGrid"><div><span>売上</span><strong>¥{item.estimateAmount.toLocaleString()}</strong></div><div><span>原価</span><strong>¥{item.costTotal.toLocaleString()}</strong></div><div><span>利益</span><strong>¥{item.profit.toLocaleString()}</strong></div><div><span>利益率</span><strong>{item.profitRate}%</strong></div></div></section>
+
+                      <section className="workOrderSection"><h2>請求</h2><div className="workOrderFormGrid"><label><span>請求状態</span><select value={item.billingStatus || '未請求'} onChange={e => updateWorkOrder(item.id,{billingStatus:e.target.value})}><option>未請求</option><option>請求準備</option><option>請求済</option></select></label></div></section>
+                    </div>
+                  </section>
+                })()}
+              </section>
+            ) : showResidentCases ? (
               <section className="residentCasesHome" aria-label="入居中案件">
                 {/* M-CROSS_RESIDENT_CASES_STEP3 */}
                 <div className="residentCasesTopbar">
@@ -7063,6 +7406,16 @@ return savedEntries
                           <h3>対応履歴</h3>
                           {history.length === 0 ? <p className="empty">履歴はありません</p> : history.map(log => <div className="residentHistoryItem" key={log.id || log.at}><div><strong>{log.status || '対応'}</strong><small>{log.at ? new Date(log.at).toLocaleString('ja-JP') : ''}</small></div>{log.memo && <p>{log.memo}</p>}</div>)}
                         </div>
+                        <div className="residentWorkOrderTransfer">
+                          {workOrders.some(workItem => workItem.sourceType === 'resident' && workItem.sourceId === item.id) ? (
+                            <button className="secondaryButton" type="button" onClick={() => { setSelectedResidentCaseId(''); setShowResidentCases(false); setShowWorkOrders(true) }}>工事案件を開く</button>
+                          ) : (
+                            <button className="primary" type="button" onClick={() => {
+                              if (!window.confirm('この入居中案件から工事案件を作成しますか？\n物件・号室・住所・依頼内容を引き継ぎます。')) return
+                              createWorkOrderFromResidentCase(item)
+                            }}>工事案件へ進む</button>
+                          )}
+                        </div>
                         <div className="residentDangerZone">
                           <button className="dangerButton residentDeleteCaseButton" type="button" onClick={() => deleteResidentCase(item.id)}>この案件を削除</button>
                         </div>
@@ -7253,6 +7606,14 @@ return savedEntries
               >
                 入居中案件
               </button>
+              /* M-CROSS_STEP19_BUTTON_PLACEMENT_FIX */
+              <button
+                className="secondaryButton workOrdersEntryButton"
+                type="button"
+                onClick={() => setShowWorkOrders(true)}
+              >
+                工事案件
+              </button>
               <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙ M-Cross設定</button>
             </section>
 
@@ -7356,6 +7717,16 @@ return savedEntries
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室</h2>
                   <p className="estimateIntro">退去時にお客様へ提示するための概算です。正式見積ではありません。</p>
+                  <div className="restorationWorkOrderAction">
+                    {workOrders.some(item => item.sourceType === 'restoration' && item.sourceId === [selectedProperty?.id || selectedProperty?.name || '', String(unit || '').trim()].join('|')) ? (
+                      <button className="secondaryButton" type="button" onClick={() => { setStarted(false); setShowWorkOrders(true) }}>工事案件を開く</button>
+                    ) : (
+                      <button className="primary" type="button" onClick={() => {
+                        if (!window.confirm('この原状回復案件から工事案件を作成しますか？\n物件・号室と施工項目を引き継ぎます。')) return
+                        createWorkOrderFromRestoration(estimateRows, totalAmount)
+                      }}>工事案件へ進む</button>
+                    )}
+                  </div>
 
                   {estimateRows.length === 0 && additionalWorks.length === 0 ? (
                     <p className="empty">概算できる採寸データがありません</p>
