@@ -185,6 +185,231 @@ function parseResidentRequestText(rawText, propertyMaster) {
   }
 }
 
+/* M-CROSS_RESIDENT_STEP15_1_ORDER_PDF_PARSER */
+/* M-CROSS_RESIDENT_STEP15_2_PDF_PARSER_FIX */
+/* M-CROSS_RESIDENT_STEP15_3_PDF_LAYOUT_FIX */
+/* M-CROSS_RESIDENT_STEP15_4_PDF_FILENAME_PARSER */
+function parseResidentOrderPdfText(rawText, propertyMaster, fileName = '') {
+  const source = String(rawText || '').normalize('NFKC')
+  const squash = value => String(value || '')
+    .normalize('NFKC')
+    .replace(/[\s　]+/g, '')
+    .replace(/[‐‑‒–—―ー−－]/g, '-')
+    .replace(/[・･]/g, '')
+    .replace(/べ/g, 'ベ')
+    .toLocaleLowerCase('ja')
+
+  const compact = squash(source)
+  const compactFileName = squash(fileName)
+  const properties = Array.isArray(propertyMaster?.properties) ? propertyMaster.properties : []
+  const companies = Array.isArray(propertyMaster?.companies) ? propertyMaster.companies : []
+
+  /* M-CROSS_RESIDENT_STEP15_5_FILENAME_PRIORITY */
+  // 最重要: 本文には参考写真の別物件名が含まれる場合があるため、
+  // PDFファイル名に一致するM-Cross物件を最優先します。
+  const fileMatchedProperty = [...properties]
+    .sort((a, b) => squash(b.name).length - squash(a.name).length)
+    .find(item => {
+      const name = squash(item.name)
+      if (!name) return false
+      const variants = [
+        name,
+        name.replace(/ベル/g, 'べル'),
+        name.replace(/べル/g, 'ベル'),
+      ]
+      return variants.some(value => compactFileName.includes(value))
+    })
+
+  const bodyMatchedProperty = [...properties]
+    .sort((a, b) => squash(b.name).length - squash(a.name).length)
+    .find(item => {
+      const name = squash(item.name)
+      if (!name) return false
+      const variants = [
+        name,
+        name.replace(/ベル/g, 'べル'),
+        name.replace(/べル/g, 'ベル'),
+      ]
+      return variants.some(value => compact.includes(value))
+    })
+
+  let matchedProperty = fileMatchedProperty || bodyMatchedProperty
+
+  // 帳票PDFでは文字間に空白が入るため、空白除去後の文字列から直接物件名を拾う。
+  let detectedPropertyName = ''
+  const knownPatterns = [
+    /リバティベル月寒/u,
+    /inove[^0-9〒]{2,30}/u,
+  ]
+  for (const pattern of knownPatterns) {
+    const match = compactFileName.match(pattern) || compact.match(pattern)
+    if (match) { detectedPropertyName = match[0].replace(/^inove/i, 'INOVE'); break }
+  }
+
+  if (!matchedProperty && detectedPropertyName) {
+    matchedProperty = properties.find(item => {
+      const left = squash(item.name)
+      const right = squash(detectedPropertyName)
+      return left === right || left.includes(right) || right.includes(left)
+    })
+  }
+
+  const propertyName = matchedProperty?.name || detectedPropertyName || ''
+  const company = matchedProperty?.company
+    || companies.find(companyItem => properties.some(propertyItem => propertyItem.companyId === companyItem.id && matchedProperty?.id === propertyItem.id))?.name
+    || ''
+  const address = matchedProperty?.address || ''
+
+  // ファイル名の「物件名1101発注書」を最優先し、本文候補を補助に使います。
+  let unit = ''
+  const fileUnitMatch = compactFileName.match(/(?:[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+-)?([0-9]{3,4})(?:発注書|依頼書|pdf|$)/u)
+  if (fileUnitMatch) unit = fileUnitMatch[1]
+  const roomNearPhone = compact.match(/(?:\d{4,6})(?:[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+-)?(\d{3,4})011-\d{3}-\d{4}/u)
+  if (!unit && roomNearPhone) unit = roomNearPhone[1]
+  if (!unit && propertyName) {
+    const p = compact.indexOf(squash(propertyName))
+    if (p >= 0) {
+      const near = compact.slice(Math.max(0, p - 50), p + squash(propertyName).length + 80)
+      const candidates = near.match(/(?:[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+-)?\d{3,4}/gu) || []
+      unit = candidates.find(value => !/^20\d{2}$/u.test(value)) || ''
+    }
+  }
+
+  // 連絡先は帳票中の入居者連絡先候補を優先。携帯があれば最優先。
+  const phones = source.replace(/[－ー―‐‑‒–—−]/g, '-').match(/(?:0[789]0-\d{4}-\d{4}|011-\d{3}-\d{4})/g) || []
+  const residentContact = phones.find(phone => /^0[789]0-/u.test(phone)) || phones[0] || ''
+
+  const hasDoor = compact.includes('玄関ドア') || compact.includes('本日玄関')
+  const hasChain = compact.includes('チェーン') || compact.includes('ドアに引掛ける') || compact.includes('ドアに引っ掛ける')
+  const hasParts = compact.includes('黒いボッチ') || compact.includes('黒い部品') || compact.includes('バネ') || compact.includes('ネジくぎ') || compact.includes('ネジ')
+
+  let requestDetails = ''
+  if (hasDoor && hasChain && hasParts) {
+    requestDetails = [
+      '玄関ドアチェーンのドア側部品（黒いボッチ・バネ・ネジ）が外れた。',
+      '入居者では元に戻せないため修理対応。',
+      compact.includes('修理が不可の場合は交換') || compact.includes('修理不可の場合は交換') ? '修理不可の場合は交換対応。' : '',
+    ].filter(Boolean).join('\n')
+  }
+
+  const caution = []
+  if (compact.includes('入居者へ直接ご連絡')) caution.push('入居者へ直接連絡して訪問日時を調整')
+  if (compact.includes('写真を送ってもらうよう依頼中')) caution.push('写真は入居者へ送付依頼中')
+  if (compact.includes('参考写真')) caution.push('参考写真あり')
+  if (compact.includes('修理が不可の場合は交換') || compact.includes('修理不可の場合は交換')) caution.push('修理不可の場合は交換対応')
+
+  return {
+    requestDate: new Date().toLocaleDateString('sv-SE'),
+    company,
+    propertyName,
+    unit,
+    address,
+    residentContact,
+    requestDetails,
+    note: '',
+    status: '未連絡',
+    nextAction: '入居者へ連絡して訪問日時を調整',
+    actionDueDate: '',
+    caution: caution.join('\n'),
+    priority: 'normal',
+  }
+}
+
+
+
+/* M-CROSS_RESIDENT_STEP16_1_PHONE_PDF_AI */
+function normalizeJapanesePhone(value) {
+  let digits = String(value || '').normalize('NFKC').replace(/[^0-9+]/g, '')
+  if (digits.startsWith('+81')) digits = '0' + digits.slice(3)
+  digits = digits.replace(/[^0-9]/g, '')
+  if (/^0[789]0\d{8}$/.test(digits)) return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7)
+  if (/^011\d{7}$/.test(digits)) return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6)
+  if (/^0\d{9,10}$/.test(digits)) return digits
+  return String(value || '').trim()
+}
+
+/* M-CROSS_RESIDENT_STEP16_3_SAFE_FAST_AI */
+function extractJapanesePhoneFromSource(value) {
+  const source = String(value || '')
+    .normalize('NFKC')
+    .replace(/[－ー―‐‑‒–—−]/g, '-')
+
+  const labeledLines = source
+    .split(/\r?\n/)
+    .filter(line => /(連絡先|電話番号|電話|TEL)/i.test(line))
+
+  const findPhone = text => {
+    const mobile = text.match(/0[789]0[\s-]*\d{4}[\s-]*\d{4}/)
+    if (mobile) return normalizeJapanesePhone(mobile[0])
+    const sapporo = text.match(/011[\s-]*\d{3}[\s-]*\d{4}/)
+    if (sapporo) return normalizeJapanesePhone(sapporo[0])
+    return ''
+  }
+
+  for (const line of labeledLines) {
+    const phone = findPhone(line)
+    if (phone) return phone
+  }
+
+  return findPhone(source)
+}
+
+function withResidentAiTimeout(promise, milliseconds = 45000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error('AI解析が45秒を超えたため中止しました')), milliseconds)
+    }),
+  ])
+}
+
+/* M-CROSS_RESIDENT_STEP17_DUPLICATE_CHECK */
+function normalizeResidentDuplicateText(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase('ja')
+    .replace(/[\s　・･、。,.()（）「」『』【】\-]/g, '')
+}
+
+function residentRequestSimilarity(leftValue, rightValue) {
+  const left = normalizeResidentDuplicateText(leftValue)
+  const right = normalizeResidentDuplicateText(rightValue)
+  if (!left || !right) return 0
+  if (left === right) return 1
+  if (left.includes(right) || right.includes(left)) return Math.min(left.length, right.length) / Math.max(left.length, right.length)
+  const makeBigrams = text => {
+    const result = new Set()
+    for (let i = 0; i < text.length - 1; i += 1) result.add(text.slice(i, i + 2))
+    return result
+  }
+  const a = makeBigrams(left)
+  const b = makeBigrams(right)
+  if (!a.size || !b.size) return 0
+  let common = 0
+  a.forEach(token => { if (b.has(token)) common += 1 })
+  return (2 * common) / (a.size + b.size)
+}
+
+function findResidentDuplicate(cases, candidate) {
+  const property = normalizeResidentDuplicateText(candidate?.propertyName)
+  const unit = normalizeResidentDuplicateText(candidate?.unit).replace(/号室$/u, '')
+  if (!property || !unit) return null
+
+  const sameRoom = (Array.isArray(cases) ? cases : []).filter(item => {
+    if (item.completed || item.status === '完了') return false
+    return normalizeResidentDuplicateText(item.propertyName) === property
+      && normalizeResidentDuplicateText(item.unit).replace(/号室$/u, '') === unit
+  })
+  if (!sameRoom.length) return null
+
+  const ranked = sameRoom
+    .map(item => ({ item, score: residentRequestSimilarity(item.requestDetails, candidate.requestDetails) }))
+    .sort((a, b) => b.score - a.score)
+
+  // Same room is always worth warning; similarity >= .35 is labelled as especially similar.
+  return ranked[0] || null
+}
+
 function normalizeResidentCase(value) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
   return {
@@ -194,7 +419,7 @@ function normalizeResidentCase(value) {
     propertyName: source.propertyName || '',
     unit: source.unit || '',
     address: source.address || '',
-    residentContact: source.residentContact || '',
+    residentContact: normalizeJapanesePhone(source.residentContact || ''),
     requestDetails: source.requestDetails || '',
     note: source.note || '',
     status: residentCaseStatuses.includes(source.status) ? source.status : '未連絡',
@@ -3469,6 +3694,15 @@ export default function App() {
   const [residentQuickPasteText, setResidentQuickPasteText] = useState('')
   const [residentQuickPreview, setResidentQuickPreview] = useState(null)
   const [residentQuickError, setResidentQuickError] = useState('')
+  /* M-CROSS_RESIDENT_STEP16_OLLAMA_AI */
+  const [residentAiLoading, setResidentAiLoading] = useState(false)
+  const [residentAiStatus, setResidentAiStatus] = useState('')
+  /* M-CROSS_RESIDENT_CASES_STEP15_PDF_IMPORT */
+  const residentPdfInputRef = useRef(null)
+  const [residentPdfLoading, setResidentPdfLoading] = useState(false)
+  const [residentPdfFileName, setResidentPdfFileName] = useState('')
+  /* M-CROSS_RESIDENT_STEP16_5_PDF_SOURCE_PREVIEW */
+  const [residentPdfSourceText, setResidentPdfSourceText] = useState('')
   /* M-CROSS_RESIDENT_STEP12_MASTER_LINK_V1 */
   const [residentQuickCompanyId, setResidentQuickCompanyId] = useState('')
   const [commonAdditionalWorks, setCommonAdditionalWorks] = useState(() => loadStringList(commonAdditionalWorksKey, defaultCommonAdditionalWorks))
@@ -4082,6 +4316,296 @@ return savedEntries
       window.alert('Excelを読み込めませんでした。元の入居中案件Excelをご確認ください。')
     } finally {
       if (residentExcelInputRef.current) residentExcelInputRef.current.value = ''
+    }
+  }
+
+  async function analyzeResidentTextWithOllama(sourceText) {
+    const safeSourceText = String(sourceText || '').slice(0, 7000)
+    const schema = {
+      type: 'object',
+      properties: {
+        company:{type:'string'}, propertyName:{type:'string'}, unit:{type:'string'}, address:{type:'string'},
+        residentName:{type:'string'}, residentContact:{type:'string'}, requestDetails:{type:'string'},
+        note:{type:'string'}, caution:{type:'string'}, nextAction:{type:'string'},
+        priority:{type:'string',enum:['urgent','normal','low']}
+      },
+      required:['company','propertyName','unit','address','residentName','residentContact','requestDetails','note','caution','nextAction','priority']
+    }
+    const response = await withResidentAiTimeout(fetch('http://localhost:11434/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'qwen3:4b',messages:[{role:'user',content:[
+        '賃貸住宅の修繕依頼から案件情報を抽出してください。説明は不要です。',
+        '参考写真や別物件の記載より依頼対象を優先。不明は空文字。',
+        safeSourceText
+      ].join('\n')}],stream:false,think:false,format:schema,options:{temperature:0,num_predict:220,num_ctx:8192}})
+    }), 45000)
+    if (!response.ok) throw new Error('Ollama HTTP ' + response.status)
+    const payload = await response.json()
+    return JSON.parse(payload?.message?.content || payload?.response || '{}')
+  }
+
+  /* M-CROSS_RESIDENT_STEP16_6_PDF_OCR */
+  async function ocrResidentPdfPages(pdf) {
+    const { createWorker } = await import('tesseract.js')
+    const worker = await createWorker('jpn+eng', 1, {
+      logger: message => {
+        if (message?.status === 'recognizing text') {
+          setResidentAiStatus('PDF画像をOCR中… ' + Math.round((message.progress || 0) * 100) + '%')
+        } else if (message?.status) {
+          setResidentAiStatus('PDF画像をOCR準備中…')
+        }
+      },
+    })
+
+    try {
+      const texts = []
+      const pageLimit = Math.min(pdf.numPages, 3)
+      for (let pageNumber = 1; pageNumber <= pageLimit; pageNumber += 1) {
+        setResidentAiStatus('PDF画像をOCR中… ' + pageNumber + '/' + pageLimit + 'ページ')
+        const page = await pdf.getPage(pageNumber)
+        const viewport = page.getViewport({ scale: 1.8 })
+        const canvas = document.createElement('canvas')
+        const context = canvas.getContext('2d', { willReadFrequently: true })
+        if (!context) continue
+        canvas.width = Math.ceil(viewport.width)
+        canvas.height = Math.ceil(viewport.height)
+        await page.render({ canvasContext: context, viewport }).promise
+        const result = await worker.recognize(canvas)
+        const pageText = String(result?.data?.text || '').trim()
+        if (pageText) texts.push(pageText)
+        canvas.width = 1
+        canvas.height = 1
+      }
+      return texts.join('\n')
+    } finally {
+      await worker.terminate()
+    }
+  }
+
+  async function importResidentCasePdf(fileValue) {
+    if (!fileValue) return
+    /* M-CROSS_RESIDENT_STEP16_2_PDF_CLEAN_FLOW */
+    setResidentQuickPasteText('')
+    setResidentPdfSourceText('')
+    setResidentQuickPreview(null)
+    setResidentQuickError('')
+    setResidentAiStatus('PDFを読み取っています…')
+    setResidentPdfLoading(true)
+    setResidentPdfFileName(fileValue.name || '')
+    setResidentQuickError('')
+    setResidentQuickPreview(null)
+
+    try {
+      /* M-CROSS_RESIDENT_STEP15_PDFJS_V6_FIX */
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+      const workerUrl = new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url).toString()
+      pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
+      const bytes = new Uint8Array(await fileValue.arrayBuffer())
+      const pdf = await pdfjs.getDocument({ data: bytes }).promise
+      const pageTexts = []
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber)
+        const content = await page.getTextContent()
+        const text = content.items
+          .map(item => typeof item.str === 'string' ? item.str : '')
+          .filter(Boolean)
+          .join(' ')
+          .trim()
+        if (text) pageTexts.push(text)
+      }
+
+      let extractedText = pageTexts.join('\n').trim()
+      const compactExtractedText = extractedText.replace(/[\s　]+/g, '')
+      if (compactExtractedText.length < 40) {
+        setResidentAiStatus('文字レイヤーが不足しているためOCRへ切り替えます…')
+        extractedText = await ocrResidentPdfPages(pdf)
+      }
+      setResidentPdfSourceText(extractedText)
+      if (!extractedText.trim()) {
+        setResidentAiStatus('')
+        setResidentQuickError('PDFの文字抽出とOCRの両方で文章を取得できませんでした。元PDFをご確認ください。')
+        setShowResidentQuickPaste(true)
+        return
+      }
+
+      // まず従来解析を行い、その後ローカルAI解析で補正します。
+      const orderParsed = parseResidentOrderPdfText(extractedText, mergedPropertyMaster, fileValue.name || '')
+      const genericParsed = parseResidentRequestText(extractedText, mergedPropertyMaster)
+      const parsed = {
+        ...genericParsed,
+        ...Object.fromEntries(
+          Object.entries(orderParsed).filter(([, value]) => value !== '' && value != null)
+        ),
+      }
+      let aiParsed = null
+      try {
+        setResidentAiStatus('PDFをローカルAIで解析しています…')
+        aiParsed = await analyzeResidentTextWithOllama(extractedText)
+      } catch (aiError) {
+        console.warn('PDF AI解析をスキップ:', aiError)
+      }
+
+      const aiMatchedProperty = aiParsed?.propertyName
+        ? [...mergedPropertyMaster.properties].sort((a,b)=>String(b.name||'').length-String(a.name||'').length).find(item => {
+            const n = value => String(value||'').normalize('NFKC').replace(/[\s　・･]+/g,'').replace(/べ/g,'ベ').toLocaleLowerCase('ja')
+            const left=n(item.name), right=n(aiParsed.propertyName)
+            return left && right && (left===right || left.includes(right) || right.includes(left))
+          })
+        : null
+
+      if (aiParsed) {
+        parsed.company = aiMatchedProperty?.company || aiParsed.company || parsed.company
+        parsed.propertyName = aiMatchedProperty?.name || aiParsed.propertyName || parsed.propertyName
+        parsed.unit = aiParsed.unit || parsed.unit
+        parsed.address = aiMatchedProperty?.address || aiParsed.address || parsed.address
+        parsed.residentContact = extractJapanesePhoneFromSource(extractedText)
+          || normalizeJapanesePhone(parsed.residentContact || '')
+        parsed.requestDetails = aiParsed.requestDetails || parsed.requestDetails
+        parsed.note = [aiParsed.residentName ? '入居者：'+aiParsed.residentName : '', aiParsed.note || '', parsed.note || ''].filter(Boolean).join('\n')
+        parsed.caution = aiParsed.caution || parsed.caution
+        parsed.nextAction = aiParsed.nextAction || parsed.nextAction
+        parsed.priority = ['urgent','normal','low'].includes(aiParsed.priority) ? aiParsed.priority : parsed.priority
+        setResidentAiStatus('PDFのAI解析完了。内容を確認してください。')
+      }
+
+      setResidentQuickPasteText('')
+      setResidentQuickPreview({
+        ...parsed,
+        note: [parsed.note, '取込元PDF：' + (fileValue.name || 'PDF')].filter(Boolean).join('\n'),
+      })
+      setResidentQuickCompanyId(
+        mergedPropertyMaster.companies.find(companyItem => companyItem.name === parsed.company)?.id || ''
+      )
+      setResidentQuickError(
+        !parsed.propertyName || !parsed.requestDetails
+          ? '一部の項目を読み取れませんでした。登録前に内容を確認・修正してください。'
+          : ''
+      )
+      setShowResidentQuickPaste(true)
+      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+    } catch (error) {
+      console.error(error)
+      setResidentQuickError('PDFを読み込めませんでした：' + (error?.message || String(error)))
+      setShowResidentQuickPaste(true)
+    } finally {
+      setResidentPdfLoading(false)
+      setResidentAiLoading(false)
+      if (residentPdfInputRef.current) residentPdfInputRef.current.value = ''
+    }
+  }
+
+  async function analyzeResidentRequestWithOllama() {
+    const sourceText = String(residentQuickPasteText || '').trim()
+    if (!sourceText) {
+      setResidentQuickError('先に依頼文またはPDFの文字を入力してください。')
+      return
+    }
+
+    setResidentAiLoading(true)
+    setResidentAiStatus('ローカルAIが内容を整理しています…')
+    setResidentQuickError('')
+
+    const schema = {
+      type: 'object',
+      properties: {
+        company: { type: 'string' },
+        propertyName: { type: 'string' },
+        unit: { type: 'string' },
+        address: { type: 'string' },
+        residentName: { type: 'string' },
+        residentContact: { type: 'string' },
+        requestDetails: { type: 'string' },
+        note: { type: 'string' },
+        caution: { type: 'string' },
+        nextAction: { type: 'string' },
+        priority: { type: 'string', enum: ['urgent', 'normal', 'low'] },
+      },
+      required: [
+        'company', 'propertyName', 'unit', 'address', 'residentName',
+        'residentContact', 'requestDetails', 'note', 'caution',
+        'nextAction', 'priority',
+      ],
+    }
+
+    const prompt = [
+      'あなたは賃貸住宅の修繕依頼をM-Crossへ登録する抽出係です。',
+      '推論・説明・Markdownは出力せず、指定されたJSONスキーマだけ返してください。',
+      '本文に参考写真や別物件名がある場合、依頼対象の物件を優先してください。',
+      '不明な項目は空文字にしてください。',
+      'priorityは、漏水・施錠不能・電気設備停止など緊急性が高ければurgent、通常はnormal、時期未定ならlowです。',
+      '',
+      '【依頼文】',
+      sourceText,
+    ].join('\n')
+
+    try {
+      const response = await fetch('http://localhost:11434/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'qwen3:4b',
+          messages: [{ role: 'user', content: prompt }],
+          stream: false,
+          think: false,
+          format: schema,
+          options: { temperature: 0 },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Ollama HTTP ' + response.status)
+      }
+
+      const payload = await response.json()
+      const content = payload?.message?.content || payload?.response || ''
+      const parsed = JSON.parse(content)
+
+      const matchedProperty = [...mergedPropertyMaster.properties]
+        .sort((left, right) => String(right.name || '').length - String(left.name || '').length)
+        .find(item => {
+          const normalize = value => String(value || '').normalize('NFKC').replace(/[\s　・･]+/g, '').replace(/べ/g, 'ベ').toLocaleLowerCase('ja')
+          const aiName = normalize(parsed.propertyName)
+          const masterName = normalize(item.name)
+          return aiName && masterName && (aiName === masterName || aiName.includes(masterName) || masterName.includes(aiName))
+        })
+
+      const companyName = matchedProperty?.company || parsed.company || ''
+      const preview = {
+        requestDate: new Date().toLocaleDateString('sv-SE'),
+        company: companyName,
+        propertyName: matchedProperty?.name || parsed.propertyName || '',
+        unit: parsed.unit || '',
+        address: matchedProperty?.address || parsed.address || '',
+        residentContact: extractJapanesePhoneFromSource(sourceText)
+          || normalizeJapanesePhone(parsed.residentContact || ''),
+        requestDetails: parsed.requestDetails || '',
+        note: [
+          parsed.residentName ? '入居者：' + parsed.residentName : '',
+          parsed.note || '',
+        ].filter(Boolean).join('\n'),
+        status: '未連絡',
+        nextAction: parsed.nextAction || '入居者へ連絡',
+        actionDueDate: '',
+        caution: parsed.caution || '',
+        priority: ['urgent', 'normal', 'low'].includes(parsed.priority) ? parsed.priority : 'normal',
+      }
+
+      setResidentQuickPreview(preview)
+      setResidentQuickCompanyId(
+        mergedPropertyMaster.companies.find(item => item.name === companyName)?.id || ''
+      )
+      setResidentAiStatus('AI読取完了。内容を確認してから登録してください。')
+    } catch (error) {
+      console.error(error)
+      const message = String(error?.message || error)
+      const hint = message.includes('Failed to fetch')
+        ? 'Ollamaへ接続できません。Ollamaの起動とOLLAMA_ORIGINS設定を確認してください。'
+        : 'ローカルAI解析に失敗しました：' + message
+      setResidentQuickError(hint)
+      setResidentAiStatus('')
+    } finally {
+      setResidentAiLoading(false)
     }
   }
 
@@ -5225,6 +5749,52 @@ return savedEntries
 /* M-CROSS_RESIDENT_STEP12_MASTER_LINK_V1_STYLE */
 .residentQuickPreview select{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(100,120,150,.28);border-radius:12px;background:#fff;color:inherit;font:inherit}
 
+/* M-CROSS_RESIDENT_CASES_STEP14_DETAIL_PAGE_STYLE */
+.residentCaseDetailPage{position:fixed;inset:0;z-index:1200;overflow-y:auto;background:var(--page-bg,#f6f5f1);padding:18px max(12px,calc((100vw - 760px)/2));overscroll-behavior:contain}.residentCaseDetailPage>.residentCaseDetail{margin:0;min-height:calc(100vh - 36px);box-sizing:border-box}.residentCaseDetailPage .residentCaseDetailTop{position:sticky;top:0;z-index:4;padding:8px 0 10px;background:inherit}.theme-dark .residentCaseDetailPage,.theme-cyber .residentCaseDetailPage,.theme-luxury .residentCaseDetailPage,.theme-retro .residentCaseDetailPage,.theme-galaxy .residentCaseDetailPage{background:#07101c}@media(max-width:620px){.residentCaseDetailPage{padding:10px}.residentCaseDetailPage>.residentCaseDetail{min-height:calc(100vh - 20px)}.residentCaseDetailPage .residentCaseDetailTop{padding-top:4px}}
+
+/* M-CROSS_RESIDENT_CASES_STEP15_PDF_IMPORT_STYLE */
+.residentImportActions .residentPdfImportButton{width:auto;margin:0}.residentPdfSource{margin:0;padding:8px 10px;border-radius:10px;background:rgba(75,130,205,.08);color:#5f6f85;font-size:12px;font-weight:800}.residentPdfImportButton:disabled{opacity:.55;cursor:progress}@media(max-width:620px){.residentImportActions .residentPdfImportButton{width:100%}}
+
+/* M-CROSS_RESIDENT_STEP16_OLLAMA_AI_STYLE */
+.residentAiReadButton{width:100%;margin:0}.residentAiReadButton:disabled{opacity:.55;cursor:not-allowed}.residentAiStatus{margin:0;padding:9px 11px;border-radius:10px;background:rgba(64,145,100,.10);color:#34704c;font-size:12px;font-weight:800}.theme-dark .residentAiStatus,.theme-cyber .residentAiStatus,.theme-luxury .residentAiStatus,.theme-retro .residentAiStatus,.theme-galaxy .residentAiStatus{color:#9ce4b8}
+
+/* M-CROSS_RESIDENT_STEP16_5_PDF_SOURCE_PREVIEW_STYLE */
+.residentSourceCompare{display:grid;gap:10px;margin:2px 0 12px}.residentSourceBox{border:1px solid rgba(100,120,150,.25);border-radius:12px;background:rgba(255,255,255,.7);overflow:hidden}.residentSourceBox summary{padding:10px 12px;font-weight:900;cursor:pointer}.residentSourceBox pre{margin:0;padding:12px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;border-top:1px solid rgba(100,120,150,.18);font:inherit;font-size:12px;line-height:1.6}.theme-dark .residentSourceBox,.theme-cyber .residentSourceBox,.theme-luxury .residentSourceBox,.theme-retro .residentSourceBox,.theme-galaxy .residentSourceBox{background:rgba(6,14,26,.75)}
+
+/* M-CROSS_RESIDENT_STEP16_8_REMOVE_PDF_IMPORT */
+.residentPdfSource{display:none!important}
+
+/* M-CROSS_TOP_SPACING_FIX_V1 */
+/* トップ画面の入力ブロックと操作ボタンの縦リズムを揃える */
+.main .card > .primary,
+.main .card > .secondaryButton,
+.main .card > .oneDriveSyncPanel,
+.main .card > .residentCasesEntryButton{margin-top:12px!important;margin-bottom:0!important}
+.main .card > .primary + .secondaryButton,
+.main .card > .secondaryButton + .secondaryButton,
+.main .card > .secondaryButton + .oneDriveSyncPanel,
+.main .card > .oneDriveSyncPanel + .residentCasesEntryButton,
+.main .card > .residentCasesEntryButton + .secondaryButton{margin-top:10px!important}
+/* 地図ボタンのあとに号室見出しが食い込まないよう余白を確保 */
+.main .card > button.primary + label,
+.main .card > button.secondaryButton + label,
+.main .card > button + .fieldLabel,
+.main .card > button + h2,
+.main .card > button + h3{margin-top:22px!important}
+/* 現場メモ後の検索ボタンと採寸開始を少し分離 */
+.main .card textarea + small{display:block;margin-top:7px}
+.main .card .similarSitesButton{margin-top:14px!important;margin-bottom:6px!important}
+/* OneDrive自身の外側余白は親側で管理 */
+.main .card > .oneDriveSyncPanel{margin-bottom:0!important}
+@media(max-width:620px){
+  .main .card > .primary,
+  .main .card > .secondaryButton,
+  .main .card > .oneDriveSyncPanel,
+  .main .card > .residentCasesEntryButton{margin-top:10px!important}
+  .main .card > button.primary + label,
+  .main .card > button.secondaryButton + label{margin-top:20px!important}
+}
+
 /* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
 .keypadEnterRow {
   grid-column: 1 / -1;
@@ -5898,6 +6468,7 @@ return savedEntries
                     <button className="secondaryButton residentQuickPasteButton" type="button" onClick={() => {
                       setResidentQuickPasteText(''); setResidentQuickPreview(null); setResidentQuickError(''); setShowResidentQuickPaste(true)
                     }}>📋 依頼文から簡単入力</button>
+                    
                     <input ref={residentExcelInputRef} type="file" accept=".xlsx,.xlsm" hidden onChange={event => importResidentCasesExcel(event.target.files?.[0])} />
                   </div>
                 </div>
@@ -5907,7 +6478,7 @@ return savedEntries
                 {showResidentQuickPaste && (
                   <section className="card residentQuickPasteCard">
                     <div className="residentCaseFormTitle"><div><p className="eyebrow">QUICK INPUT</p><h2>依頼文から簡単入力</h2></div><button className="back" type="button" onClick={() => setShowResidentQuickPaste(false)}>閉じる</button></div>
-                    <p className="subtitle">依頼メールやメッセージをそのまま貼り付けます。</p>
+                    <p className="subtitle">PDFやメールの必要な文章をコピーして貼り付け、ローカルAIで整理します。</p>
                     <textarea rows="11" value={residentQuickPasteText} onChange={e => { setResidentQuickPasteText(e.target.value); setResidentQuickPreview(null); setResidentQuickError('') }} placeholder="依頼文を貼り付け" />
                     <button className="secondaryButton" type="button" onClick={() => {
                       const parsed = parseResidentRequestText(residentQuickPasteText, mergedPropertyMaster)
@@ -5915,8 +6486,15 @@ return savedEntries
                       setResidentQuickCompanyId(mergedPropertyMaster.companies.find(companyItem => companyItem.name === parsed.company)?.id || '')
                       setResidentQuickError(!parsed.propertyName || !parsed.requestDetails ? '読み取れない項目があります。確認して修正してください。' : '')
                     }}>内容を読み取る</button>
+                    <button className="primary residentAiReadButton" type="button" disabled={residentAiLoading || !residentQuickPasteText.trim()} onClick={analyzeResidentRequestWithOllama}>
+                      {residentAiLoading ? '🤖 AI解析中…' : '🤖 ローカルAIで読み取る'}
+                    </button>
+                    {residentAiStatus && <p className="residentAiStatus" role="status">{residentAiStatus}</p>}
                     {residentQuickError && <p className="saveStatus">{residentQuickError}</p>}
                     {residentQuickPreview && <div className="residentQuickPreview">
+                      <div className="residentSourceCompare">
+                        {!residentPdfSourceText && residentQuickPasteText && <details open className="residentSourceBox"><summary>貼り付けた元文章</summary><pre>{residentQuickPasteText}</pre></details>}
+                      </div>
                       <h3>登録前の確認</h3>
                       <div className="residentCaseFormGrid">
                         <label><span>管理会社</span><select value={residentQuickCompanyId || mergedPropertyMaster.companies.find(companyItem => companyItem.name === residentQuickPreview.company)?.id || ''} onChange={e => {
@@ -5946,6 +6524,20 @@ return savedEntries
                         const propertyName = String(residentQuickPreview.propertyName || '').trim()
                         const requestDetails = String(residentQuickPreview.requestDetails || '').trim()
                         if (!propertyName || !requestDetails) { setResidentQuickError('物件名と依頼内容を確認してください。'); return }
+                        const duplicate = findResidentDuplicate(residentCases, { ...residentQuickPreview, propertyName, requestDetails })
+                        if (duplicate) {
+                          const existing = duplicate.item
+                          const similarText = duplicate.score >= 0.35 ? '\n依頼内容も似ています。' : '\n同じ部屋の未完了案件があります。'
+                          const proceed = window.confirm(
+                            '⚠ 重複の可能性があります\n\n'
+                            + (existing.propertyName || '') + ' ' + (existing.unit || '') + '号室\n'
+                            + '進捗：' + (existing.status || '未設定') + '\n'
+                            + '依頼：' + (existing.requestDetails || '未入力')
+                            + similarText
+                            + '\n\nそれでも新規登録しますか？'
+                          )
+                          if (!proceed) { setSelectedResidentCaseId(existing.id); setShowResidentQuickPaste(false); return }
+                        }
                         const now = new Date().toISOString()
                         const item = normalizeResidentCase({...residentQuickPreview, id:createResidentCaseId(), propertyName, requestDetails, history:[{id:createResidentCaseId(),at:now,status:'簡単入力',memo:'依頼文から登録'}], createdAt:now, updatedAt:now, lastActionAt:now})
                         setResidentCases(prev => [item, ...prev]); setResidentQuickPasteText(''); setResidentQuickPreview(null); setResidentQuickError(''); setShowResidentQuickPaste(false)
@@ -5968,6 +6560,21 @@ return savedEntries
                       if (!propertyName || !unitValue || !details) {
                         setResidentCaseFormError('物件名・号室・依頼内容を入力してください')
                         return
+                      }
+                      const candidateCase = { ...residentCaseForm, propertyName, unit: unitValue, requestDetails: details }
+                      const duplicate = findResidentDuplicate(residentCases, candidateCase)
+                      if (duplicate) {
+                        const existing = duplicate.item
+                        const similarText = duplicate.score >= 0.35 ? '\n依頼内容も似ています。' : '\n同じ部屋の未完了案件があります。'
+                        const proceed = window.confirm(
+                          '⚠ 重複の可能性があります\n\n'
+                          + (existing.propertyName || '') + ' ' + (existing.unit || '') + '号室\n'
+                          + '進捗：' + (existing.status || '未設定') + '\n'
+                          + '依頼：' + (existing.requestDetails || '未入力')
+                          + similarText
+                          + '\n\nそれでも新規登録しますか？'
+                        )
+                        if (!proceed) { setSelectedResidentCaseId(existing.id); setShowResidentCaseForm(false); return }
                       }
                       const now = new Date().toISOString()
                       const nextCase = normalizeResidentCase({
@@ -6147,7 +6754,7 @@ return savedEntries
                     ) : (
                       <div className="residentCaseList">
                         {visibleResidentCases.map(item => (
-                          <article className={`residentCaseCard${overdueCases.some(caseItem => caseItem.id === item.id) ? ' overdue' : ''}${todayVisitCases.some(caseItem => caseItem.id === item.id) ? ' todayVisit' : ''}`} key={item.id} role="button" tabIndex={0} onClick={() => { setSelectedResidentCaseId(item.id); setResidentHistoryMemo('') }} onKeyDown={event => { if (event.key === 'Enter') { setSelectedResidentCaseId(item.id); setResidentHistoryMemo('') } }}>
+                          <article className={`residentCaseCard${overdueCases.some(caseItem => caseItem.id === item.id) ? ' overdue' : ''}${todayVisitCases.some(caseItem => caseItem.id === item.id) ? ' todayVisit' : ''}`} key={item.id} role="button" tabIndex={0} onClick={() => { setSelectedResidentCaseId(item.id); setResidentHistoryMemo(''); requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' })) }} onKeyDown={event => { if (event.key === 'Enter') { setSelectedResidentCaseId(item.id); setResidentHistoryMemo(''); requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' })) } }}>
                             <div className="residentCaseCardTop">
                               <strong>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</strong>
                               <span>{item.status || '未連絡'}</span>
@@ -6178,10 +6785,12 @@ return savedEntries
                       const item = residentCases.find(caseItem => caseItem.id === selectedResidentCaseId)
                       if (!item) return null
                       const history = [...(item.history || [])].sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))
-                      return <section className="card residentCaseDetail">
+                      return <section className="residentCaseDetailPage" aria-label="入居中案件詳細">
+                        /* M-CROSS_RESIDENT_CASES_STEP14_DETAIL_PAGE */
+                        <div className="card residentCaseDetail">
                         <div className="residentCaseDetailTop">
                           <div><p className="eyebrow">CASE DETAIL</p><h2>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</h2></div>
-                          <button className="back" type="button" onClick={() => setSelectedResidentCaseId('')}>閉じる</button>
+                          <button className="back" type="button" onClick={() => { setSelectedResidentCaseId(''); requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' })) }}>← 案件一覧へ</button>
                         </div>
                         <p className="residentCaseDetailRequest">{item.requestDetails || '依頼内容未入力'}</p>
                         <div className="residentCaseMetaBadges">
@@ -6295,6 +6904,7 @@ return savedEntries
                         </div>
                         <div className="residentDangerZone">
                           <button className="dangerButton residentDeleteCaseButton" type="button" onClick={() => deleteResidentCase(item.id)}>この案件を削除</button>
+                        </div>
                         </div>
                       </section>
                     })()}

@@ -12,8 +12,10 @@
   "dependencies": {
     "@azure/msal-browser": "^5.26.0",
     "exceljs": "^4.4.0",
+    "pdfjs-dist": "^6.4.299",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "tesseract.js": "^7.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
