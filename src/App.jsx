@@ -5887,6 +5887,76 @@ return savedEntries
   .settingsMain{width:min(1260px,calc(100vw - 80px))!important}
 }
 
+/* M-CROSS_STEP18_3_DETAIL_OVERLAY_CLEAN */
+/* 案件詳細などの独立ページを、背後の一覧が透けない本当の画面として表示 */
+.residentCaseDetailPage{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100vh!important;
+  max-width:none!important;
+  margin:0!important;
+  transform:none!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  z-index:9999!important;
+  background:#eef1f6!important;
+  isolation:isolate;
+}
+.residentCaseDetailPage::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:#eef1f6;
+}
+.residentCaseDetailPage>.residentCaseDetail{
+  width:min(1120px,calc(100vw - 48px))!important;
+  max-width:1120px!important;
+  margin:0 auto!important;
+}
+.theme-dark .residentCaseDetailPage,
+.theme-cyber .residentCaseDetailPage,
+.theme-luxury .residentCaseDetailPage,
+.theme-retro .residentCaseDetailPage,
+.theme-galaxy .residentCaseDetailPage,
+.theme-dark .residentCaseDetailPage::before,
+.theme-cyber .residentCaseDetailPage::before,
+.theme-luxury .residentCaseDetailPage::before,
+.theme-retro .residentCaseDetailPage::before,
+.theme-galaxy .residentCaseDetailPage::before{background:#050b14!important}
+@media(max-width:620px){
+  .residentCaseDetailPage>.residentCaseDetail{width:calc(100vw - 20px)!important;margin:0 auto!important}
+}
+
+/* M-CROSS_STEP18_4_RESIDENT_CENTER_FIX */
+@media (min-width:980px){
+  /* residentCasesHome had its own width rule, so center the resident workspace independently. */
+  .residentCasesHome{
+    position:relative!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-sizing:border-box!important;
+  }
+  .residentQuickPasteCard,
+  .residentCaseFormCard{
+    width:100%!important;
+    max-width:100%!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    box-sizing:border-box!important;
+  }
+}
+@media (min-width:980px) and (max-width:1249px){
+  .residentCasesHome{width:calc(100vw - 40px)!important;max-width:1080px!important}
+}
+@media (min-width:1250px){
+  .residentCasesHome{width:min(1540px,calc(100vw - 80px))!important;max-width:1540px!important}
+}
+
 /* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
 .keypadEnterRow {
   grid-column: 1 / -1;
@@ -6878,7 +6948,6 @@ return savedEntries
                       if (!item) return null
                       const history = [...(item.history || [])].sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))
                       return <section className="residentCaseDetailPage" aria-label="入居中案件詳細">
-                        /* M-CROSS_RESIDENT_CASES_STEP14_DETAIL_PAGE */
                         <div className="card residentCaseDetail">
                         <div className="residentCaseDetailTop">
                           <div><p className="eyebrow">CASE DETAIL</p><h2>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</h2></div>
