@@ -105,6 +105,7 @@ const residentCaseStatuses = [
   '発注（未連絡）',
   '発注（不通）',
   '発注（工事日確定）',
+  '進行中',
   '完了（未報告）',
   '完了',
 ]
@@ -130,6 +131,7 @@ function getResidentNextAction(status) {
     '発注（未連絡）': '入居者へ工事日を連絡',
     '発注（不通）': '入居者へ再連絡',
     '発注（工事日確定）': '工事へ訪問',
+    '進行中': '工事を進める',
     '完了（未報告）': '管理会社へ完了報告',
     '完了': '対応完了',
   }
@@ -7182,6 +7184,7 @@ return savedEntries
                   const attentionCases = activeCases.filter(item => attentionCaseIds.has(item.id))
                   const contactCases = activeCases.filter(item => ['未連絡', '不通', '不通（メール送信）', '発注（未連絡）', '発注（不通）'].includes(item.status))
                   const orderCases = activeCases.filter(item => item.status === '見積提出済（発注待ち）')
+                  const inProgressCases = activeCases.filter(item => item.status === '進行中')
                   const unreportedCases = activeCases.filter(item => item.status === '完了（未報告）')
                   const completedCases = residentCases.filter(item => item.completed || item.status === '完了')
                   const normalizeResidentSearch = value => String(value || '').toLocaleLowerCase('ja').replace(/[\s　]+/g, '')
@@ -7195,6 +7198,7 @@ return savedEntries
                     if (residentCaseFilter === 'contact' && !contactCases.some(caseItem => caseItem.id === item.id)) return false
                     if (residentCaseFilter === 'visit' && !(item.siteVisitAt || item.workVisitAt)) return false
                     if (residentCaseFilter === 'order' && item.status !== '見積提出済（発注待ち）') return false
+                    if (residentCaseFilter === 'inProgress' && item.status !== '進行中') return false
                     if (residentCaseFilter === 'unreported' && item.status !== '完了（未報告）') return false
                     if (residentCaseFilter === 'overdue' && !overdueCases.some(caseItem => caseItem.id === item.id)) return false
                     if (residentCaseFilter === 'today' && !todayActionCases.some(caseItem => caseItem.id === item.id)) return false
@@ -7239,6 +7243,7 @@ return savedEntries
                       <button type="button" className={`residentDashboardCard visit${residentCaseFilter === 'visit' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('visit'); setResidentCaseVisibleCount(10) }}><span>予定あり</span><strong>{activeCases.filter(item => item.siteVisitAt || item.workVisitAt).length}</strong></button>
                       <button type="button" className={`residentDashboardCard contact${residentCaseFilter === 'contact' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('contact'); setResidentCaseVisibleCount(10) }}><span>未連絡・再連絡</span><strong>{contactCases.length}</strong></button>
                       <button type="button" className={`residentDashboardCard order${residentCaseFilter === 'order' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('order'); setResidentCaseVisibleCount(10) }}><span>発注待ち</span><strong>{orderCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard progress${residentCaseFilter === 'inProgress' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('inProgress'); setResidentCaseVisibleCount(10) }}><span>進行中</span><strong>{inProgressCases.length}</strong></button>
                       <button type="button" className={`residentDashboardCard report${residentCaseFilter === 'unreported' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('unreported'); setResidentCaseVisibleCount(10) }}><span>完了・未報告</span><strong>{unreportedCases.length}</strong></button>
                     </div>
 
@@ -7309,6 +7314,7 @@ return savedEntries
                           <button type="button" onClick={() => applyResidentQuickStatus(item.id, '不通（メール送信）')}>メール送信済</button>
                           <button type="button" onClick={() => applyResidentQuickStatus(item.id, '連絡済（入居者のスケジュール確認待ち）')}>日程回答待ち</button>
                           <button type="button" onClick={() => applyResidentQuickStatus(item.id, '見積提出済（発注待ち）')}>発注待ち</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '進行中')}>進行中</button>
                           <button type="button" onClick={() => applyResidentQuickStatus(item.id, '完了（未報告）')}>完了・未報告</button>
                           <button type="button" onClick={() => applyResidentQuickStatus(item.id, '完了')}>完了</button>
                           {item.isOnHold || item.status === '保留' ? (
