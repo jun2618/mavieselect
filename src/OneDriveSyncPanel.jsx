@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { PublicClientApplication } from '@azure/msal-browser'
 
 const MARKER = 'M-CROSS_ONEDRIVE_SYNC_INTEGRATION_V1'
 const storagePrefix = 'm-cross:'
 const residentCasesStorageKey = 'mcross_resident_cases_v1'
 const RESIDENT_SYNC_MARKER = 'M-CROSS_RESIDENT_ONEDRIVE_SYNC_V1'
+const residentPcMasterKey = 'mcross_resident_pc_master_v1'
+const residentAutoSaveDelay = 2500
+const AUTO_SAVE_MARKER = 'M-CROSS_RESIDENT_AUTO_SAVE_V1'
 const graphScopes = ['User.Read', 'Files.ReadWrite.AppFolder']
 const backupFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-backup.json:/content'
 
@@ -103,6 +106,10 @@ export default function OneDriveSyncPanel() {
   const [comparison, setComparison] = useState([])
   const [selectedKeys, setSelectedKeys] = useState([])
   const [expanded, setExpanded] = useState(false)
+  const [residentAutoStatus, setResidentAutoStatus] = useState('')
+  const residentAutoTimerRef = useRef(null)
+  const residentAutoRunningRef = useRef(false)
+  const residentAutoPendingRef = useRef(false)
   const localEntries = useMemo(() => readLocalEntries(), [status, expanded])
 
   useEffect(() => {
@@ -128,6 +135,68 @@ export default function OneDriveSyncPanel() {
       return (await msal.acquireTokenPopup({ scopes: graphScopes, account: activeAccount })).accessToken
     }
   }
+
+  /* M-CROSS_RESIDENT_AUTO_SAVE_V1 */
+  async function autoUploadResidentCases() {
+    if (localStorage.getItem(residentPcMasterKey) !== 'true') return
+    if (residentAutoRunningRef.current) {
+      residentAutoPendingRef.current = true
+      return
+    }
+
+    residentAutoRunningRef.current = true
+    residentAutoPendingRef.current = false
+    try {
+      setResidentAutoStatus('入居中案件をOneDriveへ自動保存中…')
+      const token = await getToken()
+      const localCases = readResidentCases()
+      const cloud = await fetchCloudBackup()
+      const payload = {
+        ...cloud,
+        fileType: 'm-cross-backup',
+        version: Math.max(Number(cloud.version) || 1, 2),
+        exportedAt: new Date().toISOString(),
+        entries: Array.isArray(cloud.entries) ? cloud.entries : [],
+        entryCount: Array.isArray(cloud.entries) ? cloud.entries.length : 0,
+        residentCases: localCases,
+        residentCaseCount: localCases.length,
+        residentSyncMarker: RESIDENT_SYNC_MARKER,
+        residentMaster: 'pc',
+      }
+      const response = await fetch(backupFileUrl, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(payload, null, 2),
+      })
+      if (!response.ok) throw new Error('HTTP ' + response.status)
+      setCloudBackup(payload)
+      setResidentAutoStatus('☁ 入居中案件 ' + localCases.length + '件 OneDrive保存済み')
+    } catch (error) {
+      console.error(error)
+      setResidentAutoStatus('⚠ OneDrive自動保存失敗: ' + (error?.message || String(error)))
+    } finally {
+      residentAutoRunningRef.current = false
+      if (residentAutoPendingRef.current) {
+        residentAutoPendingRef.current = false
+        window.clearTimeout(residentAutoTimerRef.current)
+        residentAutoTimerRef.current = window.setTimeout(autoUploadResidentCases, residentAutoSaveDelay)
+      }
+    }
+  }
+
+  useEffect(() => {
+    function handleResidentCasesSaved() {
+      if (localStorage.getItem(residentPcMasterKey) !== 'true') return
+      window.clearTimeout(residentAutoTimerRef.current)
+      setResidentAutoStatus('入居中案件の変更を保存待ち…')
+      residentAutoTimerRef.current = window.setTimeout(autoUploadResidentCases, residentAutoSaveDelay)
+    }
+    window.addEventListener('mcross:resident-cases-saved', handleResidentCasesSaved)
+    return () => {
+      window.removeEventListener('mcross:resident-cases-saved', handleResidentCasesSaved)
+      window.clearTimeout(residentAutoTimerRef.current)
+    }
+  }, [])
 
   async function signIn() {
     try {
@@ -205,8 +274,10 @@ export default function OneDriveSyncPanel() {
       })
       if (!response.ok) throw new Error('入居中案件の保存失敗 HTTP ' + response.status)
 
+      localStorage.setItem(residentPcMasterKey, 'true')
       setCloudBackup(payload)
-      setStatus('PC → OneDrive 保存成功: 入居中案件 ' + localCases.length + '件')
+      setResidentAutoStatus('☁ PC自動保存：有効')
+      setStatus('PC → OneDrive 保存成功: 入居中案件 ' + localCases.length + '件。以後、このPCでは自動保存します。')
     } catch (error) {
       console.error(error)
       setStatus('入居中案件の保存失敗: ' + (error?.message || String(error)))
@@ -230,7 +301,9 @@ export default function OneDriveSyncPanel() {
         'この端末にある入居中案件 ' + localCases.length + '件は置き換えられます。続けますか？'
       )) return
 
+      localStorage.setItem(residentPcMasterKey, 'false')
       localStorage.setItem(residentCasesStorageKey, JSON.stringify(cloudCases))
+      setResidentAutoStatus('📱 この端末は受信専用です')
       setCloudBackup(cloud)
       setStatus('OneDrive → この端末 取得成功: 入居中案件 ' + cloudCases.length + '件。画面を更新します。')
       window.setTimeout(() => window.location.reload(), 500)
@@ -331,6 +404,7 @@ export default function OneDriveSyncPanel() {
               <button className="oneDriveAction residentSyncAction" type="button" onClick={downloadResidentCasesFromOneDrive}>スマホ・確認端末：入居中案件をOneDriveから取得</button>
             </>
           )}
+          {residentAutoStatus && <div className="oneDriveStatus" data-auto-save-marker={AUTO_SAVE_MARKER}>{residentAutoStatus}</div>}
           {status && <div className="oneDriveStatus">{status}</div>}
           {cloudBackup && <small className="oneDriveMeta">OneDrive: {cloudBackup.entries.length}件 / 入居中案件 {Array.isArray(cloudBackup.residentCases) ? cloudBackup.residentCases.length : 0}件 / 保存日時 {cloudBackup.exportedAt || '未保存'}</small>}
           {comparison.length > 0 && (

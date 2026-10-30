@@ -502,6 +502,10 @@ function saveResidentCases(cases) {
       residentCasesStorageKey,
       JSON.stringify(Array.isArray(cases) ? cases : [])
     )
+    /* M-CROSS_RESIDENT_AUTO_SAVE_V1 */
+    window.dispatchEvent(new CustomEvent('mcross:resident-cases-saved', {
+      detail: { count: Array.isArray(cases) ? cases.length : 0, savedAt: new Date().toISOString() },
+    }))
     return true
   } catch (error) {
     console.error('入居中案件を保存できませんでした。', error)
