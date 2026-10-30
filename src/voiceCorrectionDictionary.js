@@ -26,21 +26,39 @@ function normalizeVoiceKey(value) {
     .trim()
 }
 
+/* M-CROSS_VOICE_DICTIONARY_VARIANTS_V4_SAFE */
+function makeVoiceVariants(value) {
+  const base = normalizeVoiceKey(value)
+  const variants = new Set([base])
+  const swaps = [
+    ['覗く', '除く'], ['のぞく', '除く'], ['除く', '覗く'],
+    ['貼り', '針'], ['針', '貼り'], ['貼り', '梁'], ['針', '梁'], ['梁', '貼り'],
+  ]
+  for (const [from, to] of swaps) {
+    if (base.includes(from)) variants.add(base.split(from).join(to))
+  }
+  return variants
+}
+
 export function applyUserVoiceCorrections(value) {
   let text = String(value || '').trim()
   const items = readItems()
+  const inputVariants = makeVoiceVariants(text)
 
-  // まず従来どおり完全一致・部分一致で置換する。
+  // 完全一致、空白違い、漢字・ひらがなの揺れを同じ候補として照合。
+  const matched = items.find(item => {
+    const registeredVariants = makeVoiceVariants(item.from)
+    return [...inputVariants].some(candidate => registeredVariants.has(candidate))
+  })
+  if (matched) return String(matched.to || '').trim()
+
+  // 長い文章内に登録語が含まれる場合も、空白を詰めた形で補正する。
   for (const item of items) {
-    if (item?.from) text = text.split(String(item.from)).join(String(item.to || ''))
+    const fromKey = normalizeVoiceKey(item.from)
+    if (!fromKey) continue
+    const normalizedText = normalizeVoiceKey(text)
+    if (normalizedText === fromKey) return String(item.to || '').trim()
   }
-
-  // 音声認識が「貼り 覗く」のように空白を挟んでも、
-  // 辞書の「貼り覗く」と同じ語として扱う。
-  const normalizedText = normalizeVoiceKey(text)
-  const exact = items.find(item => normalizeVoiceKey(item.from) === normalizedText)
-  if (exact) return String(exact.to || '').trim()
-
   return text
 }
 
