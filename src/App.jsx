@@ -4061,8 +4061,7 @@ export default function App() {
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
   /* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */
-  /* M-CROSS_FORCE_SAVED_EXPLORER_V1_SAFE */
-  const [savedViewMode, setSavedViewMode] = useState('explorer')
+  const [savedViewMode, setSavedViewMode] = useState('list')
   const [savedFolderPath, setSavedFolderPath] = useState([])
   const [showArchived, setShowArchived] = useState(false)
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
@@ -7312,7 +7311,10 @@ return savedEntries
                 </div>
               </div>
 
-
+              <div className="savedViewSwitch" aria-label="保存済み表示形式">
+                <button type="button" className={savedViewMode === 'list' ? 'active' : ''} onClick={() => setSavedViewMode('list')}>☰ 一覧表示</button>
+                <button type="button" className={savedViewMode === 'explorer' ? 'active' : ''} onClick={() => { setSavedViewMode('explorer'); setSavedFolderPath([]) }}>📁 フォルダ表示</button>
+              </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '0 0 18px' }}>
                 <button className="actionButton actionOverwrite" type="button" onClick={toggleSelectAllVisible}>
@@ -7324,7 +7326,7 @@ return savedEntries
               </div>
 
               {/* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */}
-              {visibleSavedEntries.length > 0 && (() => {
+              {savedViewMode === 'explorer' && visibleSavedEntries.length > 0 && (() => {
                 const nodes = visibleSavedEntries.map(entry => {
                   const date = new Date(entry.updatedAt || entry.createdAt || 0)
                   const validDate = !Number.isNaN(date.getTime())
