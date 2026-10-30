@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import properties from './m-cross-properties.json'
 import OneDriveSyncPanel from './OneDriveSyncPanel'
 import EstimateRowEditor from './EstimateRowEditor'
+import EstimateVersionPanel from './EstimateVersionPanel' // M-CROSS_ESTIMATE_VERSION_HISTORY_V1_SAFE
 import './App.css'
 
+// M-CROSS_REMOVE_ESTIMATE_SNAPSHOT_VIEWER_STEP1_SAFE
 import { openVoiceRecognitionReview, applyUserVoiceCorrections } from './voiceCorrectionDictionary' // M-CROSS_EDITABLE_VOICE_DICTIONARY_V2_SAFE
 import './measurementMemoVoice' // M-CROSS_MEASUREMENT_MEMO_VOICE_V2_SAFE
 const defaultRooms = [
@@ -90,8 +92,9 @@ function loadPricingSettings() {
   }
 }
 
+/* M-CROSS_ROUND_ESTIMATE_AMOUNTS_V1_SAFE */
 function formatYen(value) {
-  return new Intl.NumberFormat('ja-JP').format(Math.round(Number(value) || 0)) + '円'
+  return '¥' + Math.round(Number(value) || 0).toLocaleString('ja-JP')
 }
 /* M-CROSS_RESIDENT_CASES_STEP1 */
 const residentCasesStorageKey = 'mcross_resident_cases_v1'
@@ -2206,12 +2209,13 @@ function sumRecords(records, roomName, type) {
     .reduce((sum, record) => sum + getRecordQuantity(record), 0)
 }
 
-function getSaveKey(company, property, unit) {
+function getSaveKey(company, property, unit, workName = '') {
   return `${storagePrefix}${JSON.stringify([
     company,
     property?.name || '',
     property?.address || '',
     unit.trim(),
+    String(workName || '').trim(),
   ])}`
 }
 
@@ -2270,6 +2274,7 @@ function normalizeImportedEntry(value) {
   if (!value.propertyName.trim() || !value.unit.trim()) throw new Error('物件名または号室がありません。')
   return {
     company: value.company, propertyName: value.propertyName, address: value.address, unit: value.unit.trim(),
+    workName: typeof value.workName === 'string' && value.workName.trim() ? value.workName.trim() : '原状回復工事',
     records: Array.isArray(value.records) ? value.records : [],
     cfRecords: Array.isArray(value.cfRecords) ? value.cfRecords : [],
     softRecords: Array.isArray(value.softRecords) ? value.softRecords : [],
@@ -3983,6 +3988,14 @@ function loadEstimateEdits(key) {
   }
 }
 
+/* M-CROSS_ESTIMATE_VERSION_EXPLORER_FILENAME_V3_SAFE */
+/* M-CROSS_ESTIMATE_VERSION_NUMBERING_V4_SAFE */
+function estimateVersionMark(version) {
+  const marks = ['', '', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
+  const number = Number(version) || 0
+  return marks[number] ?? '（' + number + '）'
+}
+
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsPage, setSettingsPage] = useState('home')
@@ -4023,6 +4036,8 @@ export default function App() {
   const [showPropertyListPicker, setShowPropertyListPicker] = useState(false)
   const [propertyListSearch, setPropertyListSearch] = useState('')
   const [unit, setUnit] = useState('')
+  /* M-CROSS_WORK_NAME_V7_EXACT */
+  const [workName, setWorkName] = useState('原状回復工事')
   const [siteMemo, setSiteMemo] = useState('')
   const [showSimilarSites, setShowSimilarSites] = useState(false)
   const [showAllPropertyHistory, setShowAllPropertyHistory] = useState(false)
@@ -4069,6 +4084,30 @@ export default function App() {
   const [saveFeedback, setSaveFeedback] = useState('')
   const [estimateEditor, setEstimateEditor] = useState(null)
   const [estimateEdits, setEstimateEdits] = useState({})
+  const [estimateVersions, setEstimateVersions] = useState([])
+  /* M-CROSS_ESTIMATE_FILE_OPEN_CONTENT_STEP2_SAFE */
+  const [openedEstimateVersion, setOpenedEstimateVersion] = useState(null)
+  /* M-CROSS_VERSION_DISPLAY_FROM_SNAPSHOT_V5_SAFE */
+  const [openedEstimateRows, setOpenedEstimateRows] = useState(null)
+  /* M-CROSS_ESTIMATE_VERSIONS_BY_WORK_NAME_V1_SAFE */
+  const estimateVersionStorageKey = 'mcross:estimate-versions:' + [company, selectedProperty?.name || '', String(unit || '').trim(), String(workName || '').trim() || '原状回復工事'].join('|')
+  const legacyEstimateVersionStorageKey = 'mcross:estimate-versions:' + [company, selectedProperty?.name || '', String(unit || '').trim()].join('|')
+  useEffect(() => {
+    if (!company || !selectedProperty?.name || !String(unit || '').trim()) {
+      setEstimateVersions([])
+      return
+    }
+    try {
+      const currentStored = localStorage.getItem(estimateVersionStorageKey)
+      const legacyStored = String(workName || '').trim() === '原状回復工事'
+        ? localStorage.getItem(legacyEstimateVersionStorageKey)
+        : null
+      const loaded = JSON.parse(currentStored || legacyStored || '[]')
+      setEstimateVersions(Array.isArray(loaded) ? loaded : [])
+    } catch {
+      setEstimateVersions([])
+    }
+  }, [estimateVersionStorageKey])
   const [caseCrossFactor, setCaseCrossFactor] = useState(() => String(loadPricingSettings().crossFactor))
   const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
   const [estimateCopyFormat, setEstimateCopyFormat] = useState(() => readPreference(estimateCopyFormatKey, 'merged'))
@@ -4205,6 +4244,7 @@ export default function App() {
       propertyName: selectedProperty.name || '',
       address: selectedProperty.address || '',
       unit: unit.trim(),
+      workName: String(workName || '').trim() || '原状回復工事',
       siteMemo: siteMemo.trim(),
       records,
       cfRecords,
@@ -5660,7 +5700,7 @@ return savedEntries
       const packageData = JSON.parse(await file.text())
       if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) throw new Error('M-Cross用ファイルではないか、対応していないバージョンです。')
       const imported = normalizeImportedEntry(packageData.data)
-      const storageKey = getSaveKey(imported.company, { name: imported.propertyName, address: imported.address }, imported.unit)
+      const storageKey = getSaveKey(imported.company, { name: imported.propertyName, address: imported.address }, imported.unit, imported.workName || '原状回復工事')
       if (localStorage.getItem(storageKey) !== null && !window.confirm(`「${imported.propertyName} ${imported.unit}号室」はすでに保存されています。\n\n上書きして読み込みますか？`)) return
       localStorage.setItem(storageKey, JSON.stringify(imported))
       setSavedEntries(readSavedEntries()); setShowArchived(false); setSelectedSavedKeys([])
@@ -5669,11 +5709,13 @@ return savedEntries
   }
 
   function loadSavedEntry(entry) {
+    if (openedEstimateVersion == null) setOpenedEstimateVersion(null)
     setCurrentStorageKey(entry.storageKey || '')
     setCompany(entry.company || '')
     setPropertySearch(entry.propertyName || '')
     setSelectedProperty({ name: entry.propertyName || '', address: entry.address || '' })
     setUnit(entry.unit || '')
+    setWorkName(entry.workName || '原状回復工事')
     setSiteMemo(entry.siteMemo || '')
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
@@ -5709,6 +5751,26 @@ return savedEntries
     setStarted(true)
   }
 
+  /* M-CROSS_VERSION_DISPLAY_FROM_SNAPSHOT_V5_SAFE */
+  function openSavedEstimateVersion(entry, version) {
+    const snapshotRows = Array.isArray(version?.rows)
+      ? JSON.parse(JSON.stringify(version.rows))
+      : []
+    const snapshotAdditionalWorks = Array.isArray(version?.additionalWorks)
+      ? JSON.parse(JSON.stringify(version.additionalWorks))
+      : []
+
+    openSavedEntry(entry)
+    window.setTimeout(() => {
+      setOpenedEstimateRows(snapshotRows)
+      setAdditionalWorks(snapshotAdditionalWorks)
+      setOpenedEstimateVersion(Number(version?.version) || 1)
+      setShowEstimate(true)
+      setShowRoomManagement(false)
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    }, 0)
+  }
+
   function openSavedEntry(entry) {
     requestNavigation(() => loadSavedEntry(entry))
   }
@@ -5723,6 +5785,7 @@ return savedEntries
         propertyName: entry.propertyName || '',
         address: entry.address || '',
         unit: entry.unit || '',
+        workName: entry.workName || '原状回復工事',
         siteMemo: entry.siteMemo || '',
         records: Array.isArray(entry.records) ? entry.records : [],
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
@@ -5855,6 +5918,7 @@ return savedEntries
     setPropertySearch('')
     setSelectedProperty(null)
     setUnit('')
+    setWorkName('原状回復工事')
     setSiteMemo('')
     setCurrentStorageKey('')
     setRecords([])
@@ -5899,7 +5963,8 @@ return savedEntries
   }
 
   function startMeasurement() {
-    const storageKey = getSaveKey(company, selectedProperty, unit)
+    if (!String(workName || '').trim()) { window.alert('工事名を入力してください。'); return }
+    const storageKey = getSaveKey(company, selectedProperty, unit, workName)
     setCurrentStorageKey(storageKey)
 
     try {
@@ -5967,6 +6032,7 @@ return savedEntries
       address: draft.address || '',
     })
     setUnit(draft.unit || '')
+    setWorkName(draft.workName || '原状回復工事')
     setSiteMemo(draft.siteMemo || '')
     setRecords(Array.isArray(draft.records) ? draft.records : [])
     setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
@@ -6014,7 +6080,7 @@ return savedEntries
       return false
     }
 
-    const storageKey = currentStorageKey || getSaveKey(company, selectedProperty, unit)
+    const storageKey = currentStorageKey || getSaveKey(company, selectedProperty, unit, workName)
     let archived = false
 
     try {
@@ -6029,6 +6095,7 @@ return savedEntries
       propertyName: selectedProperty.name,
       address: selectedProperty.address,
       unit: unit.trim(),
+      workName: String(workName || '').trim() || '原状回復工事',
       siteMemo: siteMemo.trim(),
       records,
       cfRecords,
@@ -7346,15 +7413,41 @@ return savedEntries
                       </div>
                     ) : (
                       <div className="savedExplorerFiles">
-                        {matching.map(({ entry }, index) => (
-                          <button className="savedExplorerFile" type="button" key={entry.storageKey || index} onClick={() => openSavedEntry(entry)}>
-                            <span>📄</span>
-                            <div>
-                              <strong>{entry.unit ? entry.unit + '号室' : '号室未設定'}</strong>
-                              <small>更新 {formatSavedDate(entry.updatedAt)}</small>
-                            </div>
-                          </button>
-                        ))}
+                        {matching.flatMap(({ entry }, index) => {
+                          const baseName = (entry.propertyName || '物件名なし') + (entry.unit ? entry.unit + '号室' : '') + (entry.workName ? entry.workName : '')
+                          let versions = []
+                          try {
+                            const entryWorkName = String(entry.workName || '').trim() || '原状回復工事'
+                            const key = 'mcross:estimate-versions:' + [entry.company || '', entry.propertyName || '', String(entry.unit || '').trim(), entryWorkName].join('|')
+                            const legacyKey = 'mcross:estimate-versions:' + [entry.company || '', entry.propertyName || '', String(entry.unit || '').trim()].join('|')
+                            const currentStored = localStorage.getItem(key)
+                            const legacyStored = entryWorkName === '原状回復工事' ? localStorage.getItem(legacyKey) : null
+                            const stored = JSON.parse(currentStored || legacyStored || '[]')
+                            versions = Array.isArray(stored) ? stored : []
+                          } catch {}
+                          const items = [
+                            <button className="savedExplorerFile" type="button" key={(entry.storageKey || index) + '-current'} onClick={() => {
+                                const currentVersion = versions.length
+                                  ? Math.max(...versions.map(item => Number(item.version) || 0)) + 1
+                                  : 1
+                                setOpenedEstimateRows(null)
+                                setOpenedEstimateVersion(currentVersion)
+                                openSavedEntry(entry)
+                              }} /* M-CROSS_CURRENT_REVISION_BUTTON_V6_SAFE */>
+                              <span>📄</span>
+                              <div><strong>{baseName}{versions.length ? estimateVersionMark(Math.max(...versions.map(item => Number(item.version) || 0)) + 1) : ''}</strong><small>{versions.length ? '現在編集中の見積' : '最初の見積'} ／ 更新 {formatSavedDate(entry.updatedAt)}</small></div>
+                            </button>,
+                          ]
+                          versions.sort((a,b) => Number(a.version)-Number(b.version)).forEach(version => {
+                            items.push(
+                              <button className="savedExplorerFile estimateVersionExplorerFile" type="button" key={(entry.storageKey || index) + '-estimate-' + version.version} onClick={() => openSavedEstimateVersion(entry, version)}>
+                                <span>📑</span>
+                                <div><strong>{baseName}{estimateVersionMark(version.version)}</strong><small>{Number(version.version) === 1 ? '最初の見積' : '修正版'} ／ ¥{Math.round(Number(version.totalAmount || 0)).toLocaleString('ja-JP')}</small></div>
+                              </button>
+                            )
+                          })
+                          return items
+                        })}
                       </div>
                     )}
                   </div>
@@ -8059,6 +8152,23 @@ return savedEntries
                 <input value={unit} onChange={event => setUnit(event.target.value)} placeholder="例：501" />
               </label>
 
+              <label className="workNameField">
+                <span>工事名 *</span>
+                <input
+                  list="mcross-work-name-options"
+                  value={workName}
+                  onChange={event => { setWorkName(event.target.value); setSaveStatus('') }}
+                  placeholder="例：原状回復工事"
+                />
+                <datalist id="mcross-work-name-options">
+                  <option value="原状回復工事" />
+                  <option value="内装工事" />
+                  <option value="修繕工事" />
+                  <option value="設備工事" />
+                </datalist>
+                <small>同じ物件・号室でも、工事名が違えば別案件として保存します。</small>
+              </label>
+
               <label className="siteMemoField">
                 <span>現場メモ</span>
                 <textarea
@@ -8191,7 +8301,7 @@ return savedEntries
             >
               ← 物件情報へ戻る
             </button>
-            <p className="propertyLine">{selectedProperty?.name}　{unit}号室</p>
+            <p className="propertyLine">{selectedProperty?.name}　{unit}号室　{workName}</p>
             <h1>
               {showEstimate
                 ? '見積内容'
@@ -8248,7 +8358,7 @@ return savedEntries
                   const rowsForExport = applyEstimateEdits(rawRows, estimateEdits)
                   downloadEstimateExcel({
                     company,
-                    propertyName: selectedProperty?.name || '',
+                    propertyName: selectedProperty?.name || '', // M-CROSS_INITIAL_ESTIMATE_UNMARKED_V1_SAFE: 通常の初回見積は無印
                     address: selectedProperty?.address || '',
                     unit,
                   }, rowsForExport, estimateCopyFormat, additionalWorks)
@@ -8304,12 +8414,16 @@ return savedEntries
               // お客様向け画面には換算率を表示せず、設定済みの案件換算率だけを計算に使用します。
               const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
               const rawEstimateRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
-              const estimateRows = applyEstimateEdits(rawEstimateRows, estimateEdits)
+              /* M-CROSS_ESTIMATE_EXCLUSION_V5_EXACT_SAFE */
+              const allEstimateRows = openedEstimateRows ?? applyEstimateEdits(rawEstimateRows, estimateEdits)
+              /* M-CROSS_ADDITIONAL_WORK_ESTIMATE_EXCLUSION_V6_SAFE */
+              const estimateRows = allEstimateRows.filter(row => !estimateEdits[row.exclusionKey || estimateEditKey(row)]?.excluded)
+              const currentEstimateVersion = estimateVersions.reduce((max, item) => Math.max(max, Number(item.version) || 0), 0) + 1
               const additionalWorkTotal = additionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
               const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0) + additionalWorkTotal
               return (
                 <section className="card">
-                  <h2>{selectedProperty?.name} {unit}号室</h2>
+                  <h2>{selectedProperty?.name} {unit}号室{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
                   {/* M-CROSS_SIMPLIFY_ESTIMATE_TEXT_V1_SAFE */}
                   <div className="restorationWorkOrderAction">
                     {workOrders.some(item => item.sourceType === 'restoration' && item.sourceId === [selectedProperty?.id || selectedProperty?.name || '', String(unit || '').trim()].join('|')) ? (
@@ -8332,6 +8446,7 @@ return savedEntries
                       title: '内装工事以外',
                       key: '__ADDITIONAL_WORKS__',
                       rows: additionalWorks.map((item, additionalWorkIndex) => ({
+                        exclusionKey: 'additionalWork:' + (item.id || additionalWorkIndex),
                         /* M-CROSS_ADDITIONAL_WORK_FULL_EDIT_V3_1_ROBUST */
                         category: 'additionalWork',
                         additionalWorkId: item.id || '',
@@ -8419,9 +8534,44 @@ return savedEntries
                   >
                     📊 見積用Excel出力
                   </button>
+                  {Object.values(estimateEdits).some(edit => edit && typeof edit === 'object' && edit.excluded) && (
+                    <div className="estimateExcludedRestoreV4">
+                      <span>見積から外した項目があります</span>
+                      <button type="button" onClick={() => {
+                        setEstimateEdits(previous => {
+                          const next = Object.fromEntries(Object.entries(previous).map(([key, edit]) => {
+                            if (!edit || typeof edit !== 'object' || Array.isArray(edit)) return [key, edit]
+                            const restored = { ...edit }
+                            delete restored.excluded
+                            return [key, restored]
+                          }))
+                          try { localStorage.setItem(estimateEditStorageKey, JSON.stringify(next)) } catch {}
+                          return next
+                        })
+                        setIsDirty(true)
+                        setSaveStatus('見積から外した項目をすべて戻しました')
+                      }}>↩ すべて見積へ戻す</button>
+                    </div>
+                  )}
+
                   <EstimateRowEditor
                     value={estimateEditor}
                     onClose={() => setEstimateEditor(null)}
+                    onExclude={form => {
+                      if (!form?.key) return
+                      if (!window.confirm('この項目を見積から外しますか？\n採寸データは削除されません。')) return
+                      setEstimateEdits(previous => {
+                        const next = {
+                          ...previous,
+                          [form.key]: { ...(previous[form.key] || {}), excluded: true },
+                        }
+                        try { localStorage.setItem(estimateEditStorageKey, JSON.stringify(next)) } catch {}
+                        return next
+                      })
+                      setEstimateEditor(null)
+                      setIsDirty(true)
+                      setSaveStatus('見積から項目を外しました。採寸データは残っています。')
+                    }}
                     onReset={key => {
                       if (estimateEditor?.additionalWorkId || Number.isInteger(estimateEditor?.additionalWorkIndex)) {
                         setAdditionalWorks(previous => previous.map((item, index) => {
@@ -8482,6 +8632,48 @@ return savedEntries
                       setEstimateEditor(null)
                       setIsDirty(true)
                       setSaveStatus('見積明細を変更しました')
+                    }}
+                  />
+
+                  <EstimateVersionPanel
+                    propertyName={selectedProperty?.name || ''}
+                    unit={unit}
+                    currentVersion={openedEstimateVersion || currentEstimateVersion}
+                    versions={estimateVersions}
+                    currentTotal={totalAmount}
+                    onCreateRevision={() => {
+                      const version = currentEstimateVersion
+                      const snapshot = {
+                        id: 'estimate-version-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+                        version,
+                        createdAt: new Date().toISOString(),
+                        totalAmount,
+                        rows: JSON.parse(JSON.stringify(estimateRows)),
+                        additionalWorks: JSON.parse(JSON.stringify(additionalWorks)),
+                        copyFormat: estimateCopyFormat,
+                      }
+                      const next = [...estimateVersions, snapshot]
+                      try {
+                        localStorage.setItem(estimateVersionStorageKey, JSON.stringify(next))
+                        setEstimateVersions(next)
+                        setSaveStatus('お見積り' + version + 'を保存し、修正版' + (version + 1) + 'を作成しました')
+                      } catch (error) {
+                        console.error(error)
+                        window.alert('見積履歴を保存できませんでした。')
+                      }
+                    }}
+                    onDownloadVersion={version => downloadEstimateExcel({
+                      company,
+                      propertyName: (selectedProperty?.name || '') + estimateVersionMark(version.version),
+                      address: selectedProperty?.address || '',
+                      unit,
+                      estimateVersion: version.version,
+                    }, version.rows || [], version.copyFormat || estimateCopyFormat, version.additionalWorks || [])}
+                    onDeleteVersion={version => {
+                      if (!window.confirm('お見積り' + version.version + 'を削除しますか？')) return
+                      const next = estimateVersions.filter(item => item.id !== version.id)
+                      localStorage.setItem(estimateVersionStorageKey, JSON.stringify(next))
+                      setEstimateVersions(next)
                     }}
                   />
 

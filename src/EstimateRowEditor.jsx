@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import './EstimateRowEditor.css'
 
-export default function EstimateRowEditor({ value, onClose, onSave, onReset }) {
+/* M-CROSS_ESTIMATE_EXCLUSION_V5_EXACT_SAFE */
+export default function EstimateRowEditor({ value, onClose, onSave, onReset, onExclude }) {
   /* M-CROSS_ESTIMATE_EDITOR_MOBILE_SCROLL_V1_SAFE */
   /* M-CROSS_ESTIMATE_EDITOR_VIEWPORT_V2_SAFE */
   const [form, setForm] = useState(value)
@@ -70,6 +71,12 @@ export default function EstimateRowEditor({ value, onClose, onSave, onReset }) {
           <button type="button" className="secondaryButton" onClick={() => onReset(form.key)}>元に戻す</button>
           <button type="button" className="primary" onClick={() => onSave(form)}>変更を保存</button>
         </div>
+        {/* M-CROSS_ADDITIONAL_WORK_ESTIMATE_EXCLUSION_V6_SAFE: その他工事も同じ除外ボタンを表示 */}
+        {onExclude && (
+          <button type="button" className="estimateEditorExcludeV4" onClick={() => onExclude(form)}>
+            🗑 見積から外す
+          </button>
+        )}
       </section>
     </div>
   , document.body)
