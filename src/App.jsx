@@ -502,6 +502,8 @@ function saveResidentCases(cases) {
       residentCasesStorageKey,
       JSON.stringify(Array.isArray(cases) ? cases : [])
     )
+    /* M-CROSS_RESIDENT_AUTO_SAVE_V2_DIRTY */
+    localStorage.setItem('mcross_resident_auto_save_dirty_v1', new Date().toISOString())
     /* M-CROSS_RESIDENT_AUTO_SAVE_V1 */
     window.dispatchEvent(new CustomEvent('mcross:resident-cases-saved', {
       detail: { count: Array.isArray(cases) ? cases.length : 0, savedAt: new Date().toISOString() },

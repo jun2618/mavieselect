@@ -7,6 +7,7 @@ const residentCasesStorageKey = 'mcross_resident_cases_v1'
 const RESIDENT_SYNC_MARKER = 'M-CROSS_RESIDENT_ONEDRIVE_SYNC_V1'
 const residentPcMasterKey = 'mcross_resident_pc_master_v1'
 const residentAutoSaveDelay = 2500
+const residentAutoSaveDirtyKey = 'mcross_resident_auto_save_dirty_v1'
 const AUTO_SAVE_MARKER = 'M-CROSS_RESIDENT_AUTO_SAVE_V1'
 const graphScopes = ['User.Read', 'Files.ReadWrite.AppFolder']
 const backupFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-backup.json:/content'
@@ -169,6 +170,7 @@ export default function OneDriveSyncPanel() {
         body: JSON.stringify(payload, null, 2),
       })
       if (!response.ok) throw new Error('HTTP ' + response.status)
+      localStorage.removeItem(residentAutoSaveDirtyKey)
       setCloudBackup(payload)
       setResidentAutoStatus('☁ 入居中案件 ' + localCases.length + '件 OneDrive保存済み')
     } catch (error) {
@@ -185,13 +187,22 @@ export default function OneDriveSyncPanel() {
   }
 
   useEffect(() => {
-    function handleResidentCasesSaved() {
+    function scheduleResidentAutoSave() {
       if (localStorage.getItem(residentPcMasterKey) !== 'true') return
       window.clearTimeout(residentAutoTimerRef.current)
       setResidentAutoStatus('入居中案件の変更を保存待ち…')
       residentAutoTimerRef.current = window.setTimeout(autoUploadResidentCases, residentAutoSaveDelay)
     }
+
+    function handleResidentCasesSaved() {
+      scheduleResidentAutoSave()
+    }
     window.addEventListener('mcross:resident-cases-saved', handleResidentCasesSaved)
+
+    /* M-CROSS_RESIDENT_AUTO_SAVE_V2_DIRTY: 入居中案件画面から戻ってPanelが再表示された場合も送信する */
+    if (localStorage.getItem(residentAutoSaveDirtyKey)) {
+      scheduleResidentAutoSave()
+    }
     return () => {
       window.removeEventListener('mcross:resident-cases-saved', handleResidentCasesSaved)
       window.clearTimeout(residentAutoTimerRef.current)
@@ -275,6 +286,7 @@ export default function OneDriveSyncPanel() {
       if (!response.ok) throw new Error('入居中案件の保存失敗 HTTP ' + response.status)
 
       localStorage.setItem(residentPcMasterKey, 'true')
+      localStorage.removeItem(residentAutoSaveDirtyKey)
       setCloudBackup(payload)
       setResidentAutoStatus('☁ PC自動保存：有効')
       setStatus('PC → OneDrive 保存成功: 入居中案件 ' + localCases.length + '件。以後、このPCでは自動保存します。')
