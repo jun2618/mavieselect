@@ -1,0 +1,6 @@
+/* M-CROSS_MEASUREMENT_MEMO_VOICE_V2_SAFE */
+.measurementMemoVoiceWrapV2{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px}
+.measurementMemoVoiceButtonV2{min-height:40px;padding:8px 12px;border:1px solid rgba(39,111,203,.34);border-radius:10px;background:rgba(39,111,203,.08);color:inherit;font:inherit;font-weight:850;cursor:pointer}
+.measurementMemoVoiceButtonV2:disabled{opacity:.72;cursor:default}
+.measurementMemoVoiceStatusV2{font-size:13px;line-height:1.4;opacity:.82}
+@media(max-width:620px){.measurementMemoVoiceButtonV2{min-height:44px}.measurementMemoVoiceWrapV2{align-items:stretch}.measurementMemoVoiceStatusV2{width:100%}}

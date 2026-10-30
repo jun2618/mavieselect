@@ -239,3 +239,17 @@ textarea:disabled {
 
 /* M-CROSS_OTHER_WORK_VOICE_INPUT_V1_SAFE */
 .otherWorkVoiceBox{display:grid;gap:7px;margin-bottom:16px;padding:14px;border:1px solid rgba(39,111,191,.25);border-radius:14px;background:rgba(39,111,191,.06)}.otherWorkVoiceButton{min-height:48px;border:0;border-radius:12px;background:linear-gradient(135deg,#2878db,#0aa6a6);color:#fff;font-weight:900;font-size:17px;cursor:pointer}.otherWorkVoiceButton:disabled{opacity:.75}.otherWorkVoiceBox small{font-size:13px!important;opacity:.8}.otherWorkVoiceStatus{margin:0;font-size:14px;font-weight:700}.theme-dark .otherWorkVoiceBox,.theme-cyber .otherWorkVoiceBox,.theme-luxury .otherWorkVoiceBox,.theme-retro .otherWorkVoiceBox,.theme-galaxy .otherWorkVoiceBox{background:rgba(51,230,255,.08);border-color:rgba(51,230,255,.35)}
+
+/* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */
+.savedViewSwitch{display:flex;gap:8px;margin:0 0 16px}
+.savedViewSwitch button{flex:1;min-height:44px;border:1px solid rgba(90,120,170,.28);border-radius:12px;background:rgba(127,127,127,.08);color:inherit;font-weight:800}
+.savedViewSwitch button.active{background:#276fcb;color:#fff;border-color:#276fcb}
+.savedExplorer{display:grid;gap:12px;margin-bottom:18px}
+.savedExplorerCrumbs{display:flex;flex-wrap:wrap;gap:6px}
+.savedExplorerCrumbs button,.savedExplorerBack{border:0;background:transparent;color:inherit;font-weight:800;padding:7px 4px}
+.savedExplorerGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px}
+.savedExplorerFolder{display:grid;justify-items:start;gap:5px;min-height:112px;padding:14px;border:1px solid rgba(90,120,170,.22);border-radius:14px;background:rgba(127,127,127,.06);color:inherit;text-align:left}
+.savedExplorerIcon{font-size:34px}.savedExplorerFolder strong{font-size:16px}.savedExplorerFolder small{opacity:.75}
+.savedExplorerFiles{display:grid;gap:8px}.savedExplorerFile{display:flex;align-items:center;gap:12px;width:100%;padding:13px;border:1px solid rgba(90,120,170,.22);border-radius:12px;background:rgba(127,127,127,.05);color:inherit;text-align:left}
+.savedExplorerFile>span{font-size:28px}.savedExplorerFile strong,.savedExplorerFile small{display:block}.savedExplorerFile small{margin-top:3px;opacity:.75}
+@media(max-width:620px){.savedExplorerGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.savedExplorerFolder{min-height:105px}}

@@ -4,6 +4,7 @@ import OneDriveSyncPanel from './OneDriveSyncPanel'
 import EstimateRowEditor from './EstimateRowEditor'
 import './App.css'
 
+import './measurementMemoVoice' // M-CROSS_MEASUREMENT_MEMO_VOICE_V2_SAFE
 const defaultRooms = [
   '居間', 'LDK', '台所', '洋間', '洋間2', '洋間3', '和室',
   '階段', 'ホール', '玄関', '脱衣所', 'トイレ',
@@ -4025,6 +4026,9 @@ export default function App() {
   const [savedSearch, setSavedSearch] = useState('')
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
+  /* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */
+  const [savedViewMode, setSavedViewMode] = useState('list')
+  const [savedFolderPath, setSavedFolderPath] = useState([])
   const [showArchived, setShowArchived] = useState(false)
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
   const [expandedSavedKeys, setExpandedSavedKeys] = useState([])
@@ -7257,6 +7261,11 @@ return savedEntries
                 </div>
               </div>
 
+              <div className="savedViewSwitch" aria-label="保存済み表示形式">
+                <button type="button" className={savedViewMode === 'list' ? 'active' : ''} onClick={() => setSavedViewMode('list')}>☰ 一覧表示</button>
+                <button type="button" className={savedViewMode === 'explorer' ? 'active' : ''} onClick={() => { setSavedViewMode('explorer'); setSavedFolderPath([]) }}>📁 フォルダ表示</button>
+              </div>
+
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '0 0 18px' }}>
                 <button className="actionButton actionOverwrite" type="button" onClick={toggleSelectAllVisible}>
                   {visibleSavedEntries.length > 0 && visibleSavedEntries.every(entry => selectedSavedKeys.includes(entry.storageKey)) ? '選択解除' : '表示中を全選択'}
@@ -7269,12 +7278,77 @@ return savedEntries
                 </button>
               </div>
 
+              {/* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */}
+              {savedViewMode === 'explorer' && visibleSavedEntries.length > 0 && (() => {
+                const nodes = visibleSavedEntries.map(entry => {
+                  const date = new Date(entry.updatedAt || entry.createdAt || 0)
+                  const validDate = !Number.isNaN(date.getTime())
+                  return {
+                    entry,
+                    levels: [
+                      validDate ? date.getFullYear() + '年' : '日付不明',
+                      validDate ? (date.getMonth() + 1) + '月' : '月不明',
+                      entry.company || '管理会社未設定',
+                      entry.propertyName || '物件名なし',
+                    ],
+                  }
+                })
+                const depth = savedFolderPath.length
+                const matching = nodes.filter(node => savedFolderPath.every((value, index) => node.levels[index] === value))
+                const isPropertyFolder = depth >= 4
+                const folders = isPropertyFolder
+                  ? []
+                  : [...new Set(matching.map(node => node.levels[depth]))]
+                    .sort((a, b) => String(a).localeCompare(String(b), 'ja', { numeric: true }))
+
+                return (
+                  <div className="savedExplorer">
+                    <div className="savedExplorerCrumbs">
+                      <button type="button" onClick={() => setSavedFolderPath([])}>📂 保存済み</button>
+                      {savedFolderPath.map((part, index) => (
+                        <button type="button" key={index} onClick={() => setSavedFolderPath(savedFolderPath.slice(0, index + 1))}>› {part}</button>
+                      ))}
+                    </div>
+                    {savedFolderPath.length > 0 && (
+                      <button className="savedExplorerBack" type="button" onClick={() => setSavedFolderPath(path => path.slice(0, -1))}>← ひとつ上へ</button>
+                    )}
+                    {!isPropertyFolder ? (
+                      <div className="savedExplorerGrid">
+                        {folders.map(folder => {
+                          const count = matching.filter(node => node.levels[depth] === folder).length
+                          const icon = depth < 2 ? '📁' : depth === 2 ? '🗂️' : '🏢'
+                          return (
+                            <button className="savedExplorerFolder" type="button" key={folder} onClick={() => setSavedFolderPath(path => [...path, folder])}>
+                              <span className="savedExplorerIcon">{icon}</span>
+                              <strong>{folder}</strong>
+                              <small>{count}件</small>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="savedExplorerFiles">
+                        {matching.map(({ entry }, index) => (
+                          <button className="savedExplorerFile" type="button" key={entry.storageKey || index} onClick={() => openSavedEntry(entry)}>
+                            <span>📄</span>
+                            <div>
+                              <strong>{entry.unit ? entry.unit + '号室' : '号室未設定'}</strong>
+                              <small>更新 {formatSavedDate(entry.updatedAt)}</small>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
               {visibleSavedEntries.length === 0 ? (
                 <p className="empty">
                   {showArchived ? 'アーカイブされたデータはありません' : '保存済みデータはありません'}
                 </p>
               ) : (
-                <div className="savedList">
+                <div className="savedList" style={{ display: savedViewMode === 'list' ? undefined : 'none' }}>
                   {visibleSavedEntries.map((entry, index) => (
                     <article
                       className="savedItem"
