@@ -169,15 +169,22 @@ export default function OneDriveSyncPanel() {
     return data
   }
 
-  async function syncResidentCases() {
+  /* M-CROSS_RESIDENT_PC_MASTER_SYNC_V2 */
+  async function uploadResidentCasesToOneDrive() {
     try {
-      setStatus('入居中案件をOneDriveと同期しています…')
-      const token = await getToken()
       const localCases = readResidentCases()
-      const cloud = await fetchCloudBackup()
-      const cloudCases = Array.isArray(cloud.residentCases) ? cloud.residentCases : []
-      const mergedCases = mergeResidentCases(localCases, cloudCases)
+      const answer = window.prompt(
+        '【PC専用】このPCの入居中案件 ' + localCases.length + '件を正本としてOneDriveへ保存します。\n' +
+        'スマホでは実行しないでください。続ける場合は PC と入力してください。'
+      )
+      if (String(answer || '').trim().toUpperCase() !== 'PC') {
+        setStatus('入居中案件の送信をキャンセルしました')
+        return
+      }
 
+      setStatus('PCの入居中案件をOneDriveへ保存しています…')
+      const token = await getToken()
+      const cloud = await fetchCloudBackup()
       const payload = {
         ...cloud,
         fileType: 'm-cross-backup',
@@ -185,9 +192,10 @@ export default function OneDriveSyncPanel() {
         exportedAt: new Date().toISOString(),
         entries: Array.isArray(cloud.entries) ? cloud.entries : [],
         entryCount: Array.isArray(cloud.entries) ? cloud.entries.length : 0,
-        residentCases: mergedCases,
-        residentCaseCount: mergedCases.length,
+        residentCases: localCases,
+        residentCaseCount: localCases.length,
         residentSyncMarker: RESIDENT_SYNC_MARKER,
+        residentMaster: 'pc',
       }
 
       const response = await fetch(backupFileUrl, {
@@ -195,26 +203,65 @@ export default function OneDriveSyncPanel() {
         headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify(payload, null, 2),
       })
-      if (!response.ok) throw new Error('入居中案件同期失敗 HTTP ' + response.status)
+      if (!response.ok) throw new Error('入居中案件の保存失敗 HTTP ' + response.status)
 
-      localStorage.setItem(residentCasesStorageKey, JSON.stringify(mergedCases))
       setCloudBackup(payload)
-      setStatus('入居中案件同期成功: ' + mergedCases.length + '件。画面を更新します。')
+      setStatus('PC → OneDrive 保存成功: 入居中案件 ' + localCases.length + '件')
+    } catch (error) {
+      console.error(error)
+      setStatus('入居中案件の保存失敗: ' + (error?.message || String(error)))
+    }
+  }
+
+  async function downloadResidentCasesFromOneDrive() {
+    try {
+      setStatus('OneDriveの入居中案件を確認しています…')
+      const cloud = await fetchCloudBackup()
+      const cloudCases = Array.isArray(cloud.residentCases) ? cloud.residentCases : []
+
+      if (!Array.isArray(cloud.residentCases)) {
+        setStatus('OneDriveに入居中案件データがまだありません。先にPCから保存してください。')
+        return
+      }
+
+      const localCases = readResidentCases()
+      if (!window.confirm(
+        'OneDriveの入居中案件 ' + cloudCases.length + '件をこの端末へ取得します。\n' +
+        'この端末にある入居中案件 ' + localCases.length + '件は置き換えられます。続けますか？'
+      )) return
+
+      localStorage.setItem(residentCasesStorageKey, JSON.stringify(cloudCases))
+      setCloudBackup(cloud)
+      setStatus('OneDrive → この端末 取得成功: 入居中案件 ' + cloudCases.length + '件。画面を更新します。')
       window.setTimeout(() => window.location.reload(), 500)
     } catch (error) {
       console.error(error)
-      setStatus('入居中案件同期失敗: ' + (error?.message || String(error)))
+      setStatus('入居中案件の取得失敗: ' + (error?.message || String(error)))
     }
   }
+
 
   async function backupToOneDrive() {
     try {
       const entries = readLocalEntries()
       if (!entries.length) { setStatus('バックアップ対象の保存物件がありません'); return }
-      if (!window.confirm(entries.length + '件をOneDriveへバックアップします。端末データは変更しません。続けますか？')) return
+      if (!window.confirm(entries.length + '件をOneDriveへバックアップします。入居中案件のクラウドデータは保持します。続けますか？')) return
       setStatus('OneDriveへバックアップしています…')
       const token = await getToken()
-      const payload = { fileType: 'm-cross-backup', version: 1, exportedAt: new Date().toISOString(), entryCount: entries.length, entries }
+      const cloud = await fetchCloudBackup()
+      const cloudResidentCases = Array.isArray(cloud.residentCases) ? cloud.residentCases : []
+      const payload = {
+        ...cloud,
+        fileType: 'm-cross-backup',
+        version: Math.max(Number(cloud.version) || 1, 2),
+        exportedAt: new Date().toISOString(),
+        entryCount: entries.length,
+        entries,
+        residentCases: cloudResidentCases,
+        residentCaseCount: cloudResidentCases.length,
+        ...(cloud.residentSyncMarker ? { residentSyncMarker: cloud.residentSyncMarker } : {}),
+        ...(cloud.residentMaster ? { residentMaster: cloud.residentMaster } : {}),
+      }
       const response = await fetch(backupFileUrl, {
         method: 'PUT',
         headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },
@@ -223,7 +270,7 @@ export default function OneDriveSyncPanel() {
       if (!response.ok) throw new Error('バックアップ失敗 HTTP ' + response.status)
       setCloudBackup(payload)
       setComparison(compareEntries(entries, payload.entries))
-      setStatus('バックアップ成功: ' + entries.length + '件')
+      setStatus('バックアップ成功: ' + entries.length + '件。入居中案件 ' + cloudResidentCases.length + '件は保持しました。')
     } catch (error) {
       console.error(error)
       setStatus('バックアップ失敗: ' + (error?.message || String(error)))
@@ -280,7 +327,8 @@ export default function OneDriveSyncPanel() {
             <>
               <button className="oneDriveAction" type="button" onClick={backupToOneDrive}>端末 → OneDriveへバックアップ</button>
               <button className="oneDriveAction" type="button" onClick={compareWithOneDrive}>端末とOneDriveを比較</button>
-              <button className="oneDriveAction residentSyncAction" type="button" onClick={syncResidentCases}>入居中案件をPC・スマホで同期</button>
+              <button className="oneDriveAction residentSyncAction" type="button" onClick={uploadResidentCasesToOneDrive}>PC専用：入居中案件をOneDriveへ保存</button>
+              <button className="oneDriveAction residentSyncAction" type="button" onClick={downloadResidentCasesFromOneDrive}>スマホ・確認端末：入居中案件をOneDriveから取得</button>
             </>
           )}
           {status && <div className="oneDriveStatus">{status}</div>}
