@@ -1,18 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import properties from './m-cross-properties.json'
 import OneDriveSyncPanel from './OneDriveSyncPanel'
 import EstimateRowEditor from './EstimateRowEditor'
-import EstimateVersionPanel from './EstimateVersionPanel' // M-CROSS_ESTIMATE_VERSION_HISTORY_V1_SAFE
 import './App.css'
 
 // M-CROSS_REMOVE_ESTIMATE_SNAPSHOT_VIEWER_STEP1_SAFE
 import { openVoiceRecognitionReview, applyUserVoiceCorrections } from './voiceCorrectionDictionary' // M-CROSS_EDITABLE_VOICE_DICTIONARY_V2_SAFE
 import './measurementMemoVoice' // M-CROSS_MEASUREMENT_MEMO_VOICE_V2_SAFE
 const defaultRooms = [
-  '居間', 'LDK', '台所', '洋間', '洋間2', '洋間3', '和室',
-  '階段', 'ホール', '玄関', '脱衣所', 'トイレ',
+  '螻・俣', 'LDK', '蜿ｰ謇', '豢矩俣', '豢矩俣2', '豢矩俣3', '蜥悟ｮ､',
+  '髫取ｮｵ', '繝帙・繝ｫ', '邇・未', '閼ｱ陦｣謇', '繝医う繝ｬ',
 ]
-const measurementTypes = ['天井', '収納天井', '壁', '収納壁']
+const measurementTypes = ['螟ｩ莠・, '蜿守ｴ榊､ｩ莠・, '螢・, '蜿守ｴ榊｣・]
 const storagePrefix = 'm-cross:'
 const workingDraftKey = 'm-cross-working-draft:v1'
 const fontSizeKey = 'm-cross-font-size'
@@ -28,8 +27,8 @@ const quickMemosKey = 'm-cross:quick-memos:v1'
 const playSettingsKey = 'm-cross:play-settings:v1'
 const todayStatsKey = 'm-cross:today-stats:v1'
 const galaxyUnlockedKey = 'm-cross:galaxy-unlocked:v1'
-const defaultCommonAdditionalWorks = ['畳表替え', '電球交換', 'ドア簡易着色補修', '戸当たりゴム取付', '建具調整', 'コーキング']
-const quickMemos = ['窓面', '窓向かって右面', '窓向かって左面', '正面', '右面', '左面', 'シンク背面', 'シンク向かって右面', 'シンク向かって左面', '梁含む', '梁除く', '下がり天井']
+const defaultCommonAdditionalWorks = ['逡ｳ陦ｨ譖ｿ縺・, '髮ｻ逅・ｺ､謠・, '繝峨い邁｡譏鍋捩濶ｲ陬應ｿｮ', '謌ｸ蠖薙◆繧翫ざ繝蜿紋ｻ・, '蟒ｺ蜈ｷ隱ｿ謨ｴ', '繧ｳ繝ｼ繧ｭ繝ｳ繧ｰ']
+const quickMemos = ['遯馴擇', '遯灘髄縺九▲縺ｦ蜿ｳ髱｢', '遯灘髄縺九▲縺ｦ蟾ｦ髱｢', '豁｣髱｢', '蜿ｳ髱｢', '蟾ｦ髱｢', '繧ｷ繝ｳ繧ｯ閭碁擇', '繧ｷ繝ｳ繧ｯ蜷代°縺｣縺ｦ蜿ｳ髱｢', '繧ｷ繝ｳ繧ｯ蜷代°縺｣縺ｦ蟾ｦ髱｢', '譴∝性繧', '譴・勁縺・, '荳九′繧雁､ｩ莠・]
 function loadStringList(key, fallback) {
   try {
     const stored = JSON.parse(localStorage.getItem(key) || 'null')
@@ -58,10 +57,10 @@ function loadTodayStats() {
 }
 const defaultPricingSettings = {
   crossRates: {
-    '天井': 990,
-    '収納天井': 990,
-    '壁': 990,
-    '収納壁': 990,
+    '螟ｩ莠・: 990,
+    '蜿守ｴ榊､ｩ莠・: 990,
+    '螢・: 990,
+    '蜿守ｴ榊｣・: 990,
   },
   cfRate: 2300,
   softRate: 420,
@@ -94,26 +93,26 @@ function loadPricingSettings() {
 
 /* M-CROSS_ROUND_ESTIMATE_AMOUNTS_V1_SAFE */
 function formatYen(value) {
-  return '¥' + Math.round(Number(value) || 0).toLocaleString('ja-JP')
+  return 'ﾂ･' + Math.round(Number(value) || 0).toLocaleString('ja-JP')
 }
 /* M-CROSS_RESIDENT_CASES_STEP1 */
 const residentCasesStorageKey = 'mcross_resident_cases_v1'
 
 const residentCaseStatuses = [
-  '未連絡',
-  '不通',
-  '不通（メール送信）',
-  '連絡済（現調日確定）',
-  '連絡済（作業日確定）',
-  '連絡済（入居者のスケジュール確認待ち）',
-  '見積提出済（発注待ち）',
-  '保留',
-  '発注（未連絡）',
-  '発注（不通）',
-  '発注（工事日確定）',
-  '進行中',
-  '完了（未報告）',
-  '完了',
+  '譛ｪ騾｣邨｡',
+  '荳埼・,
+  '荳埼夲ｼ医Γ繝ｼ繝ｫ騾∽ｿ｡・・,
+  '騾｣邨｡貂茨ｼ育樟隱ｿ譌･遒ｺ螳夲ｼ・,
+  '騾｣邨｡貂茨ｼ井ｽ懈･ｭ譌･遒ｺ螳夲ｼ・,
+  '騾｣邨｡貂茨ｼ亥・螻・・・繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ遒ｺ隱榊ｾ・■・・,
+  '隕狗ｩ肴署蜃ｺ貂茨ｼ育匱豕ｨ蠕・■・・,
+  '菫晉蕗',
+  '逋ｺ豕ｨ・域悴騾｣邨｡・・,
+  '逋ｺ豕ｨ・井ｸ埼夲ｼ・,
+  '逋ｺ豕ｨ・亥ｷ･莠区律遒ｺ螳夲ｼ・,
+  '騾ｲ陦御ｸｭ',
+  '螳御ｺ・ｼ域悴蝣ｱ蜻奇ｼ・,
+  '螳御ｺ・,
 ]
 
 function createResidentCaseId() {
@@ -126,20 +125,20 @@ function createResidentCaseId() {
 /* M-CROSS_RESIDENT_CASES_STEP9 */
 function getResidentNextAction(status) {
   const map = {
-    '未連絡': '入居者へ連絡',
-    '不通': '入居者へ再連絡',
-    '不通（メール送信）': '入居者からの連絡を確認',
-    '連絡済（現調日確定）': '現調へ訪問',
-    '連絡済（作業日確定）': '工事へ訪問',
-    '連絡済（入居者のスケジュール確認待ち）': '入居者から日程回答を確認',
-    '見積提出済（発注待ち）': '発注状況を確認',
-    '保留': '保留中',
-    '発注（未連絡）': '入居者へ工事日を連絡',
-    '発注（不通）': '入居者へ再連絡',
-    '発注（工事日確定）': '工事へ訪問',
-    '進行中': '工事を進める',
-    '完了（未報告）': '管理会社へ完了報告',
-    '完了': '対応完了',
+    '譛ｪ騾｣邨｡': '蜈･螻・・∈騾｣邨｡',
+    '荳埼・: '蜈･螻・・∈蜀埼｣邨｡',
+    '荳埼夲ｼ医Γ繝ｼ繝ｫ騾∽ｿ｡・・: '蜈･螻・・°繧峨・騾｣邨｡繧堤｢ｺ隱・,
+    '騾｣邨｡貂茨ｼ育樟隱ｿ譌･遒ｺ螳夲ｼ・: '迴ｾ隱ｿ縺ｸ險ｪ蝠・,
+    '騾｣邨｡貂茨ｼ井ｽ懈･ｭ譌･遒ｺ螳夲ｼ・: '蟾･莠九∈險ｪ蝠・,
+    '騾｣邨｡貂茨ｼ亥・螻・・・繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ遒ｺ隱榊ｾ・■・・: '蜈･螻・・°繧画律遞句屓遲斐ｒ遒ｺ隱・,
+    '隕狗ｩ肴署蜃ｺ貂茨ｼ育匱豕ｨ蠕・■・・: '逋ｺ豕ｨ迥ｶ豕√ｒ遒ｺ隱・,
+    '菫晉蕗': '菫晉蕗荳ｭ',
+    '逋ｺ豕ｨ・域悴騾｣邨｡・・: '蜈･螻・・∈蟾･莠区律繧帝｣邨｡',
+    '逋ｺ豕ｨ・井ｸ埼夲ｼ・: '蜈･螻・・∈蜀埼｣邨｡',
+    '逋ｺ豕ｨ・亥ｷ･莠区律遒ｺ螳夲ｼ・: '蟾･莠九∈險ｪ蝠・,
+    '騾ｲ陦御ｸｭ': '蟾･莠九ｒ騾ｲ繧√ｋ',
+    '螳御ｺ・ｼ域悴蝣ｱ蜻奇ｼ・: '邂｡逅・ｼ夂､ｾ縺ｸ螳御ｺ・ｱ蜻・,
+    '螳御ｺ・: '蟇ｾ蠢懷ｮ御ｺ・,
   }
   return map[status] || ''
 }
@@ -152,7 +151,7 @@ function parseResidentRequestText(rawText, propertyMaster) {
   const readLabel = labels => {
     for (const line of lines) {
       for (const label of labels) {
-        for (const separator of ['：', ':']) {
+        for (const separator of ['・・, ':']) {
           const prefix = label + separator
           if (line.startsWith(prefix)) return line.slice(prefix.length).trim()
         }
@@ -160,35 +159,35 @@ function parseResidentRequestText(rawText, propertyMaster) {
     }
     return ''
   }
-  const rawProperty = readLabel(['物件', '物件名'])
-  const typedAddress = readLabel(['住所'])
-  const residentName = readLabel(['氏名', '入居者', 'お名前'])
-  const residentContact = readLabel(['連絡先', '電話', '電話番号'])
+  const rawProperty = readLabel(['迚ｩ莉ｶ', '迚ｩ莉ｶ蜷・])
+  const typedAddress = readLabel(['菴乗園'])
+  const residentName = readLabel(['豌丞錐', '蜈･螻・・, '縺雁錐蜑・])
+  const residentContact = readLabel(['騾｣邨｡蜈・, '髮ｻ隧ｱ', '髮ｻ隧ｱ逡ｪ蜿ｷ'])
   const properties = Array.isArray(propertyMaster?.properties) ? propertyMaster.properties : []
   const matched = properties.find(item => item.name === rawProperty)
     || properties.filter(item => rawProperty && rawProperty.startsWith(item.name)).sort((a,b) => String(b.name||'').length - String(a.name||'').length)[0]
   let propertyName = matched?.name || rawProperty
   let unit = ''
-  if (matched && rawProperty) unit = rawProperty.slice(matched.name.length).trim().replace(/号室$/u, '')
+  if (matched && rawProperty) unit = rawProperty.slice(matched.name.length).trim().replace(/蜿ｷ螳､$/u, '')
   else if (rawProperty) {
-    const parts = rawProperty.split(' ').join('　').split('　').filter(Boolean)
-    if (parts.length > 1) { unit = parts.pop().replace(/号室$/u, ''); propertyName = parts.join(' ') }
+    const parts = rawProperty.split(' ').join('縲').split('縲').filter(Boolean)
+    if (parts.length > 1) { unit = parts.pop().replace(/蜿ｷ螳､$/u, ''); propertyName = parts.join(' ') }
   }
-  const labels = ['物件：','物件:','物件名：','物件名:','住所：','住所:','氏名：','氏名:','入居者：','入居者:','お名前：','お名前:','連絡先：','連絡先:','電話：','電話:','電話番号：','電話番号:']
-  const ignorePrefixes = ['いつもお世話','株式会社','表題の件','お忙しいところ','よろしくお願い','ご対応のほど','今週中','来週中','本日中','また、','別で','工事費']
+  const labels = ['迚ｩ莉ｶ・・,'迚ｩ莉ｶ:','迚ｩ莉ｶ蜷搾ｼ・,'迚ｩ莉ｶ蜷・','菴乗園・・,'菴乗園:','豌丞錐・・,'豌丞錐:','蜈･螻・・ｼ・,'蜈･螻・・','縺雁錐蜑搾ｼ・,'縺雁錐蜑・','騾｣邨｡蜈茨ｼ・,'騾｣邨｡蜈・','髮ｻ隧ｱ・・,'髮ｻ隧ｱ:','髮ｻ隧ｱ逡ｪ蜿ｷ・・,'髮ｻ隧ｱ逡ｪ蜿ｷ:']
+  const ignorePrefixes = ['縺・▽繧ゅ♀荳冶ｩｱ','譬ｪ蠑丈ｼ夂､ｾ','陦ｨ鬘後・莉ｶ','縺雁ｿ吶＠縺・→縺薙ｍ','繧医ｍ縺励￥縺企｡倥＞','縺泌ｯｾ蠢懊・縺ｻ縺ｩ','莉企ｱ荳ｭ','譚･騾ｱ荳ｭ','譛ｬ譌･荳ｭ','縺ｾ縺溘・,'蛻･縺ｧ','蟾･莠玖ｲｻ']
   const body = lines.filter(line => !labels.some(x => line.startsWith(x)) && !ignorePrefixes.some(x => line.startsWith(x)))
   const requestDetails = body.slice(0, 3).join('\n')
-  const deadline = ['今週中','来週中','本日中','明日まで'].find(word => source.includes(word)) || ''
-  const approvalLine = lines.find(line => (line.includes('工事費') || line.includes('金額')) && line.includes('以内') && line.includes('発注')) || ''
+  const deadline = ['莉企ｱ荳ｭ','譚･騾ｱ荳ｭ','譛ｬ譌･荳ｭ','譏取律縺ｾ縺ｧ'].find(word => source.includes(word)) || ''
+  const approvalLine = lines.find(line => (line.includes('蟾･莠玖ｲｻ') || line.includes('驥鷹｡・)) && line.includes('莉･蜀・) && line.includes('逋ｺ豕ｨ')) || ''
   const noteParts = []
-  if (residentName) noteParts.push('入居者：' + residentName)
-  if (deadline) noteParts.push('連絡期限：' + deadline)
-  if (approvalLine) noteParts.push('先行発注条件：' + approvalLine)
+  if (residentName) noteParts.push('蜈･螻・・ｼ・ + residentName)
+  if (deadline) noteParts.push('騾｣邨｡譛滄剞・・ + deadline)
+  if (approvalLine) noteParts.push('蜈郁｡檎匱豕ｨ譚｡莉ｶ・・ + approvalLine)
   return {
     requestDate: new Date().toLocaleDateString('sv-SE'), company: matched?.company || '',
     propertyName, unit, address: matched?.address || typedAddress, residentContact, requestDetails,
-    note: noteParts.join('\n'), status: '未連絡',
-    nextAction: deadline ? '入居者へ連絡（' + deadline + '）' : '入居者へ連絡',
+    note: noteParts.join('\n'), status: '譛ｪ騾｣邨｡',
+    nextAction: deadline ? '蜈･螻・・∈騾｣邨｡・・ + deadline + '・・ : '蜈･螻・・∈騾｣邨｡',
     actionDueDate: '', caution: approvalLine, priority: 'normal'
   }
 }
@@ -201,10 +200,10 @@ function parseResidentOrderPdfText(rawText, propertyMaster, fileName = '') {
   const source = String(rawText || '').normalize('NFKC')
   const squash = value => String(value || '')
     .normalize('NFKC')
-    .replace(/[\s　]+/g, '')
-    .replace(/[‐‑‒–—―ー−－]/g, '-')
-    .replace(/[・･]/g, '')
-    .replace(/べ/g, 'ベ')
+    .replace(/[\s縲]+/g, '')
+    .replace(/[窶絶鯛停凪披輔・竏抵ｼ江/g, '-')
+    .replace(/[繝ｻ・･]/g, '')
+    .replace(/縺ｹ/g, '繝・)
     .toLocaleLowerCase('ja')
 
   const compact = squash(source)
@@ -213,8 +212,8 @@ function parseResidentOrderPdfText(rawText, propertyMaster, fileName = '') {
   const companies = Array.isArray(propertyMaster?.companies) ? propertyMaster.companies : []
 
   /* M-CROSS_RESIDENT_STEP15_5_FILENAME_PRIORITY */
-  // 最重要: 本文には参考写真の別物件名が含まれる場合があるため、
-  // PDFファイル名に一致するM-Cross物件を最優先します。
+  // 譛驥崎ｦ・ 譛ｬ譁・↓縺ｯ蜿り・・逵溘・蛻･迚ｩ莉ｶ蜷阪′蜷ｫ縺ｾ繧後ｋ蝣ｴ蜷医′縺ゅｋ縺溘ａ縲・
+  // PDF繝輔ぃ繧､繝ｫ蜷阪↓荳閾ｴ縺吶ｋM-Cross迚ｩ莉ｶ繧呈怙蜆ｪ蜈医＠縺ｾ縺吶・
   const fileMatchedProperty = [...properties]
     .sort((a, b) => squash(b.name).length - squash(a.name).length)
     .find(item => {
@@ -222,8 +221,8 @@ function parseResidentOrderPdfText(rawText, propertyMaster, fileName = '') {
       if (!name) return false
       const variants = [
         name,
-        name.replace(/ベル/g, 'べル'),
-        name.replace(/べル/g, 'ベル'),
+        name.replace(/繝吶Ν/g, '縺ｹ繝ｫ'),
+        name.replace(/縺ｹ繝ｫ/g, '繝吶Ν'),
       ]
       return variants.some(value => compactFileName.includes(value))
     })
@@ -235,19 +234,19 @@ function parseResidentOrderPdfText(rawText, propertyMaster, fileName = '') {
       if (!name) return false
       const variants = [
         name,
-        name.replace(/ベル/g, 'べル'),
-        name.replace(/べル/g, 'ベル'),
+        name.replace(/繝吶Ν/g, '縺ｹ繝ｫ'),
+        name.replace(/縺ｹ繝ｫ/g, '繝吶Ν'),
       ]
       return variants.some(value => compact.includes(value))
     })
 
   let matchedProperty = fileMatchedProperty || bodyMatchedProperty
 
-  // 帳票PDFでは文字間に空白が入るため、空白除去後の文字列から直接物件名を拾う。
+  // 蟶ｳ逾ｨPDF縺ｧ縺ｯ譁・ｭ鈴俣縺ｫ遨ｺ逋ｽ縺悟・繧九◆繧√∫ｩｺ逋ｽ髯､蜴ｻ蠕後・譁・ｭ怜・縺九ｉ逶ｴ謗･迚ｩ莉ｶ蜷阪ｒ諡ｾ縺・・
   let detectedPropertyName = ''
   const knownPatterns = [
-    /リバティベル月寒/u,
-    /inove[^0-9〒]{2,30}/u,
+    /繝ｪ繝舌ユ繧｣繝吶Ν譛亥ｯ・u,
+    /inove[^0-9縲綻{2,30}/u,
   ]
   for (const pattern of knownPatterns) {
     const match = compactFileName.match(pattern) || compact.match(pattern)
@@ -268,43 +267,43 @@ function parseResidentOrderPdfText(rawText, propertyMaster, fileName = '') {
     || ''
   const address = matchedProperty?.address || ''
 
-  // ファイル名の「物件名1101発注書」を最優先し、本文候補を補助に使います。
+  // 繝輔ぃ繧､繝ｫ蜷阪・縲檎黄莉ｶ蜷・101逋ｺ豕ｨ譖ｸ縲阪ｒ譛蜆ｪ蜈医＠縲∵悽譁・呵｣懊ｒ陬懷勧縺ｫ菴ｿ縺・∪縺吶・
   let unit = ''
-  const fileUnitMatch = compactFileName.match(/(?:[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+-)?([0-9]{3,4})(?:発注書|依頼書|pdf|$)/u)
+  const fileUnitMatch = compactFileName.match(/(?:[竇竇｡竇｢竇｣竇､竇･竇ｦ竇ｧ竇ｨ竇ｩ]+-)?([0-9]{3,4})(?:逋ｺ豕ｨ譖ｸ|萓晞ｼ譖ｸ|pdf|$)/u)
   if (fileUnitMatch) unit = fileUnitMatch[1]
-  const roomNearPhone = compact.match(/(?:\d{4,6})(?:[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+-)?(\d{3,4})011-\d{3}-\d{4}/u)
+  const roomNearPhone = compact.match(/(?:\d{4,6})(?:[竇竇｡竇｢竇｣竇､竇･竇ｦ竇ｧ竇ｨ竇ｩ]+-)?(\d{3,4})011-\d{3}-\d{4}/u)
   if (!unit && roomNearPhone) unit = roomNearPhone[1]
   if (!unit && propertyName) {
     const p = compact.indexOf(squash(propertyName))
     if (p >= 0) {
       const near = compact.slice(Math.max(0, p - 50), p + squash(propertyName).length + 80)
-      const candidates = near.match(/(?:[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+-)?\d{3,4}/gu) || []
+      const candidates = near.match(/(?:[竇竇｡竇｢竇｣竇､竇･竇ｦ竇ｧ竇ｨ竇ｩ]+-)?\d{3,4}/gu) || []
       unit = candidates.find(value => !/^20\d{2}$/u.test(value)) || ''
     }
   }
 
-  // 連絡先は帳票中の入居者連絡先候補を優先。携帯があれば最優先。
-  const phones = source.replace(/[－ー―‐‑‒–—−]/g, '-').match(/(?:0[789]0-\d{4}-\d{4}|011-\d{3}-\d{4})/g) || []
+  // 騾｣邨｡蜈医・蟶ｳ逾ｨ荳ｭ縺ｮ蜈･螻・・｣邨｡蜈亥呵｣懊ｒ蜆ｪ蜈医よ声蟶ｯ縺後≠繧後・譛蜆ｪ蜈医・
+  const phones = source.replace(/[・阪・窶補絶鯛停凪披・]/g, '-').match(/(?:0[789]0-\d{4}-\d{4}|011-\d{3}-\d{4})/g) || []
   const residentContact = phones.find(phone => /^0[789]0-/u.test(phone)) || phones[0] || ''
 
-  const hasDoor = compact.includes('玄関ドア') || compact.includes('本日玄関')
-  const hasChain = compact.includes('チェーン') || compact.includes('ドアに引掛ける') || compact.includes('ドアに引っ掛ける')
-  const hasParts = compact.includes('黒いボッチ') || compact.includes('黒い部品') || compact.includes('バネ') || compact.includes('ネジくぎ') || compact.includes('ネジ')
+  const hasDoor = compact.includes('邇・未繝峨い') || compact.includes('譛ｬ譌･邇・未')
+  const hasChain = compact.includes('繝√ぉ繝ｼ繝ｳ') || compact.includes('繝峨い縺ｫ蠑墓寺縺代ｋ') || compact.includes('繝峨い縺ｫ蠑輔▲謗帙￠繧・)
+  const hasParts = compact.includes('鮟偵＞繝懊ャ繝・) || compact.includes('鮟偵＞驛ｨ蜩・) || compact.includes('繝舌ロ') || compact.includes('繝阪ず縺上℃') || compact.includes('繝阪ず')
 
   let requestDetails = ''
   if (hasDoor && hasChain && hasParts) {
     requestDetails = [
-      '玄関ドアチェーンのドア側部品（黒いボッチ・バネ・ネジ）が外れた。',
-      '入居者では元に戻せないため修理対応。',
-      compact.includes('修理が不可の場合は交換') || compact.includes('修理不可の場合は交換') ? '修理不可の場合は交換対応。' : '',
+      '邇・未繝峨い繝√ぉ繝ｼ繝ｳ縺ｮ繝峨い蛛ｴ驛ｨ蜩・ｼ磯ｻ偵＞繝懊ャ繝√・繝舌ロ繝ｻ繝阪ず・峨′螟悶ｌ縺溘・,
+      '蜈･螻・・〒縺ｯ蜈・↓謌ｻ縺帙↑縺・◆繧∽ｿｮ逅・ｯｾ蠢懊・,
+      compact.includes('菫ｮ逅・′荳榊庄縺ｮ蝣ｴ蜷医・莠､謠・) || compact.includes('菫ｮ逅・ｸ榊庄縺ｮ蝣ｴ蜷医・莠､謠・) ? '菫ｮ逅・ｸ榊庄縺ｮ蝣ｴ蜷医・莠､謠帛ｯｾ蠢懊・ : '',
     ].filter(Boolean).join('\n')
   }
 
   const caution = []
-  if (compact.includes('入居者へ直接ご連絡')) caution.push('入居者へ直接連絡して訪問日時を調整')
-  if (compact.includes('写真を送ってもらうよう依頼中')) caution.push('写真は入居者へ送付依頼中')
-  if (compact.includes('参考写真')) caution.push('参考写真あり')
-  if (compact.includes('修理が不可の場合は交換') || compact.includes('修理不可の場合は交換')) caution.push('修理不可の場合は交換対応')
+  if (compact.includes('蜈･螻・・∈逶ｴ謗･縺秘｣邨｡')) caution.push('蜈･螻・・∈逶ｴ謗･騾｣邨｡縺励※險ｪ蝠乗律譎ゅｒ隱ｿ謨ｴ')
+  if (compact.includes('蜀咏悄繧帝√▲縺ｦ繧ゅｉ縺・ｈ縺・ｾ晞ｼ荳ｭ')) caution.push('蜀咏悄縺ｯ蜈･螻・・∈騾∽ｻ倅ｾ晞ｼ荳ｭ')
+  if (compact.includes('蜿り・・逵・)) caution.push('蜿り・・逵溘≠繧・)
+  if (compact.includes('菫ｮ逅・′荳榊庄縺ｮ蝣ｴ蜷医・莠､謠・) || compact.includes('菫ｮ逅・ｸ榊庄縺ｮ蝣ｴ蜷医・莠､謠・)) caution.push('菫ｮ逅・ｸ榊庄縺ｮ蝣ｴ蜷医・莠､謠帛ｯｾ蠢・)
 
   return {
     requestDate: new Date().toLocaleDateString('sv-SE'),
@@ -315,8 +314,8 @@ function parseResidentOrderPdfText(rawText, propertyMaster, fileName = '') {
     residentContact,
     requestDetails,
     note: '',
-    status: '未連絡',
-    nextAction: '入居者へ連絡して訪問日時を調整',
+    status: '譛ｪ騾｣邨｡',
+    nextAction: '蜈･螻・・∈騾｣邨｡縺励※險ｪ蝠乗律譎ゅｒ隱ｿ謨ｴ',
     actionDueDate: '',
     caution: caution.join('\n'),
     priority: 'normal',
@@ -340,11 +339,11 @@ function normalizeJapanesePhone(value) {
 function extractJapanesePhoneFromSource(value) {
   const source = String(value || '')
     .normalize('NFKC')
-    .replace(/[－ー―‐‑‒–—−]/g, '-')
+    .replace(/[・阪・窶補絶鯛停凪披・]/g, '-')
 
   const labeledLines = source
     .split(/\r?\n/)
-    .filter(line => /(連絡先|電話番号|電話|TEL)/i.test(line))
+    .filter(line => /(騾｣邨｡蜈・髮ｻ隧ｱ逡ｪ蜿ｷ|髮ｻ隧ｱ|TEL)/i.test(line))
 
   const findPhone = text => {
     const mobile = text.match(/0[789]0[\s-]*\d{4}[\s-]*\d{4}/)
@@ -366,7 +365,7 @@ function withResidentAiTimeout(promise, milliseconds = 45000) {
   return Promise.race([
     promise,
     new Promise((_, reject) => {
-      window.setTimeout(() => reject(new Error('AI解析が45秒を超えたため中止しました')), milliseconds)
+      window.setTimeout(() => reject(new Error('AI隗｣譫舌′45遘偵ｒ雜・∴縺溘◆繧∽ｸｭ豁｢縺励∪縺励◆')), milliseconds)
     }),
   ])
 }
@@ -376,7 +375,7 @@ function normalizeResidentDuplicateText(value) {
   return String(value || '')
     .normalize('NFKC')
     .toLocaleLowerCase('ja')
-    .replace(/[\s　・･、。,.()（）「」『』【】\-]/g, '')
+    .replace(/[\s縲繝ｻ・･縲√・.()・茨ｼ峨後阪弱上舌曾-]/g, '')
 }
 
 function residentRequestSimilarity(leftValue, rightValue) {
@@ -400,13 +399,13 @@ function residentRequestSimilarity(leftValue, rightValue) {
 
 function findResidentDuplicate(cases, candidate) {
   const property = normalizeResidentDuplicateText(candidate?.propertyName)
-  const unit = normalizeResidentDuplicateText(candidate?.unit).replace(/号室$/u, '')
+  const unit = normalizeResidentDuplicateText(candidate?.unit).replace(/蜿ｷ螳､$/u, '')
   if (!property || !unit) return null
 
   const sameRoom = (Array.isArray(cases) ? cases : []).filter(item => {
-    if (item.completed || item.status === '完了') return false
+    if (item.completed || item.status === '螳御ｺ・) return false
     return normalizeResidentDuplicateText(item.propertyName) === property
-      && normalizeResidentDuplicateText(item.unit).replace(/号室$/u, '') === unit
+      && normalizeResidentDuplicateText(item.unit).replace(/蜿ｷ螳､$/u, '') === unit
   })
   if (!sameRoom.length) return null
 
@@ -435,13 +434,13 @@ function normalizeWorkOrder(value) {
     workDetails: source.workDetails || '',
     estimateItems: Array.isArray(source.estimateItems) ? source.estimateItems : [],
     estimateAmount: sales,
-    estimateStatus: source.estimateStatus || '未作成',
-    orderStatus: source.orderStatus || '未発注',
+    estimateStatus: source.estimateStatus || '譛ｪ菴懈・',
+    orderStatus: source.orderStatus || '譛ｪ逋ｺ豕ｨ',
     contractor: source.contractor || '',
     startDate: source.startDate || '', completionDueDate: source.completionDueDate || '', completedDate: source.completedDate || '',
     contractorCost, materialCost, otherCost, costTotal, profit,
     profitRate: sales > 0 ? Number(((profit / sales) * 100).toFixed(1)) : 0,
-    billingStatus: source.billingStatus || '未請求',
+    billingStatus: source.billingStatus || '譛ｪ隲区ｱ・,
     sourceType: source.sourceType || '', sourceId: source.sourceId || '',
     createdAt: source.createdAt || new Date().toISOString(), updatedAt: source.updatedAt || new Date().toISOString(),
   }
@@ -470,12 +469,12 @@ function normalizeResidentCase(value) {
     residentContact: normalizeJapanesePhone(source.residentContact || ''),
     requestDetails: source.requestDetails || '',
     note: source.note || '',
-    status: residentCaseStatuses.includes(source.status) ? source.status : '未連絡',
-    nextAction: source.nextAction || getResidentNextAction(source.status || '未連絡'),
+    status: residentCaseStatuses.includes(source.status) ? source.status : '譛ｪ騾｣邨｡',
+    nextAction: source.nextAction || getResidentNextAction(source.status || '譛ｪ騾｣邨｡'),
     actionDueDate: source.actionDueDate || '',
     waitingFor: source.waitingFor || '',
     priority: ['urgent', 'normal', 'low'].includes(source.priority) ? source.priority : 'normal',
-    isOnHold: Boolean(source.isOnHold) || source.status === '保留',
+    isOnHold: Boolean(source.isOnHold) || source.status === '菫晉蕗',
     holdReason: source.holdReason || '',
     lastActionAt: source.lastActionAt || source.updatedAt || source.createdAt || '',
     siteVisitAt: source.siteVisitAt || '',
@@ -497,7 +496,7 @@ function loadResidentCases() {
     const parsed = JSON.parse(raw)
     return Array.isArray(parsed) ? parsed.map(normalizeResidentCase) : []
   } catch (error) {
-    console.error('入居中案件を読み込めませんでした。', error)
+    console.error('蜈･螻・ｸｭ譯井ｻｶ繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲・, error)
     return []
   }
 }
@@ -516,7 +515,7 @@ function saveResidentCases(cases) {
     }))
     return true
   } catch (error) {
-    console.error('入居中案件を保存できませんでした。', error)
+    console.error('蜈･螻・ｸｭ譯井ｻｶ繧剃ｿ晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・, error)
     return false
   }
 }
@@ -550,15 +549,15 @@ function downloadResidentCaseCalendar(item, visitType) {
   const startValue = isWork ? item.workVisitAt : item.siteVisitAt
   const endValue = isWork ? item.workVisitEndAt : item.siteVisitEndAt
   if (!startValue || !endValue || new Date(endValue) <= new Date(startValue)) return false
-  const title = '【入居中・' + (isWork ? '工事' : '現調') + '】'
-    + (item.propertyName || '物件名未設定')
-    + (item.unit ? ' ' + item.unit + '号室' : '')
+  const title = '縲仙・螻・ｸｭ繝ｻ' + (isWork ? '蟾･莠・ : '迴ｾ隱ｿ') + '縲・
+    + (item.propertyName || '迚ｩ莉ｶ蜷肴悴險ｭ螳・)
+    + (item.unit ? ' ' + item.unit + '蜿ｷ螳､' : '')
 
   const description = [
-    item.requestDetails ? '依頼内容：' + item.requestDetails : '',
-    item.residentContact ? '入居者連絡先：' + item.residentContact : '',
-    item.note ? '備考：' + item.note : '',
-    item.caution ? '注意事項：' + item.caution : '',
+    item.requestDetails ? '萓晞ｼ蜀・ｮｹ・・ + item.requestDetails : '',
+    item.residentContact ? '蜈･螻・・｣邨｡蜈茨ｼ・ + item.residentContact : '',
+    item.note ? '蛯呵・ｼ・ + item.note : '',
+    item.caution ? '豕ｨ諢丈ｺ矩・ｼ・ + item.caution : '',
   ].filter(Boolean).join('\n')
 
   const ics = [
@@ -592,18 +591,18 @@ function downloadResidentCaseCalendar(item, visitType) {
 }
 
 function splitMeasurementType(type) {
-  return type.startsWith('収納') ? ['収納', type.replace('収納', '')] : [type]
+  return type.startsWith('蜿守ｴ・) ? ['蜿守ｴ・, type.replace('蜿守ｴ・, '')] : [type]
 }
 function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings) {
   const crossRows = []
   const cfRows = []
   const softRows = []
   const floorTrimRows = []
-  const roomPriority = ['居間', 'LDK', '台所', '洋間', '和室', '階段', 'ホール', '玄関', '脱衣所', 'トイレ']
+  const roomPriority = ['螻・俣', 'LDK', '蜿ｰ謇', '豢矩俣', '蜥悟ｮ､', '髫取ｮｵ', '繝帙・繝ｫ', '邇・未', '閼ｱ陦｣謇', '繝医う繝ｬ']
 
   function roomBaseName(roomName) {
-    if (/^洋間\d+$/.test(roomName)) return '洋間'
-    if (/^和室\d+$/.test(roomName)) return '和室'
+    if (/^豢矩俣\d+$/.test(roomName)) return '豢矩俣'
+    if (/^蜥悟ｮ､\d+$/.test(roomName)) return '蜥悟ｮ､'
     return roomName
   }
 
@@ -633,22 +632,22 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
     return groups
   }
 
-  // 1. クロスを全部屋分、指定した部屋順で先に並べます。
+  // 1. 繧ｯ繝ｭ繧ｹ繧貞・驛ｨ螻句・縲∵欠螳壹＠縺滄Κ螻矩・〒蜈医↓荳ｦ縺ｹ縺ｾ縺吶・
   orderedRooms.forEach(roomName => {
     const definitions = [
       {
-        parts: [roomName, '天井', 'クロス貼替'],
-        records: records.filter(record => record.room === roomName && record.type === '天井'),
-        amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['天井'] || 0),
+        parts: [roomName, '螟ｩ莠・, '繧ｯ繝ｭ繧ｹ雋ｼ譖ｿ'],
+        records: records.filter(record => record.room === roomName && record.type === '螟ｩ莠・),
+        amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['螟ｩ莠・] || 0),
       },
       {
-        parts: [roomName, '壁', 'クロス貼替'],
-        records: records.filter(record => record.room === roomName && record.type === '壁'),
-        amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['壁'] || 0),
+        parts: [roomName, '螢・, '繧ｯ繝ｭ繧ｹ雋ｼ譖ｿ'],
+        records: records.filter(record => record.room === roomName && record.type === '螢・),
+        amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['螢・] || 0),
       },
       {
-        parts: [roomName, '収納', 'クロス貼替'],
-        records: records.filter(record => record.room === roomName && (record.type === '収納天井' || record.type === '収納壁')),
+        parts: [roomName, '蜿守ｴ・, '繧ｯ繝ｭ繧ｹ雋ｼ譖ｿ'],
+        records: records.filter(record => record.room === roomName && (record.type === '蜿守ｴ榊､ｩ莠・ || record.type === '蜿守ｴ榊｣・)),
         amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates[record.type] || 0),
         storage: true,
       },
@@ -662,10 +661,10 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
         crossRows.push({
           room: roomName,
           parts: definition.parts,
-          memo: definition.storage ? ['天井壁', inputMemo].filter(Boolean).join('・') : inputMemo,
+          memo: definition.storage ? ['螟ｩ莠募｣・, inputMemo].filter(Boolean).join('繝ｻ') : inputMemo,
           category: 'cross',
           quantity,
-          unit: '㎡',
+          unit: '緕｡',
           rate: quantity > 0 ? amount / quantity : 0,
           amount,
         })
@@ -673,9 +672,9 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
     })
   })
 
-  // 2. クロスが終わった後に、CFを全部屋分並べます。
+  // 2. 繧ｯ繝ｭ繧ｹ縺檎ｵゅｏ縺｣縺溷ｾ後↓縲，F繧貞・驛ｨ螻句・荳ｦ縺ｹ縺ｾ縺吶・
   const cfRooms = [...orderedRooms]
-  if (cfRecords.some(record => record.room === '土間') && !cfRooms.includes('土間')) cfRooms.push('土間')
+  if (cfRecords.some(record => record.room === '蝨滄俣') && !cfRooms.includes('蝨滄俣')) cfRooms.push('蝨滄俣')
   cfRooms.forEach(roomName => {
     const roomCfRecords = cfRecords.filter(record => record.room === roomName)
     groupByMemo(roomCfRecords).forEach((groupRecords, memo) => {
@@ -685,28 +684,28 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
       const rate = Number(pricingSettings.cfRate || 0)
       cfRows.push({
         room: roomName,
-        parts: [roomName, '床', 'CF貼り'],
+        parts: [roomName, '蠎・, 'CF雋ｼ繧・],
         memo,
         category: 'cf',
         quantity,
-        unit: '㎡',
+        unit: '緕｡',
         rate,
         amount: quantity * rate,
       })
     })
   })
-  // 3. 最後にソフト巾木。メモなしは全室合計、メモありはメモ別です。
+  // 3. 譛蠕後↓繧ｽ繝輔ヨ蟾ｾ譛ｨ縲ゅΓ繝｢縺ｪ縺励・蜈ｨ螳､蜷郁ｨ医√Γ繝｢縺ゅｊ縺ｯ繝｡繝｢蛻･縺ｧ縺吶・
   groupByMemo(softRecords).forEach((groupRecords, memo) => {
     const quantity = groupRecords.reduce((sum, record) => sum + getSoftBaseboardQuantity(record), 0)
     if (quantity <= 0) return
     const rate = Number(pricingSettings.softRate || 0)
     softRows.push({
       room: '__ALL_ROOMS__',
-      parts: ['ソフト巾木貼替'],
+      parts: ['繧ｽ繝輔ヨ蟾ｾ譛ｨ雋ｼ譖ｿ'],
       memo,
       category: 'soft',
       quantity,
-      unit: '枚',
+      unit: '譫・,
       rate,
       amount: quantity * rate,
     })
@@ -728,11 +727,11 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
     const rate = Number(pricingSettings.floorTrimRate || 0)
     floorTrimRows.push({
       room: '__FLOOR_TRIM__',
-      parts: [`${group.roomA}⇔${group.roomB}`, '床見切り取付'],
+      parts: [`${group.roomA}竍・{group.roomB}`, '蠎願ｦ句・繧雁叙莉・],
       memo: group.color,
       category: 'floorTrim',
       quantity: group.quantity,
-      unit: '本',
+      unit: '譛ｬ',
       rate,
       amount: group.quantity * rate,
     })
@@ -758,7 +757,7 @@ const CF_SQUARE_METRE_START_V3 = 20
 
 function areaTextV3(value) {
   const rounded = Math.round((Number(value || 0) + Number.EPSILON) * 10) / 10
-  return rounded + '㎡程度'
+  return rounded + '緕｡遞句ｺｦ'
 }
 
 function blankPriceV3(row) {
@@ -770,7 +769,7 @@ function crossDetailRowV3(row) {
   const memo = String(row?.memo || '').trim()
   return {
     ...blankPriceV3(row),
-    parts: [(room ? room : '') + 'クロス張替'],
+    parts: [(room ? room : '') + '繧ｯ繝ｭ繧ｹ蠑ｵ譖ｿ'],
     memo,
     quantity: '',
     unit: '',
@@ -781,11 +780,11 @@ function crossPackageRowV3(baseRow, totalArea) {
   return {
     ...blankPriceV3(baseRow || {}),
     room: baseRow?.room || '__CROSS_PACKAGE__',
-    parts: ['上記クロス張替　' + areaTextV3(totalArea)],
+    parts: ['荳願ｨ倥け繝ｭ繧ｹ蠑ｵ譖ｿ縲' + areaTextV3(totalArea)],
     memo: '',
     category: 'crossPackage',
     quantity: 1,
-    unit: '式',
+    unit: '蠑・,
   }
 }
 
@@ -793,15 +792,15 @@ function cfPackageRowV3(cfRows, totalArea) {
   const rooms = [...new Set(cfRows
     .map(row => String(row?.room || row?.parts?.[0] || '').trim())
     .filter(Boolean))]
-  const roomText = rooms.join('、')
+  const roomText = rooms.join('縲・)
   return {
     ...blankPriceV3(cfRows[cfRows.length - 1] || {}),
     room: cfRows[0]?.room || '__CF_PACKAGE__',
-    parts: [(roomText ? roomText + '　' : '') + 'CF貼り　' + areaTextV3(totalArea)],
+    parts: [(roomText ? roomText + '縲' : '') + 'CF雋ｼ繧翫' + areaTextV3(totalArea)],
     memo: '',
     category: 'cfPackage',
     quantity: 1,
-    unit: '式',
+    unit: '蠑・,
   }
 }
 
@@ -812,7 +811,7 @@ function applyCrossCfPackageRulesV3(inputRows) {
   const crossArea = crossRows.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0)
   const cfArea = cfRows.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0)
 
-  // クロスは35㎡以下を一式。CFは20㎡未満だけ一式で、20㎡ちょうどから㎡単価。
+  // 繧ｯ繝ｭ繧ｹ縺ｯ35緕｡莉･荳九ｒ荳蠑上・F縺ｯ20緕｡譛ｪ貅縺縺台ｸ蠑上〒縲・0緕｡縺｡繧・≧縺ｩ縺九ｉ緕｡蜊倅ｾ｡縲・
   const useCrossPackage = crossRows.length > 0 && crossArea > 0 && crossArea <= CROSS_PACKAGE_LIMIT_V3
   const useCfPackage = cfRows.length > 0 && cfArea > 0 && cfArea < CF_SQUARE_METRE_START_V3
 
@@ -857,7 +856,7 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
       memo: item.memo || '',
       category: 'additionalWork',
       quantity: Number(item.quantity || 0),
-      unit: item.unit || '式',
+      unit: item.unit || '蠑・,
       rate: item.unitPrice === '' || item.unitPrice == null ? '' : Number(item.unitPrice || 0),
       amount: item.unitPrice === '' || item.unitPrice == null
         ? ''
@@ -866,36 +865,36 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
 
     const outputRows = [...convertedRows, ...additionalRows]
     if (!outputRows.length) {
-      window.alert('出力できる見積項目がありません。')
+      window.alert('蜃ｺ蜉帙〒縺阪ｋ隕狗ｩ埼・岼縺後≠繧翫∪縺帙ｓ縲・)
       return
     }
     if (outputRows.length > 32) {
-      window.alert('見積明細は32行まで出力できます。現在 ' + outputRows.length + '行あります。')
+      window.alert('隕狗ｩ肴・邏ｰ縺ｯ32陦後∪縺ｧ蜃ｺ蜉帙〒縺阪∪縺吶ら樟蝨ｨ ' + outputRows.length + '陦後≠繧翫∪縺吶・)
       return
     }
 
     const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
     const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
-    if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+    if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populate繝悶Λ繧ｦ繧ｶ迚医ｒ蛻晄悄蛹悶〒縺阪∪縺帙ｓ')
 
     const templateResponse = await fetch(
       new URL('/mcross-estimate-template.xlsx', window.location.origin),
       { cache: 'no-store' },
     )
     if (!templateResponse.ok) {
-      throw new Error('見積書テンプレートを読み込めません HTTP ' + templateResponse.status)
+      throw new Error('隕狗ｩ肴嶌繝・Φ繝励Ξ繝ｼ繝医ｒ隱ｭ縺ｿ霎ｼ繧√∪縺帙ｓ HTTP ' + templateResponse.status)
     }
 
     const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
-    const ws = workbook.sheet('見積書')
-    if (!ws) throw new Error('「見積書」シートが見つかりません')
+    const ws = workbook.sheet('隕狗ｩ肴嶌')
+    if (!ws) throw new Error('縲瑚ｦ狗ｩ肴嶌縲阪す繝ｼ繝医′隕九▽縺九ｊ縺ｾ縺帙ｓ')
 
-    // 元テンプレートの書式、ロゴ、罫線、列幅、行高、印刷設定は維持する。
-    ws.cell('B5').value(entry?.company ? entry.company + '　御中' : '')
-    ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy年m月d日')
+    // 蜈・ユ繝ｳ繝励Ξ繝ｼ繝医・譖ｸ蠑上√Ο繧ｴ縲∫ｽｫ邱壹∝・蟷・∬｡碁ｫ倥∝魂蛻ｷ險ｭ螳壹・邯ｭ謖√☆繧九・
+    ws.cell('B5').value(entry?.company ? entry.company + '縲蠕｡荳ｭ' : '')
+    ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy蟷ｴm譛・譌･')
     ws.cell('D13').value(entry?.propertyName || '')
     ws.cell('F13').value(entry?.unit || '')
-    ws.cell('G13').value(entry?.unit ? '号室' : '')
+    ws.cell('G13').value(entry?.unit ? '蜿ｷ螳､' : '')
     ws.cell('D14').value(entry?.address || '')
 
     for (let rowNumber = 23; rowNumber <= 54; rowNumber += 1) {
@@ -907,7 +906,7 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
 
     function joinedParts(row) {
       if (!Array.isArray(row?.parts)) return String(row?.label || row?.name || '').trim()
-      return row.parts.map(value => String(value || '').trim()).filter(Boolean).join('　')
+      return row.parts.map(value => String(value || '').trim()).filter(Boolean).join('縲')
     }
 
     function cellValue(value) {
@@ -919,7 +918,7 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
     outputRows.forEach((row, index) => {
       const rowNumber = 23 + index
       /* M-CROSS_TEMPLATE_PRESERVE_BLANK_PARTS_V2 */
-      // 分割形式では「項目2だけ空欄」のような位置情報を維持する。
+      // 蛻・牡蠖｢蠑上〒縺ｯ縲碁・岼2縺縺醍ｩｺ谺・阪・繧医≧縺ｪ菴咲ｽｮ諠・ｱ繧堤ｶｭ謖√☆繧九・
       const rawParts = Array.isArray(row?.parts)
         ? row.parts.map(value => String(value || '').trim())
         : [String(row?.label || row?.name || '').trim()]
@@ -929,22 +928,22 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
       const memo = String(row?.memo || '').trim()
 
       if (format === 'split') {
-        // 社員用: 工事項目をC～F列へ分ける。
+        // 遉ｾ蜩｡逕ｨ: 蟾･莠矩・岼繧辰・曦蛻励∈蛻・￠繧九・
         const splitParts = [0, 1, 2, 3].map(index => parts[index] || '')
         ;['C', 'D', 'E', 'F'].forEach((column, partIndex) => {
           ws.cell(column + rowNumber).value(splitParts[partIndex])
         })
-        // 分割形式では空白列を詰めない。メモは空いている末尾列へ入れる。
+        // 蛻・牡蠖｢蠑上〒縺ｯ遨ｺ逋ｽ蛻励ｒ隧ｰ繧√↑縺・ゅΓ繝｢縺ｯ遨ｺ縺・※縺・ｋ譛ｫ蟆ｾ蛻励∈蜈･繧後ｋ縲・
         if (memo) {
           let memoIndex = -1
           for (let index = 3; index >= 0; index -= 1) {
             if (!splitParts[index]) { memoIndex = index; break }
           }
           if (memoIndex >= 0) ws.cell(['C', 'D', 'E', 'F'][memoIndex] + rowNumber).value(memo)
-          else ws.cell('F' + rowNumber).value(splitParts[3] + '　' + memo)
+          else ws.cell('F' + rowNumber).value(splitParts[3] + '縲' + memo)
         }
       } else {
-        // 自分用: 工事項目をC列へまとめ、メモはF列へ出す。
+        // 閾ｪ蛻・畑: 蟾･莠矩・岼繧辰蛻励∈縺ｾ縺ｨ繧√√Γ繝｢縺ｯF蛻励∈蜃ｺ縺吶・
         ws.cell('C' + rowNumber).value(parts.join(' '))
         ws.cell('D' + rowNumber).value('')
         ws.cell('E' + rowNumber).value('')
@@ -977,19 +976,19 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
         })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
-    const safeName = [entry?.propertyName || '物件', entry?.unit ? entry.unit + '号室' : '']
+    const safeName = [entry?.propertyName || '迚ｩ莉ｶ', entry?.unit ? entry.unit + '蜿ｷ螳､' : '']
       .filter(Boolean)
       .join('_')
       .replace(/[\/:*?"<>|]/g, '_')
     link.href = url
-    link.download = '見積書_' + safeName + '.xlsx'
+    link.download = '隕狗ｩ肴嶌_' + safeName + '.xlsx'
     document.body.appendChild(link)
     link.click()
     link.remove()
     URL.revokeObjectURL(url)
   } catch (error) {
     console.error(error)
-    window.alert(error instanceof Error ? error.message : '見積書を出力できませんでした。')
+    window.alert(error instanceof Error ? error.message : '隕狗ｩ肴嶌繧貞・蜉帙〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・)
   }
 }
 
@@ -997,14 +996,14 @@ async function downloadEstimateExcelLegacy(entry, rows, format, additionalWorks 
   rows = applyCrossCfPackageRulesV3(rows)
 try {
     if (!rows.length && !additionalWorks.length) {
-      window.alert('出力できる見積項目がありません。')
+      window.alert('蜃ｺ蜉帙〒縺阪ｋ隕狗ｩ埼・岼縺後≠繧翫∪縺帙ｓ縲・)
       return
     }
     const { default: ExcelJS } = await import('exceljs')
     const workbook = new ExcelJS.Workbook()
     workbook.creator = 'MavieSelect'
     workbook.created = new Date()
-    const worksheet = workbook.addWorksheet('見積用', {
+    const worksheet = workbook.addWorksheet('隕狗ｩ咲畑', {
       views: [{ state: 'frozen', ySplit: 8 }],
     })
     worksheet.properties.defaultRowHeight = 21
@@ -1018,7 +1017,7 @@ try {
         memo: item.memo || '',
         category: 'additionalWork',
         quantity: Number(item.quantity || 0),
-        unit: item.unit || '式',
+        unit: item.unit || '蠑・,
         rate: Number(item.unitPrice || 0),
         amount: Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)),
       })),
@@ -1026,7 +1025,7 @@ try {
     const maxParts = format === 'split'
       ? Math.max(1, ...estimateOutputRows.map(row => row.parts.length))
       : 1
-    // 「項目を分ける」場合だけ、項目3とメモの間へ空白の調整列を1列入れる。
+    // 縲碁・岼繧貞・縺代ｋ縲榊ｴ蜷医□縺代・・岼3縺ｨ繝｡繝｢縺ｮ髢薙∈遨ｺ逋ｽ縺ｮ隱ｿ謨ｴ蛻励ｒ1蛻怜・繧後ｋ縲・
     const spacerCount = format === 'split' ? 1 : 2
     const firstSpacerColumnIndex = maxParts + 1
     const memoColumnIndex = maxParts + spacerCount + 1
@@ -1039,7 +1038,7 @@ try {
       const splitParts = row.category === 'cf'
         ? row.parts
         : row.category === 'floorTrim'
-          ? [row.parts[0], '床', '見切り取付']
+          ? [row.parts[0], '蠎・, '隕句・繧雁叙莉・]
           : row.parts
       const itemCells = format === 'split' ? splitParts : [row.parts.join(' ')]
       const emptyFill = Array(Math.max(0, maxParts - itemCells.length)).fill('')
@@ -1057,18 +1056,18 @@ try {
 
     worksheet.mergeCells(1, 1, 1, lastColumn)
     const titleCell = worksheet.getCell(1, 1)
-    titleCell.value = '見積用データ'
+    titleCell.value = '隕狗ｩ咲畑繝・・繧ｿ'
     titleCell.font = { name: 'Yu Gothic', size: 16, bold: true, color: { argb: 'FFFFFFFF' } }
     titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF9B72CF' } }
     titleCell.alignment = { vertical: 'middle', horizontal: 'left' }
     worksheet.getRow(1).height = 30
 
     const metadata = [
-      ['管理会社', entry.company || ''],
-      ['物件名', entry.propertyName || ''],
-      ['住所', entry.address || ''],
-      ['号室', entry.unit || ''],
-      ['出力日', new Intl.DateTimeFormat('ja-JP').format(new Date())],
+      ['邂｡逅・ｼ夂､ｾ', entry.company || ''],
+      ['迚ｩ莉ｶ蜷・, entry.propertyName || ''],
+      ['菴乗園', entry.address || ''],
+      ['蜿ｷ螳､', entry.unit || ''],
+      ['蜃ｺ蜉帶律', new Intl.DateTimeFormat('ja-JP').format(new Date())],
     ]
     metadata.forEach(([label, value], index) => {
       const rowNumber = index + 3
@@ -1082,10 +1081,10 @@ try {
     })
 
     const headers = format === 'split'
-      ? [...Array(maxParts)].map((_, index) => '項目' + (index + 1))
-      : ['工事項目']
+      ? [...Array(maxParts)].map((_, index) => '鬆・岼' + (index + 1))
+      : ['蟾･莠矩・岼']
     headers.push(...Array(spacerCount).fill(''))
-    headers.push('メモ', '数量', '単位', '単価', '金額')
+    headers.push('繝｡繝｢', '謨ｰ驥・, '蜊倅ｽ・, '蜊倅ｾ｡', '驥鷹｡・)
     const headerRow = worksheet.getRow(8)
     headerRow.values = headers
     headerRow.height = 24
@@ -1182,9 +1181,9 @@ try {
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     })
-    const safeName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}`
+    const safeName = `${entry.propertyName || '迚ｩ莉ｶ'}_${entry.unit || '蜿ｷ螳､'}`
       .replace(/[\\/:*?"<>|]/g, '_')
-    const fileName = `${safeName}_見積用.xlsx`
+    const fileName = `${safeName}_隕狗ｩ咲畑.xlsx`
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -1194,8 +1193,8 @@ try {
     link.remove()
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   } catch (error) {
-    console.error('見積用Excelを出力できませんでした。', error)
-    window.alert('見積用Excelを出力できませんでした。')
+    console.error('隕狗ｩ咲畑Excel繧貞・蜉帙〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・, error)
+    window.alert('隕狗ｩ咲畑Excel繧貞・蜉帙〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・)
   }
 }
 
@@ -1218,70 +1217,70 @@ function toHiragana(value) {
 }
 
 const kanaToRomajiMap = {
-  きゃ: 'kya', きゅ: 'kyu', きょ: 'kyo',
-  しゃ: 'sha', しゅ: 'shu', しょ: 'sho',
-  ちゃ: 'cha', ちゅ: 'chu', ちょ: 'cho',
-  にゃ: 'nya', にゅ: 'nyu', にょ: 'nyo',
-  ひゃ: 'hya', ひゅ: 'hyu', ひょ: 'hyo',
-  みゃ: 'mya', みゅ: 'myu', みょ: 'myo',
-  りゃ: 'rya', りゅ: 'ryu', りょ: 'ryo',
-  ぎゃ: 'gya', ぎゅ: 'gyu', ぎょ: 'gyo',
-  じゃ: 'ja', じゅ: 'ju', じょ: 'jo',
-  びゃ: 'bya', びゅ: 'byu', びょ: 'byo',
-  ぴゃ: 'pya', ぴゅ: 'pyu', ぴょ: 'pyo',
-  ふぁ: 'fa', ふぃ: 'fi', ふぇ: 'fe', ふぉ: 'fo',
-  うぁ: 'wha', うぃ: 'whi', うぇ: 'whe', うぉ: 'who',
-  あ: 'a', い: 'i', う: 'u', え: 'e', お: 'o',
-  か: 'ka', き: 'ki', く: 'ku', け: 'ke', こ: 'ko',
-  さ: 'sa', し: 'shi', す: 'su', せ: 'se', そ: 'so',
-  た: 'ta', ち: 'chi', つ: 'tsu', て: 'te', と: 'to',
-  な: 'na', に: 'ni', ぬ: 'nu', ね: 'ne', の: 'no',
-  は: 'ha', ひ: 'hi', ふ: 'fu', へ: 'he', ほ: 'ho',
-  ま: 'ma', み: 'mi', む: 'mu', め: 'me', も: 'mo',
-  や: 'ya', ゆ: 'yu', よ: 'yo',
-  ら: 'ra', り: 'ri', る: 'ru', れ: 're', ろ: 'ro',
-  わ: 'wa', を: 'o', ん: 'n',
-  が: 'ga', ぎ: 'gi', ぐ: 'gu', げ: 'ge', ご: 'go',
-  ざ: 'za', じ: 'ji', ず: 'zu', ぜ: 'ze', ぞ: 'zo',
-  だ: 'da', ぢ: 'ji', づ: 'zu', で: 'de', ど: 'do',
-  ば: 'ba', び: 'bi', ぶ: 'bu', べ: 'be', ぼ: 'bo',
-  ぱ: 'pa', ぴ: 'pi', ぷ: 'pu', ぺ: 'pe', ぽ: 'po',
-  ぁ: 'a', ぃ: 'i', ぅ: 'u', ぇ: 'e', ぉ: 'o',
-  ゃ: 'ya', ゅ: 'yu', ょ: 'yo', っ: '', ー: '',
+  縺阪ｃ: 'kya', 縺阪ｅ: 'kyu', 縺阪ｇ: 'kyo',
+  縺励ｃ: 'sha', 縺励ｅ: 'shu', 縺励ｇ: 'sho',
+  縺｡繧・ 'cha', 縺｡繧・ 'chu', 縺｡繧・ 'cho',
+  縺ｫ繧・ 'nya', 縺ｫ繧・ 'nyu', 縺ｫ繧・ 'nyo',
+  縺ｲ繧・ 'hya', 縺ｲ繧・ 'hyu', 縺ｲ繧・ 'hyo',
+  縺ｿ繧・ 'mya', 縺ｿ繧・ 'myu', 縺ｿ繧・ 'myo',
+  繧翫ｃ: 'rya', 繧翫ｅ: 'ryu', 繧翫ｇ: 'ryo',
+  縺弱ｃ: 'gya', 縺弱ｅ: 'gyu', 縺弱ｇ: 'gyo',
+  縺倥ｃ: 'ja', 縺倥ｅ: 'ju', 縺倥ｇ: 'jo',
+  縺ｳ繧・ 'bya', 縺ｳ繧・ 'byu', 縺ｳ繧・ 'byo',
+  縺ｴ繧・ 'pya', 縺ｴ繧・ 'pyu', 縺ｴ繧・ 'pyo',
+  縺ｵ縺・ 'fa', 縺ｵ縺・ 'fi', 縺ｵ縺・ 'fe', 縺ｵ縺・ 'fo',
+  縺・＝: 'wha', 縺・＜: 'whi', 縺・∞: 'whe', 縺・♂: 'who',
+  縺・ 'a', 縺・ 'i', 縺・ 'u', 縺・ 'e', 縺・ 'o',
+  縺・ 'ka', 縺・ 'ki', 縺・ 'ku', 縺・ 'ke', 縺・ 'ko',
+  縺・ 'sa', 縺・ 'shi', 縺・ 'su', 縺・ 'se', 縺・ 'so',
+  縺・ 'ta', 縺｡: 'chi', 縺､: 'tsu', 縺ｦ: 'te', 縺ｨ: 'to',
+  縺ｪ: 'na', 縺ｫ: 'ni', 縺ｬ: 'nu', 縺ｭ: 'ne', 縺ｮ: 'no',
+  縺ｯ: 'ha', 縺ｲ: 'hi', 縺ｵ: 'fu', 縺ｸ: 'he', 縺ｻ: 'ho',
+  縺ｾ: 'ma', 縺ｿ: 'mi', 繧: 'mu', 繧・ 'me', 繧・ 'mo',
+  繧・ 'ya', 繧・ 'yu', 繧・ 'yo',
+  繧・ 'ra', 繧・ 'ri', 繧・ 'ru', 繧・ 're', 繧・ 'ro',
+  繧・ 'wa', 繧・ 'o', 繧・ 'n',
+  縺・ 'ga', 縺・ 'gi', 縺・ 'gu', 縺・ 'ge', 縺・ 'go',
+  縺・ 'za', 縺・ 'ji', 縺・ 'zu', 縺・ 'ze', 縺・ 'zo',
+  縺: 'da', 縺｢: 'ji', 縺･: 'zu', 縺ｧ: 'de', 縺ｩ: 'do',
+  縺ｰ: 'ba', 縺ｳ: 'bi', 縺ｶ: 'bu', 縺ｹ: 'be', 縺ｼ: 'bo',
+  縺ｱ: 'pa', 縺ｴ: 'pi', 縺ｷ: 'pu', 縺ｺ: 'pe', 縺ｽ: 'po',
+  縺・ 'a', 縺・ 'i', 縺・ 'u', 縺・ 'e', 縺・ 'o',
+  繧・ 'ya', 繧・ 'yu', 繧・ 'yo', 縺｣: '', 繝ｼ: '',
 }
 
 const romajiToKanaMap = {
-  kya: 'きゃ', kyu: 'きゅ', kyo: 'きょ',
-  sha: 'しゃ', shu: 'しゅ', sho: 'しょ',
-  sya: 'しゃ', syu: 'しゅ', syo: 'しょ',
-  cha: 'ちゃ', chu: 'ちゅ', cho: 'ちょ',
-  cya: 'ちゃ', cyu: 'ちゅ', cyo: 'ちょ',
-  nya: 'にゃ', nyu: 'にゅ', nyo: 'にょ',
-  hya: 'ひゃ', hyu: 'ひゅ', hyo: 'ひょ',
-  mya: 'みゃ', myu: 'みゅ', myo: 'みょ',
-  rya: 'りゃ', ryu: 'りゅ', ryo: 'りょ',
-  gya: 'ぎゃ', gyu: 'gyu', gyo: 'ぎょ',
-  ja: 'じゃ', ju: 'じゅ', jo: 'じょ',
-  jya: 'じゃ', jyu: 'じゅ', jyo: 'じょ',
-  bya: 'びゃ', byu: 'びゅ', byo: 'びょ',
-  pya: 'ぴゃ', pyu: 'ぴゅ', pyo: 'ぴょ',
-  fa: 'ふぁ', fi: 'ふぃ', fe: 'ふぇ', fo: 'ふぉ',
-  shi: 'し', chi: 'ち', tsu: 'つ', fu: 'ふ',
-  ka: 'か', ki: 'き', ku: 'く', ke: 'け', ko: 'こ',
-  sa: 'さ', si: 'し', su: 'す', se: 'せ', so: 'そ',
-  ta: 'た', ti: 'ち', tu: 'つ', te: 'て', to: 'と',
-  na: 'な', ni: 'に', nu: 'ぬ', ne: 'ね', no: 'の',
-  ha: 'は', hi: 'ひ', hu: 'ふ', he: 'へ', ho: 'ほ',
-  ma: 'ま', mi: 'み', mu: 'む', me: 'め', mo: 'も',
-  ya: 'や', yu: 'ゆ', yo: 'よ',
-  ra: 'ら', ri: 'り', ru: 'る', re: 'れ', ro: 'ろ',
-  wa: 'わ', wo: 'を', nn: 'ん',
-  ga: 'が', gi: 'ぎ', gu: 'ぐ', ge: 'げ', go: 'ご',
-  za: 'ざ', zi: 'じ', ji: 'じ', zu: 'ず', ze: 'ぜ', zo: 'ぞ',
-  da: 'だ', di: 'ぢ', du: 'づ', de: 'で', do: 'ど',
-  ba: 'ば', bi: 'び', bu: 'ぶ', be: 'べ', bo: 'ぼ',
-  pa: 'ぱ', pi: 'ぴ', pu: 'ぷ', pe: 'ぺ', po: 'ぽ',
-  a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お',
+  kya: '縺阪ｃ', kyu: '縺阪ｅ', kyo: '縺阪ｇ',
+  sha: '縺励ｃ', shu: '縺励ｅ', sho: '縺励ｇ',
+  sya: '縺励ｃ', syu: '縺励ｅ', syo: '縺励ｇ',
+  cha: '縺｡繧・, chu: '縺｡繧・, cho: '縺｡繧・,
+  cya: '縺｡繧・, cyu: '縺｡繧・, cyo: '縺｡繧・,
+  nya: '縺ｫ繧・, nyu: '縺ｫ繧・, nyo: '縺ｫ繧・,
+  hya: '縺ｲ繧・, hyu: '縺ｲ繧・, hyo: '縺ｲ繧・,
+  mya: '縺ｿ繧・, myu: '縺ｿ繧・, myo: '縺ｿ繧・,
+  rya: '繧翫ｃ', ryu: '繧翫ｅ', ryo: '繧翫ｇ',
+  gya: '縺弱ｃ', gyu: 'gyu', gyo: '縺弱ｇ',
+  ja: '縺倥ｃ', ju: '縺倥ｅ', jo: '縺倥ｇ',
+  jya: '縺倥ｃ', jyu: '縺倥ｅ', jyo: '縺倥ｇ',
+  bya: '縺ｳ繧・, byu: '縺ｳ繧・, byo: '縺ｳ繧・,
+  pya: '縺ｴ繧・, pyu: '縺ｴ繧・, pyo: '縺ｴ繧・,
+  fa: '縺ｵ縺・, fi: '縺ｵ縺・, fe: '縺ｵ縺・, fo: '縺ｵ縺・,
+  shi: '縺・, chi: '縺｡', tsu: '縺､', fu: '縺ｵ',
+  ka: '縺・, ki: '縺・, ku: '縺・, ke: '縺・, ko: '縺・,
+  sa: '縺・, si: '縺・, su: '縺・, se: '縺・, so: '縺・,
+  ta: '縺・, ti: '縺｡', tu: '縺､', te: '縺ｦ', to: '縺ｨ',
+  na: '縺ｪ', ni: '縺ｫ', nu: '縺ｬ', ne: '縺ｭ', no: '縺ｮ',
+  ha: '縺ｯ', hi: '縺ｲ', hu: '縺ｵ', he: '縺ｸ', ho: '縺ｻ',
+  ma: '縺ｾ', mi: '縺ｿ', mu: '繧', me: '繧・, mo: '繧・,
+  ya: '繧・, yu: '繧・, yo: '繧・,
+  ra: '繧・, ri: '繧・, ru: '繧・, re: '繧・, ro: '繧・,
+  wa: '繧・, wo: '繧・, nn: '繧・,
+  ga: '縺・, gi: '縺・, gu: '縺・, ge: '縺・, go: '縺・,
+  za: '縺・, zi: '縺・, ji: '縺・, zu: '縺・, ze: '縺・, zo: '縺・,
+  da: '縺', di: '縺｢', du: '縺･', de: '縺ｧ', do: '縺ｩ',
+  ba: '縺ｰ', bi: '縺ｳ', bu: '縺ｶ', be: '縺ｹ', bo: '縺ｼ',
+  pa: '縺ｱ', pi: '縺ｴ', pu: '縺ｷ', pe: '縺ｺ', po: '縺ｽ',
+  a: '縺・, i: '縺・, u: '縺・, e: '縺・, o: '縺・,
 }
 
 function toRomaji(value) {
@@ -1293,8 +1292,8 @@ function toRomaji(value) {
     const next = text[index + 1] || ''
     const pair = current + next
 
-    if (current === 'っ') {
-      const following = text.slice(index + 1).match(/^[ぁ-ん]/)?.[0]
+    if (current === '縺｣') {
+      const following = text.slice(index + 1).match(/^[縺・繧転/)?.[0]
       const consonant = following ? kanaToRomajiMap[following]?.[0] : ''
       if (consonant && consonant !== 'n') result += consonant
       index += 1
@@ -1324,13 +1323,13 @@ function toKana(value) {
     const doubled = remainder.match(/^([bcdfghjklmpqrstvwxyz])\1/i)
 
     if (doubled && doubled[1].toLowerCase() !== 'n') {
-      result += 'っ'
+      result += '縺｣'
       index += 1
       continue
     }
 
     if (/^n(?=[^aiueoyn]|$)/i.test(remainder)) {
-      result += 'ん'
+      result += '繧・
       index += 1
       continue
     }
@@ -1416,18 +1415,18 @@ function matchesProperty(property, queryForms) {
 }
 
 /* M-CROSS_SMART_SAVED_SEARCH_V4 */
-const smartSearchSynonyms = [['cf','クッションフロア'],['クロス','壁紙'],['ソフト巾木','巾木'],['床見切り','見切り']]
-function normalizeSmartSearchText(value) { return String(value ?? '').toLocaleLowerCase('ja').replace(/[\s　]+/g,'').replace(/[()（）［］\[\]・,，.。:：/\\_-]+/g,'') }
+const smartSearchSynonyms = [['cf','繧ｯ繝・す繝ｧ繝ｳ繝輔Ο繧｢'],['繧ｯ繝ｭ繧ｹ','螢∫ｴ・],['繧ｽ繝輔ヨ蟾ｾ譛ｨ','蟾ｾ譛ｨ'],['蠎願ｦ句・繧・,'隕句・繧・]]
+function normalizeSmartSearchText(value) { return String(value ?? '').toLocaleLowerCase('ja').replace(/[\s縲]+/g,'').replace(/[()・茨ｼ会ｼｻ・ｽ\[\]繝ｻ,・・縲・・・\\_-]+/g,'') }
 function expandSmartSearchToken(token) { const n=normalizeSmartSearchText(token); if(!n)return[]; const r=new Set([n]); smartSearchSynonyms.forEach(g=>{const v=g.map(normalizeSmartSearchText); if(v.includes(n))v.forEach(x=>r.add(x))}); return [...r] }
-function getSavedEntrySearchParts(entry) { const p=[]; const add=(label,value)=>{const text=String(value??'').trim(); if(text)p.push({label,text})}; add('物件名',entry.propertyName); add('管理会社',entry.company); add('住所',entry.address); add('号室',entry.unit); add('メモ',entry.draftMemo); add('現場メモ',entry.siteMemo); buildAutoTags(entry).forEach(tag=>add('タグ',tag)); (entry.rooms||[]).forEach(v=>add('部屋',v)); (entry.records||[]).forEach(r=>{add('部屋',r.room);add('クロス',r.type);add('メモ',r.memo)}); (entry.cfRecords||[]).forEach(r=>{add('部屋',r.room);add('工事','CF クッションフロア');add('メモ',r.memo)}); (entry.softRecords||[]).forEach(r=>{add('部屋',r.room);add('工事','ソフト巾木 巾木');add('メモ',r.memo)}); (entry.floorTrimRecords||[]).forEach(r=>{add('部屋',r.roomA);add('部屋',r.roomB);add('工事','床見切り 見切り');add('カラー',r.color)}); (entry.additionalWorks||[]).forEach(r=>{add('部屋',r.room);add('追加作業',r.work);add('メモ',r.memo)}); return p }
-function smartSavedEntryMatch(entry, query) { const tokens=String(query||'').trim().split(/[\s　]+/).filter(Boolean); if(!tokens.length)return true; const parts=getSavedEntrySearchParts(entry).map(x=>({...x,normalized:normalizeSmartSearchText(x.text)})); return tokens.every(token=>{const alternatives=expandSmartSearchToken(token); return parts.some(part=>alternatives.some(term=>part.normalized.includes(term)))}) }
+function getSavedEntrySearchParts(entry) { const p=[]; const add=(label,value)=>{const text=String(value??'').trim(); if(text)p.push({label,text})}; add('迚ｩ莉ｶ蜷・,entry.propertyName); add('邂｡逅・ｼ夂､ｾ',entry.company); add('菴乗園',entry.address); add('蜿ｷ螳､',entry.unit); add('繝｡繝｢',entry.draftMemo); add('迴ｾ蝣ｴ繝｡繝｢',entry.siteMemo); buildAutoTags(entry).forEach(tag=>add('繧ｿ繧ｰ',tag)); (entry.rooms||[]).forEach(v=>add('驛ｨ螻・,v)); (entry.records||[]).forEach(r=>{add('驛ｨ螻・,r.room);add('繧ｯ繝ｭ繧ｹ',r.type);add('繝｡繝｢',r.memo)}); (entry.cfRecords||[]).forEach(r=>{add('驛ｨ螻・,r.room);add('蟾･莠・,'CF 繧ｯ繝・す繝ｧ繝ｳ繝輔Ο繧｢');add('繝｡繝｢',r.memo)}); (entry.softRecords||[]).forEach(r=>{add('驛ｨ螻・,r.room);add('蟾･莠・,'繧ｽ繝輔ヨ蟾ｾ譛ｨ 蟾ｾ譛ｨ');add('繝｡繝｢',r.memo)}); (entry.floorTrimRecords||[]).forEach(r=>{add('驛ｨ螻・,r.roomA);add('驛ｨ螻・,r.roomB);add('蟾･莠・,'蠎願ｦ句・繧・隕句・繧・);add('繧ｫ繝ｩ繝ｼ',r.color)}); (entry.additionalWorks||[]).forEach(r=>{add('驛ｨ螻・,r.room);add('霑ｽ蜉菴懈･ｭ',r.work);add('繝｡繝｢',r.memo)}); return p }
+function smartSavedEntryMatch(entry, query) { const tokens=String(query||'').trim().split(/[\s縲]+/).filter(Boolean); if(!tokens.length)return true; const parts=getSavedEntrySearchParts(entry).map(x=>({...x,normalized:normalizeSmartSearchText(x.text)})); return tokens.every(token=>{const alternatives=expandSmartSearchToken(token); return parts.some(part=>alternatives.some(term=>part.normalized.includes(term)))}) }
 
 /* M-CROSS_AUTO_TAGS_V2 */
 function buildAutoTags(entry) {
   const tags=new Set(); const cross=entry.records||[]; const cf=entry.cfRecords||[]; const soft=entry.softRecords||[]; const trim=entry.floorTrimRecords||[]; const works=entry.additionalWorks||[];
-  if(cross.length)tags.add('クロスあり'); if(cf.length)tags.add('CFあり'); if(soft.length)tags.add('ソフト巾木あり'); if(trim.length)tags.add('床見切りあり'); if(works.length)tags.add('追加作業あり');
+  if(cross.length)tags.add('繧ｯ繝ｭ繧ｹ縺ゅｊ'); if(cf.length)tags.add('CF縺ゅｊ'); if(soft.length)tags.add('繧ｽ繝輔ヨ蟾ｾ譛ｨ縺ゅｊ'); if(trim.length)tags.add('蠎願ｦ句・繧翫≠繧・); if(works.length)tags.add('霑ｽ蜉菴懈･ｭ縺ゅｊ');
   const text=[entry.siteMemo||'',...cross.flatMap(r=>[r.room||'',r.type||'',r.memo||'']),...cf.flatMap(r=>[r.room||'',r.memo||'']),...soft.flatMap(r=>[r.room||'',r.memo||'']),...works.flatMap(r=>[r.room||'',r.work||'',r.memo||''])].join(' ').toLocaleLowerCase('ja');
-  [['換気扇','換気扇'],['畳','畳'],['トイレ','トイレ'],['エアコン','エアコン'],['網戸','網戸'],['照明','照明'],['電球','電球'],['水漏れ','水漏れ'],['窓台','窓台'],['カーテン','カーテン'],['コーキング','コーキング']].forEach(([w,t])=>{if(text.includes(w))tags.add(t)});
+  [['謠帶ｰ玲援','謠帶ｰ玲援'],['逡ｳ','逡ｳ'],['繝医う繝ｬ','繝医う繝ｬ'],['繧ｨ繧｢繧ｳ繝ｳ','繧ｨ繧｢繧ｳ繝ｳ'],['邯ｲ謌ｸ','邯ｲ謌ｸ'],['辣ｧ譏・,'辣ｧ譏・],['髮ｻ逅・,'髮ｻ逅・],['豌ｴ貍上ｌ','豌ｴ貍上ｌ'],['遯灘床','遯灘床'],['繧ｫ繝ｼ繝・Φ','繧ｫ繝ｼ繝・Φ'],['繧ｳ繝ｼ繧ｭ繝ｳ繧ｰ','繧ｳ繝ｼ繧ｭ繝ｳ繧ｰ']].forEach(([w,t])=>{if(text.includes(w))tags.add(t)});
   return [...tags]
 }
 
@@ -1466,7 +1465,7 @@ function loadPropertyMaster() {
   } catch {
     return {
       master: emptyPropertyMaster(),
-      error: '保存済みの管理会社・物件データを読み込めませんでした。データを確認してください。',
+      error: '菫晏ｭ俶ｸ医∩縺ｮ邂｡逅・ｼ夂､ｾ繝ｻ迚ｩ莉ｶ繝・・繧ｿ繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲ゅョ繝ｼ繧ｿ繧堤｢ｺ隱阪＠縺ｦ縺上□縺輔＞縲・,
     }
   }
 }
@@ -1996,7 +1995,7 @@ const styles = `
   .theme-retro .propertyOption::before { content:""; position:absolute; left:9px; top:50%; width:42px; height:46px; transform:translateY(-50%); background:url('/retro-building-icon.png') center/contain no-repeat; image-rendering:pixelated; filter:drop-shadow(2px 2px 0 #ff2bc9); }
   .theme-retro .savedItem { position:relative; min-height:118px; padding-left:78px; }
   .theme-retro .savedItem::before { content:""; position:absolute; left:12px; top:17px; width:58px; height:68px; background:url('/retro-building-icon.png') center/contain no-repeat; image-rendering:pixelated; filter:drop-shadow(3px 3px 0 #ff2bc9) drop-shadow(-1px -1px 0 #00eaff); }
-  .theme-retro .measurementTypes::before { content:"★ FIELD QUEST ★"; grid-column:1/-1; padding:7px; border:2px solid #fff22b; color:#fff22b; background:#0c0820; box-shadow:3px 3px 0 #ff2bc9; text-align:center; letter-spacing:.12em; }
+  .theme-retro .measurementTypes::before { content:"笘・FIELD QUEST 笘・; grid-column:1/-1; padding:7px; border:2px solid #fff22b; color:#fff22b; background:#0c0820; box-shadow:3px 3px 0 #ff2bc9; text-align:center; letter-spacing:.12em; }
   .theme-retro .completeCard { color:#fff; border:4px solid #00eaff; border-radius:0; background:#030817; box-shadow:6px 6px 0 #ff29cc; font-family:"DotGothic16",monospace; }
   .theme-retro .completeCard::before { content:"STAGE CLEAR!"; display:block; margin-bottom:12px; color:#ffef24; font-size:30px; text-shadow:3px 3px #ce238f; }
   @media(max-width:700px) { .theme-retro { background-size:auto 100vh; background-position:center top; } }
@@ -2010,7 +2009,7 @@ const styles = `
     .crossInputArea .numberKeypad { gap:5px; padding:7px; }
     .crossInputArea .keypadButton { min-height:40px; }
   }
-  /* 現場入力改善: 入力完了を廃止し、テンキーと登録ボタンを大型化 */
+  /* 迴ｾ蝣ｴ蜈･蜉帶隼蝟・ 蜈･蜉帛ｮ御ｺ・ｒ蟒・ｭ｢縺励√ユ繝ｳ繧ｭ繝ｼ縺ｨ逋ｻ骭ｲ繝懊ち繝ｳ繧貞､ｧ蝙句喧 */
   .numberKeypad { gap:11px; padding:14px; }
   .keypadButton { min-height:60px; font-size:23px; border-radius:14px; }
   .crossInputArea .numberKeypad { gap:9px; padding:11px; }
@@ -2045,9 +2044,9 @@ function NumberKeypad({ activeInput, onKey, decimalInput, showEnter = false, onE
       {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(key => (
         <button key={key} type="button" className="keypadButton" onClick={() => onKey(key)}>{key}</button>
       ))}
-      <button type="button" className="keypadButton utility" onClick={() => onKey('clear')}>クリア</button>
+      <button type="button" className="keypadButton utility" onClick={() => onKey('clear')}>繧ｯ繝ｪ繧｢</button>
       <button type="button" className="keypadButton" onClick={() => onKey('0')}>0</button>
-      <button type="button" className="keypadButton utility" onClick={() => onKey('backspace')} aria-label="1文字削除">⌫</button>
+      <button type="button" className="keypadButton utility" onClick={() => onKey('backspace')} aria-label="1譁・ｭ怜炎髯､">竚ｫ</button>
       {decimalInput && (
         <div className="keypadEnterRow">
           <button type="button" className="keypadButton" onClick={() => onKey('decimal')}>.</button>
@@ -2077,7 +2076,7 @@ function RoomManagementControls({
     const name = roomName.trim()
     if (!name) return
     if (rooms.some(room => room.toLocaleLowerCase() === name.toLocaleLowerCase())) {
-      setMessage('同じ名前の部屋がすでにあります')
+      setMessage('蜷後§蜷榊燕縺ｮ驛ｨ螻九′縺吶〒縺ｫ縺ゅｊ縺ｾ縺・)
       return
     }
     onAddRoom(name)
@@ -2092,7 +2091,7 @@ function RoomManagementControls({
     if (!name) return
     if (name.toLocaleLowerCase() !== editingRoom.toLocaleLowerCase() &&
         rooms.some(room => room.toLocaleLowerCase() === name.toLocaleLowerCase())) {
-      setMessage('同じ名前の部屋がすでにあります')
+      setMessage('蜷後§蜷榊燕縺ｮ驛ｨ螻九′縺吶〒縺ｫ縺ゅｊ縺ｾ縺・)
       return
     }
     onRenameRoom(editingRoom, name)
@@ -2104,7 +2103,7 @@ function RoomManagementControls({
   const pendingRoomHasData = roomToDelete ? roomHasData(roomToDelete) : false
 
   return (
-    <section className="customRoomControls" aria-label="部屋の管理">
+    <section className="customRoomControls" aria-label="驛ｨ螻九・邂｡逅・>
       <button
         className="secondaryButton"
         type="button"
@@ -2113,16 +2112,16 @@ function RoomManagementControls({
           setMessage('')
         }}
       >
-        ＋ 部屋を追加
+        ・・驛ｨ螻九ｒ霑ｽ蜉
       </button>
       {showForm && (
         <form className="customRoomForm" onSubmit={saveRoom}>
           <label>
-            <span>部屋名</span>
+            <span>驛ｨ螻句錐</span>
             <input value={roomName} onChange={event => setRoomName(event.target.value)} />
           </label>
           {message && <p className="saveStatus" role="alert">{message}</p>}
-          <button className="primary" type="submit">追加</button>
+          <button className="primary" type="submit">霑ｽ蜉</button>
         </form>
       )}
       <div className="customRoomList">
@@ -2131,17 +2130,17 @@ function RoomManagementControls({
             {editingRoom === name ? (
               <form className="roomEditForm" onSubmit={saveEditedRoom}>
                 <label>
-                  <span>部屋名</span>
+                  <span>驛ｨ螻句錐</span>
                   <input value={editingName} onChange={event => setEditingName(event.target.value)} />
                 </label>
                 {message && <p className="saveStatus" role="alert">{message}</p>}
                 <div className="roomManagementActions">
-                  <button className="primary" type="submit">保存</button>
+                  <button className="primary" type="submit">菫晏ｭ・/button>
                   <button className="secondaryButton" type="button" onClick={() => {
                     setEditingRoom('')
                     setEditingName('')
                     setMessage('')
-                  }}>キャンセル</button>
+                  }}>繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
                 </div>
               </form>
             ) : (
@@ -2153,26 +2152,26 @@ function RoomManagementControls({
                     setEditingName(name)
                     setRoomToDelete('')
                     setMessage('')
-                  }}>編集</button>
+                  }}>邱ｨ髮・/button>
                   <button className="dangerButton" type="button" onClick={() => {
                     setRoomToDelete(name)
                     setEditingRoom('')
                     setMessage('')
-                  }}>削除</button>
+                  }}>蜑企勁</button>
                 </div>
               </>
             )}
             {roomToDelete === name && (
-              <div className="roomDeleteConfirmation" role="alertdialog" aria-label={`${name}の削除確認`}>
+              <div className="roomDeleteConfirmation" role="alertdialog" aria-label={`${name}縺ｮ蜑企勁遒ｺ隱港}>
                 <p>{pendingRoomHasData
-                  ? `${name}には採寸データがあります。この部屋を削除すると、クロス・CF・ソフト巾木・メモも削除されます。本当に削除しますか？`
-                  : 'この部屋を削除しますか？'}</p>
+                  ? `${name}縺ｫ縺ｯ謗｡蟇ｸ繝・・繧ｿ縺後≠繧翫∪縺吶ゅ％縺ｮ驛ｨ螻九ｒ蜑企勁縺吶ｋ縺ｨ縲√け繝ｭ繧ｹ繝ｻCF繝ｻ繧ｽ繝輔ヨ蟾ｾ譛ｨ繝ｻ繝｡繝｢繧ょ炎髯､縺輔ｌ縺ｾ縺吶よ悽蠖薙↓蜑企勁縺励∪縺吶°・歔
+                  : '縺薙・驛ｨ螻九ｒ蜑企勁縺励∪縺吶°・・}</p>
                 <div className="roomManagementActions">
                   <button className="dangerButton" type="button" onClick={() => {
                     onDeleteRoom(name)
                     setRoomToDelete('')
-                  }}>削除する</button>
-                  <button className="secondaryButton" type="button" onClick={() => setRoomToDelete('')}>キャンセル</button>
+                  }}>蜑企勁縺吶ｋ</button>
+                  <button className="secondaryButton" type="button" onClick={() => setRoomToDelete('')}>繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
                 </div>
               </div>
             )}
@@ -2231,7 +2230,7 @@ function readSavedEntries() {
           entries.push({ ...data, archived: Boolean(data.archived), storageKey: key })
         }
       } catch {
-        // 読み込めないデータは一覧から除外
+        // 隱ｭ縺ｿ霎ｼ繧√↑縺・ョ繝ｼ繧ｿ縺ｯ荳隕ｧ縺九ｉ髯､螟・
       }
     }
     return entries.sort(
@@ -2243,9 +2242,9 @@ function readSavedEntries() {
 }
 
 function formatSavedDate(value) {
-  if (!value) return '保存日時不明'
+  if (!value) return '菫晏ｭ俶律譎ゆｸ肴・'
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '保存日時不明'
+  if (Number.isNaN(date.getTime())) return '菫晏ｭ俶律譎ゆｸ肴・'
   return new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
     month: '2-digit',
@@ -2263,18 +2262,18 @@ const mCrossFileType = 'M-Cross saved property'
 const mCrossFileVersion = 1
 
 function makeSafeFileName(value) {
-  return String(value || '物件').replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim()
+  return String(value || '迚ｩ莉ｶ').replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim()
 }
 
 function normalizeImportedEntry(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('保存データの形式が正しくありません。')
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('菫晏ｭ倥ョ繝ｼ繧ｿ縺ｮ蠖｢蠑上′豁｣縺励￥縺ゅｊ縺ｾ縺帙ｓ縲・)
   for (const key of ['company', 'propertyName', 'address', 'unit']) {
-    if (typeof value[key] !== 'string') throw new Error('物件情報が不足しています。')
+    if (typeof value[key] !== 'string') throw new Error('迚ｩ莉ｶ諠・ｱ縺御ｸ崎ｶｳ縺励※縺・∪縺吶・)
   }
-  if (!value.propertyName.trim() || !value.unit.trim()) throw new Error('物件名または号室がありません。')
+  if (!value.propertyName.trim() || !value.unit.trim()) throw new Error('迚ｩ莉ｶ蜷阪∪縺溘・蜿ｷ螳､縺後≠繧翫∪縺帙ｓ縲・)
   return {
     company: value.company, propertyName: value.propertyName, address: value.address, unit: value.unit.trim(),
-    workName: typeof value.workName === 'string' && value.workName.trim() ? value.workName.trim() : '原状回復工事',
+    workName: typeof value.workName === 'string' && value.workName.trim() ? value.workName.trim() : '蜴溽憾蝗槫ｾｩ蟾･莠・,
     records: Array.isArray(value.records) ? value.records : [],
     cfRecords: Array.isArray(value.cfRecords) ? value.cfRecords : [],
     softRecords: Array.isArray(value.softRecords) ? value.softRecords : [],
@@ -2288,7 +2287,7 @@ function normalizeImportedEntry(value) {
     cfPageIndex: Number.isInteger(value.cfPageIndex) ? value.cfPageIndex : 0,
     softPageIndex: Number.isInteger(value.softPageIndex) ? value.softPageIndex : 0,
     activePage: typeof value.activePage === 'string' ? value.activePage : 'cross',
-    measurementType: measurementTypes.includes(value.measurementType) ? value.measurementType : '天井',
+    measurementType: measurementTypes.includes(value.measurementType) ? value.measurementType : '螟ｩ莠・,
     caseCrossFactor: Math.max(0, Number(value.caseCrossFactor) || 0),
     archived: Boolean(value.archived), updatedAt: new Date().toISOString(),
   }
@@ -2298,7 +2297,7 @@ function createMCrossShareFile(entry, extension = 'mcross') {
   const data = normalizeImportedEntry(entry)
   const packageData = { fileType: mCrossFileType, version: mCrossFileVersion, exportedAt: new Date().toISOString(), data }
   const safeExtension = ['json', 'txt'].includes(extension) ? extension : 'mcross'
-  const fileName = `${makeSafeFileName(data.propertyName)}_${makeSafeFileName(data.unit)}号室.${safeExtension}`
+  const fileName = `${makeSafeFileName(data.propertyName)}_${makeSafeFileName(data.unit)}蜿ｷ螳､.${safeExtension}`
   const mimeType = safeExtension === 'txt' ? 'text/plain' : 'application/json'
   const file = new File([JSON.stringify(packageData, null, 2)], fileName, { type: mimeType })
   return { data, file, fileName }
@@ -2313,15 +2312,15 @@ function downloadMCrossFile(file, fileName) {
 
 function downloadMCrossData(entry) {
   try { const { file, fileName } = createMCrossShareFile(entry); downloadMCrossFile(file, fileName) }
-  catch (error) { console.error(error); window.alert('M-Crossデータを書き出せませんでした。') }
+  catch (error) { console.error(error); window.alert('M-Cross繝・・繧ｿ繧呈嶌縺榊・縺帙∪縺帙ｓ縺ｧ縺励◆縲・) }
 }
 
 async function shareMCrossData(entry) {
   try {
     const { data, file, fileName } = createMCrossShareFile(entry, 'txt')
     const shareData = {
-      title: `M-Cross ${data.propertyName} ${data.unit}号室`,
-      text: 'M-Crossの保存データです。M-Crossの「保存済み一覧」から読み込んでください。',
+      title: `M-Cross ${data.propertyName} ${data.unit}蜿ｷ螳､`,
+      text: 'M-Cross縺ｮ菫晏ｭ倥ョ繝ｼ繧ｿ縺ｧ縺吶・-Cross縺ｮ縲御ｿ晏ｭ俶ｸ医∩荳隕ｧ縲阪°繧芽ｪｭ縺ｿ霎ｼ繧薙〒縺上□縺輔＞縲・,
       files: [file],
     }
     if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
@@ -2329,14 +2328,14 @@ async function shareMCrossData(entry) {
       catch (error) { if (error?.name === 'AbortError') return; console.error(error) }
     }
     downloadMCrossFile(file, fileName)
-    window.alert('この端末では共有画面を開けなかったため、ファイルを保存しました。LINEやメールへ添付して送ってください。')
-  } catch (error) { console.error(error); window.alert('M-Crossデータを共有できませんでした。') }
+    window.alert('縺薙・遶ｯ譛ｫ縺ｧ縺ｯ蜈ｱ譛臥判髱｢繧帝幕縺代↑縺九▲縺溘◆繧√√ヵ繧｡繧､繝ｫ繧剃ｿ晏ｭ倥＠縺ｾ縺励◆縲・INE繧・Γ繝ｼ繝ｫ縺ｸ豺ｻ莉倥＠縺ｦ騾√▲縺ｦ縺上□縺輔＞縲・)
+  } catch (error) { console.error(error); window.alert('M-Cross繝・・繧ｿ繧貞・譛峨〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・) }
 }
 
 function downloadCsv(entry) {
   const headers = [
-    '管理会社', '物件名', '住所', '号室', '部屋名',
-    '採寸区分', '高さ', '本数', '数量', 'メモ',
+    '邂｡逅・ｼ夂､ｾ', '迚ｩ莉ｶ蜷・, '菴乗園', '蜿ｷ螳､', '驛ｨ螻句錐',
+    '謗｡蟇ｸ蛹ｺ蛻・, '鬮倥＆', '譛ｬ謨ｰ', '謨ｰ驥・, '繝｡繝｢',
   ]
   const rows = (entry.records || []).map(record => [
     entry.company,
@@ -2355,9 +2354,9 @@ function downloadCsv(entry) {
   const blob = new Blob([bom, new TextEncoder().encode(csv)], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
-  const safeName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}`.replace(/[\\\/:*?"<>|]/g, '_')
+  const safeName = `${entry.propertyName || '迚ｩ莉ｶ'}_${entry.unit || '蜿ｷ螳､'}`.replace(/[\\\/:*?"<>|]/g, '_')
   link.href = url
-  link.download = `${safeName}_採寸データ.csv`
+  link.download = `${safeName}_謗｡蟇ｸ繝・・繧ｿ.csv`
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -2373,11 +2372,11 @@ async function downloadExcel(entry) {
 
   const exportedAt = new Intl.DateTimeFormat('ja-JP').format(new Date())
   const metadata = [
-    ['管理会社', entry.company || ''],
-    ['物件名', entry.propertyName || ''],
-    ['住所', entry.address || ''],
-    ['号室', entry.unit || ''],
-    ['出力日', exportedAt],
+    ['邂｡逅・ｼ夂､ｾ', entry.company || ''],
+    ['迚ｩ莉ｶ蜷・, entry.propertyName || ''],
+    ['菴乗園', entry.address || ''],
+    ['蜿ｷ螳､', entry.unit || ''],
+    ['蜃ｺ蜉帶律', exportedAt],
   ]
 
   function addWorksheet(name, tabColor, columns, rows) {
@@ -2390,7 +2389,7 @@ async function downloadExcel(entry) {
 
     worksheet.mergeCells(1, 1, 1, displayLastColumn)
     const titleCell = worksheet.getCell(1, 1)
-    titleCell.value = `${name} 採寸データ`
+    titleCell.value = `${name} 謗｡蟇ｸ繝・・繧ｿ`
     titleCell.font = { name: 'Yu Gothic', size: 16, bold: true, color: { argb: 'FFFFFFFF' } }
     titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: tabColor } }
     titleCell.alignment = { vertical: 'middle', horizontal: 'left' }
@@ -2450,28 +2449,28 @@ async function downloadExcel(entry) {
       let maximumWidth = 20
       let extraWidth = 1.5
 
-      if (headerText === '部屋名') {
+      if (headerText === '驛ｨ螻句錐') {
         minimumWidth = 8
         maximumWidth = 16
-      } else if (headerText === '採寸区分') {
+      } else if (headerText === '謗｡蟇ｸ蛹ｺ蛻・) {
         minimumWidth = 10
         maximumWidth = 16
-      } else if (headerText === 'メモ') {
+      } else if (headerText === '繝｡繝｢') {
         minimumWidth = 14
         maximumWidth = 30
         extraWidth = 2
-      } else if (['長さ', '高さ', '本数', '枚数', '数量'].includes(headerText)) {
+      } else if (['髟ｷ縺・, '鬮倥＆', '譛ｬ謨ｰ', '譫壽焚', '謨ｰ驥・].includes(headerText)) {
         minimumWidth = 10
         maximumWidth = 12
         extraWidth = 2
-      } else if (headerText === '単位') {
+      } else if (headerText === '蜊倅ｽ・) {
         minimumWidth = 5
         maximumWidth = 6
         extraWidth = 1
-      } else if (['部屋①', '部屋②'].includes(headerText)) {
+      } else if (['驛ｨ螻銀蔵', '驛ｨ螻銀贈'].includes(headerText)) {
         minimumWidth = 10
         maximumWidth = 18
-      } else if (headerText === 'カラー') {
+      } else if (headerText === '繧ｫ繝ｩ繝ｼ') {
         minimumWidth = 10
         maximumWidth = 14
       }
@@ -2482,12 +2481,12 @@ async function downloadExcel(entry) {
       )
       column.alignment = {
         vertical: 'middle',
-        horizontal: ['長さ', '高さ', '本数', '枚数', '数量'].includes(headerText) ? 'right' : 'left',
+        horizontal: ['髟ｷ縺・, '鬮倥＆', '譛ｬ謨ｰ', '譫壽焚', '謨ｰ驥・].includes(headerText) ? 'right' : 'left',
         wrapText: maxLength + extraWidth > maximumWidth,
       }
     }
 
-    if (name === 'ソフト巾木') {
+    if (name === '繧ｽ繝輔ヨ蟾ｾ譛ｨ') {
       worksheet.getColumn(1).width = Math.max(12, worksheet.getColumn(1).width || 0)
       worksheet.getColumn(2).width = Math.max(10, worksheet.getColumn(2).width || 0)
       worksheet.getColumn(3).width = Math.max(10, worksheet.getColumn(3).width || 0)
@@ -2505,7 +2504,7 @@ async function downloadExcel(entry) {
     })
 
     // Keep the soft-baseboard sheet as readable as the other measurement sheets.
-    if (name === 'ソフト巾木') {
+    if (name === '繧ｽ繝輔ヨ蟾ｾ譛ｨ') {
       worksheet.getColumn(1).width = 18
       worksheet.getColumn(2).width = 14
       worksheet.getColumn(3).width = 14
@@ -2539,8 +2538,8 @@ async function downloadExcel(entry) {
   )
 
   const cfExcelRoomPriority = [
-    '居間', 'LDK', '台所', '洋間', '和室', '階段', 'ホール',
-    '玄関', '脱衣所', '洗面所', 'トイレ', '収納', '土間'
+    '螻・俣', 'LDK', '蜿ｰ謇', '豢矩俣', '蜥悟ｮ､', '髫取ｮｵ', '繝帙・繝ｫ',
+    '邇・未', '閼ｱ陦｣謇', '豢鈴擇謇', '繝医う繝ｬ', '蜿守ｴ・, '蝨滄俣'
   ]
 
   const getCfRoomIndexForExcel = roomName => {
@@ -2591,17 +2590,17 @@ async function downloadExcel(entry) {
           : calculatedLength
 
       return {
-        usage: roomNames.join('＋') || '使用箇所未設定',
+        usage: roomNames.join('・・) || '菴ｿ逕ｨ邂・園譛ｪ險ｭ螳・,
         roomIndexes: roomNames.map(getCfRoomIndexForExcel),
         breakdown: pieces
           .map(piece => formatQuantity(piece.pieceLength) + 'm')
-          .join('＋'),
+          .join('・・),
         orderLength: Number(formatQuantity(orderLength)),
         productCode: group.productCode || '',
       }
     }),
     ...cfMaterialSummaryForExcel.unallocatedPieces.map(piece => ({
-      usage: piece.room || '使用箇所未設定',
+      usage: piece.room || '菴ｿ逕ｨ邂・園譛ｪ險ｭ螳・,
       roomIndexes: [getCfRoomIndexForExcel(piece.room || '')],
       breakdown: formatQuantity(piece.pieceLength) + 'm',
       orderLength: Number(formatQuantity(piece.pieceLength)),
@@ -2641,23 +2640,23 @@ async function downloadExcel(entry) {
     return [record.room || '', quantity, quantity]
   })
 
-  addWorksheet('クロス', 'FFF08A79', ['部屋名', '採寸区分', 'メモ', '長さ', '本数', '数量'], crossRows)
-  addWorksheet('CF', 'FF6E91E8', ['品番・商品名', '使用箇所', '長さ内訳', '注文長(m)', '本数', '注文数量(m)'], cfRows)
-  addWorksheet('ソフト巾木', 'FF63BEA1', ['部屋名', '枚数', '数量'], softRows)
-  const floorTrimRows = (entry.floorTrimRecords || []).map(record => [record.roomA || '', record.roomB || '', record.color || '', Number(record.quantity || 0), '本'])
-  if (floorTrimRows.length > 0) addWorksheet('床見切り', 'FFC6A4E8', ['部屋①', '部屋②', 'カラー', '数量', '単位'], floorTrimRows)
+  addWorksheet('繧ｯ繝ｭ繧ｹ', 'FFF08A79', ['驛ｨ螻句錐', '謗｡蟇ｸ蛹ｺ蛻・, '繝｡繝｢', '髟ｷ縺・, '譛ｬ謨ｰ', '謨ｰ驥・], crossRows)
+  addWorksheet('CF', 'FF6E91E8', ['蜩∫分繝ｻ蝠・刀蜷・, '菴ｿ逕ｨ邂・園', '髟ｷ縺募・險ｳ', '豕ｨ譁・聞(m)', '譛ｬ謨ｰ', '豕ｨ譁・焚驥・m)'], cfRows)
+  addWorksheet('繧ｽ繝輔ヨ蟾ｾ譛ｨ', 'FF63BEA1', ['驛ｨ螻句錐', '譫壽焚', '謨ｰ驥・], softRows)
+  const floorTrimRows = (entry.floorTrimRecords || []).map(record => [record.roomA || '', record.roomB || '', record.color || '', Number(record.quantity || 0), '譛ｬ'])
+  if (floorTrimRows.length > 0) addWorksheet('蠎願ｦ句・繧・, 'FFC6A4E8', ['驛ｨ螻銀蔵', '驛ｨ螻銀贈', '繧ｫ繝ｩ繝ｼ', '謨ｰ驥・, '蜊倅ｽ・], floorTrimRows)
   const additionalWorkRows = (entry.additionalWorks || []).map(item => [
-    item.room || '', item.work || '', Number(item.quantity || 0), item.unit || '式',
+    item.room || '', item.work || '', Number(item.quantity || 0), item.unit || '蠑・,
     Number(item.unitPrice || 0), Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), item.memo || '',
   ])
-  if (additionalWorkRows.length > 0) addWorksheet('追加作業', 'FFF0A36E', ['部屋', '作業内容', '数量', '単位', '単価', '金額', 'メモ'], additionalWorkRows)
+  if (additionalWorkRows.length > 0) addWorksheet('霑ｽ蜉菴懈･ｭ', 'FFF0A36E', ['驛ｨ螻・, '菴懈･ｭ蜀・ｮｹ', '謨ｰ驥・, '蜊倅ｽ・, '蜊倅ｾ｡', '驥鷹｡・, '繝｡繝｢'], additionalWorkRows)
 
   const buffer = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   })
-  const safeName = `${entry.propertyName || '物件'}_${entry.unit || '号室'}`.replace(/[\\/:*?"<>|]/g, '_')
-  const fileName = `${safeName}_採寸データ.xlsx`
+  const safeName = `${entry.propertyName || '迚ｩ莉ｶ'}_${entry.unit || '蜿ｷ螳､'}`.replace(/[\\/:*?"<>|]/g, '_')
+  const fileName = `${safeName}_謗｡蟇ｸ繝・・繧ｿ.xlsx`
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
@@ -2667,8 +2666,8 @@ async function downloadExcel(entry) {
   link.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   } catch (error) {
-    console.error('Excelファイルを出力できませんでした。', error)
-    window.alert('Excelファイルを出力できませんでした。')
+    console.error('Excel繝輔ぃ繧､繝ｫ繧貞・蜉帙〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・, error)
+    window.alert('Excel繝輔ぃ繧､繝ｫ繧貞・蜉帙〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・)
   }
 }
 
@@ -2715,7 +2714,7 @@ function buildCfPieces(records) {
         sourceCount: count,
         quantity: 1,
         pieceLength: roundCfMaterialNumber(baseLength),
-        label: String(pieceIndex + 1) + '本目',
+        label: String(pieceIndex + 1) + '譛ｬ逶ｮ',
         isFractional: false,
       })
     }
@@ -2732,7 +2731,7 @@ function buildCfPieces(records) {
         sourceCount: count,
         quantity: fractionalCount,
         pieceLength: roundCfMaterialNumber(baseLength * fractionalCount),
-        label: '端数' + formatQuantity(fractionalCount) + '本',
+        label: '遶ｯ謨ｰ' + formatQuantity(fractionalCount) + '譛ｬ',
         isFractional: true,
       })
     }
@@ -2787,7 +2786,7 @@ function getCfMaterialAllocationSummary(records, materialGroups) {
 /* M-CROSS_CF_MATERIAL_STEP4D2 */
 
 /*
-  新しい材料グループ形式：
+  譁ｰ縺励＞譚先侭繧ｰ繝ｫ繝ｼ繝怜ｽ｢蠑擾ｼ・
   {
     id,
     allocations: [
@@ -2797,8 +2796,8 @@ function getCfMaterialAllocationSummary(records, materialGroups) {
     productCode
   }
 
-  古いrecordIds形式は、該当する採寸行の全本数を
-  allocationsへ展開して互換性を保ちます。
+  蜿､縺вecordIds蠖｢蠑上・縲∬ｩｲ蠖薙☆繧区治蟇ｸ陦後・蜈ｨ譛ｬ謨ｰ繧・
+  allocations縺ｸ螻暮幕縺励※莠呈鋤諤ｧ繧剃ｿ昴■縺ｾ縺吶・
 */
 
 function buildCfAllocationsFromRecordIds(recordIds, records) {
@@ -2863,7 +2862,7 @@ function normalizeCfMaterialGroups(groups, records) {
           normalized.pieceIndex
         )
 
-        // 同じ1本が複数グループへ重複しないよう、先に出たグループを優先します。
+        // 蜷後§1譛ｬ縺瑚､・焚繧ｰ繝ｫ繝ｼ繝励∈驥崎､・＠縺ｪ縺・ｈ縺・∝・縺ｫ蜃ｺ縺溘げ繝ｫ繝ｼ繝励ｒ蜆ｪ蜈医＠縺ｾ縺吶・
         if (alreadyAllocated.has(pieceKey)) return
 
         alreadyAllocated.add(pieceKey)
@@ -3000,7 +2999,7 @@ function LengthMeasurementPage({
     }))
 
     const numericOrderLength = Number(
-      String(materialOrderLength).replace(/[。．]/g, '.')
+      String(materialOrderLength).replace(/[縲ゑｼ讃/g, '.')
     )
 
     const nextOrderLength =
@@ -3055,7 +3054,7 @@ function LengthMeasurementPage({
   const isSummaryPage = pageIndex === rooms.length
   const room = isSummaryPage ? '' : rooms[pageIndex]
   const roomRecords = records.filter(item => item.room === room)
-  const unit = countOnly ? '枚' : 'm'
+  const unit = countOnly ? '譫・ : 'm'
   const getQuantity = countOnly ? getSoftBaseboardQuantity : getLengthQuantity
   const roomTotals = rooms.reduce((totals, roomName) => {
     totals[roomName] = records
@@ -3116,21 +3115,21 @@ function LengthMeasurementPage({
     if (countOnly) return
 
     if (activeInput === 'length') {
-      const numericLength = Number(String(length).replace(/[。．]/g, '.'))
+      const numericLength = Number(String(length).replace(/[縲ゑｼ讃/g, '.'))
       if (!Number.isFinite(numericLength) || numericLength <= 0) return
 
       setActiveInput('count')
       requestAnimationFrame(() => {
         lengthInputAreaRef.current
-          ?.querySelector('input[aria-label="CF本数入力"], input[data-length-count="count"]')
+          ?.querySelector('input[aria-label="CF譛ｬ謨ｰ蜈･蜉・], input[data-length-count="count"]')
           ?.focus()
       })
       return
     }
 
     if (activeInput === 'count') {
-      const numericLength = Number(String(length).replace(/[。．]/g, '.'))
-      const numericCount = Number(String(count).replace(/[。．]/g, '.'))
+      const numericLength = Number(String(length).replace(/[縲ゑｼ讃/g, '.'))
+      const numericCount = Number(String(count).replace(/[縲ゑｼ讃/g, '.'))
       if (!Number.isFinite(numericLength) || numericLength <= 0) return
       if (!Number.isFinite(numericCount) || numericCount <= 0) return
 
@@ -3196,7 +3195,7 @@ function LengthMeasurementPage({
       if (!Number.isInteger(quantity) || quantity < 1) return
       setRecords(prev => [...prev, { id: createRecordId(), room, quantity, memo: memo.trim() }])
     } else {
-      const numericLength = Number(length.replace(/[。．]/g, '.'))
+      const numericLength = Number(length.replace(/[縲ゑｼ讃/g, '.'))
       const numericCount = Number(count)
       if (!Number.isFinite(numericLength) || numericLength <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
       setRecords(prev => [...prev, {
@@ -3216,16 +3215,16 @@ function LengthMeasurementPage({
   }
   return (
     <>
-      <nav ref={lengthRoomAreaRef} className="roomTabs" aria-label={`${title}の部屋`}>
+      <nav ref={lengthRoomAreaRef} className="roomTabs" aria-label={`${title}縺ｮ驛ｨ螻義}>
         {rooms.map((name, index) => (
           <button key={name} type="button" className={pageIndex === index ? 'room active' : 'room'} onClick={() => goToPage(index)}>{name}</button>
         ))}
-        <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>全室合計</button>
+        <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>蜈ｨ螳､蜷郁ｨ・/button>
       </nav>
 
       {isSummaryPage ? (
         <section className="card">
-          <h2>部屋ごとの{title}合計</h2>
+          <h2>驛ｨ螻九＃縺ｨ縺ｮ{title}蜷郁ｨ・/h2>
           {rooms.map(roomName => (
             <div className="roomSummary" key={roomName}>
               <h3>{roomName}</h3>
@@ -3233,38 +3232,38 @@ function LengthMeasurementPage({
             </div>
           ))}
           <div className="summary">
-            <div className="summaryLine summaryGrand"><span>全室{title}合計</span><strong>{formatQuantity(total)}{unit}</strong></div>
+            <div className="summaryLine summaryGrand"><span>蜈ｨ螳､{title}蜷郁ｨ・/span><strong>{formatQuantity(total)}{unit}</strong></div>
 
           {/* M-CROSS_CF_MATERIAL_STEP4D3_UI */}
           {title === 'CF' && setMaterialGroups && (
             <div className="cfMaterialPanel">
-              <h2>CF材料割当</h2>
+              <h2>CF譚先侭蜑ｲ蠖・/h2>
               <p className="subtitle">
-                CFを1本ずつ選び、つないで注文する組み合わせを作ります。
+                CF繧・譛ｬ縺壹▽驕ｸ縺ｳ縲√▽縺ｪ縺・〒豕ｨ譁・☆繧狗ｵ・∩蜷医ｏ縺帙ｒ菴懊ｊ縺ｾ縺吶・
               </p>
 
               <div className="cfMaterialAllocationSummary">
                 <div className="summaryLine">
-                  <span>必要長合計</span>
+                  <span>蠢・ｦ・聞蜷郁ｨ・/span>
                   <strong>{formatQuantity(materialSummary.requiredLength)}m</strong>
                 </div>
                 <div className="summaryLine">
-                  <span>割当済み</span>
+                  <span>蜑ｲ蠖捺ｸ医∩</span>
                   <strong>{formatQuantity(materialSummary.allocatedLength)}m</strong>
                 </div>
                 <div className="summaryLine">
-                  <span>未割当</span>
+                  <span>譛ｪ蜑ｲ蠖・/span>
                   <strong>{formatQuantity(materialSummary.unallocatedLength)}m</strong>
                 </div>
               </div>
 
-              <h3>未割当のCF</h3>
+              <h3>譛ｪ蜑ｲ蠖薙・CF</h3>
 
               {availableMaterialPieces.length === 0 ? (
                 <p className="empty">
                   {materialSummary.allPieces.length > 0
-                    ? 'すべてのCFが材料へ割り当てられています'
-                    : 'CF登録がありません'}
+                    ? '縺吶∋縺ｦ縺ｮCF縺梧攝譁吶∈蜑ｲ繧雁ｽ薙※繧峨ｌ縺ｦ縺・∪縺・
+                    : 'CF逋ｻ骭ｲ縺後≠繧翫∪縺帙ｓ'}
                 </p>
               ) : (
                 <div className="cfMaterialChoices">
@@ -3276,13 +3275,13 @@ function LengthMeasurementPage({
                         onChange={() => toggleMaterialPiece(piece.pieceKey)}
                       />
                       <span>
-                        <strong>{piece.room || '部屋未設定'}　{piece.label}</strong>
+                        <strong>{piece.room || '驛ｨ螻区悴險ｭ螳・}縲{piece.label}</strong>
                         <small>
                           {piece.isFractional
-                            ? formatQuantity(piece.sourceLength) + 'm × ' + formatQuantity(piece.quantity) + '本 = ' + formatQuantity(piece.pieceLength) + 'm'
-                            : formatQuantity(piece.pieceLength) + 'm × 1本'}
+                            ? formatQuantity(piece.sourceLength) + 'm ﾃ・' + formatQuantity(piece.quantity) + '譛ｬ = ' + formatQuantity(piece.pieceLength) + 'm'
+                            : formatQuantity(piece.pieceLength) + 'm ﾃ・1譛ｬ'}
                         </small>
-                        {piece.memo && <small>メモ：{piece.memo}</small>}
+                        {piece.memo && <small>繝｡繝｢・嘴piece.memo}</small>}
                       </span>
                     </label>
                   ))}
@@ -3291,21 +3290,21 @@ function LengthMeasurementPage({
 
               {selectedMaterialPieces.length > 0 && (
                 <div className="cfMaterialCreate">
-                  <h3>選択中の内訳</h3>
+                  <h3>驕ｸ謚樔ｸｭ縺ｮ蜀・ｨｳ</h3>
                   {selectedMaterialPieces.map(piece => (
                     <div className="summaryLine" key={piece.pieceKey}>
-                      <span>{piece.room || '部屋未設定'}　{piece.label}</span>
+                      <span>{piece.room || '驛ｨ螻区悴險ｭ螳・}縲{piece.label}</span>
                       <strong>{formatQuantity(piece.pieceLength)}m</strong>
                     </div>
                   ))}
 
                   <div className="summaryLine summaryGrand">
-                    <span>計算長</span>
+                    <span>險育ｮ鈴聞</span>
                     <strong>{formatQuantity(selectedMaterialLength)}m</strong>
                   </div>
 
                   <label>
-                    <span>注文長（m）</span>
+                    <span>豕ｨ譁・聞・・・・/span>
                     <input
                       type="number"
                       min="0"
@@ -3317,24 +3316,24 @@ function LengthMeasurementPage({
                   </label>
 
                   <label>
-                    <span>品番・商品名</span>
+                    <span>蜩∫分繝ｻ蝠・刀蜷・/span>
                     <input
                       type="text"
                       value={materialProductCode}
                       onChange={event => setMaterialProductCode(event.target.value)}
-                      placeholder="例：HM-12001"
+                      placeholder="萓具ｼ唏M-12001"
                     />
                   </label>
 
                   <button className="add" type="button" onClick={createMaterialGroup}>
-                    選択したCFを材料にする
+                    驕ｸ謚槭＠縺櫃F繧呈攝譁吶↓縺吶ｋ
                   </button>
                 </div>
               )}
 
               {normalizedMaterialGroups.length > 0 && (
                 <div className="cfMaterialGroupList">
-                  <h3>材料発注グループ</h3>
+                  <h3>譚先侭逋ｺ豕ｨ繧ｰ繝ｫ繝ｼ繝・/h3>
 
                   {normalizedMaterialGroups.map((group, index) => {
                     const groupPieces = getCfMaterialGroupPieces(group, records)
@@ -3349,38 +3348,38 @@ function LengthMeasurementPage({
                     return (
                       <div className="cfMaterialGroup" key={group.id}>
                         <div className="cfMaterialGroupHeader">
-                          <strong>CF材料 {index + 1}</strong>
+                          <strong>CF譚先侭 {index + 1}</strong>
                           <button
                             type="button"
                             onClick={() => releaseMaterialGroup(group.id)}
-                            aria-label={'CF材料' + (index + 1) + 'の割当を解除'}
+                            aria-label={'CF譚先侭' + (index + 1) + '縺ｮ蜑ｲ蠖薙ｒ隗｣髯､'}
                           >
-                            ×
+                            ﾃ・
                           </button>
                         </div>
 
-                        <p>{roomNames.join(' ＋ ') || '対象データなし'}</p>
+                        <p>{roomNames.join(' ・・') || '蟇ｾ雎｡繝・・繧ｿ縺ｪ縺・}</p>
 
                         {groupPieces.map(piece => (
                           <div className="summaryLine" key={piece.pieceKey}>
-                            <span>{piece.room || '部屋未設定'}　{piece.label}</span>
+                            <span>{piece.room || '驛ｨ螻区悴險ｭ螳・}縲{piece.label}</span>
                             <strong>{formatQuantity(piece.pieceLength)}m</strong>
                           </div>
                         ))}
 
                         <div className="summaryLine summaryGrand">
-                          <span>計算長</span>
+                          <span>險育ｮ鈴聞</span>
                           <strong>{formatQuantity(calculatedLength)}m</strong>
                         </div>
 
                         {hasDifference && (
                           <p className="saveStatus" role="status">
-                            計算長と注文長が異なります。ロス分を含む場合はそのままで問題ありません。
+                            險育ｮ鈴聞縺ｨ豕ｨ譁・聞縺檎焚縺ｪ繧翫∪縺吶ゅΟ繧ｹ蛻・ｒ蜷ｫ繧蝣ｴ蜷医・縺昴・縺ｾ縺ｾ縺ｧ蝠城｡後≠繧翫∪縺帙ｓ縲・
                           </p>
                         )}
 
                         <label>
-                          <span>注文長（m）</span>
+                          <span>豕ｨ譁・聞・・・・/span>
                           <input
                             type="number"
                             min="0"
@@ -3393,14 +3392,14 @@ function LengthMeasurementPage({
                         </label>
 
                         <label>
-                          <span>品番・商品名</span>
+                          <span>蜩∫分繝ｻ蝠・刀蜷・/span>
                           <input
                             type="text"
                             value={group.productCode || ''}
                             onChange={event => updateMaterialGroup(group.id, {
                               productCode: event.target.value,
                             })}
-                            placeholder="例：HM-12001"
+                            placeholder="萓具ｼ唏M-12001"
                           />
                         </label>
 
@@ -3409,7 +3408,7 @@ function LengthMeasurementPage({
                           type="button"
                           onClick={() => releaseMaterialGroup(group.id)}
                         >
-                          この材料の割当を解除
+                          縺薙・譚先侭縺ｮ蜑ｲ蠖薙ｒ隗｣髯､
                         </button>
                       </div>
                     )
@@ -3427,12 +3426,12 @@ function LengthMeasurementPage({
             <form ref={lengthInputAreaRef} onSubmit={addRecord}>
               {countOnly ? (
                 <div className="inputRow" style={{ gridTemplateColumns: '1fr' }}>
-                  <label><span>枚数</span><input type="text" inputMode="none" readOnly data-length-count="count" aria-label="CF本数入力" value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
+                  <label><span>譫壽焚</span><input type="text" inputMode="none" readOnly data-length-count="count" aria-label="CF譛ｬ謨ｰ蜈･蜉・ value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="繧ｿ繝・・" /></label>
                 </div>
               ) : (
                 <div className="inputRow">
-                  <label><span>長さ（メートル）</span><input type="text" inputMode="none" readOnly data-length-count="length" aria-label="CF長さ入力" value={length} onFocus={() => setActiveInput('length')} onClick={() => setActiveInput('length')} placeholder="タップ" /></label>
-                  <label><span>本数</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="タップ" /></label>
+                  <label><span>髟ｷ縺包ｼ医Γ繝ｼ繝医Ν・・/span><input type="text" inputMode="none" readOnly data-length-count="length" aria-label="CF髟ｷ縺募・蜉・ value={length} onFocus={() => setActiveInput('length')} onClick={() => setActiveInput('length')} placeholder="繧ｿ繝・・" /></label>
+                  <label><span>譛ｬ謨ｰ</span><input type="text" inputMode="none" readOnly value={count} onFocus={() => setActiveInput('count')} onClick={() => setActiveInput('count')} placeholder="繧ｿ繝・・" /></label>
                 </div>
               )}
               <NumberKeypad
@@ -3443,38 +3442,38 @@ function LengthMeasurementPage({
                 onEnter={handleMeasurementEnter}
               />
               <label>
-                <span>メモ</span>
-                <input ref={memoInputRef} className="memoInput" type="text" value={memo} onChange={event => setMemo(event.target.value)} placeholder="例：窓面、収納内" />
+                <span>繝｡繝｢</span>
+                <input ref={memoInputRef} className="memoInput" type="text" value={memo} onChange={event => setMemo(event.target.value)} placeholder="萓具ｼ夂ｪ馴擇縲∝庶邏榊・" />
               </label>
-              {countOnly && <button className="add" type="submit">＋ ソフト巾木登録</button>}
+              {countOnly && <button className="add" type="submit">・・繧ｽ繝輔ヨ蟾ｾ譛ｨ逋ｻ骭ｲ</button>}
             </form>
             <div className="records">
-              {!countOnly && <h2>{room}の{title}登録</h2>}
+              {!countOnly && <h2>{room}縺ｮ{title}逋ｻ骭ｲ</h2>}
               {roomRecords.length === 0 ? (
-                <p className="empty">{room}の{title}登録内容はありません</p>
+                <p className="empty">{room}縺ｮ{title}逋ｻ骭ｲ蜀・ｮｹ縺ｯ縺ゅｊ縺ｾ縺帙ｓ</p>
               ) : roomRecords.map(item => (
                 <div className="record" key={item.id}>
                   <div>
-                    <strong>{countOnly ? 'ソフト巾木登録' : title}</strong>
-                    <small>{countOnly ? `${formatQuantity(item.quantity)}枚` : `${Number(item.length).toFixed(2)}m × ${item.count}本`}</small>
-                    {item.memo && <small>メモ：{item.memo}</small>}
+                    <strong>{countOnly ? '繧ｽ繝輔ヨ蟾ｾ譛ｨ逋ｻ骭ｲ' : title}</strong>
+                    <small>{countOnly ? `${formatQuantity(item.quantity)}譫啻 : `${Number(item.length).toFixed(2)}m ﾃ・${item.count}譛ｬ`}</small>
+                    {item.memo && <small>繝｡繝｢・嘴item.memo}</small>}
                   </div>
                   <b>{formatQuantity(getQuantity(item))}{unit}</b>
                   <button type="button" onClick={() => {
                     setRecords(prev => prev.filter(record => record.id !== item.id))
                     onRoomRecordsChanged(room)
-                  }} aria-label={`${room}の${title}登録を削除`}>×</button>
+                  }} aria-label={`${room}縺ｮ${title}逋ｻ骭ｲ繧貞炎髯､`}>ﾃ・/button>
                 </div>
               ))}
             </div>
             <div className="summary">
-              <div className="summaryLine summaryGrand"><span>{room}の{title}合計</span><strong>{formatQuantity(roomTotals[room] || 0)}{unit}</strong></div>
+              <div className="summaryLine summaryGrand"><span>{room}縺ｮ{title}蜷郁ｨ・/span><strong>{formatQuantity(roomTotals[room] || 0)}{unit}</strong></div>
             </div>
           </section>
           <div className="roomNavigation">
-            <button className="back" type="button" disabled={pageIndex === 0} onClick={() => goToPage(pageIndex - 1)}>← 前の部屋</button>
+            <button className="back" type="button" disabled={pageIndex === 0} onClick={() => goToPage(pageIndex - 1)}>竊・蜑阪・驛ｨ螻・/button>
             <button className="primary roomNavigationNext" type="button" onClick={() => goToPage(pageIndex + 1)}>
-              {pageIndex === rooms.length - 1 ? '全室合計へ →' : '次の部屋 →'}
+              {pageIndex === rooms.length - 1 ? '蜈ｨ螳､蜷郁ｨ医∈ 竊・ : '谺｡縺ｮ驛ｨ螻・竊・}
             </button>
           </div>
         </>
@@ -3486,7 +3485,7 @@ function LengthMeasurementPage({
 function FloorTrimSection({ rooms, records, setRecords, onChanged, onRegistered }) {
   const [roomA, setRoomA] = useState(rooms[0] || '')
   const [roomB, setRoomB] = useState(rooms[1] || rooms[0] || '')
-  const [color, setColor] = useState('シルバー')
+  const [color, setColor] = useState('繧ｷ繝ｫ繝舌・')
   const [quantity, setQuantity] = useState('1')
 
   useEffect(() => {
@@ -3508,26 +3507,26 @@ function FloorTrimSection({ rooms, records, setRecords, onChanged, onRegistered 
 
   return (
     <section className="card floorTrimSection">
-      <h2>床見切り</h2>
+      <h2>蠎願ｦ句・繧・/h2>
       <form onSubmit={addFloorTrim}>
         <div className="floorTrimGrid">
-          <label><span>部屋①</span><select value={roomA} onChange={event => setRoomA(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
-          <label><span>部屋②</span><select value={roomB} onChange={event => setRoomB(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+          <label><span>驛ｨ螻銀蔵</span><select value={roomA} onChange={event => setRoomA(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+          <label><span>驛ｨ螻銀贈</span><select value={roomB} onChange={event => setRoomB(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
         </div>
-        <label><span>カラー</span></label>
+        <label><span>繧ｫ繝ｩ繝ｼ</span></label>
         <div className="floorTrimColorOptions">
-          {['シルバー', 'アンバー'].map(value => <button key={value} type="button" className={`floorTrimColorButton${color === value ? ' active' : ''}`} onClick={() => setColor(value)}>{value}</button>)}
+          {['繧ｷ繝ｫ繝舌・', '繧｢繝ｳ繝舌・'].map(value => <button key={value} type="button" className={`floorTrimColorButton${color === value ? ' active' : ''}`} onClick={() => setColor(value)}>{value}</button>)}
         </div>
-        <label><span>数量（本）</span><input type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
-        {roomA === roomB && <p className="saveStatus" role="alert">異なる部屋を選んでください</p>}
-        <button className="add" type="submit">＋ 床見切りを登録</button>
+        <label><span>謨ｰ驥擾ｼ域悽・・/span><input type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
+        {roomA === roomB && <p className="saveStatus" role="alert">逡ｰ縺ｪ繧矩Κ螻九ｒ驕ｸ繧薙〒縺上□縺輔＞</p>}
+        <button className="add" type="submit">・・蠎願ｦ句・繧翫ｒ逋ｻ骭ｲ</button>
       </form>
       <div className="records">
-        {records.length === 0 ? <p className="empty">床見切りの登録はありません</p> : records.map(item => (
+        {records.length === 0 ? <p className="empty">蠎願ｦ句・繧翫・逋ｻ骭ｲ縺ｯ縺ゅｊ縺ｾ縺帙ｓ</p> : records.map(item => (
           <div className="record" key={item.id}>
-            <div><strong>{item.roomA}⇔{item.roomB}</strong><small>床見切り取付・{item.color}</small></div>
-            <b>{formatQuantity(item.quantity)}本</b>
-            <button type="button" onClick={() => { setRecords(previous => previous.filter(record => record.id !== item.id)); onChanged() }} aria-label="床見切りを削除">×</button>
+            <div><strong>{item.roomA}竍倍item.roomB}</strong><small>蠎願ｦ句・繧雁叙莉倥・{item.color}</small></div>
+            <b>{formatQuantity(item.quantity)}譛ｬ</b>
+            <button type="button" onClick={() => { setRecords(previous => previous.filter(record => record.id !== item.id)); onChanged() }} aria-label="蠎願ｦ句・繧翫ｒ蜑企勁">ﾃ・/button>
           </div>
         ))}
       </div>
@@ -3551,7 +3550,7 @@ function FinalReviewPage({
   const [room, setRoom] = useState(rooms[0] || '')
   const [work, setWork] = useState('')
   const [quantity, setQuantity] = useState('1')
-  const [unit, setUnit] = useState('式')
+  const [unit, setUnit] = useState('蠑・)
   const [unitPrice, setUnitPrice] = useState('')
   /* M-CROSS_OTHER_WORK_VOICE_INPUT_V1_SAFE */
   const [voiceInputStatus, setVoiceInputStatus] = useState('')
@@ -3577,8 +3576,8 @@ function FinalReviewPage({
         found.push({
           work: recordWork,
           price,
-          unit: record.unit || '式',
-          propertyName: entry.propertyName || '物件名なし',
+          unit: record.unit || '蠑・,
+          propertyName: entry.propertyName || '迚ｩ莉ｶ蜷阪↑縺・,
           room: record.room || '',
           updatedAt: entry.updatedAt || '',
         })
@@ -3601,7 +3600,7 @@ function FinalReviewPage({
     setRoom(rooms[0] || '')
     setWork('')
     setQuantity('1')
-    setUnit('式')
+    setUnit('蠑・)
     setUnitPrice('')
     setMemo('')
   }
@@ -3611,7 +3610,7 @@ function FinalReviewPage({
     setRoom(item.room || rooms[0] || '')
     setWork(item.work || '')
     setQuantity(String(item.quantity ?? '1'))
-    setUnit(item.unit || '式')
+    setUnit(item.unit || '蠑・)
     setUnitPrice(String(item.unitPrice ?? ''))
     setMemo(item.memo || '')
     window.setTimeout(() => {
@@ -3622,10 +3621,10 @@ function FinalReviewPage({
   /* M-CROSS_VOICE_CORRECTION_DICTIONARY_V1_SAFE */
   function correctOtherWorkVoiceText(value) {
     const corrections = [
-      ['針覗く', '梁除く'], ['針のぞく', '梁除く'], ['針除く', '梁除く'],
-      ['梁覗く', '梁除く'], ['梁のぞく', '梁除く'],
-      ['ソフト幅木', 'ソフト巾木'], ['クッションフロアー', 'クッションフロア'],
-      ['カートリッヂ', 'カートリッジ'],
+      ['驥晁ｦ励￥', '譴・勁縺・], ['驥昴・縺槭￥', '譴・勁縺・], ['驥晞勁縺・, '譴・勁縺・],
+      ['譴∬ｦ励￥', '譴・勁縺・], ['譴√・縺槭￥', '譴・勁縺・],
+      ['繧ｽ繝輔ヨ蟷・惠', '繧ｽ繝輔ヨ蟾ｾ譛ｨ'], ['繧ｯ繝・す繝ｧ繝ｳ繝輔Ο繧｢繝ｼ', '繧ｯ繝・す繝ｧ繝ｳ繝輔Ο繧｢'],
+      ['繧ｫ繝ｼ繝医Μ繝・モ', '繧ｫ繝ｼ繝医Μ繝・ず'],
     ]
     let text = String(value || '').trim()
     corrections.forEach(([from, to]) => { text = text.split(from).join(to) })
@@ -3635,7 +3634,7 @@ function FinalReviewPage({
   function applyOtherWorkVoiceText(transcript) {
     const text = String(transcript || '').trim()
     if (!text) return
-    const normalized = text.replace(/[、，,。]/g, ' ').replace(/\s+/g, ' ').trim()
+    const normalized = text.replace(/[縲・ｼ・縲・/g, ' ').replace(/\s+/g, ' ').trim()
     const roomCandidate = rooms.find(name => normalized.startsWith(name + ' ') || normalized === name)
       || rooms.find(name => normalized.includes(name))
       || ''
@@ -3644,20 +3643,20 @@ function FinalReviewPage({
       setRoom(roomCandidate)
       remainder = remainder.replace(roomCandidate, '').trim()
     }
-    const quantityMatch = remainder.match(/(?:数量)?\s*(\d+(?:\.\d+)?)\s*(式|個|本|枚|台|箇所)?$/)
+    const quantityMatch = remainder.match(/(?:謨ｰ驥・?\s*(\d+(?:\.\d+)?)\s*(蠑楯蛟弓譛ｬ|譫嘶蜿ｰ|邂・園)?$/)
     if (quantityMatch) {
       setQuantity(quantityMatch[1])
       if (quantityMatch[2]) setUnit(quantityMatch[2])
       remainder = remainder.slice(0, quantityMatch.index).trim()
     }
     if (remainder) setWork(remainder)
-    setVoiceInputStatus('認識結果を入力欄へ反映しました。内容を確認して登録してください。')
+    setVoiceInputStatus('隱崎ｭ倡ｵ先棡繧貞・蜉帶ｬ・∈蜿肴丐縺励∪縺励◆縲ょ・螳ｹ繧堤｢ｺ隱阪＠縺ｦ逋ｻ骭ｲ縺励※縺上□縺輔＞縲・)
   }
 
   function startOtherWorkVoiceInput() {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!Recognition) {
-      setVoiceInputStatus('このブラウザーでは音声入力を利用できません。端末のキーボード音声入力を使ってください。')
+      setVoiceInputStatus('縺薙・繝悶Λ繧ｦ繧ｶ繝ｼ縺ｧ縺ｯ髻ｳ螢ｰ蜈･蜉帙ｒ蛻ｩ逕ｨ縺ｧ縺阪∪縺帙ｓ縲らｫｯ譛ｫ縺ｮ繧ｭ繝ｼ繝懊・繝蛾浹螢ｰ蜈･蜉帙ｒ菴ｿ縺｣縺ｦ縺上□縺輔＞縲・)
       return
     }
     try {
@@ -3667,7 +3666,7 @@ function FinalReviewPage({
       recognition.interimResults = false
       recognition.maxAlternatives = 1
       setVoiceListening(true)
-      setVoiceInputStatus('🎤 聞き取り中… 例：台所 混合栓 漏水修理')
+      setVoiceInputStatus('痔 閨槭″蜿悶ｊ荳ｭ窶ｦ 萓具ｼ壼床謇 豺ｷ蜷域・貍乗ｰｴ菫ｮ逅・)
       recognition.onresult = event => {
         const rawText = String(event.results?.[0]?.[0]?.transcript || '').trim()
         openVoiceRecognitionReview({
@@ -3677,13 +3676,13 @@ function FinalReviewPage({
         })
       }
       recognition.onerror = event => {
-        setVoiceInputStatus('音声入力エラー: ' + (event.error || '認識できませんでした'))
+        setVoiceInputStatus('髻ｳ螢ｰ蜈･蜉帙お繝ｩ繝ｼ: ' + (event.error || '隱崎ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆'))
       }
       recognition.onend = () => setVoiceListening(false)
       recognition.start()
     } catch (error) {
       setVoiceListening(false)
-      setVoiceInputStatus('音声入力を開始できませんでした。マイク権限を確認してください。')
+      setVoiceInputStatus('髻ｳ螢ｰ蜈･蜉帙ｒ髢句ｧ九〒縺阪∪縺帙ｓ縺ｧ縺励◆縲ゅ・繧､繧ｯ讓ｩ髯舌ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・)
       console.error(error)
     }
   }
@@ -3730,7 +3729,7 @@ function FinalReviewPage({
           count: 0,
           latestTime: 0,
           latestPrice: 0,
-          latestUnit: '式',
+          latestUnit: '蠑・,
         }
 
         current.count += 1
@@ -3738,7 +3737,7 @@ function FinalReviewPage({
           current.name = name
           current.latestTime = updatedTime
           current.latestPrice = Number(record.unitPrice || 0)
-          current.latestUnit = record.unit || '式'
+          current.latestUnit = record.unit || '蠑・
         }
         stats.set(key, current)
       })
@@ -3757,18 +3756,18 @@ function FinalReviewPage({
     const warnings = []
 
     ;(additionalWorks || []).forEach(item => {
-      const label = (item.room || '部屋未設定') + '・' + (item.work || '作業名未設定')
+      const label = (item.room || '驛ｨ螻区悴險ｭ螳・) + '繝ｻ' + (item.work || '菴懈･ｭ蜷肴悴險ｭ螳・)
       const quantity = Number(item.quantity || 0)
       const unitPriceValue = Number(item.unitPrice || 0)
 
       if (!Number.isFinite(quantity) || quantity <= 0) {
-        warnings.push('数量を確認：' + label)
+        warnings.push('謨ｰ驥上ｒ遒ｺ隱搾ｼ・ + label)
       }
       if (!Number.isFinite(unitPriceValue) || unitPriceValue <= 0) {
-        warnings.push('単価0円：' + label)
+        warnings.push('蜊倅ｾ｡0蜀・ｼ・ + label)
       }
       if (quantity >= 1000) {
-        warnings.push('数量が大きい：' + label + '（' + quantity + (item.unit || '') + '）')
+        warnings.push('謨ｰ驥上′螟ｧ縺阪＞・・ + label + '・・ + quantity + (item.unit || '') + '・・)
       }
     })
 
@@ -3785,14 +3784,14 @@ function FinalReviewPage({
       const separatorIndex = key.indexOf('|')
       const duplicateRoom = key.slice(0, separatorIndex)
       const duplicateWork = key.slice(separatorIndex + 1)
-      warnings.push('重複の可能性：' + (duplicateRoom || '部屋未設定') + '・' + duplicateWork + ' × ' + value + '件')
+      warnings.push('驥崎､・・蜿ｯ閭ｽ諤ｧ・・ + (duplicateRoom || '驛ｨ螻区悴險ｭ螳・) + '繝ｻ' + duplicateWork + ' ﾃ・' + value + '莉ｶ')
     })
 
     return [...new Set(warnings)]
   }, [additionalWorks])
 
   function addCommonWork() {
-    const value = window.prompt('よく使う項目名を入力してください')?.trim()
+    const value = window.prompt('繧医￥菴ｿ縺・・岼蜷阪ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞')?.trim()
     if (!value || commonWorks.includes(value)) return
     const next = [...commonWorks, value]
     setCommonWorks(next)
@@ -3808,30 +3807,30 @@ function FinalReviewPage({
   return (
     <>
       <section className="card">
-        <h2>✅ 最終確認</h2>
-        <p className="subtitle">内装数量と、内装以外の追加作業を確認してください。</p>
+        <h2>笨・譛邨ら｢ｺ隱・/h2>
+        <p className="subtitle">蜀・｣・焚驥上→縲∝・陬・ｻ･螟悶・霑ｽ蜉菴懈･ｭ繧堤｢ｺ隱阪＠縺ｦ縺上□縺輔＞縲・/p>
         <div className="reviewTotals">
-          <div className="reviewTotal"><span>クロス合計</span><strong>{formatQuantity(crossTotal)}㎡</strong></div>
-          <div className="reviewTotal"><span>CF合計</span><strong>{formatQuantity(cfTotal)}㎡</strong></div>
-          <div className="reviewTotal"><span>ソフト巾木</span><strong>{formatQuantity(softTotal)}枚</strong></div>
-          <div className="reviewTotal"><span>床見切り</span><strong>{formatQuantity(floorTrimTotal)}本</strong></div>
+          <div className="reviewTotal"><span>繧ｯ繝ｭ繧ｹ蜷郁ｨ・/span><strong>{formatQuantity(crossTotal)}緕｡</strong></div>
+          <div className="reviewTotal"><span>CF蜷郁ｨ・/span><strong>{formatQuantity(cfTotal)}緕｡</strong></div>
+          <div className="reviewTotal"><span>繧ｽ繝輔ヨ蟾ｾ譛ｨ</span><strong>{formatQuantity(softTotal)}譫・/strong></div>
+          <div className="reviewTotal"><span>蠎願ｦ句・繧・/span><strong>{formatQuantity(floorTrimTotal)}譛ｬ</strong></div>
         </div>
       </section>
 
       <section className="card">
-        <h2>🔧 内装以外の追加作業</h2>
-        <div className="commonWorkButtons" aria-label="よく使う追加作業">
+        <h2>肌 蜀・｣・ｻ･螟悶・霑ｽ蜉菴懈･ｭ</h2>
+        <div className="commonWorkButtons" aria-label="繧医￥菴ｿ縺・ｿｽ蜉菴懈･ｭ">
           {commonWorks.map(value => (
             <button key={value} className="quickMemoButton" type="button" onClick={() => setWork(value)} onContextMenu={event => { event.preventDefault(); deleteCommonWork(value) }}>{value}</button>
           ))}
-          <button className="quickMemoButton" type="button" onClick={addCommonWork}>＋ よく使う項目</button>
+          <button className="quickMemoButton" type="button" onClick={addCommonWork}>・・繧医￥菴ｿ縺・・岼</button>
         </div>
 
         {autoFrequentWorks.length > 0 && (
-          <section className="autoFrequentWorks" aria-label="最近よく使う項目">
+          <section className="autoFrequentWorks" aria-label="譛霑代ｈ縺丈ｽｿ縺・・岼">
             <div className="autoFrequentWorksTitle">
-              <strong>✨ 最近よく使う項目</strong>
-              <small>保存済みデータから自動表示</small>
+              <strong>笨ｨ 譛霑代ｈ縺丈ｽｿ縺・・岼</strong>
+              <small>菫晏ｭ俶ｸ医∩繝・・繧ｿ縺九ｉ閾ｪ蜍戊｡ｨ遉ｺ</small>
             </div>
             <div className="autoFrequentWorkButtons">
               {autoFrequentWorks.map(item => (
@@ -3844,10 +3843,10 @@ function FinalReviewPage({
                     if (item.latestPrice > 0) setUnitPrice(String(item.latestPrice))
                     if (item.latestUnit) setUnit(item.latestUnit)
                   }}
-                  title={'使用回数 ' + item.count + '回'}
+                  title={'菴ｿ逕ｨ蝗樊焚 ' + item.count + '蝗・}
                 >
                   <span>{item.name}</span>
-                  <small>{item.count}回{item.latestPrice > 0 ? '・直近 ' + formatYen(item.latestPrice) : ''}</small>
+                  <small>{item.count}蝗桀item.latestPrice > 0 ? '繝ｻ逶ｴ霑・' + formatYen(item.latestPrice) : ''}</small>
                 </button>
               ))}
             </div>
@@ -3856,8 +3855,8 @@ function FinalReviewPage({
 
         <section className={`estimateCheckPanel ${estimateCheckWarnings.length ? 'hasWarnings' : 'allClear'}`}>
           <div className="estimateCheckHeader">
-            <strong>🧠 入力・見積チェック</strong>
-            <span>{estimateCheckWarnings.length ? estimateCheckWarnings.length + '件確認' : 'OK'}</span>
+            <strong>ｧ 蜈･蜉帙・隕狗ｩ阪メ繧ｧ繝・け</strong>
+            <span>{estimateCheckWarnings.length ? estimateCheckWarnings.length + '莉ｶ遒ｺ隱・ : 'OK'}</span>
           </div>
           {estimateCheckWarnings.length > 0 ? (
             <ul>
@@ -3866,30 +3865,30 @@ function FinalReviewPage({
               ))}
             </ul>
           ) : (
-            <p>追加作業に明らかな数量0・単価0・重複は見つかりません。</p>
+            <p>霑ｽ蜉菴懈･ｭ縺ｫ譏弱ｉ縺九↑謨ｰ驥・繝ｻ蜊倅ｾ｡0繝ｻ驥崎､・・隕九▽縺九ｊ縺ｾ縺帙ｓ縲・/p>
           )}
-          <small>確認補助です。工事内容や金額の正否を自動決定するものではありません。</small>
+          <small>遒ｺ隱崎｣懷勧縺ｧ縺吶ょｷ･莠句・螳ｹ繧・≡鬘阪・豁｣蜷ｦ繧定・蜍墓ｱｺ螳壹☆繧九ｂ縺ｮ縺ｧ縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・/small>
         </section>
 
         <form className="additionalWorkForm" onSubmit={addWork}>
           <div className="otherWorkVoiceBox">
             <button className="otherWorkVoiceButton" type="button" disabled={voiceListening} onClick={startOtherWorkVoiceInput}>
-              {voiceListening ? '🎤 聞き取り中…' : '🎤 音声で入力'}
+              {voiceListening ? '痔 閨槭″蜿悶ｊ荳ｭ窶ｦ' : '痔 髻ｳ螢ｰ縺ｧ蜈･蜉・}
             </button>
-            <small>例：台所 混合栓 漏水修理 ／ 台所 混合栓 カートリッジ交換 1個</small>
+            <small>萓具ｼ壼床謇 豺ｷ蜷域・貍乗ｰｴ菫ｮ逅・・・蜿ｰ謇 豺ｷ蜷域・繧ｫ繝ｼ繝医Μ繝・ず莠､謠・1蛟・/small>
             {voiceInputStatus && <p className="otherWorkVoiceStatus" role="status">{voiceInputStatus}</p>}
           </div>
           {editingAdditionalWorkId && (
             <div className="additionalWorkEditNotice">
-              <strong>✏️ 追加作業を編集中</strong>
-              <button type="button" onClick={resetAdditionalWorkEditor}>編集をキャンセル</button>
+              <strong>笨擾ｸ・霑ｽ蜉菴懈･ｭ繧堤ｷｨ髮・ｸｭ</strong>
+              <button type="button" onClick={resetAdditionalWorkEditor}>邱ｨ髮・ｒ繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
             </div>
           )}
-          <label><span>部屋</span><select value={room} onChange={event => setRoom(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
-          <label><span>作業内容</span><input value={work} onChange={event => setWork(event.target.value)} placeholder="例：畳表替え、電球交換" /></label>
+          <label><span>驛ｨ螻・/span><select value={room} onChange={event => setRoom(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+          <label><span>菴懈･ｭ蜀・ｮｹ</span><input value={work} onChange={event => setWork(event.target.value)} placeholder="萓具ｼ夂糞陦ｨ譖ｿ縺医・崕逅・ｺ､謠・ /></label>
           {pastUnitPriceSuggestions.length > 0 && (
-            <section className="pastPriceSuggestions" aria-label="過去の単価候補">
-              <strong>💡 過去の単価候補</strong>
+            <section className="pastPriceSuggestions" aria-label="驕主悉縺ｮ蜊倅ｾ｡蛟呵｣・>
+              <strong>庁 驕主悉縺ｮ蜊倅ｾ｡蛟呵｣・/strong>
               <div className="pastPriceSuggestionList">
                 {pastUnitPriceSuggestions.map(item => (
                   <button
@@ -3903,28 +3902,28 @@ function FinalReviewPage({
                     }}
                   >
                     <span>{item.work}</span>
-                    <b>{formatYen(item.price)}／{item.unit}</b>
-                    <small>{item.propertyName}{item.room ? '・' + item.room : ''}</small>
+                    <b>{formatYen(item.price)}・旬item.unit}</b>
+                    <small>{item.propertyName}{item.room ? '繝ｻ' + item.room : ''}</small>
                   </button>
                 ))}
               </div>
-              <small>候補を押した場合だけ、作業名・単価・単位へ反映します。</small>
+              <small>蛟呵｣懊ｒ謚ｼ縺励◆蝣ｴ蜷医□縺代∽ｽ懈･ｭ蜷阪・蜊倅ｾ｡繝ｻ蜊倅ｽ阪∈蜿肴丐縺励∪縺吶・/small>
             </section>
           )}
           <div className="additionalWorkGrid">
-            <label><span>数量</span><input type="number" min="0.1" step="0.1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
-            <label><span>単位</span><select value={unit} onChange={event => setUnit(event.target.value)}>{['式','個','本','枚','台','箇所'].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-            <label><span>単価（円）</span><input type="number" min="0" step="1" value={unitPrice} onChange={event => setUnitPrice(event.target.value)} placeholder="0" /></label>
-            <label><span>金額</span><input type="text" readOnly value={formatYen((Number(quantity) || 0) * (Number(unitPrice) || 0))} /></label>
-            <label><span>メモ</span><input value={memo} onChange={event => setMemo(event.target.value)} placeholder="任意" /></label>
+            <label><span>謨ｰ驥・/span><input type="number" min="0.1" step="0.1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
+            <label><span>蜊倅ｽ・/span><select value={unit} onChange={event => setUnit(event.target.value)}>{['蠑・,'蛟・,'譛ｬ','譫・,'蜿ｰ','邂・園'].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+            <label><span>蜊倅ｾ｡・亥・・・/span><input type="number" min="0" step="1" value={unitPrice} onChange={event => setUnitPrice(event.target.value)} placeholder="0" /></label>
+            <label><span>驥鷹｡・/span><input type="text" readOnly value={formatYen((Number(quantity) || 0) * (Number(unitPrice) || 0))} /></label>
+            <label><span>繝｡繝｢</span><input value={memo} onChange={event => setMemo(event.target.value)} placeholder="莉ｻ諢・ /></label>
           </div>
           <button className="add" type="submit">
-            {editingAdditionalWorkId ? '✓ 追加作業を更新' : '＋ 追加作業を登録'}
+            {editingAdditionalWorkId ? '笨・霑ｽ蜉菴懈･ｭ繧呈峩譁ｰ' : '・・霑ｽ蜉菴懈･ｭ繧堤匳骭ｲ'}
           </button>
         </form>
 
         <div className="records">
-          {additionalWorks.length === 0 ? <p className="empty">追加作業はありません</p> : additionalWorks.map(item => (
+          {additionalWorks.length === 0 ? <p className="empty">霑ｽ蜉菴懈･ｭ縺ｯ縺ゅｊ縺ｾ縺帙ｓ</p> : additionalWorks.map(item => (
             <div
               className={`additionalWorkItem additionalWorkEditable ${editingAdditionalWorkId === item.id ? 'editing' : ''}`}
               key={item.id}
@@ -3937,11 +3936,11 @@ function FinalReviewPage({
                   startEditingAdditionalWork(item)
                 }
               }}
-              aria-label={item.room + 'の' + item.work + 'を編集'}
+              aria-label={item.room + '縺ｮ' + item.work + '繧堤ｷｨ髮・}
             >
-              <div><strong>{item.room}　{item.work}</strong><small>{item.memo || 'メモなし'}</small></div>
+              <div><strong>{item.room}縲{item.work}</strong><small>{item.memo || '繝｡繝｢縺ｪ縺・}</small></div>
               <div><b>{formatQuantity(item.quantity)}{item.unit}</b><small>{formatYen(Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0))}</small></div>
-              <button type="button" onClick={event => { event.stopPropagation(); if (editingAdditionalWorkId === item.id) resetAdditionalWorkEditor(); setAdditionalWorks(previous => previous.filter(record => record.id !== item.id)); onChanged() }} aria-label="追加作業を削除">×</button>
+              <button type="button" onClick={event => { event.stopPropagation(); if (editingAdditionalWorkId === item.id) resetAdditionalWorkEditor(); setAdditionalWorks(previous => previous.filter(record => record.id !== item.id)); onChanged() }} aria-label="霑ｽ蜉菴懈･ｭ繧貞炎髯､">ﾃ・/button>
             </div>
           ))}
         </div>
@@ -3991,9 +3990,9 @@ function loadEstimateEdits(key) {
 /* M-CROSS_ESTIMATE_VERSION_EXPLORER_FILENAME_V3_SAFE */
 /* M-CROSS_ESTIMATE_VERSION_NUMBERING_V4_SAFE */
 function estimateVersionMark(version) {
-  const marks = ['', '', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
+  const marks = ['', '', '竭｡', '竭｢', '竭｣', '竭､', '竭･', '竭ｦ', '竭ｧ', '竭ｨ', '竭ｩ']
   const number = Number(version) || 0
-  return marks[number] ?? '（' + number + '）'
+  return marks[number] ?? '・・ + number + '・・
 }
 
 export default function App() {
@@ -4037,7 +4036,7 @@ export default function App() {
   const [propertyListSearch, setPropertyListSearch] = useState('')
   const [unit, setUnit] = useState('')
   /* M-CROSS_WORK_NAME_V7_EXACT */
-  const [workName, setWorkName] = useState('原状回復工事')
+  const [workName, setWorkName] = useState('蜴溽憾蝗槫ｾｩ蟾･莠・)
   const [siteMemo, setSiteMemo] = useState('')
   const [showSimilarSites, setShowSimilarSites] = useState(false)
   const [showAllPropertyHistory, setShowAllPropertyHistory] = useState(false)
@@ -4090,7 +4089,7 @@ export default function App() {
   /* M-CROSS_VERSION_DISPLAY_FROM_SNAPSHOT_V5_SAFE */
   const [openedEstimateRows, setOpenedEstimateRows] = useState(null)
   /* M-CROSS_ESTIMATE_VERSIONS_BY_WORK_NAME_V1_SAFE */
-  const estimateVersionStorageKey = 'mcross:estimate-versions:' + [company, selectedProperty?.name || '', String(unit || '').trim(), String(workName || '').trim() || '原状回復工事'].join('|')
+  const estimateVersionStorageKey = 'mcross:estimate-versions:' + [company, selectedProperty?.name || '', String(unit || '').trim(), String(workName || '').trim() || '蜴溽憾蝗槫ｾｩ蟾･莠・].join('|')
   const legacyEstimateVersionStorageKey = 'mcross:estimate-versions:' + [company, selectedProperty?.name || '', String(unit || '').trim()].join('|')
   useEffect(() => {
     if (!company || !selectedProperty?.name || !String(unit || '').trim()) {
@@ -4099,7 +4098,7 @@ export default function App() {
     }
     try {
       const currentStored = localStorage.getItem(estimateVersionStorageKey)
-      const legacyStored = String(workName || '').trim() === '原状回復工事'
+      const legacyStored = String(workName || '').trim() === '蜴溽憾蝗槫ｾｩ蟾･莠・
         ? localStorage.getItem(legacyEstimateVersionStorageKey)
         : null
       const loaded = JSON.parse(currentStored || legacyStored || '[]')
@@ -4111,7 +4110,7 @@ export default function App() {
   const [caseCrossFactor, setCaseCrossFactor] = useState(() => String(loadPricingSettings().crossFactor))
   const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
   const [estimateCopyFormat, setEstimateCopyFormat] = useState(() => readPreference(estimateCopyFormatKey, 'merged'))
-  const [measurementType, setMeasurementType] = useState('天井')
+  const [measurementType, setMeasurementType] = useState('螟ｩ莠・)
   const [height, setHeight] = useState('')
   const [count, setCount] = useState('')
   const [memo, setMemo] = useState('')
@@ -4146,7 +4145,7 @@ export default function App() {
   const [residentCaseForm, setResidentCaseForm] = useState(() => ({
     requestDate: new Date().toLocaleDateString('sv-SE'),
     company: '', propertyName: '', unit: '', address: '', residentContact: '',
-    requestDetails: '', note: '', status: '未連絡', nextAction: '入居者へ連絡',
+    requestDetails: '', note: '', status: '譛ｪ騾｣邨｡', nextAction: '蜈･螻・・∈騾｣邨｡',
     actionDueDate: '', caution: '',
   }))
   const [residentCaseFormError, setResidentCaseFormError] = useState('')
@@ -4232,7 +4231,7 @@ export default function App() {
       setWorkingDraft(draft)
       setShowDraftRecovery(true)
     } catch {
-      try { localStorage.removeItem(workingDraftKey) } catch { /* 復旧不能なデータは無視 */ }
+      try { localStorage.removeItem(workingDraftKey) } catch { /* 蠕ｩ譌ｧ荳崎・縺ｪ繝・・繧ｿ縺ｯ辟｡隕・*/ }
     }
   }, [])
   useEffect(() => {
@@ -4244,7 +4243,7 @@ export default function App() {
       propertyName: selectedProperty.name || '',
       address: selectedProperty.address || '',
       unit: unit.trim(),
-      workName: String(workName || '').trim() || '原状回復工事',
+      workName: String(workName || '').trim() || '蜴溽憾蝗槫ｾｩ蟾･莠・,
       siteMemo: siteMemo.trim(),
       records,
       cfRecords,
@@ -4270,7 +4269,7 @@ export default function App() {
       localStorage.setItem(workingDraftKey, JSON.stringify(draft))
       setWorkingDraft(draft)
     } catch (error) {
-      console.error('作業中データを自動保存できませんでした。', error)
+      console.error('菴懈･ｭ荳ｭ繝・・繧ｿ繧定・蜍穂ｿ晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・, error)
     }
   }, [
     started,
@@ -4377,11 +4376,11 @@ export default function App() {
 
     const normalize = value => String(value || '')
       .toLocaleLowerCase('ja')
-      .replace(/[\s　]+/g, '')
-      .replace(/[()（）［］\[\]・,，.。:：/\\_-]+/g, '')
+      .replace(/[\s縲]+/g, '')
+      .replace(/[()・茨ｼ会ｼｻ・ｽ\[\]繝ｻ,・・縲・・・\\_-]+/g, '')
 
     const memoTokens = currentMemo
-      .split(/[\s　,，、。・/]+/)
+      .split(/[\s縲,・後√ゅ・/]+/)
       .map(normalize)
       .filter(token => token.length >= 2)
 
@@ -4396,26 +4395,26 @@ export default function App() {
 
         if (currentPropertyName && entryName === normalize(currentPropertyName)) {
           score += 8
-          reasons.push('同じ物件')
+          reasons.push('蜷後§迚ｩ莉ｶ')
         } else if (currentPropertyName && (entryName.includes(normalize(currentPropertyName)) || normalize(currentPropertyName).includes(entryName))) {
           score += 5
-          reasons.push('物件名が近い')
+          reasons.push('迚ｩ莉ｶ蜷阪′霑代＞')
         }
 
         if (currentCompany && entryCompany === normalize(currentCompany)) {
           score += 3
-          reasons.push('同じ管理会社')
+          reasons.push('蜷後§邂｡逅・ｼ夂､ｾ')
         }
 
         if (currentAddress && entryAddress === normalize(currentAddress)) {
           score += 5
-          reasons.push('同じ住所')
+          reasons.push('蜷後§菴乗園')
         }
 
         const matchedMemoTokens = memoTokens.filter(token => entryMemo.includes(token))
         if (matchedMemoTokens.length > 0) {
           score += Math.min(matchedMemoTokens.length * 2, 6)
-          reasons.push('現場メモ: ' + matchedMemoTokens.slice(0, 3).join('・'))
+          reasons.push('迴ｾ蝣ｴ繝｡繝｢: ' + matchedMemoTokens.slice(0, 3).join('繝ｻ'))
         }
 
         const hasCross = (entry.records || []).length > 0
@@ -4424,11 +4423,11 @@ export default function App() {
         const hasTrim = (entry.floorTrimRecords || []).length > 0
         const workCount = (entry.additionalWorks || []).length
         const summary = [
-          hasCross ? 'クロス' : '',
+          hasCross ? '繧ｯ繝ｭ繧ｹ' : '',
           hasCf ? 'CF' : '',
-          hasSoft ? 'ソフト巾木' : '',
-          hasTrim ? '床見切り' : '',
-          workCount ? '追加作業' + workCount + '件' : '',
+          hasSoft ? '繧ｽ繝輔ヨ蟾ｾ譛ｨ' : '',
+          hasTrim ? '蠎願ｦ句・繧・ : '',
+          workCount ? '霑ｽ蜉菴懈･ｭ' + workCount + '莉ｶ' : '',
         ].filter(Boolean)
 
         return { entry, score, reasons, summary }
@@ -4524,38 +4523,38 @@ return savedEntries
   function updateGlobalList(key, setter, currentItems, action, currentValue = '') {
     let next = [...currentItems]
     if (action === 'add') {
-      const value = window.prompt('追加する項目名を入力してください')?.trim()
+      const value = window.prompt('霑ｽ蜉縺吶ｋ鬆・岼蜷阪ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞')?.trim()
       if (!value || next.includes(value)) return
       next.push(value)
     } else if (action === 'edit') {
-      const value = window.prompt('項目名を編集してください', currentValue)?.trim()
+      const value = window.prompt('鬆・岼蜷阪ｒ邱ｨ髮・＠縺ｦ縺上□縺輔＞', currentValue)?.trim()
       if (!value || (value !== currentValue && next.includes(value))) return
       next = next.map(item => item === currentValue ? value : item)
     } else if (action === 'delete') {
       if (next.length <= 1) {
-        window.alert('最低1項目は残してください。')
+        window.alert('譛菴・鬆・岼縺ｯ谿九＠縺ｦ縺上□縺輔＞縲・)
         return
       }
-      if (!window.confirm(`「${currentValue}」を削除しますか？`)) return
+      if (!window.confirm(`縲・{currentValue}縲阪ｒ蜑企勁縺励∪縺吶°・歔)) return
       next = next.filter(item => item !== currentValue)
     }
     try {
       localStorage.setItem(key, JSON.stringify(next))
       setter(next)
-      setMasterStatus('設定を保存しました。')
+      setMasterStatus('險ｭ螳壹ｒ菫晏ｭ倥＠縺ｾ縺励◆縲・)
     } catch {
-      setMasterStatus('設定を保存できませんでした。')
+      setMasterStatus('險ｭ螳壹ｒ菫晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・)
     }
   }
   function resetGlobalList(key, setter, fallback, label) {
-    if (!window.confirm(`${label}を初期状態へ戻しますか？`)) return
+    if (!window.confirm(`${label}繧貞・譛溽憾諷九∈謌ｻ縺励∪縺吶°・歔)) return
     const next = [...fallback]
     try {
       localStorage.setItem(key, JSON.stringify(next))
       setter(next)
-      setMasterStatus(`${label}を初期状態へ戻しました。`)
+      setMasterStatus(`${label}繧貞・譛溽憾諷九∈謌ｻ縺励∪縺励◆縲Ａ)
     } catch {
-      setMasterStatus('設定を保存できませんでした。')
+      setMasterStatus('險ｭ螳壹ｒ菫晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・)
     }
   }
   function GlobalListEditor({ title, description, items, storageKey, setter, fallback }) {
@@ -4568,26 +4567,26 @@ return savedEntries
             <div className="globalListItem" key={item}>
               <span>{item}</span>
               <div className="masterActions">
-                <button className="secondaryButton" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'edit', item)}>編集</button>
-                <button className="dangerButton" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'delete', item)}>削除</button>
+                <button className="secondaryButton" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'edit', item)}>邱ｨ髮・/button>
+                <button className="dangerButton" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'delete', item)}>蜑企勁</button>
               </div>
             </div>
           ))}
         </div>
-        <button className="primary" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'add')}>＋ 項目を追加</button>
-        <button className="secondaryButton" type="button" onClick={() => resetGlobalList(storageKey, setter, fallback, title)}>初期状態へ戻す</button>
+        <button className="primary" type="button" onClick={() => updateGlobalList(storageKey, setter, items, 'add')}>・・鬆・岼繧定ｿｽ蜉</button>
+        <button className="secondaryButton" type="button" onClick={() => resetGlobalList(storageKey, setter, fallback, title)}>蛻晄悄迥ｶ諷九∈謌ｻ縺・/button>
       </section>
     )
   }
   function savePlaySettings(next) {
     setPlaySettings(next)
-    try { localStorage.setItem(playSettingsKey, JSON.stringify(next)) } catch { /* 任意設定 */ }
+    try { localStorage.setItem(playSettingsKey, JSON.stringify(next)) } catch { /* 莉ｻ諢剰ｨｭ螳・*/ }
   }
   function updateTodayStats(updater) {
     setTodayStats(previous => {
       const base = previous.date === getLocalDateKey() ? previous : loadTodayStats()
       const next = updater(base)
-      try { localStorage.setItem(todayStatsKey, JSON.stringify(next)) } catch { /* 任意記録 */ }
+      try { localStorage.setItem(todayStatsKey, JSON.stringify(next)) } catch { /* 莉ｻ諢剰ｨ倬鹸 */ }
       return next
     })
   }
@@ -4608,14 +4607,14 @@ return savedEntries
       oscillator.connect(gain); gain.connect(context.destination)
       oscillator.start(); oscillator.stop(context.currentTime + 0.14)
       oscillator.onended = () => context.close()
-    } catch { /* 音が使えない端末では無音 */ }
+    } catch { /* 髻ｳ縺御ｽｿ縺医↑縺・ｫｯ譛ｫ縺ｧ縺ｯ辟｡髻ｳ */ }
   }
   function triggerRegisteredEffect() {
     updateTodayStats(previous => ({ ...previous, registrations: previous.registrations + 1 }))
     playRegistrationSound()
     if (!playSettings.effects) return
-    const symbols = { beige: '✨', dark: '✦', pop: '🎉', cyber: '⚡', luxury: '✦', sakura: '🌸', ice: '❄', forest: '🍃', galaxy: '★' }
-    setEffectBurst({ id: Date.now(), symbol: symbols[theme] || '✨', theme })
+    const symbols = { beige: '笨ｨ', dark: '笨ｦ', pop: '脂', cyber: '笞｡', luxury: '笨ｦ', sakura: '減', ice: '笶・, forest: '鴻', galaxy: '笘・ }
+    setEffectBurst({ id: Date.now(), symbol: symbols[theme] || '笨ｨ', theme })
     window.setTimeout(() => setEffectBurst(null), 700)
   }
   function handleLogoTap() {
@@ -4625,7 +4624,7 @@ return savedEntries
     if (nextCount < 5 || galaxyUnlocked) return
     setGalaxyUnlocked(true)
     setShowGalaxyUnlock(true)
-    try { localStorage.setItem(galaxyUnlockedKey, 'true') } catch { /* 任意解除 */ }
+    try { localStorage.setItem(galaxyUnlockedKey, 'true') } catch { /* 莉ｻ諢剰ｧ｣髯､ */ }
     window.setTimeout(() => setShowGalaxyUnlock(false), 2400)
   }
   function markUnsaved() {
@@ -4639,7 +4638,7 @@ return savedEntries
       const next = crossType
         ? { ...previous, crossRates: { ...previous.crossRates, [crossType]: numericValue } }
         : { ...previous, [field]: numericValue }
-      try { localStorage.setItem(pricingSettingsKey, JSON.stringify(next)) } catch { /* 任意設定 */ }
+      try { localStorage.setItem(pricingSettingsKey, JSON.stringify(next)) } catch { /* 莉ｻ諢剰ｨｭ螳・*/ }
       return next
     })
   }
@@ -4664,7 +4663,7 @@ return savedEntries
         }
         return text(value).replace(/\//g, '-').replace(/\./g, '-')
       }
-      const normalizeHeader = value => text(value).replace(/[\s　\r\n]+/g, '')
+      const normalizeHeader = value => text(value).replace(/[\s縲\r\n]+/g, '')
       const findSheet = names => names.map(name => workbook.getWorksheet(name)).find(Boolean)
 
       const importedCases = []
@@ -4675,9 +4674,9 @@ return savedEntries
         let headerRowNumber = 0
         let headers = []
         const headerAliases = {
-          requestDate: ['依頼日', '受付日'], company: ['管理会社'], propertyName: ['物件名', '物件'], unit: ['号室'],
-          address: ['住所'], residentContact: ['連絡先', '電話番号', '入居者連絡先'], status: ['進捗', 'ステータス'],
-          requestDetails: ['内容', '依頼内容'], note: ['備考'], siteVisitAt: ['現調日', '現地調査日'], workVisitAt: ['工事日', '作業日'], caution: ['注意事項']
+          requestDate: ['萓晞ｼ譌･', '蜿嶺ｻ俶律'], company: ['邂｡逅・ｼ夂､ｾ'], propertyName: ['迚ｩ莉ｶ蜷・, '迚ｩ莉ｶ'], unit: ['蜿ｷ螳､'],
+          address: ['菴乗園'], residentContact: ['騾｣邨｡蜈・, '髮ｻ隧ｱ逡ｪ蜿ｷ', '蜈･螻・・｣邨｡蜈・], status: ['騾ｲ謐・, '繧ｹ繝・・繧ｿ繧ｹ'],
+          requestDetails: ['蜀・ｮｹ', '萓晞ｼ蜀・ｮｹ'], note: ['蛯呵・], siteVisitAt: ['迴ｾ隱ｿ譌･', '迴ｾ蝨ｰ隱ｿ譟ｻ譌･'], workVisitAt: ['蟾･莠区律', '菴懈･ｭ譌･'], caution: ['豕ｨ諢丈ｺ矩・]
         }
         sheet.eachRow((row, rowNumber) => {
           if (headerRowNumber) return
@@ -4695,12 +4694,12 @@ return savedEntries
         for (let rowNumber = headerRowNumber + 1; rowNumber <= sheet.rowCount; rowNumber += 1) {
           const row = sheet.getRow(rowNumber)
           const propertyName = text(indexFor('propertyName') ? row.getCell(indexFor('propertyName')).value : '')
-          const unit = text(indexFor('unit') ? row.getCell(indexFor('unit')).value : '').replace(/号室$/u, '')
+          const unit = text(indexFor('unit') ? row.getCell(indexFor('unit')).value : '').replace(/蜿ｷ螳､$/u, '')
           const requestDetails = text(indexFor('requestDetails') ? row.getCell(indexFor('requestDetails')).value : '')
           if (!propertyName && !unit && !requestDetails) continue
           const requestDate = dateText(indexFor('requestDate') ? row.getCell(indexFor('requestDate')).value : '')
           const rawStatus = text(indexFor('status') ? row.getCell(indexFor('status')).value : '')
-          const status = residentCaseStatuses.includes(rawStatus) ? rawStatus : (fallbackStatus || '未連絡')
+          const status = residentCaseStatuses.includes(rawStatus) ? rawStatus : (fallbackStatus || '譛ｪ騾｣邨｡')
           const key = [propertyName, unit, requestDate, requestDetails].join('|')
           if (duplicateKeys.has(key)) continue
           duplicateKeys.add(key)
@@ -4717,8 +4716,8 @@ return savedEntries
             siteVisitAt: dateText(indexFor('siteVisitAt') ? row.getCell(indexFor('siteVisitAt')).value : ''),
             workVisitAt: dateText(indexFor('workVisitAt') ? row.getCell(indexFor('workVisitAt')).value : ''),
             caution: text(indexFor('caution') ? row.getCell(indexFor('caution')).value : ''),
-            completed: status === '完了',
-            history: [{ id: createResidentCaseId(), at: now, status: 'Excel移行', memo: sheet.name + 'から移行' }],
+            completed: status === '螳御ｺ・,
+            history: [{ id: createResidentCaseId(), at: now, status: 'Excel遘ｻ陦・, memo: sheet.name + '縺九ｉ遘ｻ陦・ }],
             createdAt: now, updatedAt: now,
           }))
           count += 1
@@ -4726,20 +4725,20 @@ return savedEntries
         return count
       }
 
-      const activeCount = readCases(findSheet(['依頼一覧']), '')
-      const orderCount = readCases(findSheet(['発注待ち一覧']), '見積提出済（発注待ち）')
-      const completedCount = readCases(findSheet(['完了一覧']), '完了')
+      const activeCount = readCases(findSheet(['萓晞ｼ荳隕ｧ']), '')
+      const orderCount = readCases(findSheet(['逋ｺ豕ｨ蠕・■荳隕ｧ']), '隕狗ｩ肴署蜃ｺ貂茨ｼ育匱豕ｨ蠕・■・・)
+      const completedCount = readCases(findSheet(['螳御ｺ・ｸ隕ｧ']), '螳御ｺ・)
 
-      // LogData の対応履歴を物件名＋号室で紐付けます。
+      // LogData 縺ｮ蟇ｾ蠢懷ｱ･豁ｴ繧堤黄莉ｶ蜷搾ｼ句捷螳､縺ｧ邏蝉ｻ倥￠縺ｾ縺吶・
       let historyCount = 0
-      const logSheet = findSheet(['LogData', 'ログデータ'])
+      const logSheet = findSheet(['LogData', '繝ｭ繧ｰ繝・・繧ｿ'])
       if (logSheet) {
         let logHeaderRow = 0
         let logHeaders = []
         logSheet.eachRow((row, rowNumber) => {
           if (logHeaderRow) return
           const values = row.values.slice(1).map(normalizeHeader)
-          const hits = values.filter(value => ['日時', '日付', '物件名', '物件', '号室', 'ステータス', '進捗', 'メモ', '内容'].includes(value)).length
+          const hits = values.filter(value => ['譌･譎・, '譌･莉・, '迚ｩ莉ｶ蜷・, '迚ｩ莉ｶ', '蜿ｷ螳､', '繧ｹ繝・・繧ｿ繧ｹ', '騾ｲ謐・, '繝｡繝｢', '蜀・ｮｹ'].includes(value)).length
           if (hits >= 3) { logHeaderRow = rowNumber; logHeaders = values }
         })
         if (logHeaderRow) {
@@ -4747,16 +4746,16 @@ return savedEntries
             const index = logHeaders.findIndex(header => aliases.includes(header))
             return index >= 0 ? index + 1 : 0
           }
-          const dateIndex = logIndex(['日時', '日付'])
-          const propertyIndex = logIndex(['物件名', '物件'])
-          const unitIndex = logIndex(['号室'])
-          const statusIndex = logIndex(['ステータス', '進捗'])
-          const memoIndex = logIndex(['メモ', '内容', '備考'])
+          const dateIndex = logIndex(['譌･譎・, '譌･莉・])
+          const propertyIndex = logIndex(['迚ｩ莉ｶ蜷・, '迚ｩ莉ｶ'])
+          const unitIndex = logIndex(['蜿ｷ螳､'])
+          const statusIndex = logIndex(['繧ｹ繝・・繧ｿ繧ｹ', '騾ｲ謐・])
+          const memoIndex = logIndex(['繝｡繝｢', '蜀・ｮｹ', '蛯呵・])
 
           for (let rowNumber = logHeaderRow + 1; rowNumber <= logSheet.rowCount; rowNumber += 1) {
             const row = logSheet.getRow(rowNumber)
             const propertyName = text(propertyIndex ? row.getCell(propertyIndex).value : '')
-            const unit = text(unitIndex ? row.getCell(unitIndex).value : '').replace(/号室$/u, '')
+            const unit = text(unitIndex ? row.getCell(unitIndex).value : '').replace(/蜿ｷ螳､$/u, '')
             const statusText = text(statusIndex ? row.getCell(statusIndex).value : '')
             const memoText = text(memoIndex ? row.getCell(memoIndex).value : '')
             if (!propertyName && !unit && !statusText && !memoText) continue
@@ -4770,7 +4769,7 @@ return savedEntries
             const match = importedCases.find(item => item.propertyName === propertyName && item.unit === unit)
             if (!match) continue
             match.history = [...(match.history || []), {
-              id: createResidentCaseId(), at, status: statusText || '対応履歴', memo: memoText,
+              id: createResidentCaseId(), at, status: statusText || '蟇ｾ蠢懷ｱ･豁ｴ', memo: memoText,
             }]
             historyCount += 1
           }
@@ -4778,18 +4777,18 @@ return savedEntries
       }
 
       if (importedCases.length === 0) {
-        window.alert('取り込める案件が見つかりませんでした。シート名と見出しをご確認ください。')
+        window.alert('蜿悶ｊ霎ｼ繧√ｋ譯井ｻｶ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆縲ゅす繝ｼ繝亥錐縺ｨ隕句・縺励ｒ縺皮｢ｺ隱阪￥縺縺輔＞縲・)
         return
       }
 
-      const message = 'Excelから ' + importedCases.length + '件を検出しました。\n\n依頼一覧: ' + activeCount + '件\n発注待ち一覧: ' + orderCount + '件\n完了一覧: ' + completedCount + '件\n対応履歴: ' + historyCount + '件\n\nM-Crossへ登録しますか？'
+      const message = 'Excel縺九ｉ ' + importedCases.length + '莉ｶ繧呈､懷・縺励∪縺励◆縲・n\n萓晞ｼ荳隕ｧ: ' + activeCount + '莉ｶ\n逋ｺ豕ｨ蠕・■荳隕ｧ: ' + orderCount + '莉ｶ\n螳御ｺ・ｸ隕ｧ: ' + completedCount + '莉ｶ\n蟇ｾ蠢懷ｱ･豁ｴ: ' + historyCount + '莉ｶ\n\nM-Cross縺ｸ逋ｻ骭ｲ縺励∪縺吶°・・
       if (!window.confirm(message)) return
 
       setResidentCases(previous => [...importedCases, ...previous])
-      window.alert(importedCases.length + '件をM-Crossへ登録しました。')
+      window.alert(importedCases.length + '莉ｶ繧樽-Cross縺ｸ逋ｻ骭ｲ縺励∪縺励◆縲・)
     } catch (error) {
       console.error(error)
-      window.alert('Excelを読み込めませんでした。元の入居中案件Excelをご確認ください。')
+      window.alert('Excel繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲ょ・縺ｮ蜈･螻・ｸｭ譯井ｻｶExcel繧偵＃遒ｺ隱阪￥縺縺輔＞縲・)
     } finally {
       if (residentExcelInputRef.current) residentExcelInputRef.current.value = ''
     }
@@ -4810,8 +4809,8 @@ return savedEntries
     const response = await withResidentAiTimeout(fetch('http://localhost:11434/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'qwen3:4b',messages:[{role:'user',content:[
-        '賃貸住宅の修繕依頼から案件情報を抽出してください。説明は不要です。',
-        '参考写真や別物件の記載より依頼対象を優先。不明は空文字。',
+        '雉・ｲｸ菴丞ｮ・・菫ｮ郢穂ｾ晞ｼ縺九ｉ譯井ｻｶ諠・ｱ繧呈歓蜃ｺ縺励※縺上□縺輔＞縲りｪｬ譏弱・荳崎ｦ√〒縺吶・,
+        '蜿り・・逵溘ｄ蛻･迚ｩ莉ｶ縺ｮ險倩ｼ峨ｈ繧贋ｾ晞ｼ蟇ｾ雎｡繧貞━蜈医ゆｸ肴・縺ｯ遨ｺ譁・ｭ励・,
         safeSourceText
       ].join('\n')}],stream:false,think:false,format:schema,options:{temperature:0,num_predict:220,num_ctx:8192}})
     }), 45000)
@@ -4826,9 +4825,9 @@ return savedEntries
     const worker = await createWorker('jpn+eng', 1, {
       logger: message => {
         if (message?.status === 'recognizing text') {
-          setResidentAiStatus('PDF画像をOCR中… ' + Math.round((message.progress || 0) * 100) + '%')
+          setResidentAiStatus('PDF逕ｻ蜒上ｒOCR荳ｭ窶ｦ ' + Math.round((message.progress || 0) * 100) + '%')
         } else if (message?.status) {
-          setResidentAiStatus('PDF画像をOCR準備中…')
+          setResidentAiStatus('PDF逕ｻ蜒上ｒOCR貅門ｙ荳ｭ窶ｦ')
         }
       },
     })
@@ -4837,7 +4836,7 @@ return savedEntries
       const texts = []
       const pageLimit = Math.min(pdf.numPages, 3)
       for (let pageNumber = 1; pageNumber <= pageLimit; pageNumber += 1) {
-        setResidentAiStatus('PDF画像をOCR中… ' + pageNumber + '/' + pageLimit + 'ページ')
+        setResidentAiStatus('PDF逕ｻ蜒上ｒOCR荳ｭ窶ｦ ' + pageNumber + '/' + pageLimit + '繝壹・繧ｸ')
         const page = await pdf.getPage(pageNumber)
         const viewport = page.getViewport({ scale: 1.8 })
         const canvas = document.createElement('canvas')
@@ -4865,7 +4864,7 @@ return savedEntries
     setResidentPdfSourceText('')
     setResidentQuickPreview(null)
     setResidentQuickError('')
-    setResidentAiStatus('PDFを読み取っています…')
+    setResidentAiStatus('PDF繧定ｪｭ縺ｿ蜿悶▲縺ｦ縺・∪縺吮ｦ')
     setResidentPdfLoading(true)
     setResidentPdfFileName(fileValue.name || '')
     setResidentQuickError('')
@@ -4892,20 +4891,20 @@ return savedEntries
       }
 
       let extractedText = pageTexts.join('\n').trim()
-      const compactExtractedText = extractedText.replace(/[\s　]+/g, '')
+      const compactExtractedText = extractedText.replace(/[\s縲]+/g, '')
       if (compactExtractedText.length < 40) {
-        setResidentAiStatus('文字レイヤーが不足しているためOCRへ切り替えます…')
+        setResidentAiStatus('譁・ｭ励Ξ繧､繝､繝ｼ縺御ｸ崎ｶｳ縺励※縺・ｋ縺溘ａOCR縺ｸ蛻・ｊ譖ｿ縺医∪縺吮ｦ')
         extractedText = await ocrResidentPdfPages(pdf)
       }
       setResidentPdfSourceText(extractedText)
       if (!extractedText.trim()) {
         setResidentAiStatus('')
-        setResidentQuickError('PDFの文字抽出とOCRの両方で文章を取得できませんでした。元PDFをご確認ください。')
+        setResidentQuickError('PDF縺ｮ譁・ｭ玲歓蜃ｺ縺ｨOCR縺ｮ荳｡譁ｹ縺ｧ譁・ｫ繧貞叙蠕励〒縺阪∪縺帙ｓ縺ｧ縺励◆縲ょ・PDF繧偵＃遒ｺ隱阪￥縺縺輔＞縲・)
         setShowResidentQuickPaste(true)
         return
       }
 
-      // まず従来解析を行い、その後ローカルAI解析で補正します。
+      // 縺ｾ縺壼ｾ捺擂隗｣譫舌ｒ陦後＞縲√◎縺ｮ蠕後Ο繝ｼ繧ｫ繝ｫAI隗｣譫舌〒陬懈ｭ｣縺励∪縺吶・
       const orderParsed = parseResidentOrderPdfText(extractedText, mergedPropertyMaster, fileValue.name || '')
       const genericParsed = parseResidentRequestText(extractedText, mergedPropertyMaster)
       const parsed = {
@@ -4916,15 +4915,15 @@ return savedEntries
       }
       let aiParsed = null
       try {
-        setResidentAiStatus('PDFをローカルAIで解析しています…')
+        setResidentAiStatus('PDF繧偵Ο繝ｼ繧ｫ繝ｫAI縺ｧ隗｣譫舌＠縺ｦ縺・∪縺吮ｦ')
         aiParsed = await analyzeResidentTextWithOllama(extractedText)
       } catch (aiError) {
-        console.warn('PDF AI解析をスキップ:', aiError)
+        console.warn('PDF AI隗｣譫舌ｒ繧ｹ繧ｭ繝・・:', aiError)
       }
 
       const aiMatchedProperty = aiParsed?.propertyName
         ? [...mergedPropertyMaster.properties].sort((a,b)=>String(b.name||'').length-String(a.name||'').length).find(item => {
-            const n = value => String(value||'').normalize('NFKC').replace(/[\s　・･]+/g,'').replace(/べ/g,'ベ').toLocaleLowerCase('ja')
+            const n = value => String(value||'').normalize('NFKC').replace(/[\s縲繝ｻ・･]+/g,'').replace(/縺ｹ/g,'繝・).toLocaleLowerCase('ja')
             const left=n(item.name), right=n(aiParsed.propertyName)
             return left && right && (left===right || left.includes(right) || right.includes(left))
           })
@@ -4938,31 +4937,31 @@ return savedEntries
         parsed.residentContact = extractJapanesePhoneFromSource(extractedText)
           || normalizeJapanesePhone(parsed.residentContact || '')
         parsed.requestDetails = aiParsed.requestDetails || parsed.requestDetails
-        parsed.note = [aiParsed.residentName ? '入居者：'+aiParsed.residentName : '', aiParsed.note || '', parsed.note || ''].filter(Boolean).join('\n')
+        parsed.note = [aiParsed.residentName ? '蜈･螻・・ｼ・+aiParsed.residentName : '', aiParsed.note || '', parsed.note || ''].filter(Boolean).join('\n')
         parsed.caution = aiParsed.caution || parsed.caution
         parsed.nextAction = aiParsed.nextAction || parsed.nextAction
         parsed.priority = ['urgent','normal','low'].includes(aiParsed.priority) ? aiParsed.priority : parsed.priority
-        setResidentAiStatus('PDFのAI解析完了。内容を確認してください。')
+        setResidentAiStatus('PDF縺ｮAI隗｣譫仙ｮ御ｺ・ょ・螳ｹ繧堤｢ｺ隱阪＠縺ｦ縺上□縺輔＞縲・)
       }
 
       setResidentQuickPasteText('')
       setResidentQuickPreview({
         ...parsed,
-        note: [parsed.note, '取込元PDF：' + (fileValue.name || 'PDF')].filter(Boolean).join('\n'),
+        note: [parsed.note, '蜿冶ｾｼ蜈ケDF・・ + (fileValue.name || 'PDF')].filter(Boolean).join('\n'),
       })
       setResidentQuickCompanyId(
         mergedPropertyMaster.companies.find(companyItem => companyItem.name === parsed.company)?.id || ''
       )
       setResidentQuickError(
         !parsed.propertyName || !parsed.requestDetails
-          ? '一部の項目を読み取れませんでした。登録前に内容を確認・修正してください。'
+          ? '荳驛ｨ縺ｮ鬆・岼繧定ｪｭ縺ｿ蜿悶ｌ縺ｾ縺帙ｓ縺ｧ縺励◆縲ら匳骭ｲ蜑阪↓蜀・ｮｹ繧堤｢ｺ隱阪・菫ｮ豁｣縺励※縺上□縺輔＞縲・
           : ''
       )
       setShowResidentQuickPaste(true)
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
     } catch (error) {
       console.error(error)
-      setResidentQuickError('PDFを読み込めませんでした：' + (error?.message || String(error)))
+      setResidentQuickError('PDF繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆・・ + (error?.message || String(error)))
       setShowResidentQuickPaste(true)
     } finally {
       setResidentPdfLoading(false)
@@ -4974,12 +4973,12 @@ return savedEntries
   async function analyzeResidentRequestWithOllama() {
     const sourceText = String(residentQuickPasteText || '').trim()
     if (!sourceText) {
-      setResidentQuickError('先に依頼文またはPDFの文字を入力してください。')
+      setResidentQuickError('蜈医↓萓晞ｼ譁・∪縺溘・PDF縺ｮ譁・ｭ励ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・)
       return
     }
 
     setResidentAiLoading(true)
-    setResidentAiStatus('ローカルAIが内容を整理しています…')
+    setResidentAiStatus('繝ｭ繝ｼ繧ｫ繝ｫAI縺悟・螳ｹ繧呈紛逅・＠縺ｦ縺・∪縺吮ｦ')
     setResidentQuickError('')
 
     const schema = {
@@ -5005,13 +5004,13 @@ return savedEntries
     }
 
     const prompt = [
-      'あなたは賃貸住宅の修繕依頼をM-Crossへ登録する抽出係です。',
-      '推論・説明・Markdownは出力せず、指定されたJSONスキーマだけ返してください。',
-      '本文に参考写真や別物件名がある場合、依頼対象の物件を優先してください。',
-      '不明な項目は空文字にしてください。',
-      'priorityは、漏水・施錠不能・電気設備停止など緊急性が高ければurgent、通常はnormal、時期未定ならlowです。',
+      '縺ゅ↑縺溘・雉・ｲｸ菴丞ｮ・・菫ｮ郢穂ｾ晞ｼ繧樽-Cross縺ｸ逋ｻ骭ｲ縺吶ｋ謚ｽ蜃ｺ菫ゅ〒縺吶・,
+      '謗ｨ隲悶・隱ｬ譏弱・Markdown縺ｯ蜃ｺ蜉帙○縺壹∵欠螳壹＆繧後◆JSON繧ｹ繧ｭ繝ｼ繝槭□縺題ｿ斐＠縺ｦ縺上□縺輔＞縲・,
+      '譛ｬ譁・↓蜿り・・逵溘ｄ蛻･迚ｩ莉ｶ蜷阪′縺ゅｋ蝣ｴ蜷医∽ｾ晞ｼ蟇ｾ雎｡縺ｮ迚ｩ莉ｶ繧貞━蜈医＠縺ｦ縺上□縺輔＞縲・,
+      '荳肴・縺ｪ鬆・岼縺ｯ遨ｺ譁・ｭ励↓縺励※縺上□縺輔＞縲・,
+      'priority縺ｯ縲∵ｼ乗ｰｴ繝ｻ譁ｽ骭荳崎・繝ｻ髮ｻ豌苓ｨｭ蛯吝●豁｢縺ｪ縺ｩ邱頑･諤ｧ縺碁ｫ倥￠繧後・urgent縲・壼ｸｸ縺ｯnormal縲∵凾譛滓悴螳壹↑繧瑛ow縺ｧ縺吶・,
       '',
-      '【依頼文】',
+      '縲蝉ｾ晞ｼ譁・・,
       sourceText,
     ].join('\n')
 
@@ -5040,7 +5039,7 @@ return savedEntries
       const matchedProperty = [...mergedPropertyMaster.properties]
         .sort((left, right) => String(right.name || '').length - String(left.name || '').length)
         .find(item => {
-          const normalize = value => String(value || '').normalize('NFKC').replace(/[\s　・･]+/g, '').replace(/べ/g, 'ベ').toLocaleLowerCase('ja')
+          const normalize = value => String(value || '').normalize('NFKC').replace(/[\s縲繝ｻ・･]+/g, '').replace(/縺ｹ/g, '繝・).toLocaleLowerCase('ja')
           const aiName = normalize(parsed.propertyName)
           const masterName = normalize(item.name)
           return aiName && masterName && (aiName === masterName || aiName.includes(masterName) || masterName.includes(aiName))
@@ -5057,11 +5056,11 @@ return savedEntries
           || normalizeJapanesePhone(parsed.residentContact || ''),
         requestDetails: parsed.requestDetails || '',
         note: [
-          parsed.residentName ? '入居者：' + parsed.residentName : '',
+          parsed.residentName ? '蜈･螻・・ｼ・ + parsed.residentName : '',
           parsed.note || '',
         ].filter(Boolean).join('\n'),
-        status: '未連絡',
-        nextAction: parsed.nextAction || '入居者へ連絡',
+        status: '譛ｪ騾｣邨｡',
+        nextAction: parsed.nextAction || '蜈･螻・・∈騾｣邨｡',
         actionDueDate: '',
         caution: parsed.caution || '',
         priority: ['urgent', 'normal', 'low'].includes(parsed.priority) ? parsed.priority : 'normal',
@@ -5071,13 +5070,13 @@ return savedEntries
       setResidentQuickCompanyId(
         mergedPropertyMaster.companies.find(item => item.name === companyName)?.id || ''
       )
-      setResidentAiStatus('AI読取完了。内容を確認してから登録してください。')
+      setResidentAiStatus('AI隱ｭ蜿門ｮ御ｺ・ょ・螳ｹ繧堤｢ｺ隱阪＠縺ｦ縺九ｉ逋ｻ骭ｲ縺励※縺上□縺輔＞縲・)
     } catch (error) {
       console.error(error)
       const message = String(error?.message || error)
       const hint = message.includes('Failed to fetch')
-        ? 'Ollamaへ接続できません。Ollamaの起動とOLLAMA_ORIGINS設定を確認してください。'
-        : 'ローカルAI解析に失敗しました：' + message
+        ? 'Ollama縺ｸ謗･邯壹〒縺阪∪縺帙ｓ縲０llama縺ｮ襍ｷ蜍輔→OLLAMA_ORIGINS險ｭ螳壹ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・
+        : '繝ｭ繝ｼ繧ｫ繝ｫAI隗｣譫舌↓螟ｱ謨励＠縺ｾ縺励◆・・ + message
       setResidentQuickError(hint)
       setResidentAiStatus('')
     } finally {
@@ -5097,37 +5096,37 @@ return savedEntries
     if (!workOrder) return
     const items = Array.isArray(workOrder.estimateItems) ? workOrder.estimateItems : []
     if (!items.length) {
-      window.alert('見積明細がありません。')
+      window.alert('隕狗ｩ肴・邏ｰ縺後≠繧翫∪縺帙ｓ縲・)
       return
     }
     if (items.length > 32) {
-      window.alert('見積明細は32行まで出力できます。')
+      window.alert('隕狗ｩ肴・邏ｰ縺ｯ32陦後∪縺ｧ蜃ｺ蜉帙〒縺阪∪縺吶・)
       return
     }
 
     try {
-      // ExcelJSは元テンプレートの画像・描画情報を壊すため使用しません。
-      // xlsx-populateでユーザーのテンプレートを保ったままセル値だけ差し替えます。
+      // ExcelJS縺ｯ蜈・ユ繝ｳ繝励Ξ繝ｼ繝医・逕ｻ蜒上・謠冗判諠・ｱ繧貞｣翫☆縺溘ａ菴ｿ逕ｨ縺励∪縺帙ｓ縲・
+      // xlsx-populate縺ｧ繝ｦ繝ｼ繧ｶ繝ｼ縺ｮ繝・Φ繝励Ξ繝ｼ繝医ｒ菫昴▲縺溘∪縺ｾ繧ｻ繝ｫ蛟､縺縺大ｷｮ縺玲崛縺医∪縺吶・
       /* M-CROSS_STEP20_12_BUFFER_FIX */
       /* M-CROSS_STEP20_13_XLSX_POPULATE_BROWSER_BUILD */
-      // Node.js版ではなく、fs・crypto・processを要求しない公式ブラウザビルドを使います。
+      // Node.js迚医〒縺ｯ縺ｪ縺上’s繝ｻcrypto繝ｻprocess繧定ｦ∵ｱゅ＠縺ｪ縺・・蠑上ヶ繝ｩ繧ｦ繧ｶ繝薙Ν繝峨ｒ菴ｿ縺・∪縺吶・
       const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
       const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
-      if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+      if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populate繝悶Λ繧ｦ繧ｶ迚医ｒ蛻晄悄蛹悶〒縺阪∪縺帙ｓ')
       const templateResponse = await fetch(new URL('/mcross-estimate-template.xlsx', window.location.origin), { cache: 'no-store' })
-      if (!templateResponse.ok) throw new Error('見積書テンプレートを読み込めません HTTP ' + templateResponse.status)
+      if (!templateResponse.ok) throw new Error('隕狗ｩ肴嶌繝・Φ繝励Ξ繝ｼ繝医ｒ隱ｭ縺ｿ霎ｼ繧√∪縺帙ｓ HTTP ' + templateResponse.status)
 
       const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
-      const ws = workbook.sheet('見積書')
-      if (!ws) throw new Error('「見積書」シートが見つかりません')
+      const ws = workbook.sheet('隕狗ｩ肴嶌')
+      if (!ws) throw new Error('縲瑚ｦ狗ｩ肴嶌縲阪す繝ｼ繝医′隕九▽縺九ｊ縺ｾ縺帙ｓ')
 
-      // ユーザーのテンプレート、MSロゴ、会社情報、罫線、行高、列幅は一切作り直しません。
-      // 無記載項目は空白にします。
-      ws.cell('B5').value(workOrder.company ? workOrder.company + '　御中' : '')
-      ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy年m月d日')
+      // 繝ｦ繝ｼ繧ｶ繝ｼ縺ｮ繝・Φ繝励Ξ繝ｼ繝医｀S繝ｭ繧ｴ縲∽ｼ夂､ｾ諠・ｱ縲∫ｽｫ邱壹∬｡碁ｫ倥∝・蟷・・荳蛻・ｽ懊ｊ逶ｴ縺励∪縺帙ｓ縲・
+      // 辟｡險倩ｼ蛾・岼縺ｯ遨ｺ逋ｽ縺ｫ縺励∪縺吶・
+      ws.cell('B5').value(workOrder.company ? workOrder.company + '縲蠕｡荳ｭ' : '')
+      ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy蟷ｴm譛・譌･')
       ws.cell('D13').value(workOrder.propertyName || '')
       ws.cell('F13').value(workOrder.unit || '')
-      ws.cell('G13').value(workOrder.unit ? '号室' : '')
+      ws.cell('G13').value(workOrder.unit ? '蜿ｷ螳､' : '')
       ws.cell('D14').value(workOrder.address || '')
 
       for (let rowNumber = 23; rowNumber <= 54; rowNumber += 1) {
@@ -5164,15 +5163,15 @@ return savedEntries
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = ['見積書', workOrder.propertyName || '物件', workOrder.unit ? workOrder.unit + '号室' : ''].filter(Boolean).join('_') + '.xlsx'
+      link.download = ['隕狗ｩ肴嶌', workOrder.propertyName || '迚ｩ莉ｶ', workOrder.unit ? workOrder.unit + '蜿ｷ螳､' : ''].filter(Boolean).join('_') + '.xlsx'
       document.body.appendChild(link)
       link.click()
       link.remove()
       URL.revokeObjectURL(url)
-      updateWorkOrder(workOrder.id, { estimateStatus: '提出済' })
+      updateWorkOrder(workOrder.id, { estimateStatus: '謠仙・貂・ })
     } catch (error) {
       console.error(error)
-      window.alert('見積書を出力できませんでした：' + (error?.message || String(error)))
+      window.alert('隕狗ｩ肴嶌繧貞・蜉帙〒縺阪∪縺帙ｓ縺ｧ縺励◆・・ + (error?.message || String(error)))
     }
   }
 
@@ -5189,31 +5188,31 @@ return savedEntries
     const propertyName = selectedProperty?.name || ''
     const unitValue = String(unit || '').trim()
     if (!propertyName || !unitValue) {
-      window.alert('物件名と号室を確認してください。')
+      window.alert('迚ｩ莉ｶ蜷阪→蜿ｷ螳､繧堤｢ｺ隱阪＠縺ｦ縺上□縺輔＞縲・)
       return
     }
 
     const sourceId = [selectedProperty?.id || propertyName, unitValue].join('|')
     const existing = workOrders.find(item => item.sourceType === 'restoration' && item.sourceId === sourceId)
     if (existing) {
-      window.alert('この原状回復案件はすでに工事案件へ登録されています。')
+      window.alert('縺薙・蜴溽憾蝗槫ｾｩ譯井ｻｶ縺ｯ縺吶〒縺ｫ蟾･莠区｡井ｻｶ縺ｸ逋ｻ骭ｲ縺輔ｌ縺ｦ縺・∪縺吶・)
       setStarted(false)
       setShowWorkOrders(true)
       return
     }
 
     const workNames = [
-      records?.length ? 'クロス' : '',
+      records?.length ? '繧ｯ繝ｭ繧ｹ' : '',
       cfRecords?.length ? 'CF' : '',
-      softRecords?.length ? 'ソフト巾木' : '',
-      floorTrimRecords?.length ? '床見切り' : '',
+      softRecords?.length ? '繧ｽ繝輔ヨ蟾ｾ譛ｨ' : '',
+      floorTrimRecords?.length ? '蠎願ｦ句・繧・ : '',
       ...(additionalWorks || []).map(item => item.work || item.name || '').filter(Boolean),
     ].filter(Boolean)
 
     const estimateItems = (Array.isArray(actualEstimateRows) ? actualEstimateRows : []).map((row, index) => ({
       id: row.id || 'estimate-' + index,
       category: row.category || row.group || row.room || row.type || '',
-      name: row.name || row.label || row.work || row.item || row.displayName || row.type || '工事項目',
+      name: row.name || row.label || row.work || row.item || row.displayName || row.type || '蟾･莠矩・岼',
       specification: row.specification || row.spec || row.memo || row.note || '',
       quantity: Number(row.quantity ?? row.qty ?? row.count ?? 0) || 0,
       unit: row.unit || '',
@@ -5231,12 +5230,12 @@ return savedEntries
       propertyName,
       unit: unitValue,
       address: selectedProperty?.address || '',
-      workDetails: [...new Set(workNames)].join('・') || '原状回復工事',
+      workDetails: [...new Set(workNames)].join('繝ｻ') || '蜴溽憾蝗槫ｾｩ蟾･莠・,
       estimateItems,
       estimateAmount,
-      estimateStatus: estimateItems.length > 0 || estimateAmount > 0 ? '作成中' : '未作成',
-      orderStatus: '未発注',
-      billingStatus: '未請求',
+      estimateStatus: estimateItems.length > 0 || estimateAmount > 0 ? '菴懈・荳ｭ' : '譛ｪ菴懈・',
+      orderStatus: '譛ｪ逋ｺ豕ｨ',
+      billingStatus: '譛ｪ隲区ｱ・,
       sourceType: 'restoration',
       sourceId,
       createdAt: now,
@@ -5252,7 +5251,7 @@ return savedEntries
     if (!residentCase) return
     const existing = workOrders.find(item => item.sourceType === 'resident' && item.sourceId === residentCase.id)
     if (existing) {
-      window.alert('この入居中案件はすでに工事案件へ登録されています。')
+      window.alert('縺薙・蜈･螻・ｸｭ譯井ｻｶ縺ｯ縺吶〒縺ｫ蟾･莠区｡井ｻｶ縺ｸ逋ｻ骭ｲ縺輔ｌ縺ｦ縺・∪縺吶・)
       setSelectedResidentCaseId('')
       setShowResidentCases(false)
       setShowWorkOrders(true)
@@ -5267,9 +5266,9 @@ return savedEntries
       unit: residentCase.unit || '',
       address: residentCase.address || '',
       workDetails: residentCase.requestDetails || '',
-      estimateStatus: '未作成',
-      orderStatus: '未発注',
-      billingStatus: '未請求',
+      estimateStatus: '譛ｪ菴懈・',
+      orderStatus: '譛ｪ逋ｺ豕ｨ',
+      billingStatus: '譛ｪ隲区ｱ・,
       sourceType: 'resident',
       sourceId: residentCase.id,
       createdAt: now,
@@ -5278,8 +5277,8 @@ return savedEntries
 
     setWorkOrders(previous => [workOrder, ...previous])
     updateResidentCase(residentCase.id, {
-      nextAction: '工事案件で見積・発注を進める',
-    }, '工事案件へ移行', '工事案件を作成')
+      nextAction: '蟾･莠区｡井ｻｶ縺ｧ隕狗ｩ阪・逋ｺ豕ｨ繧帝ｲ繧√ｋ',
+    }, '蟾･莠区｡井ｻｶ縺ｸ遘ｻ陦・, '蟾･莠区｡井ｻｶ繧剃ｽ懈・')
     setSelectedResidentCaseId('')
     setShowResidentCases(false)
     setShowWorkOrders(true)
@@ -5308,8 +5307,8 @@ return savedEntries
   function deleteResidentCase(caseId) {
     const target = residentCases.find(item => item.id === caseId)
     if (!target) return
-    const label = (target.propertyName || '物件名未設定') + (target.unit ? ' ' + target.unit + '号室' : '')
-    if (!window.confirm('「' + label + '」の入居中案件を削除しますか？\n\nこの操作は元に戻せません。')) return
+    const label = (target.propertyName || '迚ｩ莉ｶ蜷肴悴險ｭ螳・) + (target.unit ? ' ' + target.unit + '蜿ｷ螳､' : '')
+    if (!window.confirm('縲・ + label + '縲阪・蜈･螻・ｸｭ譯井ｻｶ繧貞炎髯､縺励∪縺吶°・歃n\n縺薙・謫堺ｽ懊・蜈・↓謌ｻ縺帙∪縺帙ｓ縲・)) return
     setResidentCases(previous => previous.filter(item => item.id !== caseId))
     setSelectedResidentCaseId('')
     setResidentHistoryMemo('')
@@ -5318,44 +5317,44 @@ return savedEntries
   /* M-CROSS_RESIDENT_CASES_STEP11_ALL_IN */
   function holdResidentCase(caseId, reason) {
     updateResidentCase(caseId, {
-      status: '保留',
+      status: '菫晉蕗',
       isOnHold: true,
-      holdReason: reason || '時期未定',
-      nextAction: '保留中',
+      holdReason: reason || '譎よ悄譛ｪ螳・,
+      nextAction: '菫晉蕗荳ｭ',
       actionDueDate: '',
       waitingFor: '',
-    }, '保留', reason || '時期未定')
+    }, '菫晉蕗', reason || '譎よ悄譛ｪ螳・)
   }
 
   function resumeResidentCase(caseId) {
     updateResidentCase(caseId, {
-      status: '発注（未連絡）',
+      status: '逋ｺ豕ｨ・域悴騾｣邨｡・・,
       isOnHold: false,
       holdReason: '',
-      nextAction: '入居者へ工事日を連絡',
-    }, '保留解除', '対応中へ戻しました')
+      nextAction: '蜈･螻・・∈蟾･莠区律繧帝｣邨｡',
+    }, '菫晉蕗隗｣髯､', '蟇ｾ蠢應ｸｭ縺ｸ謌ｻ縺励∪縺励◆')
   }
 
   function applyResidentQuickStatus(caseId, status) {
     updateResidentCase(caseId, {
       status,
       nextAction: getResidentNextAction(status),
-      completed: status === '完了',
+      completed: status === '螳御ｺ・,
     }, status, '')
   }
 
   function changeFontSize(value) {
     setFontSize(value)
-    try { localStorage.setItem(fontSizeKey, value) } catch { /* 設定の保存は任意 */ }
+    try { localStorage.setItem(fontSizeKey, value) } catch { /* 險ｭ螳壹・菫晏ｭ倥・莉ｻ諢・*/ }
   }
 
   function changeTheme(value) {
     setTheme(value)
-    try { localStorage.setItem(themeKey, value) } catch { /* 設定の保存は任意 */ }
+    try { localStorage.setItem(themeKey, value) } catch { /* 險ｭ螳壹・菫晏ｭ倥・莉ｻ諢・*/ }
   }
   function changeEstimateCopyFormat(value) {
     setEstimateCopyFormat(value)
-    try { localStorage.setItem(estimateCopyFormatKey, value) } catch { /* 設定の保存は任意 */ }
+    try { localStorage.setItem(estimateCopyFormatKey, value) } catch { /* 險ｭ螳壹・菫晏ｭ倥・莉ｻ諢・*/ }
   }
   function savePropertyMaster(nextMaster, successMessage) {
     if (propertyMasterState.error) {
@@ -5368,7 +5367,7 @@ return savedEntries
       setMasterStatus(successMessage)
       return true
     } catch {
-      setMasterStatus('保存できませんでした。端末の空き容量やブラウザーの保存設定をご確認ください。')
+      setMasterStatus('菫晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆縲らｫｯ譛ｫ縺ｮ遨ｺ縺榊ｮｹ驥上ｄ繝悶Λ繧ｦ繧ｶ繝ｼ縺ｮ菫晏ｭ倩ｨｭ螳壹ｒ縺皮｢ｺ隱阪￥縺縺輔＞縲・)
       return false
     }
   }
@@ -5378,7 +5377,7 @@ return savedEntries
     const name = masterCompanyName.trim()
     if (!name) return
     if (mergedPropertyMaster.companies.some(item => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
-      setMasterStatus('同じ管理会社名がすでに登録されています。')
+      setMasterStatus('蜷後§邂｡逅・ｼ夂､ｾ蜷阪′縺吶〒縺ｫ逋ｻ骭ｲ縺輔ｌ縺ｦ縺・∪縺吶・)
       return
     }
 
@@ -5386,7 +5385,7 @@ return savedEntries
     if (savePropertyMaster({
       ...propertyMasterState.master,
       addedCompanies: [...propertyMasterState.master.addedCompanies, company],
-    }, '管理会社を追加しました。')) {
+    }, '邂｡逅・ｼ夂､ｾ繧定ｿｽ蜉縺励∪縺励◆縲・)) {
       setMasterCompanyName('')
       setMasterPropertyCompanyId(company.id)
       setEditingCompanyId('')
@@ -5401,14 +5400,14 @@ return savedEntries
     if (mergedPropertyMaster.companies.some(item =>
       item.id !== companyId && item.name.toLocaleLowerCase() === name.toLocaleLowerCase()
     )) {
-      setMasterStatus('同じ管理会社名がすでに登録されています。')
+      setMasterStatus('蜷後§邂｡逅・ｼ夂､ｾ蜷阪′縺吶〒縺ｫ逋ｻ骭ｲ縺輔ｌ縺ｦ縺・∪縺吶・)
       return
     }
 
     if (savePropertyMaster({
       ...propertyMasterState.master,
       companyNames: { ...propertyMasterState.master.companyNames, [companyId]: name },
-    }, '管理会社名を変更しました。')) {
+    }, '邂｡逅・ｼ夂､ｾ蜷阪ｒ螟画峩縺励∪縺励◆縲・)) {
       if (!started && company === companyBeingRenamed.name) setCompany(name)
       setMasterCompanyName('')
       setEditingCompanyId('')
@@ -5420,15 +5419,15 @@ return savedEntries
       property => property.companyId === masterCompany.id
     ).length
     const confirmation = propertyCount
-      ? `「${masterCompany.name}」には${propertyCount}件の物件があります。管理会社と物件を一覧から削除しますか？`
-      : `管理会社「${masterCompany.name}」を削除しますか？`
+      ? `縲・{masterCompany.name}縲阪↓縺ｯ${propertyCount}莉ｶ縺ｮ迚ｩ莉ｶ縺後≠繧翫∪縺吶らｮ｡逅・ｼ夂､ｾ縺ｨ迚ｩ莉ｶ繧剃ｸ隕ｧ縺九ｉ蜑企勁縺励∪縺吶°・歔
+      : `邂｡逅・ｼ夂､ｾ縲・{masterCompany.name}縲阪ｒ蜑企勁縺励∪縺吶°・歔
     if (!window.confirm(confirmation)) return
 
     const nextMaster = {
       ...propertyMasterState.master,
       deletedCompanyIds: [...new Set([...propertyMasterState.master.deletedCompanyIds, masterCompany.id])],
     }
-    if (savePropertyMaster(nextMaster, '管理会社を削除しました。')) {
+    if (savePropertyMaster(nextMaster, '邂｡逅・ｼ夂､ｾ繧貞炎髯､縺励∪縺励◆縲・)) {
       if (!started && company === masterCompany.name) {
         setCompany('')
         setPropertySearch('')
@@ -5477,7 +5476,7 @@ return savedEntries
     event.preventDefault()
     const name = propertyForm.name.trim()
     if (!name || !masterPropertyCompanyId) return
-    const aliases = propertyForm.aliases.split(/[,、\n]/).map(alias => alias.trim()).filter(Boolean)
+    const aliases = propertyForm.aliases.split(/[,縲―n]/).map(alias => alias.trim()).filter(Boolean)
     const values = {
       name,
       address: propertyForm.address.trim(),
@@ -5529,7 +5528,7 @@ return savedEntries
       }
     }
 
-    if (savePropertyMaster(nextMaster, editingPropertyId ? '物件情報を更新しました。' : '物件を追加しました。')) {
+    if (savePropertyMaster(nextMaster, editingPropertyId ? '迚ｩ莉ｶ諠・ｱ繧呈峩譁ｰ縺励∪縺励◆縲・ : '迚ｩ莉ｶ繧定ｿｽ蜉縺励∪縺励◆縲・)) {
       setEditingPropertyId('')
       setShowPropertyForm(false)
       setPropertyForm({ name: '', address: '', reading: '', aliases: '' })
@@ -5537,7 +5536,7 @@ return savedEntries
   }
 
   function deleteMasterProperty(property) {
-    if (!window.confirm(`物件「${property.name}」を削除しますか？`)) return
+    if (!window.confirm(`迚ｩ莉ｶ縲・{property.name}縲阪ｒ蜑企勁縺励∪縺吶°・歔)) return
     const master = propertyMasterState.master
     const nextMaster = property.id.startsWith('base-property:')
       ? {
@@ -5548,7 +5547,7 @@ return savedEntries
           ...master,
           addedProperties: master.addedProperties.filter(item => item.id !== property.id),
         }
-    if (savePropertyMaster(nextMaster, '物件を削除しました。')) {
+    if (savePropertyMaster(nextMaster, '迚ｩ莉ｶ繧貞炎髯､縺励∪縺励◆縲・)) {
       if (!started && selectedProperty?.id === property.id) {
         setSelectedProperty(null)
         setPropertySearch('')
@@ -5666,7 +5665,7 @@ return savedEntries
   }
 
   function discardAndNavigate() {
-    try { localStorage.removeItem(workingDraftKey) } catch { /* 削除失敗は無視 */ }
+    try { localStorage.removeItem(workingDraftKey) } catch { /* 蜑企勁螟ｱ謨励・辟｡隕・*/ }
     setWorkingDraft(null)
     setIsDirty(false)
     setSaveStatus('')
@@ -5695,17 +5694,17 @@ return savedEntries
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!/\.(mcross|json|txt)$/i.test(file.name)) { window.alert('M-Crossから受け取った .mcross、.json、または .txt ファイルを選択してください。'); return }
+    if (!/\.(mcross|json|txt)$/i.test(file.name)) { window.alert('M-Cross縺九ｉ蜿励￠蜿悶▲縺・.mcross縲・json縲√∪縺溘・ .txt 繝輔ぃ繧､繝ｫ繧帝∈謚槭＠縺ｦ縺上□縺輔＞縲・); return }
     try {
       const packageData = JSON.parse(await file.text())
-      if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) throw new Error('M-Cross用ファイルではないか、対応していないバージョンです。')
+      if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) throw new Error('M-Cross逕ｨ繝輔ぃ繧､繝ｫ縺ｧ縺ｯ縺ｪ縺・°縲∝ｯｾ蠢懊＠縺ｦ縺・↑縺・ヰ繝ｼ繧ｸ繝ｧ繝ｳ縺ｧ縺吶・)
       const imported = normalizeImportedEntry(packageData.data)
-      const storageKey = getSaveKey(imported.company, { name: imported.propertyName, address: imported.address }, imported.unit, imported.workName || '原状回復工事')
-      if (localStorage.getItem(storageKey) !== null && !window.confirm(`「${imported.propertyName} ${imported.unit}号室」はすでに保存されています。\n\n上書きして読み込みますか？`)) return
+      const storageKey = getSaveKey(imported.company, { name: imported.propertyName, address: imported.address }, imported.unit, imported.workName || '蜴溽憾蝗槫ｾｩ蟾･莠・)
+      if (localStorage.getItem(storageKey) !== null && !window.confirm(`縲・{imported.propertyName} ${imported.unit}蜿ｷ螳､縲阪・縺吶〒縺ｫ菫晏ｭ倥＆繧後※縺・∪縺吶・n\n荳頑嶌縺阪＠縺ｦ隱ｭ縺ｿ霎ｼ縺ｿ縺ｾ縺吶°・歔)) return
       localStorage.setItem(storageKey, JSON.stringify(imported))
       setSavedEntries(readSavedEntries()); setShowArchived(false); setSelectedSavedKeys([])
-      window.alert(`「${imported.propertyName} ${imported.unit}号室」を読み込みました。`)
-    } catch (error) { console.error(error); window.alert(error instanceof Error ? error.message : 'M-Crossデータを読み込めませんでした。') }
+      window.alert(`縲・{imported.propertyName} ${imported.unit}蜿ｷ螳､縲阪ｒ隱ｭ縺ｿ霎ｼ縺ｿ縺ｾ縺励◆縲Ａ)
+    } catch (error) { console.error(error); window.alert(error instanceof Error ? error.message : 'M-Cross繝・・繧ｿ繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲・) }
   }
 
   function loadSavedEntry(entry) {
@@ -5715,7 +5714,7 @@ return savedEntries
     setPropertySearch(entry.propertyName || '')
     setSelectedProperty({ name: entry.propertyName || '', address: entry.address || '' })
     setUnit(entry.unit || '')
-    setWorkName(entry.workName || '原状回復工事')
+    setWorkName(entry.workName || '蜴溽憾蝗槫ｾｩ蟾･莠・)
     setSiteMemo(entry.siteMemo || '')
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
@@ -5735,7 +5734,7 @@ return savedEntries
     setCfPageIndex(Number.isInteger(entry.cfPageIndex) ? entry.cfPageIndex : 0)
     setSoftPageIndex(Number.isInteger(entry.softPageIndex) ? entry.softPageIndex : 0)
     setActivePage(entry.activePage || 'cross')
-    setMeasurementType(entry.measurementType || '天井')
+    setMeasurementType(entry.measurementType || '螟ｩ莠・)
     setCaseCrossFactor(String(entry.caseCrossFactor ?? pricingSettings.crossFactor))
     setHeight('')
     setCount('')
@@ -5785,7 +5784,7 @@ return savedEntries
         propertyName: entry.propertyName || '',
         address: entry.address || '',
         unit: entry.unit || '',
-        workName: entry.workName || '原状回復工事',
+        workName: entry.workName || '蜴溽憾蝗槫ｾｩ蟾･莠・,
         siteMemo: entry.siteMemo || '',
         records: Array.isArray(entry.records) ? entry.records : [],
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
@@ -5802,27 +5801,27 @@ return savedEntries
         cfPageIndex: Number.isInteger(entry.cfPageIndex) ? entry.cfPageIndex : 0,
         softPageIndex: Number.isInteger(entry.softPageIndex) ? entry.softPageIndex : 0,
         activePage: entry.activePage || 'cross',
-        measurementType: entry.measurementType || '天井',
+        measurementType: entry.measurementType || '螟ｩ莠・,
         caseCrossFactor: Number(entry.caseCrossFactor ?? pricingSettings.crossFactor),
         archived: Boolean(entry.archived),
         updatedAt: new Date().toISOString(),
       }))
       setSavedEntries(readSavedEntries())
     } catch {
-      window.alert('上書き保存できませんでした。端末の空き容量をご確認ください。')
+      window.alert('荳頑嶌縺堺ｿ晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆縲らｫｯ譛ｫ縺ｮ遨ｺ縺榊ｮｹ驥上ｒ縺皮｢ｺ隱阪￥縺縺輔＞縲・)
     }
   }
 
   function deleteSavedEntry(entry) {
     if (!entry.storageKey) return
-    const label = `${entry.propertyName || '物件名なし'} ${entry.unit || ''}号室`
-    if (!window.confirm(`「${label}」の保存データを削除しますか？`)) return
+    const label = `${entry.propertyName || '迚ｩ莉ｶ蜷阪↑縺・} ${entry.unit || ''}蜿ｷ螳､`
+    if (!window.confirm(`縲・{label}縲阪・菫晏ｭ倥ョ繝ｼ繧ｿ繧貞炎髯､縺励∪縺吶°・歔)) return
     try {
       localStorage.removeItem(entry.storageKey)
       setSavedEntries(readSavedEntries())
       setSelectedSavedKeys(prev => prev.filter(key => key !== entry.storageKey))
     } catch {
-      window.alert('データを削除できませんでした。')
+      window.alert('繝・・繧ｿ繧貞炎髯､縺ｧ縺阪∪縺帙ｓ縺ｧ縺励◆縲・)
     }
   }
 
@@ -5837,7 +5836,7 @@ return savedEntries
       setSavedEntries(readSavedEntries())
       setSelectedSavedKeys(prev => prev.filter(key => key !== entry.storageKey))
     } catch {
-      window.alert('アーカイブ状態を更新できませんでした。')
+      window.alert('繧｢繝ｼ繧ｫ繧､繝也憾諷九ｒ譖ｴ譁ｰ縺ｧ縺阪∪縺帙ｓ縺ｧ縺励◆縲・)
     }
   }
 
@@ -5881,7 +5880,7 @@ return savedEntries
           archived: archiveValue,
         }))
       } catch {
-        // 更新できないデータはスキップ
+        // 譖ｴ譁ｰ縺ｧ縺阪↑縺・ョ繝ｼ繧ｿ縺ｯ繧ｹ繧ｭ繝・・
       }
     })
 
@@ -5891,13 +5890,13 @@ return savedEntries
 
   function bulkDeleteSelected() {
     if (selectedSavedKeys.length === 0) return
-    if (!window.confirm(`選択した${selectedSavedKeys.length}件を削除しますか？`)) return
+    if (!window.confirm(`驕ｸ謚槭＠縺・{selectedSavedKeys.length}莉ｶ繧貞炎髯､縺励∪縺吶°・歔)) return
 
     selectedSavedKeys.forEach(key => {
       try {
         localStorage.removeItem(key)
       } catch {
-        // 削除できないデータはスキップ
+        // 蜑企勁縺ｧ縺阪↑縺・ョ繝ｼ繧ｿ縺ｯ繧ｹ繧ｭ繝・・
       }
     })
 
@@ -5918,7 +5917,7 @@ return savedEntries
     setPropertySearch('')
     setSelectedProperty(null)
     setUnit('')
-    setWorkName('原状回復工事')
+    setWorkName('蜴溽憾蝗槫ｾｩ蟾･莠・)
     setSiteMemo('')
     setCurrentStorageKey('')
     setRecords([])
@@ -5929,7 +5928,7 @@ return savedEntries
     setAdditionalWorks([])
     setMemo('')
     setIsDirty(false)
-    setSaveStatus('新規登録を開始できます')
+    setSaveStatus('譁ｰ隕冗匳骭ｲ繧帝幕蟋九〒縺阪∪縺・)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -5940,14 +5939,14 @@ return savedEntries
     }
 
     const saveFirst = window.confirm(
-      '現在編集中の内容が保存されていません。\n\n' +
-      '［OK］保存して終了し、新規登録へ進む\n' +
-      '［キャンセル］保存せず進むか、操作を中止する'
+      '迴ｾ蝨ｨ邱ｨ髮・ｸｭ縺ｮ蜀・ｮｹ縺御ｿ晏ｭ倥＆繧後※縺・∪縺帙ｓ縲・n\n' +
+      '・ｻOK・ｽ菫晏ｭ倥＠縺ｦ邨ゆｺ・＠縲∵眠隕冗匳骭ｲ縺ｸ騾ｲ繧\n' +
+      '・ｻ繧ｭ繝｣繝ｳ繧ｻ繝ｫ・ｽ菫晏ｭ倥○縺夐ｲ繧縺九∵桃菴懊ｒ荳ｭ豁｢縺吶ｋ'
     )
 
     if (saveFirst) {
       if (!saveCurrentData()) {
-        window.alert('保存できなかったため、新規登録へ進みませんでした。')
+        window.alert('菫晏ｭ倥〒縺阪↑縺九▲縺溘◆繧√∵眠隕冗匳骭ｲ縺ｸ騾ｲ縺ｿ縺ｾ縺帙ｓ縺ｧ縺励◆縲・)
         return
       }
       resetForNewRegistration()
@@ -5955,15 +5954,15 @@ return savedEntries
     }
 
     const discard = window.confirm(
-      '保存せずに新規登録へ進みますか？\n\n' +
-      '［OK］保存せず新規登録へ進む\n' +
-      '［キャンセル］編集中の画面へ戻る'
+      '菫晏ｭ倥○縺壹↓譁ｰ隕冗匳骭ｲ縺ｸ騾ｲ縺ｿ縺ｾ縺吶°・歃n\n' +
+      '・ｻOK・ｽ菫晏ｭ倥○縺壽眠隕冗匳骭ｲ縺ｸ騾ｲ繧\n' +
+      '・ｻ繧ｭ繝｣繝ｳ繧ｻ繝ｫ・ｽ邱ｨ髮・ｸｭ縺ｮ逕ｻ髱｢縺ｸ謌ｻ繧・
     )
     if (discard) resetForNewRegistration()
   }
 
   function startMeasurement() {
-    if (!String(workName || '').trim()) { window.alert('工事名を入力してください。'); return }
+    if (!String(workName || '').trim()) { window.alert('蟾･莠句錐繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲・); return }
     const storageKey = getSaveKey(company, selectedProperty, unit, workName)
     setCurrentStorageKey(storageKey)
 
@@ -5988,7 +5987,7 @@ return savedEntries
       setCfPageIndex(Number.isInteger(savedData?.cfPageIndex) ? savedData.cfPageIndex : 0)
       setSoftPageIndex(Number.isInteger(savedData?.softPageIndex) ? savedData.softPageIndex : 0)
       setActivePage(savedData?.activePage || 'cross')
-      setMeasurementType(savedData?.measurementType || '天井')
+      setMeasurementType(savedData?.measurementType || '螟ｩ莠・)
       setCaseCrossFactor(String(savedData?.caseCrossFactor ?? pricingSettings.crossFactor))
       setMemo(savedData?.draftMemo || '')
       setSaveStatus('')
@@ -6005,10 +6004,10 @@ return savedEntries
       setCfPageIndex(0)
       setSoftPageIndex(0)
       setActivePage('cross')
-      setMeasurementType('天井')
+      setMeasurementType('螟ｩ莠・)
       setCaseCrossFactor(String(pricingSettings.crossFactor))
       setMemo('')
-      setSaveStatus('保存データを読み込めませんでした')
+      setSaveStatus('菫晏ｭ倥ョ繝ｼ繧ｿ繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆')
     }
     setHeight('')
     setCount('')
@@ -6032,7 +6031,7 @@ return savedEntries
       address: draft.address || '',
     })
     setUnit(draft.unit || '')
-    setWorkName(draft.workName || '原状回復工事')
+    setWorkName(draft.workName || '蜴溽憾蝗槫ｾｩ蟾･莠・)
     setSiteMemo(draft.siteMemo || '')
     setRecords(Array.isArray(draft.records) ? draft.records : [])
     setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
@@ -6052,7 +6051,7 @@ return savedEntries
     setCfPageIndex(Number.isInteger(draft.cfPageIndex) ? draft.cfPageIndex : 0)
     setSoftPageIndex(Number.isInteger(draft.softPageIndex) ? draft.softPageIndex : 0)
     setActivePage(draft.activePage || 'cross')
-    setMeasurementType(draft.measurementType || '天井')
+    setMeasurementType(draft.measurementType || '螟ｩ莠・)
     setCaseCrossFactor(String(draft.caseCrossFactor ?? pricingSettings.crossFactor))
     setCurrentStorageKey(draft.currentStorageKey || '')
     setHeight('')
@@ -6070,13 +6069,13 @@ return savedEntries
     setStarted(true)
   }
   function discardWorkingDraft() {
-    try { localStorage.removeItem(workingDraftKey) } catch { /* 削除失敗は無視 */ }
+    try { localStorage.removeItem(workingDraftKey) } catch { /* 蜑企勁螟ｱ謨励・辟｡隕・*/ }
     setWorkingDraft(null)
     setShowDraftRecovery(false)
   }
   function saveCurrentData() {
     if (!company || !selectedProperty || !unit.trim()) {
-      setSaveStatus('管理会社・物件・号室を選択してください')
+      setSaveStatus('邂｡逅・ｼ夂､ｾ繝ｻ迚ｩ莉ｶ繝ｻ蜿ｷ螳､繧帝∈謚槭＠縺ｦ縺上□縺輔＞')
       return false
     }
 
@@ -6087,7 +6086,7 @@ return savedEntries
       const existing = JSON.parse(localStorage.getItem(storageKey) || '{}')
       archived = Boolean(existing.archived)
     } catch {
-      // 読み込みに失敗した場合は通常一覧に保存
+      // 隱ｭ縺ｿ霎ｼ縺ｿ縺ｫ螟ｱ謨励＠縺溷ｴ蜷医・騾壼ｸｸ荳隕ｧ縺ｫ菫晏ｭ・
     }
 
     const saveData = {
@@ -6095,7 +6094,7 @@ return savedEntries
       propertyName: selectedProperty.name,
       address: selectedProperty.address,
       unit: unit.trim(),
-      workName: String(workName || '').trim() || '原状回復工事',
+      workName: String(workName || '').trim() || '蜴溽憾蝗槫ｾｩ蟾･莠・,
       siteMemo: siteMemo.trim(),
       records,
       cfRecords,
@@ -6128,7 +6127,7 @@ return savedEntries
       setSaveStatus('')
       return true
     } catch {
-      setSaveStatus('保存できませんでした。端末の空き容量をご確認ください')
+      setSaveStatus('菫晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆縲らｫｯ譛ｫ縺ｮ遨ｺ縺榊ｮｹ驥上ｒ縺皮｢ｺ隱阪￥縺縺輔＞')
       return false
     }
   }
@@ -6181,7 +6180,7 @@ return savedEntries
 
   function deleteRoom(roomName) {
     if (rooms.length <= 1) {
-      window.alert('部屋をすべて削除することはできません')
+      window.alert('驛ｨ螻九ｒ縺吶∋縺ｦ蜑企勁縺吶ｋ縺薙→縺ｯ縺ｧ縺阪∪縺帙ｓ')
       return
     }
 
@@ -6252,14 +6251,14 @@ return savedEntries
   }
   function handleCrossEnter() {
     if (activeInput === 'height') {
-      const numericHeight = Number(height.replace(/[。．]/g, '.'))
+      const numericHeight = Number(height.replace(/[縲ゑｼ讃/g, '.'))
       if (!Number.isFinite(numericHeight) || numericHeight <= 0) return
       setActiveInput('count')
       return
     }
 
     if (activeInput === 'count') {
-      const numericHeight = Number(height.replace(/[。．]/g, '.'))
+      const numericHeight = Number(height.replace(/[縲ゑｼ讃/g, '.'))
       const numericCount = Number(count)
       if (!Number.isFinite(numericHeight) || numericHeight <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
       addCrossRecord({ preventDefault() {} })
@@ -6310,7 +6309,7 @@ return savedEntries
 
   function addCrossRecord(event) {
     event.preventDefault()
-    const numericHeight = Number(height.replace(/[。．]/g, '.'))
+    const numericHeight = Number(height.replace(/[縲ゑｼ讃/g, '.'))
     const numericCount = Number(count)
     if (!Number.isFinite(numericHeight) || numericHeight <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
 
@@ -6358,10 +6357,10 @@ return savedEntries
 
   const fontScales = { small: 0.8, medium: 0.9, large: 1 }
   const fontOptions = [
-    ['small', '小'], ['medium', '中'], ['large', '大'],
+    ['small', '蟆・], ['medium', '荳ｭ'], ['large', '螟ｧ'],
   ]
   const themeOptions = [
-    ['beige', 'ベージュ'], ['dark', 'ダーク'], ['pop', 'ポップ'], ['cyber', 'サイバー'],
+    ['beige', '繝吶・繧ｸ繝･'], ['dark', '繝繝ｼ繧ｯ'], ['pop', '繝昴ャ繝・], ['cyber', '繧ｵ繧､繝舌・'],
     ['luxury', 'Luxury Black'], ['sakura', 'SAKURA'], ['ice', 'Ice'], ['forest', 'Forest'],
     ['retro', 'RETRO'],
     ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
@@ -6524,7 +6523,7 @@ return savedEntries
 .residentPdfSource{display:none!important}
 
 /* M-CROSS_TOP_SPACING_FIX_V1 */
-/* トップ画面の入力ブロックと操作ボタンの縦リズムを揃える */
+/* 繝医ャ繝礼判髱｢縺ｮ蜈･蜉帙ヶ繝ｭ繝・け縺ｨ謫堺ｽ懊・繧ｿ繝ｳ縺ｮ邵ｦ繝ｪ繧ｺ繝繧呈純縺医ｋ */
 .main .card > .primary,
 .main .card > .secondaryButton,
 .main .card > .oneDriveSyncPanel,
@@ -6534,16 +6533,16 @@ return savedEntries
 .main .card > .secondaryButton + .oneDriveSyncPanel,
 .main .card > .oneDriveSyncPanel + .residentCasesEntryButton,
 .main .card > .residentCasesEntryButton + .secondaryButton{margin-top:10px!important}
-/* 地図ボタンのあとに号室見出しが食い込まないよう余白を確保 */
+/* 蝨ｰ蝗ｳ繝懊ち繝ｳ縺ｮ縺ゅ→縺ｫ蜿ｷ螳､隕句・縺励′鬟溘＞霎ｼ縺ｾ縺ｪ縺・ｈ縺・ｽ咏區繧堤｢ｺ菫・*/
 .main .card > button.primary + label,
 .main .card > button.secondaryButton + label,
 .main .card > button + .fieldLabel,
 .main .card > button + h2,
 .main .card > button + h3{margin-top:22px!important}
-/* 現場メモ後の検索ボタンと採寸開始を少し分離 */
+/* 迴ｾ蝣ｴ繝｡繝｢蠕後・讀懃ｴ｢繝懊ち繝ｳ縺ｨ謗｡蟇ｸ髢句ｧ九ｒ蟆代＠蛻・屬 */
 .main .card textarea + small{display:block;margin-top:7px}
 .main .card .similarSitesButton{margin-top:14px!important;margin-bottom:6px!important}
-/* OneDrive自身の外側余白は親側で管理 */
+/* OneDrive閾ｪ霄ｫ縺ｮ螟門・菴咏區縺ｯ隕ｪ蛛ｴ縺ｧ邂｡逅・*/
 .main .card > .oneDriveSyncPanel{margin-bottom:0!important}
 @media(max-width:620px){
   .main .card > .primary,
@@ -6605,7 +6604,7 @@ return savedEntries
 }
 
 /* M-CROSS_STEP18_1_SPLIT_WINDOW_CENTER_FIX */
-/* PCフル画面はワイド、Windowsの2分割程度では中央寄せして横スクロールを防ぐ */
+/* PC繝輔Ν逕ｻ髱｢縺ｯ繝ｯ繧､繝峨仝indows縺ｮ2蛻・牡遞句ｺｦ縺ｧ縺ｯ荳ｭ螟ｮ蟇・○縺励※讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧帝亟縺・*/
 @media (min-width:980px) and (max-width:1249px){
   html,body,#root,.app{max-width:100%;overflow-x:hidden!important}
   .main,.settingsMain{width:calc(100% - 32px)!important;max-width:1120px!important;margin-left:auto!important;margin-right:auto!important;padding-left:0!important;padding-right:0!important;box-sizing:border-box!important}
@@ -6622,7 +6621,7 @@ return savedEntries
 }
 
 /* M-CROSS_STEP18_2_TRUE_CENTER_FIX */
-/* PCでは親要素の既存オフセットを打ち消し、現在のウィンドウ幅の中央に固定 */
+/* PC縺ｧ縺ｯ隕ｪ隕∫ｴ縺ｮ譌｢蟄倥が繝輔そ繝・ヨ繧呈遠縺｡豸医＠縲∫樟蝨ｨ縺ｮ繧ｦ繧｣繝ｳ繝峨え蟷・・荳ｭ螟ｮ縺ｫ蝗ｺ螳・*/
 @media (min-width:980px){
   html,body,#root{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;overflow-x:hidden!important}
   #root>.app,.app{width:100%!important;max-width:none!important;margin:0!important;padding-left:0!important;padding-right:0!important;box-sizing:border-box!important}
@@ -6647,7 +6646,7 @@ return savedEntries
 }
 
 /* M-CROSS_STEP18_3_DETAIL_OVERLAY_CLEAN */
-/* 案件詳細などの独立ページを、背後の一覧が透けない本当の画面として表示 */
+/* 譯井ｻｶ隧ｳ邏ｰ縺ｪ縺ｩ縺ｮ迢ｬ遶九・繝ｼ繧ｸ繧偵∬レ蠕後・荳隕ｧ縺碁上￠縺ｪ縺・悽蠖薙・逕ｻ髱｢縺ｨ縺励※陦ｨ遉ｺ */
 .residentCaseDetailPage{
   position:fixed!important;
   inset:0!important;
@@ -6761,7 +6760,7 @@ return savedEntries
 `}</style>
       <style>{`
 /* M-CROSS_ESTIMATE_THEME_COLORS_V1 */
-/* 概算見積専用のテーマ別配色。レイアウトには触れない。 */
+/* 讎らｮ苓ｦ狗ｩ榊ｰら畑縺ｮ繝・・繝槫挨驟崎牡縲ゅΞ繧､繧｢繧ｦ繝医↓縺ｯ隗ｦ繧後↑縺・・*/
 .app {
   --estimate-bg: rgba(255, 255, 255, 0.90);
   --estimate-border: rgba(180, 105, 55, 0.55);
@@ -6912,7 +6911,7 @@ return savedEntries
 `}</style>
       <style>{`
 /* M-CROSS_ESTIMATE_FONT_FIX_FINAL */
-/* 概算見積の数字サイズを最終的に上書き。小中大のapp zoomにも連動する */
+/* 讎らｮ苓ｦ狗ｩ阪・謨ｰ蟄励し繧､繧ｺ繧呈怙邨ら噪縺ｫ荳頑嶌縺阪ょｰ丈ｸｭ螟ｧ縺ｮapp zoom縺ｫ繧る｣蜍輔☆繧・*/
 @media (max-width:700px){
  .estimateRow .estimateNumber{font-size:16px!important;line-height:1.5!important;font-weight:700!important;}
  .estimateRow>.estimateNumber:last-child,.estimateRow>.estimateNumber:last-child strong{font-size:18px!important;line-height:1.45!important;font-weight:900!important;}
@@ -6922,7 +6921,7 @@ return savedEntries
 `}</style>
       <style>{`
 /* M-CROSS_ESTIMATE_NUMBERS_LARGE_V1 */
-/* 全テーマ共通：スマホ概算の数量・単価・金額を読みやすく拡大 */
+/* 蜈ｨ繝・・繝槫・騾夲ｼ壹せ繝槭・讎らｮ励・謨ｰ驥上・蜊倅ｾ｡繝ｻ驥鷹｡阪ｒ隱ｭ縺ｿ繧・☆縺乗僑螟ｧ */
 @media (max-width:700px) {
   .estimateRow .estimateNumber {
     font-size: 1.12em !important;
@@ -6956,8 +6955,8 @@ return savedEntries
   .estimateRow > strong:first-child { flex:0 0 100%!important; width:100%!important; min-width:0!important; max-width:100%!important; white-space:normal!important; word-break:keep-all!important; overflow-wrap:break-word!important; font-size:1.02em!important; line-height:1.45!important; }
   .estimateRow > strong:first-child .estimateMemo { display:inline!important; margin-left:6px!important; white-space:normal!important; word-break:keep-all!important; overflow-wrap:break-word!important; font-size:.95em!important; }
   .estimateRow .estimateNumber { flex:0 0 auto!important; width:auto!important; max-width:100%!important; min-width:0!important; white-space:nowrap!important; font-size:.96em!important; line-height:1.4!important; text-align:left!important; }
-  .estimateRow .estimateUnit::after { content:" ×"; }
-  .estimateRow .estimateRate::after { content:" ＝"!important; }
+  .estimateRow .estimateUnit::after { content:" ﾃ・; }
+  .estimateRow .estimateRate::after { content:" ・・!important; }
   .estimateRow > .estimateNumber:last-child { margin-left:0!important; text-align:left!important; }
   .estimateRow > .estimateNumber:last-child::before { content:""!important; }
   .estimateTotal { width:100%!important; max-width:100%!important; display:flex!important; flex-wrap:wrap!important; justify-content:space-between!important; gap:6px 12px!important; box-sizing:border-box!important; overflow:visible!important; font-size:1.08em!important; }
@@ -6980,7 +6979,7 @@ return savedEntries
               <div className="brand">M-Cross</div>
             </div>
           </div>
-          <button className="settingsButton" type="button" aria-label="設定" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙️</button>
+          <button className="settingsButton" type="button" aria-label="險ｭ螳・ onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>笞呻ｸ・/button>
         </header>
 
         {settingsOpen ? (
@@ -6988,13 +6987,13 @@ return savedEntries
             <button className="back" type="button" onClick={() => {
               if (settingsPage === 'home') setSettingsOpen(false)
               else { setSettingsPage('home'); setMasterPropertyCompanyId(''); setShowPropertyForm(false) }
-            }}>{settingsPage === 'home' ? '← 戻る' : '← 設定へ戻る'}</button>
-            <p className="eyebrow">M-Cross設定</p>
-            <h1>{settingsPage === 'home' ? '設定' : settingsPage === 'additional' ? '追加作業設定' : settingsPage === 'memos' ? 'メモ設定' : settingsPage === 'rooms' ? '初期部屋設定' : settingsPage === 'pricing' ? '単価・概算設定' : '管理会社・物件管理'}</h1>
+            }}>{settingsPage === 'home' ? '竊・謌ｻ繧・ : '竊・險ｭ螳壹∈謌ｻ繧・}</button>
+            <p className="eyebrow">M-Cross險ｭ螳・/p>
+            <h1>{settingsPage === 'home' ? '險ｭ螳・ : settingsPage === 'additional' ? '霑ｽ蜉菴懈･ｭ險ｭ螳・ : settingsPage === 'memos' ? '繝｡繝｢險ｭ螳・ : settingsPage === 'rooms' ? '蛻晄悄驛ｨ螻玖ｨｭ螳・ : settingsPage === 'pricing' ? '蜊倅ｾ｡繝ｻ讎らｮ苓ｨｭ螳・ : '邂｡逅・ｼ夂､ｾ繝ｻ迚ｩ莉ｶ邂｡逅・}</h1>
             <section className="card">
               {settingsPage === 'home' && (<>
-              <h2>表示設定</h2>
-              <h2>フォントサイズ</h2>
+              <h2>陦ｨ遉ｺ險ｭ螳・/h2>
+              <h2>繝輔か繝ｳ繝医し繧､繧ｺ</h2>
               <div className="settingsOptions">
                 {fontOptions.map(([value, label]) => (
                   <button
@@ -7008,7 +7007,7 @@ return savedEntries
                   </button>
                 ))}
               </div>
-              <h2 style={{ marginTop: 28 }}>テーマカラー</h2>
+              <h2 style={{ marginTop: 28 }}>繝・・繝槭き繝ｩ繝ｼ</h2>
               <div className="settingsOptions">
                 {themeOptions.map(([value, label]) => (
                   <button
@@ -7022,31 +7021,31 @@ return savedEntries
                   </button>
                 ))}
               </div>
-              <h2 style={{ marginTop: 28 }}>見積コピー形式</h2>
+              <h2 style={{ marginTop: 28 }}>隕狗ｩ阪さ繝斐・蠖｢蠑・/h2>
               <div className="settingsOptions">
-                <button type="button" className={`settingsOption${estimateCopyFormat === 'split' ? ' active' : ''}`} onClick={() => changeEstimateCopyFormat('split')}>項目を分ける</button>
-                <button type="button" className={`settingsOption${estimateCopyFormat === 'merged' ? ' active' : ''}`} onClick={() => changeEstimateCopyFormat('merged')}>項目をまとめる</button>
+                <button type="button" className={`settingsOption${estimateCopyFormat === 'split' ? ' active' : ''}`} onClick={() => changeEstimateCopyFormat('split')}>鬆・岼繧貞・縺代ｋ</button>
+                <button type="button" className={`settingsOption${estimateCopyFormat === 'merged' ? ' active' : ''}`} onClick={() => changeEstimateCopyFormat('merged')}>鬆・岼繧偵∪縺ｨ繧√ｋ</button>
               </div>
               <p className="copyFormatPreview">
-                {estimateCopyFormat === 'split' ? '社員用：居間｜収納｜壁｜クロス貼替｜8.6｜㎡' : '自分用：居間 収納 壁 クロス貼替｜8.6｜㎡'}
+                {estimateCopyFormat === 'split' ? '遉ｾ蜩｡逕ｨ・壼ｱ・俣・懷庶邏搾ｽ懷｣・ｽ懊け繝ｭ繧ｹ雋ｼ譖ｿ・・.6・懊治' : '閾ｪ蛻・畑・壼ｱ・俣 蜿守ｴ・螢・繧ｯ繝ｭ繧ｹ雋ｼ譖ｿ・・.6・懊治'}
               </p>
-              <h2 style={{ marginTop: 28 }}>遊び設定</h2>
+              <h2 style={{ marginTop: 28 }}>驕翫・險ｭ螳・/h2>
               <div className="settingsOptions">
-                <button type="button" className={`settingsOption${playSettings.effects ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, effects: !playSettings.effects })}>登録エフェクト {playSettings.effects ? 'ON' : 'OFF'}</button>
-                <button type="button" className={`settingsOption${playSettings.splash ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, splash: !playSettings.splash })}>起動画面 {playSettings.splash ? 'ON' : 'OFF'}</button>
+                <button type="button" className={`settingsOption${playSettings.effects ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, effects: !playSettings.effects })}>逋ｻ骭ｲ繧ｨ繝輔ぉ繧ｯ繝・{playSettings.effects ? 'ON' : 'OFF'}</button>
+                <button type="button" className={`settingsOption${playSettings.splash ? ' active' : ''}`} onClick={() => savePlaySettings({ ...playSettings, splash: !playSettings.splash })}>襍ｷ蜍慕判髱｢ {playSettings.splash ? 'ON' : 'OFF'}</button>
               </div>
-              <div className="settingsMenu" aria-label="詳細設定">
-                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('additional')}><span>🔧 よく使う追加作業</span><span>›</span></button>
-                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('memos')}><span>📝 よく使うメモ</span><span>›</span></button>
-                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('rooms')}><span>🏠 新規物件の初期部屋</span><span>›</span></button>
-                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('pricing')}><span>💰 単価・概算設定</span><span>›</span></button>
-                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('management')}><span>🏢 管理会社・物件管理</span><span>›</span></button>
+              <div className="settingsMenu" aria-label="隧ｳ邏ｰ險ｭ螳・>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('additional')}><span>肌 繧医￥菴ｿ縺・ｿｽ蜉菴懈･ｭ</span><span>窶ｺ</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('memos')}><span>統 繧医￥菴ｿ縺・Γ繝｢</span><span>窶ｺ</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('rooms')}><span>匠 譁ｰ隕冗黄莉ｶ縺ｮ蛻晄悄驛ｨ螻・/span><span>窶ｺ</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('pricing')}><span>腸 蜊倅ｾ｡繝ｻ讎らｮ苓ｨｭ螳・/span><span>窶ｺ</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('management')}><span>召 邂｡逅・ｼ夂､ｾ繝ｻ迚ｩ莉ｶ邂｡逅・/span><span>窶ｺ</span></button>
               </div>
               </>)}
               {settingsPage === 'additional' && (<>
               <GlobalListEditor
-                title="🔧 よく使う追加作業"
-                description="最終確認画面に表示する追加作業を編集します。変更は全案件で使用されます。"
+                title="肌 繧医￥菴ｿ縺・ｿｽ蜉菴懈･ｭ"
+                description="譛邨ら｢ｺ隱咲判髱｢縺ｫ陦ｨ遉ｺ縺吶ｋ霑ｽ蜉菴懈･ｭ繧堤ｷｨ髮・＠縺ｾ縺吶ょ､画峩縺ｯ蜈ｨ譯井ｻｶ縺ｧ菴ｿ逕ｨ縺輔ｌ縺ｾ縺吶・
                 items={commonAdditionalWorks}
                 storageKey={commonAdditionalWorksKey}
                 setter={setCommonAdditionalWorks}
@@ -7055,8 +7054,8 @@ return savedEntries
               </>)}
               {settingsPage === 'memos' && (<>
               <GlobalListEditor
-                title="📝 よく使うメモ"
-                description="クロス採寸画面に表示するメモ候補を編集します。"
+                title="統 繧医￥菴ｿ縺・Γ繝｢"
+                description="繧ｯ繝ｭ繧ｹ謗｡蟇ｸ逕ｻ髱｢縺ｫ陦ｨ遉ｺ縺吶ｋ繝｡繝｢蛟呵｣懊ｒ邱ｨ髮・＠縺ｾ縺吶・
                 items={configuredQuickMemos}
                 storageKey={quickMemosKey}
                 setter={setConfiguredQuickMemos}
@@ -7065,8 +7064,8 @@ return savedEntries
               </>)}
               {settingsPage === 'rooms' && (<>
               <GlobalListEditor
-                title="🏠 新規物件の初期部屋"
-                description="これから新しく開始する物件に表示する部屋を編集します。既存の保存物件は変更しません。"
+                title="匠 譁ｰ隕冗黄莉ｶ縺ｮ蛻晄悄驛ｨ螻・
+                description="縺薙ｌ縺九ｉ譁ｰ縺励￥髢句ｧ九☆繧狗黄莉ｶ縺ｫ陦ｨ遉ｺ縺吶ｋ驛ｨ螻九ｒ邱ｨ髮・＠縺ｾ縺吶よ里蟄倥・菫晏ｭ倡黄莉ｶ縺ｯ螟画峩縺励∪縺帙ｓ縲・
                 items={configuredDefaultRooms}
                 storageKey={defaultRoomsKey}
                 setter={setConfiguredDefaultRooms}
@@ -7074,13 +7073,13 @@ return savedEntries
               />
               </>)}
               {settingsPage === 'pricing' && (<>
-              <h2>単価・概算設定</h2>
+              <h2>蜊倅ｾ｡繝ｻ讎らｮ苓ｨｭ螳・/h2>
               <div className="estimateSettings">
-                <p className="estimateIntro">ここで設定した単価と換算率を、新しい案件の概算金額に使用します。</p>
+                <p className="estimateIntro">縺薙％縺ｧ險ｭ螳壹＠縺溷腰萓｡縺ｨ謠帷ｮ礼紫繧偵∵眠縺励＞譯井ｻｶ縺ｮ讎らｮ鈴≡鬘阪↓菴ｿ逕ｨ縺励∪縺吶・/p>
                 <div className="estimateSettingsGrid">
                   {measurementTypes.map(type => (
                     <label key={type}>
-                      <span>クロス {type}（円／㎡）</span>
+                      <span>繧ｯ繝ｭ繧ｹ {type}・亥・・上治・・/span>
                       <input
                         type="number"
                         min="0"
@@ -7091,19 +7090,19 @@ return savedEntries
                     </label>
                   ))}
                   <label>
-                    <span>CF（円／㎡・概算数量は実測m×1.8）</span>
+                    <span>CF・亥・・上治繝ｻ讎らｮ玲焚驥上・螳滓ｸｬmﾃ・.8・・/span>
                     <input type="number" min="0" step="1" value={pricingSettings.cfRate} onChange={event => updatePricingSetting('cfRate', event.target.value)} />
                   </label>
                   <label>
-                    <span>ソフト巾木（円／枚）</span>
+                    <span>繧ｽ繝輔ヨ蟾ｾ譛ｨ・亥・・乗椢・・/span>
                     <input type="number" min="0" step="1" value={pricingSettings.softRate} onChange={event => updatePricingSetting('softRate', event.target.value)} />
                   </label>
                   <label>
-                    <span>床見切り（円／本）</span>
+                    <span>蠎願ｦ句・繧奇ｼ亥・・乗悽・・/span>
                     <input type="number" min="0" step="1" value={pricingSettings.floorTrimRate} onChange={event => updatePricingSetting('floorTrimRate', event.target.value)} />
                   </label>
                   <label>
-                    <span>クロス基本換算率</span>
+                    <span>繧ｯ繝ｭ繧ｹ蝓ｺ譛ｬ謠帷ｮ礼紫</span>
                     <input type="number" min="0" step="0.01" value={pricingSettings.crossFactor} onChange={event => updatePricingSetting('crossFactor', event.target.value)} />
                   </label>
                 </div>
@@ -7111,7 +7110,7 @@ return savedEntries
 
               </>)}
               {settingsPage === 'management' && (<>
-              <h2>管理会社・物件管理</h2>
+              <h2>邂｡逅・ｼ夂､ｾ繝ｻ迚ｩ莉ｶ邂｡逅・/h2>
               {masterStatus && <p className="saveStatus" role="status">{masterStatus}</p>}
               <form
                 className="masterCompanyForm"
@@ -7125,11 +7124,11 @@ return savedEntries
                 }
               }}>
                 <label>
-                  <span>{editingCompanyId ? '管理会社名を編集' : '新しい管理会社'}</span>
+                  <span>{editingCompanyId ? '邂｡逅・ｼ夂､ｾ蜷阪ｒ邱ｨ髮・ : '譁ｰ縺励＞邂｡逅・ｼ夂､ｾ'}</span>
                   <input
                     value={masterCompanyName}
                     onChange={event => setMasterCompanyName(event.target.value)}
-                    placeholder="管理会社名"
+                    placeholder="邂｡逅・ｼ夂､ｾ蜷・
                     required
                   />
                 </label>
@@ -7139,14 +7138,14 @@ return savedEntries
                     type="submit"
                     onClick={() => setManagementScrollTarget('companyForm')}
                   >
-                    {editingCompanyId ? '管理会社名を保存' : '管理会社を追加'}
+                    {editingCompanyId ? '邂｡逅・ｼ夂､ｾ蜷阪ｒ菫晏ｭ・ : '邂｡逅・ｼ夂､ｾ繧定ｿｽ蜉'}
                   </button>
                   {editingCompanyId && (
                     <button className="secondaryButton" type="button" onClick={() => {
                       setEditingCompanyId('')
                       setMasterCompanyName('')
                     }}>
-                      編集をキャンセル
+                      邱ｨ髮・ｒ繧ｭ繝｣繝ｳ繧ｻ繝ｫ
                     </button>
                   )}
                 </div>
@@ -7163,13 +7162,13 @@ return savedEntries
                         setEditingPropertyId('')
                         setManagementScrollTarget('propertyList')
                       }}>
-                        物件一覧
+                        迚ｩ莉ｶ荳隕ｧ
                       </button>
                       <button type="button" className="secondaryButton" onClick={() => startEditingCompany(masterCompany)}>
-                        編集
+                        邱ｨ髮・
                       </button>
                       <button type="button" className="dangerButton" onClick={() => deleteMasterCompany(masterCompany)}>
-                        削除
+                        蜑企勁
                       </button>
                     </div>
                   </div>
@@ -7180,10 +7179,10 @@ return savedEntries
                 <section className="masterPropertySection" ref={propertyListRef}>
                   <h3>
                     {mergedPropertyMaster.companies.find(item => item.id === masterPropertyCompanyId)?.name || ''}
-                    の物件
+                    縺ｮ迚ｩ莉ｶ
                   </h3>
                   <button className="secondaryButton" type="button" onClick={() => startAddingProperty()}>
-                    ＋ 新規物件追加
+                    ・・譁ｰ隕冗黄莉ｶ霑ｽ蜉
                   </button>
                   <div className="masterPropertyList">
                     {mergedPropertyMaster.properties
@@ -7191,20 +7190,20 @@ return savedEntries
                       .map(property => (
                         <article className="masterPropertyItem" key={property.id}>
                           <strong>{property.name}</strong>
-                          <span>{property.address || '住所未登録'}</span>
-                          <span>読み方：{property.reading || '未登録'}</span>
+                          <span>{property.address || '菴乗園譛ｪ逋ｻ骭ｲ'}</span>
+                          <span>隱ｭ縺ｿ譁ｹ・嘴property.reading || '譛ｪ逋ｻ骭ｲ'}</span>
                           <span>
-                            別名：{(Array.isArray(property.aliases)
+                            蛻･蜷搾ｼ嘴(Array.isArray(property.aliases)
                               ? property.aliases
                               : property.aliases ? [property.aliases] : property.alias ? [property.alias] : []
-                            ).join('、') || '未登録'}
+                            ).join('縲・) || '譛ｪ逋ｻ骭ｲ'}
                           </span>
                           <div className="masterActions">
                             <button className="secondaryButton" type="button" onClick={() => startEditingProperty(property)}>
-                              編集
+                              邱ｨ髮・
                             </button>
                             <button className="dangerButton" type="button" onClick={() => deleteMasterProperty(property)}>
-                              削除
+                              蜑企勁
                             </button>
                           </div>
                         </article>
@@ -7217,9 +7216,9 @@ return savedEntries
                       ref={propertyFormRef}
                       onSubmit={saveMasterProperty}
                     >
-                      <h3>{editingPropertyId ? '物件を編集' : '物件を追加'}</h3>
+                      <h3>{editingPropertyId ? '迚ｩ莉ｶ繧堤ｷｨ髮・ : '迚ｩ莉ｶ繧定ｿｽ蜉'}</h3>
                       <label>
-                        <span>管理会社</span>
+                        <span>邂｡逅・ｼ夂､ｾ</span>
                         <select
                           value={masterPropertyCompanyId}
                           onChange={event => {
@@ -7228,14 +7227,14 @@ return savedEntries
                           }}
                           required
                         >
-                          <option value="">管理会社を選択</option>
+                          <option value="">邂｡逅・ｼ夂､ｾ繧帝∈謚・/option>
                           {mergedPropertyMaster.companies.map(item => (
                             <option value={item.id} key={item.id}>{item.name}</option>
                           ))}
                         </select>
                       </label>
                       <label>
-                        <span>物件名</span>
+                        <span>迚ｩ莉ｶ蜷・/span>
                         <input
                           value={propertyForm.name}
                           onChange={event => setPropertyForm(prev => ({ ...prev, name: event.target.value }))}
@@ -7243,37 +7242,37 @@ return savedEntries
                         />
                       </label>
                       <label>
-                        <span>住所</span>
+                        <span>菴乗園</span>
                         <input
                           value={propertyForm.address}
                           onChange={event => setPropertyForm(prev => ({ ...prev, address: event.target.value }))}
                         />
                       </label>
                       <label>
-                        <span>検索用の読み方</span>
+                        <span>讀懃ｴ｢逕ｨ縺ｮ隱ｭ縺ｿ譁ｹ</span>
                         <input
                           value={propertyForm.reading}
                           onChange={event => setPropertyForm(prev => ({ ...prev, reading: event.target.value }))}
-                          placeholder="例：しゅしゅ"
+                          placeholder="萓具ｼ壹＠繧・＠繧・
                         />
                       </label>
                       <label>
-                        <span>検索用の別名（カンマ区切り）</span>
+                        <span>讀懃ｴ｢逕ｨ縺ｮ蛻･蜷搾ｼ医き繝ｳ繝槫玄蛻・ｊ・・/span>
                         <input
                           value={propertyForm.aliases}
                           onChange={event => setPropertyForm(prev => ({ ...prev, aliases: event.target.value }))}
-                          placeholder="例：CHOUCHOU, chou"
+                          placeholder="萓具ｼ咾HOUCHOU, chou"
                         />
                       </label>
                       <div className="masterActions">
                         <button className="primary" type="submit">
-                          {editingPropertyId ? '物件を保存' : '物件を追加'}
+                          {editingPropertyId ? '迚ｩ莉ｶ繧剃ｿ晏ｭ・ : '迚ｩ莉ｶ繧定ｿｽ蜉'}
                         </button>
                         <button className="secondaryButton" type="button" onClick={() => {
                           setEditingPropertyId('')
                           setShowPropertyForm(false)
                           setPropertyForm({ name: '', address: '', reading: '', aliases: '' })
-                        }}>キャンセル</button>
+                        }}>繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
                       </div>
                     </form>
                   )}
@@ -7284,9 +7283,9 @@ return savedEntries
           </main>
         ) : showSavedList && !started ? (
           <main className="main">
-            <button className="back" type="button" onClick={() => setShowSavedList(false)}>← 物件情報へ戻る</button>
-            <p className="eyebrow">保存した採寸データ</p>
-            <h1>{showArchived ? 'アーカイブ一覧' : '保存済み一覧'}</h1>
+            <button className="back" type="button" onClick={() => setShowSavedList(false)}>竊・迚ｩ莉ｶ諠・ｱ縺ｸ謌ｻ繧・/button>
+            <p className="eyebrow">菫晏ｭ倥＠縺滓治蟇ｸ繝・・繧ｿ</p>
+            <h1>{showArchived ? '繧｢繝ｼ繧ｫ繧､繝紋ｸ隕ｧ' : '菫晏ｭ俶ｸ医∩荳隕ｧ'}</h1>
 
             <section className="card">
               <div className="settingsOptions" style={{ marginBottom: 18 }}>
@@ -7299,7 +7298,7 @@ return savedEntries
                     setSelectedSavedKeys([])
                   }}
                 >
-                  保存済み
+                  菫晏ｭ俶ｸ医∩
                 </button>
                 <button
                   type="button"
@@ -7310,56 +7309,56 @@ return savedEntries
                     setSelectedSavedKeys([])
                   }}
                 >
-                  アーカイブ
+                  繧｢繝ｼ繧ｫ繧､繝・
                 </button>
               </div>
 
               <input ref={importFileInputRef} type="file" accept=".mcross,.json,.txt,application/json,text/plain" onChange={importMCrossData} style={{ display: 'none' }} />
               <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
-                📥 M-Crossファイルを読み込む
+                踏 M-Cross繝輔ぃ繧､繝ｫ繧定ｪｭ縺ｿ霎ｼ繧
               </button>
               <div className="savedToolbar">
                 <label>
-                  <span>🔎 かしこい検索</span>
-                  <input type="search" value={savedSearch} onChange={event => setSavedSearch(event.target.value)} placeholder="物件名・住所・号室・部屋・工事・メモを検索" />
+                  <span>博 縺九＠縺薙＞讀懃ｴ｢</span>
+                  <input type="search" value={savedSearch} onChange={event => setSavedSearch(event.target.value)} placeholder="迚ｩ莉ｶ蜷阪・菴乗園繝ｻ蜿ｷ螳､繝ｻ驛ｨ螻九・蟾･莠九・繝｡繝｢繧呈､懃ｴ｢" />
                 </label>
                 <div className="savedToolbarGrid">
                   <label>
-                    <span>管理会社</span>
+                    <span>邂｡逅・ｼ夂､ｾ</span>
                     <select value={savedCompanyFilter} onChange={event => setSavedCompanyFilter(event.target.value)}>
-                      <option value="">すべて</option>
+                      <option value="">縺吶∋縺ｦ</option>
                       {savedCompanyOptions.map(name => <option key={name} value={name}>{name}</option>)}
                     </select>
                   </label>
                   <label>
-                    <span>並び順</span>
+                    <span>荳ｦ縺ｳ鬆・/span>
                     <select value={savedSortOrder} onChange={event => setSavedSortOrder(event.target.value)}>
-                      <option value="newest">最近更新した順</option>
-                      <option value="oldest">古い順</option>
-                      <option value="property">物件名順</option>
+                      <option value="newest">譛霑第峩譁ｰ縺励◆鬆・/option>
+                      <option value="oldest">蜿､縺・・/option>
+                      <option value="property">迚ｩ莉ｶ蜷埼・/option>
                     </select>
                   </label>
                 </div>
                 <div className="savedListSummary">
-                  <span>{showArchived ? 'アーカイブ' : '保存済み'} {savedCount}件</span>
-                  <span>表示 {visibleSavedEntries.length}件</span>
+                  <span>{showArchived ? '繧｢繝ｼ繧ｫ繧､繝・ : '菫晏ｭ俶ｸ医∩'} {savedCount}莉ｶ</span>
+                  <span>陦ｨ遉ｺ {visibleSavedEntries.length}莉ｶ</span>
                 </div>
               </div>
 
-              <div className="savedViewSwitch" aria-label="保存済み表示形式">
-                <button type="button" className={savedViewMode === 'list' ? 'active' : ''} onClick={() => setSavedViewMode('list')}>☰ 一覧表示</button>
-                <button type="button" className={savedViewMode === 'explorer' ? 'active' : ''} onClick={() => { setSavedViewMode('explorer'); setSavedFolderPath([]) }}>📁 フォルダ表示</button>
+              <div className="savedViewSwitch" aria-label="菫晏ｭ俶ｸ医∩陦ｨ遉ｺ蠖｢蠑・>
+                <button type="button" className={savedViewMode === 'list' ? 'active' : ''} onClick={() => setSavedViewMode('list')}>笘ｰ 荳隕ｧ陦ｨ遉ｺ</button>
+                <button type="button" className={savedViewMode === 'explorer' ? 'active' : ''} onClick={() => { setSavedViewMode('explorer'); setSavedFolderPath([]) }}>刀 繝輔か繝ｫ繝陦ｨ遉ｺ</button>
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '0 0 18px' }}>
                 <button className="actionButton actionOverwrite" type="button" onClick={toggleSelectAllVisible}>
-                  {visibleSavedEntries.length > 0 && visibleSavedEntries.every(entry => selectedSavedKeys.includes(entry.storageKey)) ? '選択解除' : '表示中を全選択'}
+                  {visibleSavedEntries.length > 0 && visibleSavedEntries.every(entry => selectedSavedKeys.includes(entry.storageKey)) ? '驕ｸ謚櫁ｧ｣髯､' : '陦ｨ遉ｺ荳ｭ繧貞・驕ｸ謚・}
                 </button>
                 <button className="actionButton actionCsv" type="button" onClick={bulkArchiveSelected} disabled={selectedSavedKeys.length === 0}>
-                  {showArchived ? '選択を一覧へ戻す' : '選択をアーカイブ'}
+                  {showArchived ? '驕ｸ謚槭ｒ荳隕ｧ縺ｸ謌ｻ縺・ : '驕ｸ謚槭ｒ繧｢繝ｼ繧ｫ繧､繝・}
                 </button>
                 <button className="actionButton actionDelete" type="button" onClick={bulkDeleteSelected} disabled={selectedSavedKeys.length === 0}>
-                  選択を削除（{selectedSavedKeys.length}）
+                  驕ｸ謚槭ｒ蜑企勁・・selectedSavedKeys.length}・・
                 </button>
               </div>
 
@@ -7371,10 +7370,10 @@ return savedEntries
                   return {
                     entry,
                     levels: [
-                      validDate ? date.getFullYear() + '年' : '日付不明',
-                      validDate ? (date.getMonth() + 1) + '月' : '月不明',
-                      entry.company || '管理会社未設定',
-                      entry.propertyName || '物件名なし',
+                      validDate ? date.getFullYear() + '蟷ｴ' : '譌･莉倅ｸ肴・',
+                      validDate ? (date.getMonth() + 1) + '譛・ : '譛井ｸ肴・',
+                      entry.company || '邂｡逅・ｼ夂､ｾ譛ｪ險ｭ螳・,
+                      entry.propertyName || '迚ｩ莉ｶ蜷阪↑縺・,
                     ],
                   }
                 })
@@ -7389,24 +7388,24 @@ return savedEntries
                 return (
                   <div className="savedExplorer">
                     <div className="savedExplorerCrumbs">
-                      <button type="button" onClick={() => setSavedFolderPath([])}>📂 保存済み</button>
+                      <button type="button" onClick={() => setSavedFolderPath([])}>唐 菫晏ｭ俶ｸ医∩</button>
                       {savedFolderPath.map((part, index) => (
-                        <button type="button" key={index} onClick={() => setSavedFolderPath(savedFolderPath.slice(0, index + 1))}>› {part}</button>
+                        <button type="button" key={index} onClick={() => setSavedFolderPath(savedFolderPath.slice(0, index + 1))}>窶ｺ {part}</button>
                       ))}
                     </div>
                     {savedFolderPath.length > 0 && (
-                      <button className="savedExplorerBack" type="button" onClick={() => setSavedFolderPath(path => path.slice(0, -1))}>← ひとつ上へ</button>
+                      <button className="savedExplorerBack" type="button" onClick={() => setSavedFolderPath(path => path.slice(0, -1))}>竊・縺ｲ縺ｨ縺､荳翫∈</button>
                     )}
                     {!isPropertyFolder ? (
                       <div className="savedExplorerGrid">
                         {folders.map(folder => {
                           const count = matching.filter(node => node.levels[depth] === folder).length
-                          const icon = depth < 2 ? '📁' : depth === 2 ? '🗂️' : '🏢'
+                          const icon = depth < 2 ? '刀' : depth === 2 ? '翌・・ : '召'
                           return (
                             <button className="savedExplorerFolder" type="button" key={folder} onClick={() => setSavedFolderPath(path => [...path, folder])}>
                               <span className="savedExplorerIcon">{icon}</span>
                               <strong>{folder}</strong>
-                              <small>{count}件</small>
+                              <small>{count}莉ｶ</small>
                             </button>
                           )
                         })}
@@ -7414,14 +7413,14 @@ return savedEntries
                     ) : (
                       <div className="savedExplorerFiles">
                         {matching.flatMap(({ entry }, index) => {
-                          const baseName = (entry.propertyName || '物件名なし') + (entry.unit ? entry.unit + '号室' : '') + (entry.workName ? entry.workName : '')
+                          const baseName = (entry.propertyName || '迚ｩ莉ｶ蜷阪↑縺・) + (entry.unit ? entry.unit + '蜿ｷ螳､' : '') + (entry.workName ? entry.workName : '')
                           let versions = []
                           try {
-                            const entryWorkName = String(entry.workName || '').trim() || '原状回復工事'
+                            const entryWorkName = String(entry.workName || '').trim() || '蜴溽憾蝗槫ｾｩ蟾･莠・
                             const key = 'mcross:estimate-versions:' + [entry.company || '', entry.propertyName || '', String(entry.unit || '').trim(), entryWorkName].join('|')
                             const legacyKey = 'mcross:estimate-versions:' + [entry.company || '', entry.propertyName || '', String(entry.unit || '').trim()].join('|')
                             const currentStored = localStorage.getItem(key)
-                            const legacyStored = entryWorkName === '原状回復工事' ? localStorage.getItem(legacyKey) : null
+                            const legacyStored = entryWorkName === '蜴溽憾蝗槫ｾｩ蟾･莠・ ? localStorage.getItem(legacyKey) : null
                             const stored = JSON.parse(currentStored || legacyStored || '[]')
                             versions = Array.isArray(stored) ? stored : []
                           } catch {}
@@ -7434,15 +7433,15 @@ return savedEntries
                                 setOpenedEstimateVersion(currentVersion)
                                 openSavedEntry(entry)
                               }} /* M-CROSS_CURRENT_REVISION_BUTTON_V6_SAFE */>
-                              <span>📄</span>
-                              <div><strong>{baseName}{versions.length ? estimateVersionMark(Math.max(...versions.map(item => Number(item.version) || 0)) + 1) : ''}</strong><small>{versions.length ? '現在編集中の見積' : '最初の見積'} ／ 更新 {formatSavedDate(entry.updatedAt)}</small></div>
+                              <span>塘</span>
+                              <div><strong>{baseName}{versions.length ? estimateVersionMark(Math.max(...versions.map(item => Number(item.version) || 0)) + 1) : ''}</strong><small>{versions.length ? '迴ｾ蝨ｨ邱ｨ髮・ｸｭ縺ｮ隕狗ｩ・ : '譛蛻昴・隕狗ｩ・} ・・譖ｴ譁ｰ {formatSavedDate(entry.updatedAt)}</small></div>
                             </button>,
                           ]
                           versions.sort((a,b) => Number(a.version)-Number(b.version)).forEach(version => {
                             items.push(
                               <button className="savedExplorerFile estimateVersionExplorerFile" type="button" key={(entry.storageKey || index) + '-estimate-' + version.version} onClick={() => openSavedEstimateVersion(entry, version)}>
-                                <span>📑</span>
-                                <div><strong>{baseName}{estimateVersionMark(version.version)}</strong><small>{Number(version.version) === 1 ? '最初の見積' : '修正版'} ／ ¥{Math.round(Number(version.totalAmount || 0)).toLocaleString('ja-JP')}</small></div>
+                                <span>淘</span>
+                                <div><strong>{baseName}{estimateVersionMark(version.version)}</strong><small>{Number(version.version) === 1 ? '譛蛻昴・隕狗ｩ・ : '菫ｮ豁｣迚・} ・・ﾂ･{Math.round(Number(version.totalAmount || 0)).toLocaleString('ja-JP')}</small></div>
                               </button>
                             )
                           })
@@ -7456,7 +7455,7 @@ return savedEntries
 
               {visibleSavedEntries.length === 0 ? (
                 <p className="empty">
-                  {showArchived ? 'アーカイブされたデータはありません' : '保存済みデータはありません'}
+                  {showArchived ? '繧｢繝ｼ繧ｫ繧､繝悶＆繧後◆繝・・繧ｿ縺ｯ縺ゅｊ縺ｾ縺帙ｓ' : '菫晏ｭ俶ｸ医∩繝・・繧ｿ縺ｯ縺ゅｊ縺ｾ縺帙ｓ'}
                 </p>
               ) : (
                 <div className="savedList" style={{ display: savedViewMode === 'list' ? undefined : 'none' }}>
@@ -7466,32 +7465,32 @@ return savedEntries
                       key={entry.storageKey || `${entry.propertyName}-${entry.unit}-${index}`}
                     >
                       <div className="savedCardTop">
-                        <input type="checkbox" checked={selectedSavedKeys.includes(entry.storageKey)} onChange={() => toggleSavedSelection(entry.storageKey)} aria-label={`${entry.propertyName || '物件名なし'}を選択`} />
+                        <input type="checkbox" checked={selectedSavedKeys.includes(entry.storageKey)} onChange={() => toggleSavedSelection(entry.storageKey)} aria-label={`${entry.propertyName || '迚ｩ莉ｶ蜷阪↑縺・}繧帝∈謚杼} />
                         <div className="savedCardTitle">
-                          <div className="savedProperty">{entry.propertyName || '物件名なし'}</div>
-                          <div className="savedUnit">{entry.unit || ''}号室</div>
-                          <div className="savedMeta">{entry.company || '管理会社未設定'}</div>
+                          <div className="savedProperty">{entry.propertyName || '迚ｩ莉ｶ蜷阪↑縺・}</div>
+                          <div className="savedUnit">{entry.unit || ''}蜿ｷ螳､</div>
+                          <div className="savedMeta">{entry.company || '邂｡逅・ｼ夂､ｾ譛ｪ險ｭ螳・}</div>
                         </div>
-                        <span className="savedCardDate">更新 {formatSavedDate(entry.updatedAt)}</span>
+                        <span className="savedCardDate">譖ｴ譁ｰ {formatSavedDate(entry.updatedAt)}</span>
                       </div>
                       {buildAutoTags(entry).length > 0 && (
-                        <div className="autoTagList" aria-label="自動タグ">
+                        <div className="autoTagList" aria-label="閾ｪ蜍輔ち繧ｰ">
                           {buildAutoTags(entry).map(tag => <span className="autoTag" key={tag}>#{tag}</span>)}
                         </div>
                       )}
                       <div className="savedPrimaryActions">
-                        <button className="actionButton actionOpen" type="button" onClick={() => openSavedEntry(entry)}>開く</button>
-                        <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel出力</button>
+                        <button className="actionButton actionOpen" type="button" onClick={() => openSavedEntry(entry)}>髢九￥</button>
+                        <button className="actionButton actionCsv" type="button" onClick={() => downloadExcel(entry)}>Excel蜃ｺ蜉・/button>
                       </div>
                       <button className="savedMoreButton" type="button" onClick={() => toggleSavedMore(entry.storageKey)}>
-                        {expandedSavedKeys.includes(entry.storageKey) ? '▲ 操作を閉じる' : '▼ その他の操作'}
+                        {expandedSavedKeys.includes(entry.storageKey) ? '笆ｲ 謫堺ｽ懊ｒ髢峨§繧・ : '笆ｼ 縺昴・莉悶・謫堺ｽ・}
                       </button>
                       {expandedSavedKeys.includes(entry.storageKey) && (
                         <div className="savedMoreActions">
-                          <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>上書き保存</button>
-                          <button className="actionButton actionOverwrite" type="button" onClick={() => shareMCrossData(entry)}>📤 M-Crossファイルを送る</button>
-                          <button className="actionButton actionOverwrite" type="button" onClick={() => setEntryArchived(entry, !showArchived)}>{showArchived ? '一覧に戻す' : 'アーカイブ'}</button>
-                          <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
+                          <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>荳頑嶌縺堺ｿ晏ｭ・/button>
+                          <button className="actionButton actionOverwrite" type="button" onClick={() => shareMCrossData(entry)}>豆 M-Cross繝輔ぃ繧､繝ｫ繧帝√ｋ</button>
+                          <button className="actionButton actionOverwrite" type="button" onClick={() => setEntryArchived(entry, !showArchived)}>{showArchived ? '荳隕ｧ縺ｫ謌ｻ縺・ : '繧｢繝ｼ繧ｫ繧､繝・}</button>
+                          <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>蜑企勁</button>
                         </div>
                       )}
                     </article>
@@ -7504,156 +7503,156 @@ return savedEntries
           <main className="main">
             {showWorkOrders ? (
               <section className="workOrdersHome">
-                <div className="workOrdersTopbar"><button className="back" type="button" onClick={() => setShowWorkOrders(false)}>← 戻る</button><div><p className="eyebrow">M-Cross WORK</p><h1>工事案件</h1></div></div>
+                <div className="workOrdersTopbar"><button className="back" type="button" onClick={() => setShowWorkOrders(false)}>竊・謌ｻ繧・/button><div><p className="eyebrow">M-Cross WORK</p><h1>蟾･莠区｡井ｻｶ</h1></div></div>
                 <div className="workOrderStats">
-                  <div><span>全案件</span><strong>{workOrders.length}</strong></div>
-                  <div><span>未請求</span><strong>{workOrders.filter(item => item.billingStatus !== '請求済').length}</strong></div>
-                  <div><span>完了</span><strong>{workOrders.filter(item => item.completedDate).length}</strong></div>
+                  <div><span>蜈ｨ譯井ｻｶ</span><strong>{workOrders.length}</strong></div>
+                  <div><span>譛ｪ隲区ｱ・/span><strong>{workOrders.filter(item => item.billingStatus !== '隲区ｱよｸ・).length}</strong></div>
+                  <div><span>螳御ｺ・/span><strong>{workOrders.filter(item => item.completedDate).length}</strong></div>
                 </div>
-                {workOrders.length === 0 ? <div className="card workOrdersEmpty"><strong>工事案件はまだありません</strong><span>次のSTEPで採寸案件・入居中案件から工事案件へ進める機能を追加します。</span></div> : <div className="workOrdersList">{workOrders.map(item => <article className="card workOrderCard" key={item.id} role="button" tabIndex={0} onClick={() => setSelectedWorkOrderId(item.id)} onKeyDown={event => { if (event.key === 'Enter') setSelectedWorkOrderId(item.id) }}><strong>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</strong><p>{item.workDetails || '工事内容未入力'}</p><div className="summaryLine"><span>見積</span><strong>¥{item.estimateAmount.toLocaleString()}</strong></div><div className="summaryLine"><span>原価</span><strong>¥{item.costTotal.toLocaleString()}</strong></div><div className="summaryLine"><span>利益</span><strong>¥{item.profit.toLocaleString()} / {item.profitRate}%</strong></div><small>{item.orderStatus} / {item.billingStatus}</small></article>)}</div>}
+                {workOrders.length === 0 ? <div className="card workOrdersEmpty"><strong>蟾･莠区｡井ｻｶ縺ｯ縺ｾ縺縺ゅｊ縺ｾ縺帙ｓ</strong><span>谺｡縺ｮSTEP縺ｧ謗｡蟇ｸ譯井ｻｶ繝ｻ蜈･螻・ｸｭ譯井ｻｶ縺九ｉ蟾･莠区｡井ｻｶ縺ｸ騾ｲ繧√ｋ讖溯・繧定ｿｽ蜉縺励∪縺吶・/span></div> : <div className="workOrdersList">{workOrders.map(item => <article className="card workOrderCard" key={item.id} role="button" tabIndex={0} onClick={() => setSelectedWorkOrderId(item.id)} onKeyDown={event => { if (event.key === 'Enter') setSelectedWorkOrderId(item.id) }}><strong>{item.propertyName || '迚ｩ莉ｶ蜷肴悴險ｭ螳・} {item.unit ? item.unit + '蜿ｷ螳､' : ''}</strong><p>{item.workDetails || '蟾･莠句・螳ｹ譛ｪ蜈･蜉・}</p><div className="summaryLine"><span>隕狗ｩ・/span><strong>ﾂ･{item.estimateAmount.toLocaleString()}</strong></div><div className="summaryLine"><span>蜴滉ｾ｡</span><strong>ﾂ･{item.costTotal.toLocaleString()}</strong></div><div className="summaryLine"><span>蛻ｩ逶・/span><strong>ﾂ･{item.profit.toLocaleString()} / {item.profitRate}%</strong></div><small>{item.orderStatus} / {item.billingStatus}</small></article>)}</div>}
                 {selectedWorkOrderId && (() => {
                   const item = workOrders.find(workItem => workItem.id === selectedWorkOrderId)
                   if (!item) return null
                   return <section className="workOrderDetailPage">
                     <div className="card workOrderDetail">
                       <div className="workOrderDetailTop">
-                        <button className="back" type="button" onClick={() => setSelectedWorkOrderId('')}>← 工事案件一覧へ</button>
-                        <div><p className="eyebrow">M-Cross WORK</p><h1>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</h1></div>
+                        <button className="back" type="button" onClick={() => setSelectedWorkOrderId('')}>竊・蟾･莠区｡井ｻｶ荳隕ｧ縺ｸ</button>
+                        <div><p className="eyebrow">M-Cross WORK</p><h1>{item.propertyName || '迚ｩ莉ｶ蜷肴悴險ｭ螳・} {item.unit ? item.unit + '蜿ｷ螳､' : ''}</h1></div>
                       </div>
 
-                      <section className="workOrderSection"><h2>基本情報</h2><div className="workOrderFormGrid">
-                        <label><span>管理会社</span><input value={item.company || ''} onChange={e => updateWorkOrder(item.id,{company:e.target.value})}/></label>
-                        <label><span>物件名</span><input value={item.propertyName || ''} onChange={e => updateWorkOrder(item.id,{propertyName:e.target.value})}/></label>
-                        <label><span>号室</span><input value={item.unit || ''} onChange={e => updateWorkOrder(item.id,{unit:e.target.value})}/></label>
-                        <label className="wide"><span>住所</span><input value={item.address || ''} onChange={e => updateWorkOrder(item.id,{address:e.target.value})}/></label>
-                        <label className="wide"><span>工事内容</span><textarea rows="3" value={item.workDetails || ''} onChange={e => updateWorkOrder(item.id,{workDetails:e.target.value})}/></label>
+                      <section className="workOrderSection"><h2>蝓ｺ譛ｬ諠・ｱ</h2><div className="workOrderFormGrid">
+                        <label><span>邂｡逅・ｼ夂､ｾ</span><input value={item.company || ''} onChange={e => updateWorkOrder(item.id,{company:e.target.value})}/></label>
+                        <label><span>迚ｩ莉ｶ蜷・/span><input value={item.propertyName || ''} onChange={e => updateWorkOrder(item.id,{propertyName:e.target.value})}/></label>
+                        <label><span>蜿ｷ螳､</span><input value={item.unit || ''} onChange={e => updateWorkOrder(item.id,{unit:e.target.value})}/></label>
+                        <label className="wide"><span>菴乗園</span><input value={item.address || ''} onChange={e => updateWorkOrder(item.id,{address:e.target.value})}/></label>
+                        <label className="wide"><span>蟾･莠句・螳ｹ</span><textarea rows="3" value={item.workDetails || ''} onChange={e => updateWorkOrder(item.id,{workDetails:e.target.value})}/></label>
                       </div></section>
 
-                      <section className="workOrderSection"><h2>見積</h2>
+                      <section className="workOrderSection"><h2>隕狗ｩ・/h2>
                       {Array.isArray(item.estimateItems) && item.estimateItems.length > 0 && (
                         <div className="workOrderEstimateItems">
                           {item.estimateItems.map((estimateItem, estimateIndex) => (
                             <div className="workOrderEstimateItem" key={estimateItem.id || estimateIndex}>
-                              <div><strong>{estimateItem.name || '工事項目'}</strong>{estimateItem.specification && <small>{estimateItem.specification}</small>}</div>
+                              <div><strong>{estimateItem.name || '蟾･莠矩・岼'}</strong>{estimateItem.specification && <small>{estimateItem.specification}</small>}</div>
                               <span>{Number(estimateItem.quantity || 0).toLocaleString()} {estimateItem.unit || ''}</span>
-                              <span>¥{Number(estimateItem.unitPrice || 0).toLocaleString()}</span>
-                              <strong>¥{Number(estimateItem.amount || 0).toLocaleString()}</strong>
+                              <span>ﾂ･{Number(estimateItem.unitPrice || 0).toLocaleString()}</span>
+                              <strong>ﾂ･{Number(estimateItem.amount || 0).toLocaleString()}</strong>
                             </div>
                           ))}
                         </div>
                       )}
                       <div className="workOrderFormGrid">
-                        <label><span>見積金額</span><input type="number" min="0" value={item.estimateAmount || 0} onChange={e => updateWorkOrder(item.id,{estimateAmount:Number(e.target.value)||0})}/></label>
-                        <label><span>見積状態</span><select value={item.estimateStatus || '未作成'} onChange={e => updateWorkOrder(item.id,{estimateStatus:e.target.value})}><option>未作成</option><option>作成中</option><option>提出済</option><option>承認</option></select></label>
-                      </div><button className="secondaryButton" type="button" onClick={() => exportWorkOrderEstimate(item)}>📊 見積書を出力</button></section>
+                        <label><span>隕狗ｩ埼≡鬘・/span><input type="number" min="0" value={item.estimateAmount || 0} onChange={e => updateWorkOrder(item.id,{estimateAmount:Number(e.target.value)||0})}/></label>
+                        <label><span>隕狗ｩ咲憾諷・/span><select value={item.estimateStatus || '譛ｪ菴懈・'} onChange={e => updateWorkOrder(item.id,{estimateStatus:e.target.value})}><option>譛ｪ菴懈・</option><option>菴懈・荳ｭ</option><option>謠仙・貂・/option><option>謇ｿ隱・/option></select></label>
+                      </div><button className="secondaryButton" type="button" onClick={() => exportWorkOrderEstimate(item)}>投 隕狗ｩ肴嶌繧貞・蜉・/button></section>
 
-                      <section className="workOrderSection"><h2>発注</h2><div className="workOrderFormGrid">
-                        <label><span>発注状態</span><select value={item.orderStatus || '未発注'} onChange={e => updateWorkOrder(item.id,{orderStatus:e.target.value})}><option>未発注</option><option>発注準備</option><option>発注済み</option><option>施工中</option></select></label>
-                        <label><span>発注先</span><input value={item.contractor || ''} onChange={e => updateWorkOrder(item.id,{contractor:e.target.value})}/></label>
+                      <section className="workOrderSection"><h2>逋ｺ豕ｨ</h2><div className="workOrderFormGrid">
+                        <label><span>逋ｺ豕ｨ迥ｶ諷・/span><select value={item.orderStatus || '譛ｪ逋ｺ豕ｨ'} onChange={e => updateWorkOrder(item.id,{orderStatus:e.target.value})}><option>譛ｪ逋ｺ豕ｨ</option><option>逋ｺ豕ｨ貅門ｙ</option><option>逋ｺ豕ｨ貂医∩</option><option>譁ｽ蟾･荳ｭ</option></select></label>
+                        <label><span>逋ｺ豕ｨ蜈・/span><input value={item.contractor || ''} onChange={e => updateWorkOrder(item.id,{contractor:e.target.value})}/></label>
                       </div></section>
 
-                      <section className="workOrderSection"><h2>工程</h2><div className="workOrderFormGrid">
-                        <label><span>着工予定</span><input type="date" value={item.startDate || ''} onChange={e => updateWorkOrder(item.id,{startDate:e.target.value})}/></label>
-                        <label><span>完了予定</span><input type="date" value={item.completionDueDate || ''} onChange={e => updateWorkOrder(item.id,{completionDueDate:e.target.value})}/></label>
-                        <label><span>完了日</span><input type="date" value={item.completedDate || ''} onChange={e => updateWorkOrder(item.id,{completedDate:e.target.value})}/></label>
+                      <section className="workOrderSection"><h2>蟾･遞・/h2><div className="workOrderFormGrid">
+                        <label><span>逹蟾･莠亥ｮ・/span><input type="date" value={item.startDate || ''} onChange={e => updateWorkOrder(item.id,{startDate:e.target.value})}/></label>
+                        <label><span>螳御ｺ・ｺ亥ｮ・/span><input type="date" value={item.completionDueDate || ''} onChange={e => updateWorkOrder(item.id,{completionDueDate:e.target.value})}/></label>
+                        <label><span>螳御ｺ・律</span><input type="date" value={item.completedDate || ''} onChange={e => updateWorkOrder(item.id,{completedDate:e.target.value})}/></label>
                       </div></section>
 
-                      <section className="workOrderSection"><h2>原価・利益</h2><div className="workOrderFormGrid">
-                        <label><span>業者支払</span><input type="number" min="0" value={item.contractorCost || 0} onChange={e => updateWorkOrder(item.id,{contractorCost:Number(e.target.value)||0})}/></label>
-                        <label><span>資材費</span><input type="number" min="0" value={item.materialCost || 0} onChange={e => updateWorkOrder(item.id,{materialCost:Number(e.target.value)||0})}/></label>
-                        <label><span>その他経費</span><input type="number" min="0" value={item.otherCost || 0} onChange={e => updateWorkOrder(item.id,{otherCost:Number(e.target.value)||0})}/></label>
-                      </div><div className="workOrderMoneyGrid"><div><span>売上</span><strong>¥{item.estimateAmount.toLocaleString()}</strong></div><div><span>原価</span><strong>¥{item.costTotal.toLocaleString()}</strong></div><div><span>利益</span><strong>¥{item.profit.toLocaleString()}</strong></div><div><span>利益率</span><strong>{item.profitRate}%</strong></div></div></section>
+                      <section className="workOrderSection"><h2>蜴滉ｾ｡繝ｻ蛻ｩ逶・/h2><div className="workOrderFormGrid">
+                        <label><span>讌ｭ閠・髪謇・/span><input type="number" min="0" value={item.contractorCost || 0} onChange={e => updateWorkOrder(item.id,{contractorCost:Number(e.target.value)||0})}/></label>
+                        <label><span>雉・攝雋ｻ</span><input type="number" min="0" value={item.materialCost || 0} onChange={e => updateWorkOrder(item.id,{materialCost:Number(e.target.value)||0})}/></label>
+                        <label><span>縺昴・莉也ｵ瑚ｲｻ</span><input type="number" min="0" value={item.otherCost || 0} onChange={e => updateWorkOrder(item.id,{otherCost:Number(e.target.value)||0})}/></label>
+                      </div><div className="workOrderMoneyGrid"><div><span>螢ｲ荳・/span><strong>ﾂ･{item.estimateAmount.toLocaleString()}</strong></div><div><span>蜴滉ｾ｡</span><strong>ﾂ･{item.costTotal.toLocaleString()}</strong></div><div><span>蛻ｩ逶・/span><strong>ﾂ･{item.profit.toLocaleString()}</strong></div><div><span>蛻ｩ逶顔紫</span><strong>{item.profitRate}%</strong></div></div></section>
 
-                      <section className="workOrderSection"><h2>請求</h2><div className="workOrderFormGrid"><label><span>請求状態</span><select value={item.billingStatus || '未請求'} onChange={e => updateWorkOrder(item.id,{billingStatus:e.target.value})}><option>未請求</option><option>請求準備</option><option>請求済</option></select></label></div></section>
+                      <section className="workOrderSection"><h2>隲区ｱ・/h2><div className="workOrderFormGrid"><label><span>隲区ｱら憾諷・/span><select value={item.billingStatus || '譛ｪ隲区ｱ・} onChange={e => updateWorkOrder(item.id,{billingStatus:e.target.value})}><option>譛ｪ隲区ｱ・/option><option>隲区ｱよｺ門ｙ</option><option>隲区ｱよｸ・/option></select></label></div></section>
                     </div>
                   </section>
                 })()}
               </section>
             ) : showResidentCases ? (
-              <section className="residentCasesHome" aria-label="入居中案件">
+              <section className="residentCasesHome" aria-label="蜈･螻・ｸｭ譯井ｻｶ">
                 {/* M-CROSS_RESIDENT_CASES_STEP3 */}
                 <div className="residentCasesTopbar">
-                  <button className="back" type="button" onClick={() => setShowResidentCases(false)}>← 戻る</button>
+                  <button className="back" type="button" onClick={() => setShowResidentCases(false)}>竊・謌ｻ繧・/button>
                   <div className="residentImportActions">
-                    <button className="primary residentNewCaseButton" type="button" onClick={() => { setResidentCaseFormError(''); setShowResidentCaseForm(true) }}>＋ 新規案件</button>
-                    <button className="secondaryButton residentImportButton" type="button" onClick={() => residentExcelInputRef.current?.click()}>📥 Excelから取り込む</button>
+                    <button className="primary residentNewCaseButton" type="button" onClick={() => { setResidentCaseFormError(''); setShowResidentCaseForm(true) }}>・・譁ｰ隕乗｡井ｻｶ</button>
+                    <button className="secondaryButton residentImportButton" type="button" onClick={() => residentExcelInputRef.current?.click()}>踏 Excel縺九ｉ蜿悶ｊ霎ｼ繧</button>
                     <button className="secondaryButton residentQuickPasteButton" type="button" onClick={() => {
                       setResidentQuickPasteText(''); setResidentQuickPreview(null); setResidentQuickError(''); setShowResidentQuickPaste(true)
-                    }}>📋 依頼文から簡単入力</button>
+                    }}>搭 萓晞ｼ譁・°繧臥ｰ｡蜊伜・蜉・/button>
                     
                     <input ref={residentExcelInputRef} type="file" accept=".xlsx,.xlsm" hidden onChange={event => importResidentCasesExcel(event.target.files?.[0])} />
                   </div>
                 </div>
                 <p className="eyebrow">M-Cross WORK</p>
-                <h1>入居中案件</h1>
-                <p className="subtitle">次に対応する案件を先に確認できる一覧です。</p>
+                <h1>蜈･螻・ｸｭ譯井ｻｶ</h1>
+                <p className="subtitle">谺｡縺ｫ蟇ｾ蠢懊☆繧区｡井ｻｶ繧貞・縺ｫ遒ｺ隱阪〒縺阪ｋ荳隕ｧ縺ｧ縺吶・/p>
                 {showResidentQuickPaste && (
                   <section className="card residentQuickPasteCard">
-                    <div className="residentCaseFormTitle"><div><p className="eyebrow">QUICK INPUT</p><h2>依頼文から簡単入力</h2></div><button className="back" type="button" onClick={() => setShowResidentQuickPaste(false)}>閉じる</button></div>
-                    <p className="subtitle">PDFやメールの必要な文章をコピーして貼り付け、ローカルAIで整理します。</p>
-                    <textarea rows="11" value={residentQuickPasteText} onChange={e => { setResidentQuickPasteText(e.target.value); setResidentQuickPreview(null); setResidentQuickError('') }} placeholder="依頼文を貼り付け" />
+                    <div className="residentCaseFormTitle"><div><p className="eyebrow">QUICK INPUT</p><h2>萓晞ｼ譁・°繧臥ｰ｡蜊伜・蜉・/h2></div><button className="back" type="button" onClick={() => setShowResidentQuickPaste(false)}>髢峨§繧・/button></div>
+                    <p className="subtitle">PDF繧・Γ繝ｼ繝ｫ縺ｮ蠢・ｦ√↑譁・ｫ繧偵さ繝斐・縺励※雋ｼ繧贋ｻ倥￠縲√Ο繝ｼ繧ｫ繝ｫAI縺ｧ謨ｴ逅・＠縺ｾ縺吶・/p>
+                    <textarea rows="11" value={residentQuickPasteText} onChange={e => { setResidentQuickPasteText(e.target.value); setResidentQuickPreview(null); setResidentQuickError('') }} placeholder="萓晞ｼ譁・ｒ雋ｼ繧贋ｻ倥￠" />
                     <button className="secondaryButton" type="button" onClick={() => {
                       const parsed = parseResidentRequestText(residentQuickPasteText, mergedPropertyMaster)
                       setResidentQuickPreview(parsed)
                       setResidentQuickCompanyId(mergedPropertyMaster.companies.find(companyItem => companyItem.name === parsed.company)?.id || '')
-                      setResidentQuickError(!parsed.propertyName || !parsed.requestDetails ? '読み取れない項目があります。確認して修正してください。' : '')
-                    }}>内容を読み取る</button>
+                      setResidentQuickError(!parsed.propertyName || !parsed.requestDetails ? '隱ｭ縺ｿ蜿悶ｌ縺ｪ縺・・岼縺後≠繧翫∪縺吶ら｢ｺ隱阪＠縺ｦ菫ｮ豁｣縺励※縺上□縺輔＞縲・ : '')
+                    }}>蜀・ｮｹ繧定ｪｭ縺ｿ蜿悶ｋ</button>
                     <button className="primary residentAiReadButton" type="button" disabled={residentAiLoading || !residentQuickPasteText.trim()} onClick={analyzeResidentRequestWithOllama}>
-                      {residentAiLoading ? '🤖 AI解析中…' : '🤖 ローカルAIで読み取る'}
+                      {residentAiLoading ? '､・AI隗｣譫蝉ｸｭ窶ｦ' : '､・繝ｭ繝ｼ繧ｫ繝ｫAI縺ｧ隱ｭ縺ｿ蜿悶ｋ'}
                     </button>
                     {residentAiStatus && <p className="residentAiStatus" role="status">{residentAiStatus}</p>}
                     {residentQuickError && <p className="saveStatus">{residentQuickError}</p>}
                     {residentQuickPreview && <div className="residentQuickPreview">
                       <div className="residentSourceCompare">
-                        {!residentPdfSourceText && residentQuickPasteText && <details open className="residentSourceBox"><summary>貼り付けた元文章</summary><pre>{residentQuickPasteText}</pre></details>}
+                        {!residentPdfSourceText && residentQuickPasteText && <details open className="residentSourceBox"><summary>雋ｼ繧贋ｻ倥￠縺溷・譁・ｫ</summary><pre>{residentQuickPasteText}</pre></details>}
                       </div>
-                      <h3>登録前の確認</h3>
+                      <h3>逋ｻ骭ｲ蜑阪・遒ｺ隱・/h3>
                       <div className="residentCaseFormGrid">
-                        <label><span>管理会社</span><select value={residentQuickCompanyId || mergedPropertyMaster.companies.find(companyItem => companyItem.name === residentQuickPreview.company)?.id || ''} onChange={e => {
+                        <label><span>邂｡逅・ｼ夂､ｾ</span><select value={residentQuickCompanyId || mergedPropertyMaster.companies.find(companyItem => companyItem.name === residentQuickPreview.company)?.id || ''} onChange={e => {
                           const companyId = e.target.value
                           const selectedCompany = mergedPropertyMaster.companies.find(companyItem => companyItem.id === companyId)
                           setResidentQuickCompanyId(companyId)
                           setResidentQuickPreview(v => ({ ...v, company: selectedCompany?.name || '', propertyName: '', address: '' }))
-                        }}><option value="">管理会社を選択</option>{mergedPropertyMaster.companies.map(companyItem => <option key={companyItem.id} value={companyItem.id}>{companyItem.name}</option>)}</select></label>
-                        <label><span>物件名 *</span><select value={residentQuickPreview.propertyName || ''} onChange={e => {
+                        }}><option value="">邂｡逅・ｼ夂､ｾ繧帝∈謚・/option>{mergedPropertyMaster.companies.map(companyItem => <option key={companyItem.id} value={companyItem.id}>{companyItem.name}</option>)}</select></label>
+                        <label><span>迚ｩ莉ｶ蜷・*</span><select value={residentQuickPreview.propertyName || ''} onChange={e => {
                           const propertyName = e.target.value
                           const selectedCompanyId = residentQuickCompanyId || mergedPropertyMaster.companies.find(companyItem => companyItem.name === residentQuickPreview.company)?.id || ''
                           const selectedProperty = mergedPropertyMaster.properties.find(propertyItem => propertyItem.companyId === selectedCompanyId && propertyItem.name === propertyName)
                           setResidentQuickPreview(v => ({ ...v, propertyName, address: selectedProperty?.address || v.address || '' }))
-                        }}><option value="">物件を選択</option>{mergedPropertyMaster.properties.filter(propertyItem => {
+                        }}><option value="">迚ｩ莉ｶ繧帝∈謚・/option>{mergedPropertyMaster.properties.filter(propertyItem => {
                           const selectedCompanyId = residentQuickCompanyId || mergedPropertyMaster.companies.find(companyItem => companyItem.name === residentQuickPreview.company)?.id || ''
                           return !selectedCompanyId || propertyItem.companyId === selectedCompanyId
                         }).map(propertyItem => <option key={propertyItem.id} value={propertyItem.name}>{propertyItem.name}</option>)}</select></label>
-                        <label><span>号室</span><input value={residentQuickPreview.unit || ''} onChange={e => setResidentQuickPreview(v => ({...v, unit:e.target.value}))} /></label>
-                        <label><span>連絡先</span><input value={residentQuickPreview.residentContact || ''} onChange={e => setResidentQuickPreview(v => ({...v, residentContact:e.target.value}))} /></label>
-                        <label className="wide"><span>住所</span><input value={residentQuickPreview.address || ''} onChange={e => setResidentQuickPreview(v => ({...v, address:e.target.value}))} /></label>
-                        <label className="wide"><span>依頼内容 *</span><textarea rows="4" value={residentQuickPreview.requestDetails || ''} onChange={e => setResidentQuickPreview(v => ({...v, requestDetails:e.target.value}))} /></label>
-                        <label className="wide"><span>備考</span><textarea rows="3" value={residentQuickPreview.note || ''} onChange={e => setResidentQuickPreview(v => ({...v, note:e.target.value}))} /></label>
-                        <label><span>次にやること</span><input value={residentQuickPreview.nextAction || ''} onChange={e => setResidentQuickPreview(v => ({...v, nextAction:e.target.value}))} /></label>
-                        <label className="wide"><span>注意事項</span><textarea rows="2" value={residentQuickPreview.caution || ''} onChange={e => setResidentQuickPreview(v => ({...v, caution:e.target.value}))} /></label>
+                        <label><span>蜿ｷ螳､</span><input value={residentQuickPreview.unit || ''} onChange={e => setResidentQuickPreview(v => ({...v, unit:e.target.value}))} /></label>
+                        <label><span>騾｣邨｡蜈・/span><input value={residentQuickPreview.residentContact || ''} onChange={e => setResidentQuickPreview(v => ({...v, residentContact:e.target.value}))} /></label>
+                        <label className="wide"><span>菴乗園</span><input value={residentQuickPreview.address || ''} onChange={e => setResidentQuickPreview(v => ({...v, address:e.target.value}))} /></label>
+                        <label className="wide"><span>萓晞ｼ蜀・ｮｹ *</span><textarea rows="4" value={residentQuickPreview.requestDetails || ''} onChange={e => setResidentQuickPreview(v => ({...v, requestDetails:e.target.value}))} /></label>
+                        <label className="wide"><span>蛯呵・/span><textarea rows="3" value={residentQuickPreview.note || ''} onChange={e => setResidentQuickPreview(v => ({...v, note:e.target.value}))} /></label>
+                        <label><span>谺｡縺ｫ繧・ｋ縺薙→</span><input value={residentQuickPreview.nextAction || ''} onChange={e => setResidentQuickPreview(v => ({...v, nextAction:e.target.value}))} /></label>
+                        <label className="wide"><span>豕ｨ諢丈ｺ矩・/span><textarea rows="2" value={residentQuickPreview.caution || ''} onChange={e => setResidentQuickPreview(v => ({...v, caution:e.target.value}))} /></label>
                       </div>
                       <button className="primary" type="button" onClick={() => {
                         const propertyName = String(residentQuickPreview.propertyName || '').trim()
                         const requestDetails = String(residentQuickPreview.requestDetails || '').trim()
-                        if (!propertyName || !requestDetails) { setResidentQuickError('物件名と依頼内容を確認してください。'); return }
+                        if (!propertyName || !requestDetails) { setResidentQuickError('迚ｩ莉ｶ蜷阪→萓晞ｼ蜀・ｮｹ繧堤｢ｺ隱阪＠縺ｦ縺上□縺輔＞縲・); return }
                         const duplicate = findResidentDuplicate(residentCases, { ...residentQuickPreview, propertyName, requestDetails })
                         if (duplicate) {
                           const existing = duplicate.item
-                          const similarText = duplicate.score >= 0.35 ? '\n依頼内容も似ています。' : '\n同じ部屋の未完了案件があります。'
+                          const similarText = duplicate.score >= 0.35 ? '\n萓晞ｼ蜀・ｮｹ繧ゆｼｼ縺ｦ縺・∪縺吶・ : '\n蜷後§驛ｨ螻九・譛ｪ螳御ｺ・｡井ｻｶ縺後≠繧翫∪縺吶・
                           const proceed = window.confirm(
-                            '⚠ 重複の可能性があります\n\n'
-                            + (existing.propertyName || '') + ' ' + (existing.unit || '') + '号室\n'
-                            + '進捗：' + (existing.status || '未設定') + '\n'
-                            + '依頼：' + (existing.requestDetails || '未入力')
+                            '笞 驥崎､・・蜿ｯ閭ｽ諤ｧ縺後≠繧翫∪縺兔n\n'
+                            + (existing.propertyName || '') + ' ' + (existing.unit || '') + '蜿ｷ螳､\n'
+                            + '騾ｲ謐暦ｼ・ + (existing.status || '譛ｪ險ｭ螳・) + '\n'
+                            + '萓晞ｼ・・ + (existing.requestDetails || '譛ｪ蜈･蜉・)
                             + similarText
-                            + '\n\nそれでも新規登録しますか？'
+                            + '\n\n縺昴ｌ縺ｧ繧よ眠隕冗匳骭ｲ縺励∪縺吶°・・
                           )
                           if (!proceed) { setSelectedResidentCaseId(existing.id); setShowResidentQuickPaste(false); return }
                         }
                         const now = new Date().toISOString()
-                        const item = normalizeResidentCase({...residentQuickPreview, id:createResidentCaseId(), propertyName, requestDetails, history:[{id:createResidentCaseId(),at:now,status:'簡単入力',memo:'依頼文から登録'}], createdAt:now, updatedAt:now, lastActionAt:now})
+                        const item = normalizeResidentCase({...residentQuickPreview, id:createResidentCaseId(), propertyName, requestDetails, history:[{id:createResidentCaseId(),at:now,status:'邁｡蜊伜・蜉・,memo:'萓晞ｼ譁・°繧臥匳骭ｲ'}], createdAt:now, updatedAt:now, lastActionAt:now})
                         setResidentCases(prev => [item, ...prev]); setResidentQuickPasteText(''); setResidentQuickPreview(null); setResidentQuickError(''); setShowResidentQuickPaste(false)
-                      }}>この内容で案件登録</button>
+                      }}>縺薙・蜀・ｮｹ縺ｧ譯井ｻｶ逋ｻ骭ｲ</button>
                     </div>}
                   </section>
                 )}
@@ -7661,8 +7660,8 @@ return savedEntries
                 {showResidentCaseForm && (
                   <section className="card residentCaseFormCard">
                     <div className="residentCaseFormTitle">
-                      <div><p className="eyebrow">NEW CASE</p><h2>新規案件</h2></div>
-                      <button type="button" className="back" onClick={() => setShowResidentCaseForm(false)}>閉じる</button>
+                      <div><p className="eyebrow">NEW CASE</p><h2>譁ｰ隕乗｡井ｻｶ</h2></div>
+                      <button type="button" className="back" onClick={() => setShowResidentCaseForm(false)}>髢峨§繧・/button>
                     </div>
                     <form onSubmit={event => {
                       event.preventDefault()
@@ -7670,21 +7669,21 @@ return savedEntries
                       const unitValue = residentCaseForm.unit.trim()
                       const details = residentCaseForm.requestDetails.trim()
                       if (!propertyName || !unitValue || !details) {
-                        setResidentCaseFormError('物件名・号室・依頼内容を入力してください')
+                        setResidentCaseFormError('迚ｩ莉ｶ蜷阪・蜿ｷ螳､繝ｻ萓晞ｼ蜀・ｮｹ繧貞・蜉帙＠縺ｦ縺上□縺輔＞')
                         return
                       }
                       const candidateCase = { ...residentCaseForm, propertyName, unit: unitValue, requestDetails: details }
                       const duplicate = findResidentDuplicate(residentCases, candidateCase)
                       if (duplicate) {
                         const existing = duplicate.item
-                        const similarText = duplicate.score >= 0.35 ? '\n依頼内容も似ています。' : '\n同じ部屋の未完了案件があります。'
+                        const similarText = duplicate.score >= 0.35 ? '\n萓晞ｼ蜀・ｮｹ繧ゆｼｼ縺ｦ縺・∪縺吶・ : '\n蜷後§驛ｨ螻九・譛ｪ螳御ｺ・｡井ｻｶ縺後≠繧翫∪縺吶・
                         const proceed = window.confirm(
-                          '⚠ 重複の可能性があります\n\n'
-                          + (existing.propertyName || '') + ' ' + (existing.unit || '') + '号室\n'
-                          + '進捗：' + (existing.status || '未設定') + '\n'
-                          + '依頼：' + (existing.requestDetails || '未入力')
+                          '笞 驥崎､・・蜿ｯ閭ｽ諤ｧ縺後≠繧翫∪縺兔n\n'
+                          + (existing.propertyName || '') + ' ' + (existing.unit || '') + '蜿ｷ螳､\n'
+                          + '騾ｲ謐暦ｼ・ + (existing.status || '譛ｪ險ｭ螳・) + '\n'
+                          + '萓晞ｼ・・ + (existing.requestDetails || '譛ｪ蜈･蜉・)
                           + similarText
-                          + '\n\nそれでも新規登録しますか？'
+                          + '\n\n縺昴ｌ縺ｧ繧よ眠隕冗匳骭ｲ縺励∪縺吶°・・
                         )
                         if (!proceed) { setSelectedResidentCaseId(existing.id); setShowResidentCaseForm(false); return }
                       }
@@ -7695,7 +7694,7 @@ return savedEntries
                         unit: unitValue,
                         requestDetails: details,
                         id: createResidentCaseId(),
-                        history: [{ id: createResidentCaseId(), at: now, status: residentCaseForm.status || '未連絡', memo: '案件登録' }],
+                        history: [{ id: createResidentCaseId(), at: now, status: residentCaseForm.status || '譛ｪ騾｣邨｡', memo: '譯井ｻｶ逋ｻ骭ｲ' }],
                         createdAt: now,
                         updatedAt: now,
                       })
@@ -7703,7 +7702,7 @@ return savedEntries
                       setResidentCaseForm({
                         requestDate: new Date().toLocaleDateString('sv-SE'),
                         company: '', propertyName: '', unit: '', address: '', residentContact: '',
-                        requestDetails: '', note: '', status: '未連絡', nextAction: '入居者へ連絡',
+                        requestDetails: '', note: '', status: '譛ｪ騾｣邨｡', nextAction: '蜈･螻・・∈騾｣邨｡',
                         actionDueDate: '', caution: '',
                       })
                       setResidentCaseCompanyId('')
@@ -7711,8 +7710,8 @@ return savedEntries
                       setShowResidentCaseForm(false)
                     }}>
                       <div className="residentCaseFormGrid">
-                        <label><span>依頼日</span><input type="date" value={residentCaseForm.requestDate} onChange={e => setResidentCaseForm(v => ({ ...v, requestDate: e.target.value }))} /></label>
-                        <label><span>管理会社</span><select value={residentCaseCompanyId} onChange={e => {
+                        <label><span>萓晞ｼ譌･</span><input type="date" value={residentCaseForm.requestDate} onChange={e => setResidentCaseForm(v => ({ ...v, requestDate: e.target.value }))} /></label>
+                        <label><span>邂｡逅・ｼ夂､ｾ</span><select value={residentCaseCompanyId} onChange={e => {
                           const companyId = e.target.value
                           const selectedCompany = mergedPropertyMaster.companies.find(item => item.id === companyId)
                           setResidentCaseCompanyId(companyId)
@@ -7723,10 +7722,10 @@ return savedEntries
                             address: '',
                           }))
                         }}>
-                          <option value="">管理会社を選択</option>
+                          <option value="">邂｡逅・ｼ夂､ｾ繧帝∈謚・/option>
                           {mergedPropertyMaster.companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
                         </select></label>
-                        <label className="wide"><span>物件名 *</span><select value={residentCaseForm.propertyName} disabled={!residentCaseCompanyId} onChange={e => {
+                        <label className="wide"><span>迚ｩ莉ｶ蜷・*</span><select value={residentCaseForm.propertyName} disabled={!residentCaseCompanyId} onChange={e => {
                           const propertyName = e.target.value
                           const selectedProperty = residentCaseProperties.find(item => item.name === propertyName)
                           setResidentCaseForm(v => ({
@@ -7735,38 +7734,38 @@ return savedEntries
                             address: selectedProperty?.address || '',
                           }))
                         }}>
-                          <option value="">{residentCaseCompanyId ? '物件を選択' : '先に管理会社を選択'}</option>
+                          <option value="">{residentCaseCompanyId ? '迚ｩ莉ｶ繧帝∈謚・ : '蜈医↓邂｡逅・ｼ夂､ｾ繧帝∈謚・}</option>
                           {residentCaseProperties.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}
                         </select></label>
                         <div className="residentMasterShortcut wide">
-                          <span>管理会社・物件が見つからない場合</span>
+                          <span>邂｡逅・ｼ夂､ｾ繝ｻ迚ｩ莉ｶ縺瑚ｦ九▽縺九ｉ縺ｪ縺・ｴ蜷・/span>
                           <button type="button" className="secondaryButton" onClick={() => {
                             setShowResidentCaseForm(false)
                             setShowResidentCases(false)
                             setSettingsPage('management')
                             setSettingsOpen(true)
-                          }}>管理会社・物件管理を開く</button>
+                          }}>邂｡逅・ｼ夂､ｾ繝ｻ迚ｩ莉ｶ邂｡逅・ｒ髢九￥</button>
                         </div>
-                        <label><span>号室 *</span><input type="text" value={residentCaseForm.unit} onChange={e => setResidentCaseForm(v => ({ ...v, unit: e.target.value }))} placeholder="101" /></label>
-                        <label><span>入居者連絡先</span><input type="tel" inputMode="tel" value={residentCaseForm.residentContact} onChange={e => setResidentCaseForm(v => ({ ...v, residentContact: e.target.value }))} placeholder="電話番号" /></label>
-                        <label className="wide"><span>住所（物件マスターから自動入力）</span><input type="text" readOnly value={residentCaseForm.address} placeholder="物件を選択すると表示されます" /></label>
-                        <label className="wide"><span>依頼内容 *</span><textarea rows="3" value={residentCaseForm.requestDetails} onChange={e => setResidentCaseForm(v => ({ ...v, requestDetails: e.target.value }))} placeholder="例：台所水栓から漏水" /></label>
-                        <label className="wide"><span>備考</span><textarea rows="2" value={residentCaseForm.note} onChange={e => setResidentCaseForm(v => ({ ...v, note: e.target.value }))} /></label>
-                        <label><span>進捗</span><select value={residentCaseForm.status} onChange={e => setResidentCaseForm(v => ({ ...v, status: e.target.value }))}>{residentCaseStatuses.map(status => <option key={status} value={status}>{status}</option>)}</select></label>
-                        <label><span>次にやること</span><input type="text" value={residentCaseForm.nextAction} onChange={e => setResidentCaseForm(v => ({ ...v, nextAction: e.target.value }))} /></label>
-                        <label><span>対応期限</span><input type="date" value={residentCaseForm.actionDueDate} onChange={e => setResidentCaseForm(v => ({ ...v, actionDueDate: e.target.value }))} /></label>
-                        <label className="wide"><span>注意事項</span><textarea rows="2" value={residentCaseForm.caution} onChange={e => setResidentCaseForm(v => ({ ...v, caution: e.target.value }))} /></label>
+                        <label><span>蜿ｷ螳､ *</span><input type="text" value={residentCaseForm.unit} onChange={e => setResidentCaseForm(v => ({ ...v, unit: e.target.value }))} placeholder="101" /></label>
+                        <label><span>蜈･螻・・｣邨｡蜈・/span><input type="tel" inputMode="tel" value={residentCaseForm.residentContact} onChange={e => setResidentCaseForm(v => ({ ...v, residentContact: e.target.value }))} placeholder="髮ｻ隧ｱ逡ｪ蜿ｷ" /></label>
+                        <label className="wide"><span>菴乗園・育黄莉ｶ繝槭せ繧ｿ繝ｼ縺九ｉ閾ｪ蜍募・蜉幢ｼ・/span><input type="text" readOnly value={residentCaseForm.address} placeholder="迚ｩ莉ｶ繧帝∈謚槭☆繧九→陦ｨ遉ｺ縺輔ｌ縺ｾ縺・ /></label>
+                        <label className="wide"><span>萓晞ｼ蜀・ｮｹ *</span><textarea rows="3" value={residentCaseForm.requestDetails} onChange={e => setResidentCaseForm(v => ({ ...v, requestDetails: e.target.value }))} placeholder="萓具ｼ壼床謇豌ｴ譬薙°繧画ｼ乗ｰｴ" /></label>
+                        <label className="wide"><span>蛯呵・/span><textarea rows="2" value={residentCaseForm.note} onChange={e => setResidentCaseForm(v => ({ ...v, note: e.target.value }))} /></label>
+                        <label><span>騾ｲ謐・/span><select value={residentCaseForm.status} onChange={e => setResidentCaseForm(v => ({ ...v, status: e.target.value }))}>{residentCaseStatuses.map(status => <option key={status} value={status}>{status}</option>)}</select></label>
+                        <label><span>谺｡縺ｫ繧・ｋ縺薙→</span><input type="text" value={residentCaseForm.nextAction} onChange={e => setResidentCaseForm(v => ({ ...v, nextAction: e.target.value }))} /></label>
+                        <label><span>蟇ｾ蠢懈悄髯・/span><input type="date" value={residentCaseForm.actionDueDate} onChange={e => setResidentCaseForm(v => ({ ...v, actionDueDate: e.target.value }))} /></label>
+                        <label className="wide"><span>豕ｨ諢丈ｺ矩・/span><textarea rows="2" value={residentCaseForm.caution} onChange={e => setResidentCaseForm(v => ({ ...v, caution: e.target.value }))} /></label>
                       </div>
                       {residentCaseFormError && <p className="saveStatus" role="alert">{residentCaseFormError}</p>}
-                      <button className="primary" type="submit">この案件を登録</button>
+                      <button className="primary" type="submit">縺薙・譯井ｻｶ繧堤匳骭ｲ</button>
                     </form>
                   </section>
                 )}
 
                 {(() => {
                   const todayKey = new Date().toLocaleDateString('sv-SE')
-                  const holdCases = residentCases.filter(item => item.isOnHold || item.status === '保留')
-                  const activeCases = residentCases.filter(item => !item.completed && item.status !== '完了' && !item.isOnHold && item.status !== '保留')
+                  const holdCases = residentCases.filter(item => item.isOnHold || item.status === '菫晉蕗')
+                  const activeCases = residentCases.filter(item => !item.completed && item.status !== '螳御ｺ・ && !item.isOnHold && item.status !== '菫晉蕗')
                   const overdueCases = activeCases.filter(item => item.actionDueDate && item.actionDueDate < todayKey)
                   const todayActionCases = activeCases.filter(item => item.actionDueDate === todayKey)
                   const todayVisitCases = activeCases.filter(item =>
@@ -7787,12 +7786,12 @@ return savedEntries
                     ...noDueCases.map(item => item.id),
                   ])
                   const attentionCases = activeCases.filter(item => attentionCaseIds.has(item.id))
-                  const contactCases = activeCases.filter(item => ['未連絡', '不通', '不通（メール送信）', '発注（未連絡）', '発注（不通）'].includes(item.status))
-                  const orderCases = activeCases.filter(item => item.status === '見積提出済（発注待ち）')
-                  const inProgressCases = activeCases.filter(item => item.status === '進行中')
-                  const unreportedCases = activeCases.filter(item => item.status === '完了（未報告）')
-                  const completedCases = residentCases.filter(item => item.completed || item.status === '完了')
-                  const normalizeResidentSearch = value => String(value || '').toLocaleLowerCase('ja').replace(/[\s　]+/g, '')
+                  const contactCases = activeCases.filter(item => ['譛ｪ騾｣邨｡', '荳埼・, '荳埼夲ｼ医Γ繝ｼ繝ｫ騾∽ｿ｡・・, '逋ｺ豕ｨ・域悴騾｣邨｡・・, '逋ｺ豕ｨ・井ｸ埼夲ｼ・].includes(item.status))
+                  const orderCases = activeCases.filter(item => item.status === '隕狗ｩ肴署蜃ｺ貂茨ｼ育匱豕ｨ蠕・■・・)
+                  const inProgressCases = activeCases.filter(item => item.status === '騾ｲ陦御ｸｭ')
+                  const unreportedCases = activeCases.filter(item => item.status === '螳御ｺ・ｼ域悴蝣ｱ蜻奇ｼ・)
+                  const completedCases = residentCases.filter(item => item.completed || item.status === '螳御ｺ・)
+                  const normalizeResidentSearch = value => String(value || '').toLocaleLowerCase('ja').replace(/[\s縲]+/g, '')
                   const searchToken = normalizeResidentSearch(residentCaseSearch)
                   const sourceCases = residentCaseFilter === 'completed'
                     ? completedCases
@@ -7802,9 +7801,9 @@ return savedEntries
                   const filteredResidentCases = sourceCases.filter(item => {
                     if (residentCaseFilter === 'contact' && !contactCases.some(caseItem => caseItem.id === item.id)) return false
                     if (residentCaseFilter === 'visit' && !(item.siteVisitAt || item.workVisitAt)) return false
-                    if (residentCaseFilter === 'order' && item.status !== '見積提出済（発注待ち）') return false
-                    if (residentCaseFilter === 'inProgress' && item.status !== '進行中') return false
-                    if (residentCaseFilter === 'unreported' && item.status !== '完了（未報告）') return false
+                    if (residentCaseFilter === 'order' && item.status !== '隕狗ｩ肴署蜃ｺ貂茨ｼ育匱豕ｨ蠕・■・・) return false
+                    if (residentCaseFilter === 'inProgress' && item.status !== '騾ｲ陦御ｸｭ') return false
+                    if (residentCaseFilter === 'unreported' && item.status !== '螳御ｺ・ｼ域悴蝣ｱ蜻奇ｼ・) return false
                     if (residentCaseFilter === 'overdue' && !overdueCases.some(caseItem => caseItem.id === item.id)) return false
                     if (residentCaseFilter === 'today' && !todayActionCases.some(caseItem => caseItem.id === item.id)) return false
                     if (residentCaseFilter === 'nodue' && !noDueCases.some(caseItem => caseItem.id === item.id)) return false
@@ -7829,125 +7828,125 @@ return savedEntries
 
                   return <>
                     <div className="residentOverallCounts residentOverallCountsFour">
-                      <button type="button" className={residentCaseFilter === 'all' ? 'active' : ''} onClick={() => { setResidentCaseFilter('all'); setResidentCaseVisibleCount(10) }}><span>対応中</span><strong>{activeCases.length}</strong></button>
-                      <button type="button" className={residentCaseFilter === 'hold' ? 'active' : ''} onClick={() => { setResidentCaseFilter('hold'); setResidentCaseVisibleCount(10) }}><span>保留</span><strong>{holdCases.length}</strong></button>
-                      <button type="button" className={residentCaseFilter === 'completed' ? 'active' : ''} onClick={() => { setResidentCaseFilter('completed'); setResidentCaseVisibleCount(10) }}><span>完了</span><strong>{completedCases.length}</strong></button>
-                      <div><span>全案件</span><strong>{residentCases.length}</strong></div>
+                      <button type="button" className={residentCaseFilter === 'all' ? 'active' : ''} onClick={() => { setResidentCaseFilter('all'); setResidentCaseVisibleCount(10) }}><span>蟇ｾ蠢應ｸｭ</span><strong>{activeCases.length}</strong></button>
+                      <button type="button" className={residentCaseFilter === 'hold' ? 'active' : ''} onClick={() => { setResidentCaseFilter('hold'); setResidentCaseVisibleCount(10) }}><span>菫晉蕗</span><strong>{holdCases.length}</strong></button>
+                      <button type="button" className={residentCaseFilter === 'completed' ? 'active' : ''} onClick={() => { setResidentCaseFilter('completed'); setResidentCaseVisibleCount(10) }}><span>螳御ｺ・/span><strong>{completedCases.length}</strong></button>
+                      <div><span>蜈ｨ譯井ｻｶ</span><strong>{residentCases.length}</strong></div>
                     </div>
                     <div className={`residentAttentionBanner${attentionCases.length ? ' hasAttention' : ''}`}>
-                      <div><span>見落としチェック</span><strong>{attentionCases.length ? attentionCases.length + '件 要確認' : '現在なし'}</strong></div>
+                      <div><span>隕玖誠縺ｨ縺励メ繧ｧ繝・け</span><strong>{attentionCases.length ? attentionCases.length + '莉ｶ 隕∫｢ｺ隱・ : '迴ｾ蝨ｨ縺ｪ縺・}</strong></div>
                       <div className="residentAttentionButtons">
-                        {noDueCases.length > 0 && <button type="button" onClick={() => { setResidentCaseFilter('nodue'); setResidentCaseVisibleCount(10) }}>次回対応日なし {noDueCases.length}件</button>}
-                        {staleCases.length > 0 && <button type="button" onClick={() => { setResidentCaseFilter('stale'); setResidentCaseVisibleCount(10) }}>30日以上動きなし {staleCases.length}件</button>}
+                        {noDueCases.length > 0 && <button type="button" onClick={() => { setResidentCaseFilter('nodue'); setResidentCaseVisibleCount(10) }}>谺｡蝗槫ｯｾ蠢懈律縺ｪ縺・{noDueCases.length}莉ｶ</button>}
+                        {staleCases.length > 0 && <button type="button" onClick={() => { setResidentCaseFilter('stale'); setResidentCaseVisibleCount(10) }}>30譌･莉･荳雁虚縺阪↑縺・{staleCases.length}莉ｶ</button>}
                       </div>
                     </div>
-                    <h2 className="residentSectionTitle">要対応</h2>
+                    <h2 className="residentSectionTitle">隕∝ｯｾ蠢・/h2>
                     <div className="residentDashboardGrid">
-                      <button type="button" className={`residentDashboardCard urgent${residentCaseFilter === 'overdue' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('overdue'); setResidentCaseVisibleCount(10) }}><span>期限超過</span><strong>{overdueCases.length}</strong></button>
-                      <button type="button" className={`residentDashboardCard today${residentCaseFilter === 'today' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('today'); setResidentCaseVisibleCount(10) }}><span>今日やる</span><strong>{todayActionCases.length}</strong></button>
-                      <button type="button" className={`residentDashboardCard visit${residentCaseFilter === 'visit' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('visit'); setResidentCaseVisibleCount(10) }}><span>予定あり</span><strong>{activeCases.filter(item => item.siteVisitAt || item.workVisitAt).length}</strong></button>
-                      <button type="button" className={`residentDashboardCard contact${residentCaseFilter === 'contact' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('contact'); setResidentCaseVisibleCount(10) }}><span>未連絡・再連絡</span><strong>{contactCases.length}</strong></button>
-                      <button type="button" className={`residentDashboardCard order${residentCaseFilter === 'order' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('order'); setResidentCaseVisibleCount(10) }}><span>発注待ち</span><strong>{orderCases.length}</strong></button>
-                      <button type="button" className={`residentDashboardCard progress${residentCaseFilter === 'inProgress' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('inProgress'); setResidentCaseVisibleCount(10) }}><span>進行中</span><strong>{inProgressCases.length}</strong></button>
-                      <button type="button" className={`residentDashboardCard report${residentCaseFilter === 'unreported' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('unreported'); setResidentCaseVisibleCount(10) }}><span>完了・未報告</span><strong>{unreportedCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard urgent${residentCaseFilter === 'overdue' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('overdue'); setResidentCaseVisibleCount(10) }}><span>譛滄剞雜・℃</span><strong>{overdueCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard today${residentCaseFilter === 'today' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('today'); setResidentCaseVisibleCount(10) }}><span>莉頑律繧・ｋ</span><strong>{todayActionCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard visit${residentCaseFilter === 'visit' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('visit'); setResidentCaseVisibleCount(10) }}><span>莠亥ｮ壹≠繧・/span><strong>{activeCases.filter(item => item.siteVisitAt || item.workVisitAt).length}</strong></button>
+                      <button type="button" className={`residentDashboardCard contact${residentCaseFilter === 'contact' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('contact'); setResidentCaseVisibleCount(10) }}><span>譛ｪ騾｣邨｡繝ｻ蜀埼｣邨｡</span><strong>{contactCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard order${residentCaseFilter === 'order' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('order'); setResidentCaseVisibleCount(10) }}><span>逋ｺ豕ｨ蠕・■</span><strong>{orderCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard progress${residentCaseFilter === 'inProgress' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('inProgress'); setResidentCaseVisibleCount(10) }}><span>騾ｲ陦御ｸｭ</span><strong>{inProgressCases.length}</strong></button>
+                      <button type="button" className={`residentDashboardCard report${residentCaseFilter === 'unreported' ? ' active' : ''}`} onClick={() => { setResidentCaseFilter('unreported'); setResidentCaseVisibleCount(10) }}><span>螳御ｺ・・譛ｪ蝣ｱ蜻・/span><strong>{unreportedCases.length}</strong></button>
                     </div>
 
                     <div className="residentCasesListHeader">
-                      <h2>案件一覧</h2>
-                      <span>{priorityCases.length}件</span>
+                      <h2>譯井ｻｶ荳隕ｧ</h2>
+                      <span>{priorityCases.length}莉ｶ</span>
                     </div>
                     <div className="residentCaseSearchBar">
-                      <input type="search" value={residentCaseSearch} onChange={event => { setResidentCaseSearch(event.target.value); setResidentCaseVisibleCount(10) }} placeholder="物件名・号室・依頼内容などを検索" />
-                      {(residentCaseSearch || residentCaseFilter !== 'all') && <button type="button" onClick={() => { setResidentCaseSearch(''); setResidentCaseFilter('all'); setResidentCaseVisibleCount(10) }}>解除</button>}
+                      <input type="search" value={residentCaseSearch} onChange={event => { setResidentCaseSearch(event.target.value); setResidentCaseVisibleCount(10) }} placeholder="迚ｩ莉ｶ蜷阪・蜿ｷ螳､繝ｻ萓晞ｼ蜀・ｮｹ縺ｪ縺ｩ繧呈､懃ｴ｢" />
+                      {(residentCaseSearch || residentCaseFilter !== 'all') && <button type="button" onClick={() => { setResidentCaseSearch(''); setResidentCaseFilter('all'); setResidentCaseVisibleCount(10) }}>隗｣髯､</button>}
                     </div>
 
                     {priorityCases.length === 0 ? (
                       <div className="card residentEmptyCard">
-                        <strong>現在の入居中案件はありません</strong>
-                        <span>「＋ 新規案件」から登録できます。</span>
+                        <strong>迴ｾ蝨ｨ縺ｮ蜈･螻・ｸｭ譯井ｻｶ縺ｯ縺ゅｊ縺ｾ縺帙ｓ</strong>
+                        <span>縲鯉ｼ・譁ｰ隕乗｡井ｻｶ縲阪°繧臥匳骭ｲ縺ｧ縺阪∪縺吶・/span>
                       </div>
                     ) : (
                       <div className="residentCaseList">
                         {visibleResidentCases.map(item => (
                           <article className={`residentCaseCard${overdueCases.some(caseItem => caseItem.id === item.id) ? ' overdue' : ''}${todayVisitCases.some(caseItem => caseItem.id === item.id) ? ' todayVisit' : ''}`} key={item.id} role="button" tabIndex={0} onClick={() => { setSelectedResidentCaseId(item.id); setResidentHistoryMemo(''); requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' })) }} onKeyDown={event => { if (event.key === 'Enter') { setSelectedResidentCaseId(item.id); setResidentHistoryMemo(''); requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' })) } }}>
                             <div className="residentCaseCardTop">
-                              <strong>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</strong>
-                              <span>{item.status || '未連絡'}</span>
+                              <strong>{item.propertyName || '迚ｩ莉ｶ蜷肴悴險ｭ螳・} {item.unit ? item.unit + '蜿ｷ螳､' : ''}</strong>
+                              <span>{item.status || '譛ｪ騾｣邨｡'}</span>
                             </div>
-                            <p>{item.requestDetails || '依頼内容未入力'}</p>
+                            <p>{item.requestDetails || '萓晞ｼ蜀・ｮｹ譛ｪ蜈･蜉・}</p>
                             <div className="residentCardBadges">
-                              {item.priority === 'urgent' && <span className="urgent">🔴 急ぎ</span>}
-                              {item.waitingFor && <span>⏳ {item.waitingFor}待ち</span>}
-                              {(item.isOnHold || item.status === '保留') && <span className="hold">保留</span>}
+                              {item.priority === 'urgent' && <span className="urgent">閥 諤･縺・/span>}
+                              {item.waitingFor && <span>竢ｳ {item.waitingFor}蠕・■</span>}
+                              {(item.isOnHold || item.status === '菫晉蕗') && <span className="hold">菫晉蕗</span>}
                             </div>
                             <div className="residentCaseNext">
-                              <span>次にやること</span>
-                              <strong>{item.nextAction || '未設定'}</strong>
+                              <span>谺｡縺ｫ繧・ｋ縺薙→</span>
+                              <strong>{item.nextAction || '譛ｪ險ｭ螳・}</strong>
                             </div>
-                            {item.siteVisitAt && <small>現調：{new Date(item.siteVisitAt).toLocaleString('ja-JP')}{item.siteVisitEndAt ? ' ～ ' + new Date(item.siteVisitEndAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''}</small>}
-                            {item.workVisitAt && <small>工事：{new Date(item.workVisitAt).toLocaleString('ja-JP')}{item.workVisitEndAt ? ' ～ ' + new Date(item.workVisitEndAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''}</small>}
-                            {item.actionDueDate ? <small>期限：{item.actionDueDate}</small> : (!item.completed && item.status !== '完了' && <small className="residentNoDue">⚠ 次回対応日が未設定</small>)}
-                            {item.lastActionAt && <small>最終対応：{new Date(item.lastActionAt).toLocaleDateString('ja-JP')}</small>}
+                            {item.siteVisitAt && <small>迴ｾ隱ｿ・嘴new Date(item.siteVisitAt).toLocaleString('ja-JP')}{item.siteVisitEndAt ? ' ・・' + new Date(item.siteVisitEndAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''}</small>}
+                            {item.workVisitAt && <small>蟾･莠具ｼ嘴new Date(item.workVisitAt).toLocaleString('ja-JP')}{item.workVisitEndAt ? ' ・・' + new Date(item.workVisitEndAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''}</small>}
+                            {item.actionDueDate ? <small>譛滄剞・嘴item.actionDueDate}</small> : (!item.completed && item.status !== '螳御ｺ・ && <small className="residentNoDue">笞 谺｡蝗槫ｯｾ蠢懈律縺梧悴險ｭ螳・/small>)}
+                            {item.lastActionAt && <small>譛邨ょｯｾ蠢懶ｼ嘴new Date(item.lastActionAt).toLocaleDateString('ja-JP')}</small>}
                           </article>
                         ))}
                       </div>
                     )}
                     {residentCaseVisibleCount < priorityCases.length && (
-                      <button className="secondaryButton residentMoreButton" type="button" onClick={() => setResidentCaseVisibleCount(previous => previous + 10)}>もっと見る（残り {priorityCases.length - residentCaseVisibleCount}件）</button>
+                      <button className="secondaryButton residentMoreButton" type="button" onClick={() => setResidentCaseVisibleCount(previous => previous + 10)}>繧ゅ▲縺ｨ隕九ｋ・域ｮ九ｊ {priorityCases.length - residentCaseVisibleCount}莉ｶ・・/button>
                     )}
 
                     {selectedResidentCaseId && (() => {
                       const item = residentCases.find(caseItem => caseItem.id === selectedResidentCaseId)
                       if (!item) return null
                       const history = [...(item.history || [])].sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))
-                      return <section className="residentCaseDetailPage" aria-label="入居中案件詳細">
+                      return <section className="residentCaseDetailPage" aria-label="蜈･螻・ｸｭ譯井ｻｶ隧ｳ邏ｰ">
                         <div className="card residentCaseDetail">
                         <div className="residentCaseDetailTop">
-                          <div><p className="eyebrow">CASE DETAIL</p><h2>{item.propertyName || '物件名未設定'} {item.unit ? item.unit + '号室' : ''}</h2></div>
-                          <button className="back" type="button" onClick={() => { setSelectedResidentCaseId(''); requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' })) }}>← 案件一覧へ</button>
+                          <div><p className="eyebrow">CASE DETAIL</p><h2>{item.propertyName || '迚ｩ莉ｶ蜷肴悴險ｭ螳・} {item.unit ? item.unit + '蜿ｷ螳､' : ''}</h2></div>
+                          <button className="back" type="button" onClick={() => { setSelectedResidentCaseId(''); requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' })) }}>竊・譯井ｻｶ荳隕ｧ縺ｸ</button>
                         </div>
-                        <p className="residentCaseDetailRequest">{item.requestDetails || '依頼内容未入力'}</p>
+                        <p className="residentCaseDetailRequest">{item.requestDetails || '萓晞ｼ蜀・ｮｹ譛ｪ蜈･蜉・}</p>
                         <div className="residentCaseMetaBadges">
-                          <span className={`priority-${item.priority || 'normal'}`}>{item.priority === 'urgent' ? '🔴 急ぎ' : item.priority === 'low' ? '⚪ 低' : '🟡 通常'}</span>
-                          {item.waitingFor && <span>⏳ {item.waitingFor}待ち</span>}
-                          {item.lastActionAt && <span>最終対応：{new Date(item.lastActionAt).toLocaleDateString('ja-JP')}</span>}
-                          {(item.isOnHold || item.status === '保留') && <span className="hold">保留：{item.holdReason || '理由未設定'}</span>}
+                          <span className={`priority-${item.priority || 'normal'}`}>{item.priority === 'urgent' ? '閥 諤･縺・ : item.priority === 'low' ? '笞ｪ 菴・ : '泯 騾壼ｸｸ'}</span>
+                          {item.waitingFor && <span>竢ｳ {item.waitingFor}蠕・■</span>}
+                          {item.lastActionAt && <span>譛邨ょｯｾ蠢懶ｼ嘴new Date(item.lastActionAt).toLocaleDateString('ja-JP')}</span>}
+                          {(item.isOnHold || item.status === '菫晉蕗') && <span className="hold">菫晉蕗・嘴item.holdReason || '逅・罰譛ｪ險ｭ螳・}</span>}
                         </div>
-                        {item.residentContact && <a className="primary residentCallButton" href={'tel:' + item.residentContact}>📞 入居者へ電話する</a>}
+                        {item.residentContact && <a className="primary residentCallButton" href={'tel:' + item.residentContact}>到 蜈･螻・・∈髮ｻ隧ｱ縺吶ｋ</a>}
                         <div className="residentQuickActions">
-                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '不通')}>不通</button>
-                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '不通（メール送信）')}>メール送信済</button>
-                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '連絡済（入居者のスケジュール確認待ち）')}>日程回答待ち</button>
-                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '見積提出済（発注待ち）')}>発注待ち</button>
-                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '進行中')}>進行中</button>
-                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '完了（未報告）')}>完了・未報告</button>
-                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '完了')}>完了</button>
-                          {item.isOnHold || item.status === '保留' ? (
-                            <button type="button" onClick={() => resumeResidentCase(item.id)}>対応中へ戻す</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '荳埼・)}>荳埼・/button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '荳埼夲ｼ医Γ繝ｼ繝ｫ騾∽ｿ｡・・)}>繝｡繝ｼ繝ｫ騾∽ｿ｡貂・/button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '騾｣邨｡貂茨ｼ亥・螻・・・繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ遒ｺ隱榊ｾ・■・・)}>譌･遞句屓遲泌ｾ・■</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '隕狗ｩ肴署蜃ｺ貂茨ｼ育匱豕ｨ蠕・■・・)}>逋ｺ豕ｨ蠕・■</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '騾ｲ陦御ｸｭ')}>騾ｲ陦御ｸｭ</button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '螳御ｺ・ｼ域悴蝣ｱ蜻奇ｼ・)}>螳御ｺ・・譛ｪ蝣ｱ蜻・/button>
+                          <button type="button" onClick={() => applyResidentQuickStatus(item.id, '螳御ｺ・)}>螳御ｺ・/button>
+                          {item.isOnHold || item.status === '菫晉蕗' ? (
+                            <button type="button" onClick={() => resumeResidentCase(item.id)}>蟇ｾ蠢應ｸｭ縺ｸ謌ｻ縺・/button>
                           ) : (
                             <button type="button" onClick={() => {
-                              const reason = window.prompt('保留理由を入力してください', '管理会社判断待ち')
+                              const reason = window.prompt('菫晉蕗逅・罰繧貞・蜉帙＠縺ｦ縺上□縺輔＞', '邂｡逅・ｼ夂､ｾ蛻､譁ｭ蠕・■')
                               if (reason === null) return
-                              holdResidentCase(item.id, reason.trim() || '時期未定')
-                            }}>保留にする</button>
+                              holdResidentCase(item.id, reason.trim() || '譎よ悄譛ｪ螳・)
+                            }}>菫晉蕗縺ｫ縺吶ｋ</button>
                           )}
                         </div>
                         <div className="residentCaseDetailGrid">
-                          <label><span>進捗</span><select value={item.status} onChange={event => applyResidentQuickStatus(item.id, event.target.value)}>{residentCaseStatuses.map(status => <option key={status} value={status}>{status}</option>)}</select></label>
-                          <label><span>次にやること</span><input value={item.nextAction || ''} onChange={event => updateResidentCase(item.id, { nextAction: event.target.value })} /></label>
-                          <label><span>対応期限</span><input type="date" value={item.actionDueDate || ''} onChange={event => updateResidentCase(item.id, { actionDueDate: event.target.value })} /></label>
-                          <label><span>誰待ち</span><select value={item.waitingFor || ''} onChange={event => updateResidentCase(item.id, { waitingFor: event.target.value })}>
-                            <option value="">自社対応</option><option value="入居者">入居者待ち</option><option value="管理会社">管理会社待ち</option><option value="オーナー">オーナー待ち</option><option value="業者">業者待ち</option>
+                          <label><span>騾ｲ謐・/span><select value={item.status} onChange={event => applyResidentQuickStatus(item.id, event.target.value)}>{residentCaseStatuses.map(status => <option key={status} value={status}>{status}</option>)}</select></label>
+                          <label><span>谺｡縺ｫ繧・ｋ縺薙→</span><input value={item.nextAction || ''} onChange={event => updateResidentCase(item.id, { nextAction: event.target.value })} /></label>
+                          <label><span>蟇ｾ蠢懈悄髯・/span><input type="date" value={item.actionDueDate || ''} onChange={event => updateResidentCase(item.id, { actionDueDate: event.target.value })} /></label>
+                          <label><span>隱ｰ蠕・■</span><select value={item.waitingFor || ''} onChange={event => updateResidentCase(item.id, { waitingFor: event.target.value })}>
+                            <option value="">閾ｪ遉ｾ蟇ｾ蠢・/option><option value="蜈･螻・・>蜈･螻・・ｾ・■</option><option value="邂｡逅・ｼ夂､ｾ">邂｡逅・ｼ夂､ｾ蠕・■</option><option value="繧ｪ繝ｼ繝翫・">繧ｪ繝ｼ繝翫・蠕・■</option><option value="讌ｭ閠・>讌ｭ閠・ｾ・■</option>
                           </select></label>
-                          <label><span>優先度</span><select value={item.priority || 'normal'} onChange={event => updateResidentCase(item.id, { priority: event.target.value })}>
-                            <option value="urgent">🔴 急ぎ</option><option value="normal">🟡 通常</option><option value="low">⚪ 低</option>
+                          <label><span>蜆ｪ蜈亥ｺｦ</span><select value={item.priority || 'normal'} onChange={event => updateResidentCase(item.id, { priority: event.target.value })}>
+                            <option value="urgent">閥 諤･縺・/option><option value="normal">泯 騾壼ｸｸ</option><option value="low">笞ｪ 菴・/option>
                           </select></label>
-                          <label><span>連絡先</span><input value={item.residentContact || ''} onChange={event => updateResidentCase(item.id, { residentContact: event.target.value })} /></label>
+                          <label><span>騾｣邨｡蜈・/span><input value={item.residentContact || ''} onChange={event => updateResidentCase(item.id, { residentContact: event.target.value })} /></label>
                           {/* M-CROSS_RESIDENT_CASES_STEP6_TIME_RANGE */}
                           <div className="residentVisitEditor wide">
-                            <h3>現調予定</h3>
+                            <h3>迴ｾ隱ｿ莠亥ｮ・/h3>
                             <div className="residentVisitDateRow">
-                              <label><span>日付</span><input type="date" value={(item.siteVisitAt || '').slice(0, 10)} onChange={event => {
+                              <label><span>譌･莉・/span><input type="date" value={(item.siteVisitAt || '').slice(0, 10)} onChange={event => {
                                 const dateValue = event.target.value
                                 const currentTime = (item.siteVisitAt || '').slice(11, 16) || '09:00'
                                 const startValue = dateValue ? dateValue + 'T' + currentTime : ''
@@ -7956,27 +7955,27 @@ return savedEntries
                                 updateResidentCase(item.id, {
                                   siteVisitAt: startValue,
                                   siteVisitEndAt: endValue,
-                                  status: dateValue ? '連絡済（現調日確定）' : item.status,
-                                  nextAction: dateValue ? '現調へ訪問' : item.nextAction,
-                                }, dateValue ? '連絡済（現調日確定）' : '', dateValue ? '現調日を登録' : '')
+                                  status: dateValue ? '騾｣邨｡貂茨ｼ育樟隱ｿ譌･遒ｺ螳夲ｼ・ : item.status,
+                                  nextAction: dateValue ? '迴ｾ隱ｿ縺ｸ險ｪ蝠・ : item.nextAction,
+                                }, dateValue ? '騾｣邨｡貂茨ｼ育樟隱ｿ譌･遒ｺ螳夲ｼ・ : '', dateValue ? '迴ｾ隱ｿ譌･繧堤匳骭ｲ' : '')
                               }} /></label>
-                              <label><span>開始</span><input type="time" value={(item.siteVisitAt || '').slice(11, 16)} disabled={!item.siteVisitAt} onChange={event => {
+                              <label><span>髢句ｧ・/span><input type="time" value={(item.siteVisitAt || '').slice(11, 16)} disabled={!item.siteVisitAt} onChange={event => {
                                 const dateValue = (item.siteVisitAt || '').slice(0, 10)
                                 updateResidentCase(item.id, { siteVisitAt: dateValue && event.target.value ? dateValue + 'T' + event.target.value : '' })
                               }} /></label>
-                              <label><span>終了</span><input type="time" value={(item.siteVisitEndAt || '').slice(11, 16)} disabled={!item.siteVisitAt} onChange={event => {
+                              <label><span>邨ゆｺ・/span><input type="time" value={(item.siteVisitEndAt || '').slice(11, 16)} disabled={!item.siteVisitAt} onChange={event => {
                                 const dateValue = (item.siteVisitAt || '').slice(0, 10)
                                 updateResidentCase(item.id, { siteVisitEndAt: dateValue && event.target.value ? dateValue + 'T' + event.target.value : '' })
                               }} /></label>
                             </div>
-                            {item.siteVisitAt && item.siteVisitEndAt && new Date(item.siteVisitEndAt) <= new Date(item.siteVisitAt) && <p className="saveStatus" role="alert">終了時刻は開始時刻より後にしてください</p>}
-                            <p className="residentCalendarNote">予定ファイル（.ics）をダウンロードします。ダウンロード後に開いてカレンダーへ追加してください。</p>
-                            <button className="secondaryButton residentCalendarButton" type="button" disabled={!item.siteVisitAt || !item.siteVisitEndAt || new Date(item.siteVisitEndAt) <= new Date(item.siteVisitAt)} onClick={() => downloadResidentCaseCalendar(item, 'site')}>📅 現調をカレンダーへ追加</button>
+                            {item.siteVisitAt && item.siteVisitEndAt && new Date(item.siteVisitEndAt) <= new Date(item.siteVisitAt) && <p className="saveStatus" role="alert">邨ゆｺ・凾蛻ｻ縺ｯ髢句ｧ区凾蛻ｻ繧医ｊ蠕後↓縺励※縺上□縺輔＞</p>}
+                            <p className="residentCalendarNote">莠亥ｮ壹ヵ繧｡繧､繝ｫ・・ics・峨ｒ繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺吶ゅム繧ｦ繝ｳ繝ｭ繝ｼ繝牙ｾ後↓髢九＞縺ｦ繧ｫ繝ｬ繝ｳ繝繝ｼ縺ｸ霑ｽ蜉縺励※縺上□縺輔＞縲・/p>
+                            <button className="secondaryButton residentCalendarButton" type="button" disabled={!item.siteVisitAt || !item.siteVisitEndAt || new Date(item.siteVisitEndAt) <= new Date(item.siteVisitAt)} onClick={() => downloadResidentCaseCalendar(item, 'site')}>套 迴ｾ隱ｿ繧偵き繝ｬ繝ｳ繝繝ｼ縺ｸ霑ｽ蜉</button>
                           </div>
                           <div className="residentVisitEditor wide">
-                            <h3>工事予定</h3>
+                            <h3>蟾･莠倶ｺ亥ｮ・/h3>
                             <div className="residentVisitDateRow">
-                              <label><span>日付</span><input type="date" value={(item.workVisitAt || '').slice(0, 10)} onChange={event => {
+                              <label><span>譌･莉・/span><input type="date" value={(item.workVisitAt || '').slice(0, 10)} onChange={event => {
                                 const dateValue = event.target.value
                                 const currentTime = (item.workVisitAt || '').slice(11, 16) || '09:00'
                                 const startValue = dateValue ? dateValue + 'T' + currentTime : ''
@@ -7985,50 +7984,50 @@ return savedEntries
                                 updateResidentCase(item.id, {
                                   workVisitAt: startValue,
                                   workVisitEndAt: endValue,
-                                  status: dateValue ? '連絡済（作業日確定）' : item.status,
-                                  nextAction: dateValue ? '工事へ訪問' : item.nextAction,
-                                }, dateValue ? '連絡済（作業日確定）' : '', dateValue ? '工事日を登録' : '')
+                                  status: dateValue ? '騾｣邨｡貂茨ｼ井ｽ懈･ｭ譌･遒ｺ螳夲ｼ・ : item.status,
+                                  nextAction: dateValue ? '蟾･莠九∈險ｪ蝠・ : item.nextAction,
+                                }, dateValue ? '騾｣邨｡貂茨ｼ井ｽ懈･ｭ譌･遒ｺ螳夲ｼ・ : '', dateValue ? '蟾･莠区律繧堤匳骭ｲ' : '')
                               }} /></label>
-                              <label><span>開始</span><input type="time" value={(item.workVisitAt || '').slice(11, 16)} disabled={!item.workVisitAt} onChange={event => {
+                              <label><span>髢句ｧ・/span><input type="time" value={(item.workVisitAt || '').slice(11, 16)} disabled={!item.workVisitAt} onChange={event => {
                                 const dateValue = (item.workVisitAt || '').slice(0, 10)
                                 updateResidentCase(item.id, { workVisitAt: dateValue && event.target.value ? dateValue + 'T' + event.target.value : '' })
                               }} /></label>
-                              <label><span>終了</span><input type="time" value={(item.workVisitEndAt || '').slice(11, 16)} disabled={!item.workVisitAt} onChange={event => {
+                              <label><span>邨ゆｺ・/span><input type="time" value={(item.workVisitEndAt || '').slice(11, 16)} disabled={!item.workVisitAt} onChange={event => {
                                 const dateValue = (item.workVisitAt || '').slice(0, 10)
                                 updateResidentCase(item.id, { workVisitEndAt: dateValue && event.target.value ? dateValue + 'T' + event.target.value : '' })
                               }} /></label>
                             </div>
-                            {item.workVisitAt && item.workVisitEndAt && new Date(item.workVisitEndAt) <= new Date(item.workVisitAt) && <p className="saveStatus" role="alert">終了時刻は開始時刻より後にしてください</p>}
-                            <p className="residentCalendarNote">予定ファイル（.ics）をダウンロードします。ダウンロード後に開いてカレンダーへ追加してください。</p>
-                            <button className="secondaryButton residentCalendarButton" type="button" disabled={!item.workVisitAt || !item.workVisitEndAt || new Date(item.workVisitEndAt) <= new Date(item.workVisitAt)} onClick={() => downloadResidentCaseCalendar(item, 'work')}>📅 工事をカレンダーへ追加</button>
+                            {item.workVisitAt && item.workVisitEndAt && new Date(item.workVisitEndAt) <= new Date(item.workVisitAt) && <p className="saveStatus" role="alert">邨ゆｺ・凾蛻ｻ縺ｯ髢句ｧ区凾蛻ｻ繧医ｊ蠕後↓縺励※縺上□縺輔＞</p>}
+                            <p className="residentCalendarNote">莠亥ｮ壹ヵ繧｡繧､繝ｫ・・ics・峨ｒ繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺吶ゅム繧ｦ繝ｳ繝ｭ繝ｼ繝牙ｾ後↓髢九＞縺ｦ繧ｫ繝ｬ繝ｳ繝繝ｼ縺ｸ霑ｽ蜉縺励※縺上□縺輔＞縲・/p>
+                            <button className="secondaryButton residentCalendarButton" type="button" disabled={!item.workVisitAt || !item.workVisitEndAt || new Date(item.workVisitEndAt) <= new Date(item.workVisitAt)} onClick={() => downloadResidentCaseCalendar(item, 'work')}>套 蟾･莠九ｒ繧ｫ繝ｬ繝ｳ繝繝ｼ縺ｸ霑ｽ蜉</button>
                           </div>
-                          <label className="wide"><span>備考</span><textarea rows="2" value={item.note || ''} onChange={event => updateResidentCase(item.id, { note: event.target.value })} /></label>
+                          <label className="wide"><span>蛯呵・/span><textarea rows="2" value={item.note || ''} onChange={event => updateResidentCase(item.id, { note: event.target.value })} /></label>
                         </div>
                         <div className="residentHistoryAdd">
-                          <input type="text" value={residentHistoryMemo} onChange={event => setResidentHistoryMemo(event.target.value)} placeholder="対応メモを入力" />
+                          <input type="text" value={residentHistoryMemo} onChange={event => setResidentHistoryMemo(event.target.value)} placeholder="蟇ｾ蠢懊Γ繝｢繧貞・蜉・ />
                           <button className="secondaryButton" type="button" onClick={() => {
                             const memoText = residentHistoryMemo.trim()
                             if (!memoText) return
-                            updateResidentCase(item.id, {}, item.status || '対応メモ', memoText)
+                            updateResidentCase(item.id, {}, item.status || '蟇ｾ蠢懊Γ繝｢', memoText)
                             setResidentHistoryMemo('')
-                          }}>履歴に追加</button>
+                          }}>螻･豁ｴ縺ｫ霑ｽ蜉</button>
                         </div>
                         <div className="residentHistoryList">
-                          <h3>対応履歴</h3>
-                          {history.length === 0 ? <p className="empty">履歴はありません</p> : history.map(log => <div className="residentHistoryItem" key={log.id || log.at}><div><strong>{log.status || '対応'}</strong><small>{log.at ? new Date(log.at).toLocaleString('ja-JP') : ''}</small></div>{log.memo && <p>{log.memo}</p>}</div>)}
+                          <h3>蟇ｾ蠢懷ｱ･豁ｴ</h3>
+                          {history.length === 0 ? <p className="empty">螻･豁ｴ縺ｯ縺ゅｊ縺ｾ縺帙ｓ</p> : history.map(log => <div className="residentHistoryItem" key={log.id || log.at}><div><strong>{log.status || '蟇ｾ蠢・}</strong><small>{log.at ? new Date(log.at).toLocaleString('ja-JP') : ''}</small></div>{log.memo && <p>{log.memo}</p>}</div>)}
                         </div>
                         <div className="residentWorkOrderTransfer">
                           {workOrders.some(workItem => workItem.sourceType === 'resident' && workItem.sourceId === item.id) ? (
-                            <button className="secondaryButton" type="button" onClick={() => { setSelectedResidentCaseId(''); setShowResidentCases(false); setShowWorkOrders(true) }}>工事案件を開く</button>
+                            <button className="secondaryButton" type="button" onClick={() => { setSelectedResidentCaseId(''); setShowResidentCases(false); setShowWorkOrders(true) }}>蟾･莠区｡井ｻｶ繧帝幕縺・/button>
                           ) : (
                             <button className="primary" type="button" onClick={() => {
-                              if (!window.confirm('この入居中案件から工事案件を作成しますか？\n物件・号室・住所・依頼内容を引き継ぎます。')) return
+                              if (!window.confirm('縺薙・蜈･螻・ｸｭ譯井ｻｶ縺九ｉ蟾･莠区｡井ｻｶ繧剃ｽ懈・縺励∪縺吶°・歃n迚ｩ莉ｶ繝ｻ蜿ｷ螳､繝ｻ菴乗園繝ｻ萓晞ｼ蜀・ｮｹ繧貞ｼ輔″邯吶℃縺ｾ縺吶・)) return
                               createWorkOrderFromResidentCase(item)
-                            }}>工事案件へ進む</button>
+                            }}>蟾･莠区｡井ｻｶ縺ｸ騾ｲ繧</button>
                           )}
                         </div>
                         <div className="residentDangerZone">
-                          <button className="dangerButton residentDeleteCaseButton" type="button" onClick={() => deleteResidentCase(item.id)}>この案件を削除</button>
+                          <button className="dangerButton residentDeleteCaseButton" type="button" onClick={() => deleteResidentCase(item.id)}>縺薙・譯井ｻｶ繧貞炎髯､</button>
                         </div>
                         </div>
                       </section>
@@ -8039,31 +8038,31 @@ return savedEntries
             ) : (
               <>
 
-            <p className="eyebrow">お部屋の採寸を、かんたんに</p>
-            <h1>物件情報</h1>
-            <p className="subtitle">採寸する物件を選択してください。</p>
+            <p className="eyebrow">縺企Κ螻九・謗｡蟇ｸ繧偵√°繧薙◆繧薙↓</p>
+            <h1>迚ｩ莉ｶ諠・ｱ</h1>
+            <p className="subtitle">謗｡蟇ｸ縺吶ｋ迚ｩ莉ｶ繧帝∈謚槭＠縺ｦ縺上□縺輔＞縲・/p>
             {/* M-CROSS_PROMOTE_SAVED_LIST_V1_SAFE */}
             <button className="savedListHeroButton" type="button" onClick={openSavedList}>
-              <span>📂 保存済み一覧を見る</span>
-              <small>保存した物件を開く・続きから編集</small>
+              <span>唐 菫晏ｭ俶ｸ医∩荳隕ｧ繧定ｦ九ｋ</span>
+              <small>菫晏ｭ倥＠縺溽黄莉ｶ繧帝幕縺上・邯壹″縺九ｉ邱ｨ髮・/small>
             </button>
             <button className="newRegistrationHeroButton" type="button" onClick={startNewRegistration}>
-              <span>＋ 新規で登録する</span>
-              <small>新しい物件・号室の採寸を開始</small>
+              <span>・・譁ｰ隕上〒逋ｻ骭ｲ縺吶ｋ</span>
+              <small>譁ｰ縺励＞迚ｩ莉ｶ繝ｻ蜿ｷ螳､縺ｮ謗｡蟇ｸ繧帝幕蟋・/small>
             </button>
-            <section className="todayStats" aria-label="今日の記録">
-              <strong>TODAY</strong><span>完了物件 {todayStats.completed}件</span><span>登録件数 {todayStats.registrations}件</span>
+            <section className="todayStats" aria-label="莉頑律縺ｮ險倬鹸">
+              <strong>TODAY</strong><span>螳御ｺ・黄莉ｶ {todayStats.completed}莉ｶ</span><span>逋ｻ骭ｲ莉ｶ謨ｰ {todayStats.registrations}莉ｶ</span>
             </section>
             <section className="card">
               <label>
-                <span>管理会社</span>
+                <span>邂｡逅・ｼ夂､ｾ</span>
                 <select value={company} onChange={event => {
                   setCompany(event.target.value)
                   setPropertySearch('')
                   setSelectedProperty(null)
                   setSaveStatus('')
                 }}>
-                  <option value="">管理会社を選択</option>
+                  <option value="">邂｡逅・ｼ夂､ｾ繧帝∈謚・/option>
                   {companies.map(name => <option key={name} value={name}>{name}</option>)}
                 </select>
               </label>
@@ -8075,19 +8074,19 @@ return savedEntries
                 disabled={!company}
                 onClick={() => { setPropertyListSearch(''); setShowPropertyListPicker(true) }}
               >
-                {selectedProperty ? '📋 物件を変更する' : '📋 物件を選ぶ'}
+                {selectedProperty ? '搭 迚ｩ莉ｶ繧貞､画峩縺吶ｋ' : '搭 迚ｩ莉ｶ繧帝∈縺ｶ'}
               </button>
 
               {showPropertyListPicker && (
                 <div className="propertyListPickerBackdrop" onClick={() => setShowPropertyListPicker(false)}>
-                  <section className="propertyListPickerPanel" role="dialog" aria-modal="true" aria-label="物件一覧から選ぶ" onClick={event => event.stopPropagation()}>
+                  <section className="propertyListPickerPanel" role="dialog" aria-modal="true" aria-label="迚ｩ莉ｶ荳隕ｧ縺九ｉ驕ｸ縺ｶ" onClick={event => event.stopPropagation()}>
                     <div className="propertyListPickerHeader">
-                      <div><strong>物件一覧から選ぶ</strong><small>{company}　{companyProperties.length}件</small></div>
-                      <button type="button" onClick={() => setShowPropertyListPicker(false)} aria-label="閉じる">×</button>
+                      <div><strong>迚ｩ莉ｶ荳隕ｧ縺九ｉ驕ｸ縺ｶ</strong><small>{company}縲{companyProperties.length}莉ｶ</small></div>
+                      <button type="button" onClick={() => setShowPropertyListPicker(false)} aria-label="髢峨§繧・>ﾃ・/button>
                     </div>
                     <label className="propertyListPickerSearch">
-                      <span>一覧を絞り込む</span>
-                      <input autoFocus value={propertyListSearch} onChange={event => setPropertyListSearch(event.target.value)} placeholder="物件名・住所を入力" />
+                      <span>荳隕ｧ繧堤ｵ槭ｊ霎ｼ繧</span>
+                      <input autoFocus value={propertyListSearch} onChange={event => setPropertyListSearch(event.target.value)} placeholder="迚ｩ莉ｶ蜷阪・菴乗園繧貞・蜉・ />
                     </label>
                     <div className="propertyListPickerItems">
                       {companyProperties
@@ -8106,7 +8105,7 @@ return savedEntries
                             setShowPropertyListPicker(false)
                           }}>
                             <strong>{item.name}</strong>
-                            <small>{item.address || '住所未登録'}</small>
+                            <small>{item.address || '菴乗園譛ｪ逋ｻ骭ｲ'}</small>
                           </button>
                         ))}
                     </div>
@@ -8126,13 +8125,13 @@ return savedEntries
 
               {/* M-CROSS_PROPERTY_PICKER_V4_SIMPLE */}
               <div className="selectedPropertySummary">
-                <small>選択中の物件</small>
-                <strong>{selectedProperty?.name || 'まだ選択されていません'}</strong>
+                <small>驕ｸ謚樔ｸｭ縺ｮ迚ｩ莉ｶ</small>
+                <strong>{selectedProperty?.name || '縺ｾ縺驕ｸ謚槭＆繧後※縺・∪縺帙ｓ'}</strong>
               </div>
 
               <div className="address">
-                <small>物件住所</small>
-                <strong>{selectedProperty?.address || '物件を選択すると住所が表示されます'}</strong>
+                <small>迚ｩ莉ｶ菴乗園</small>
+                <strong>{selectedProperty?.address || '迚ｩ莉ｶ繧帝∈謚槭☆繧九→菴乗園縺瑚｡ｨ遉ｺ縺輔ｌ縺ｾ縺・}</strong>
               </div>
               <button
                 className="secondaryButton"
@@ -8145,39 +8144,39 @@ return savedEntries
                   window.open(mapUrl, '_blank', 'noopener,noreferrer')
                 }}
               >
-                地図・ナビを開く
+                蝨ｰ蝗ｳ繝ｻ繝翫ン繧帝幕縺・
               </button>
               <label>
-                <span>号室</span>
-                <input value={unit} onChange={event => setUnit(event.target.value)} placeholder="例：501" />
+                <span>蜿ｷ螳､</span>
+                <input value={unit} onChange={event => setUnit(event.target.value)} placeholder="萓具ｼ・01" />
               </label>
 
               <label className="workNameField">
-                <span>工事名 *</span>
+                <span>蟾･莠句錐 *</span>
                 <input
                   list="mcross-work-name-options"
                   value={workName}
                   onChange={event => { setWorkName(event.target.value); setSaveStatus('') }}
-                  placeholder="例：原状回復工事"
+                  placeholder="萓具ｼ壼次迥ｶ蝗槫ｾｩ蟾･莠・
                 />
                 <datalist id="mcross-work-name-options">
-                  <option value="原状回復工事" />
-                  <option value="内装工事" />
-                  <option value="修繕工事" />
-                  <option value="設備工事" />
+                  <option value="蜴溽憾蝗槫ｾｩ蟾･莠・ />
+                  <option value="蜀・｣・ｷ･莠・ />
+                  <option value="菫ｮ郢募ｷ･莠・ />
+                  <option value="險ｭ蛯吝ｷ･莠・ />
                 </datalist>
-                <small>同じ物件・号室でも、工事名が違えば別案件として保存します。</small>
+                <small>蜷後§迚ｩ莉ｶ繝ｻ蜿ｷ螳､縺ｧ繧ゅ∝ｷ･莠句錐縺碁＆縺医・蛻･譯井ｻｶ縺ｨ縺励※菫晏ｭ倥＠縺ｾ縺吶・/small>
               </label>
 
               <label className="siteMemoField">
-                <span>現場メモ</span>
+                <span>迴ｾ蝣ｴ繝｡繝｢</span>
                 <textarea
                   value={siteMemo}
                   onChange={event => setSiteMemo(event.target.value)}
-                  placeholder="例：赤い外壁、角地、駐車場狭い、入口に自販機"
+                  placeholder="萓具ｼ夊ｵ､縺・､門｣√∬ｧ貞慍縲・ｧ占ｻ雁ｴ迢ｭ縺・∝・蜿｣縺ｫ閾ｪ雋ｩ讖・
                   rows={3}
                 />
-                <small>建物の特徴・駐車場所・鍵・次回確認事項など。かしこい検索にも使えます。</small>
+                <small>蟒ｺ迚ｩ縺ｮ迚ｹ蠕ｴ繝ｻ鬧占ｻ雁ｴ謇繝ｻ骰ｵ繝ｻ谺｡蝗樒｢ｺ隱堺ｺ矩・↑縺ｩ縲ゅ°縺励％縺・､懃ｴ｢縺ｫ繧ゆｽｿ縺医∪縺吶・/small>
               </label>
 
                             <button
@@ -8186,36 +8185,36 @@ return savedEntries
                 disabled={!selectedProperty}
                 onClick={() => setShowSimilarSites(value => !value)}
               >
-                🔍 似た現場を探す
+                剥 莨ｼ縺溽樟蝣ｴ繧呈爾縺・
               </button>
 
               {showSimilarSites && (
                 <section className="similarSitesPanel">
                   <div className="similarSitesHeading">
-                    <strong>似た現場候補</strong>
-                    <small>保存済みデータから参考候補を表示</small>
+                    <strong>莨ｼ縺溽樟蝣ｴ蛟呵｣・/strong>
+                    <small>菫晏ｭ俶ｸ医∩繝・・繧ｿ縺九ｉ蜿り・呵｣懊ｒ陦ｨ遉ｺ</small>
                   </div>
                   {similarSiteCandidates.length === 0 ? (
-                    <p className="empty">一致する過去現場がありません</p>
+                    <p className="empty">荳閾ｴ縺吶ｋ驕主悉迴ｾ蝣ｴ縺後≠繧翫∪縺帙ｓ</p>
                   ) : (
                     <div className="similarSitesList">
                       {similarSiteCandidates.map(({ entry, score, reasons, summary }) => (
                         <article className="similarSiteItem" key={entry.storageKey || entry.id || entry.propertyName + entry.unit}>
                           <div>
-                            <strong>{entry.propertyName || '物件名なし'}　{entry.unit || ''}</strong>
-                            <small>{entry.company || '管理会社未設定'}</small>
-                            <small>一致理由：{reasons.join(' / ')}</small>
-                            {summary.length > 0 && <small>内容：{summary.join('・')}</small>}
+                            <strong>{entry.propertyName || '迚ｩ莉ｶ蜷阪↑縺・}縲{entry.unit || ''}</strong>
+                            <small>{entry.company || '邂｡逅・ｼ夂､ｾ譛ｪ險ｭ螳・}</small>
+                            <small>荳閾ｴ逅・罰・嘴reasons.join(' / ')}</small>
+                            {summary.length > 0 && <small>蜀・ｮｹ・嘴summary.join('繝ｻ')}</small>}
                           </div>
                           <div className="similarSiteActions">
-                            <span>近さ {score}</span>
-                            <button type="button" onClick={() => loadSavedEntry(entry)}>開く</button>
+                            <span>霑代＆ {score}</span>
+                            <button type="button" onClick={() => loadSavedEntry(entry)}>髢九￥</button>
                           </div>
                         </article>
                       ))}
                     </div>
                   )}
-                  <p className="similarSitesNote">過去の数量や工事内容は自動コピーしません。参考表示のみです。</p>
+                  <p className="similarSitesNote">驕主悉縺ｮ謨ｰ驥上ｄ蟾･莠句・螳ｹ縺ｯ閾ｪ蜍輔さ繝斐・縺励∪縺帙ｓ縲ょ盾閠・｡ｨ遉ｺ縺ｮ縺ｿ縺ｧ縺吶・/p>
                 </section>
               )}
 
@@ -8223,17 +8222,17 @@ return savedEntries
               {selectedProperty && previousPropertyEntries.length > 0 && (
                 <section className="previousPropertyPanel">
                   <div className="previousPropertyHeading">
-                    <strong>💡 前回この物件では</strong>
-                    <small>{previousPropertyEntries.length}件の履歴</small>
+                    <strong>庁 蜑榊屓縺薙・迚ｩ莉ｶ縺ｧ縺ｯ</strong>
+                    <small>{previousPropertyEntries.length}莉ｶ縺ｮ螻･豁ｴ</small>
                   </div>
                   <div className="propertyHistoryControls">
                     <button type="button" onClick={() => setShowAllPropertyHistory(value => !value)}>
-                      {showAllPropertyHistory ? '直近3件だけ表示' : '過去の履歴をすべて見る'}
+                      {showAllPropertyHistory ? '逶ｴ霑・莉ｶ縺縺題｡ｨ遉ｺ' : '驕主悉縺ｮ螻･豁ｴ繧偵☆縺ｹ縺ｦ隕九ｋ'}
                     </button>
                     {showAllPropertyHistory && (
-                      <select value={propertyHistoryOrder} onChange={event => setPropertyHistoryOrder(event.target.value)} aria-label="履歴の並び順">
-                        <option value="newest">新しい順</option>
-                        <option value="oldest">古い順</option>
+                      <select value={propertyHistoryOrder} onChange={event => setPropertyHistoryOrder(event.target.value)} aria-label="螻･豁ｴ縺ｮ荳ｦ縺ｳ鬆・>
+                        <option value="newest">譁ｰ縺励＞鬆・/option>
+                        <option value="oldest">蜿､縺・・/option>
                       </select>
                     )}
                   </div>
@@ -8246,25 +8245,25 @@ return savedEntries
                     ).map(({ entry, crossTotalValue, cfTotalValue, softTotalValue, trimTotalValue, workNames }) => (
                       <article className="previousPropertyItem" key={entry.storageKey || entry.propertyName + entry.unit + entry.updatedAt}>
                         <div className="previousPropertyTop">
-                          <strong>{entry.unit || '号室未設定'}号室</strong>
-                          <small>更新 {formatSavedDate(entry.updatedAt)}</small>
+                          <strong>{entry.unit || '蜿ｷ螳､譛ｪ險ｭ螳・}蜿ｷ螳､</strong>
+                          <small>譖ｴ譁ｰ {formatSavedDate(entry.updatedAt)}</small>
                         </div>
                         <div className="previousPropertyTotals">
-                          {crossTotalValue > 0 && <span>クロス {formatQuantity(crossTotalValue)}㎡</span>}
-                          {cfTotalValue > 0 && <span>CF {formatQuantity(cfTotalValue)}㎡</span>}
-                          {softTotalValue > 0 && <span>ソフト巾木 {formatQuantity(softTotalValue)}枚</span>}
-                          {trimTotalValue > 0 && <span>床見切り {formatQuantity(trimTotalValue)}本</span>}
+                          {crossTotalValue > 0 && <span>繧ｯ繝ｭ繧ｹ {formatQuantity(crossTotalValue)}緕｡</span>}
+                          {cfTotalValue > 0 && <span>CF {formatQuantity(cfTotalValue)}緕｡</span>}
+                          {softTotalValue > 0 && <span>繧ｽ繝輔ヨ蟾ｾ譛ｨ {formatQuantity(softTotalValue)}譫・/span>}
+                          {trimTotalValue > 0 && <span>蠎願ｦ句・繧・{formatQuantity(trimTotalValue)}譛ｬ</span>}
                         </div>
-                        {workNames.length > 0 && <small>追加作業：{workNames.join('・')}</small>}
-                        <button type="button" onClick={() => loadSavedEntry(entry)}>過去データを開く</button>
+                        {workNames.length > 0 && <small>霑ｽ蜉菴懈･ｭ・嘴workNames.join('繝ｻ')}</small>}
+                        <button type="button" onClick={() => loadSavedEntry(entry)}>驕主悉繝・・繧ｿ繧帝幕縺・/button>
                       </article>
                     ))}
                   </div>
-                  <p>参考表示のみです。過去の数量・単価・工事内容は今回へ自動コピーしません。</p>
+                  <p>蜿り・｡ｨ遉ｺ縺ｮ縺ｿ縺ｧ縺吶る℃蜴ｻ縺ｮ謨ｰ驥上・蜊倅ｾ｡繝ｻ蟾･莠句・螳ｹ縺ｯ莉雁屓縺ｸ閾ｪ蜍輔さ繝斐・縺励∪縺帙ｓ縲・/p>
                 </section>
               )}
 
-              <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>採寸を開始する →</button>
+              <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>謗｡蟇ｸ繧帝幕蟋九☆繧・竊・/button>
 
               <OneDriveSyncPanel />
               <button
@@ -8272,7 +8271,7 @@ return savedEntries
                 type="button"
                 onClick={() => setShowResidentCases(true)}
               >
-                入居中案件
+                蜈･螻・ｸｭ譯井ｻｶ
               </button>
               {/* M-CROSS_STEP19_BUTTON_PLACEMENT_FIX */}
               <button
@@ -8280,9 +8279,9 @@ return savedEntries
                 type="button"
                 onClick={() => setShowWorkOrders(true)}
               >
-                工事案件
+                蟾･莠区｡井ｻｶ
               </button>
-              <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙ M-Cross設定</button>
+              <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>笞・M-Cross險ｭ螳・/button>
             </section>
 
               </>
@@ -8299,21 +8298,21 @@ return savedEntries
                 setIsDirty(false)
               })}
             >
-              ← 物件情報へ戻る
+              竊・迚ｩ莉ｶ諠・ｱ縺ｸ謌ｻ繧・
             </button>
-            <p className="propertyLine">{selectedProperty?.name}　{unit}号室　{workName}</p>
+            <p className="propertyLine">{selectedProperty?.name}縲{unit}蜿ｷ螳､縲{workName}</p>
             <h1>
               {showEstimate
-                ? '見積内容'
+                ? '隕狗ｩ榊・螳ｹ'
                 : showRoomManagement
-                  ? '部屋管理'
+                  ? '驛ｨ螻狗ｮ｡逅・
                   : activePage === 'cross'
-                ? isSummaryPage ? '全室の合計' : '採寸入力'
-                : activePage === 'cf' ? 'CF採寸' : activePage === 'soft' ? 'ソフト巾木' : activePage === 'floorTrim' ? '床見切り' : 'その他工事'}
+                ? isSummaryPage ? '蜈ｨ螳､縺ｮ蜷郁ｨ・ : '謗｡蟇ｸ蜈･蜉・
+                : activePage === 'cf' ? 'CF謗｡蟇ｸ' : activePage === 'soft' ? '繧ｽ繝輔ヨ蟾ｾ譛ｨ' : activePage === 'floorTrim' ? '蠎願ｦ句・繧・ : '縺昴・莉門ｷ･莠・}
             </h1>
             <div className="measurementActions">
               <button className="newRegistrationInlineButton" type="button" onClick={startNewRegistration}>
-                ＋ 新規登録
+                ・・譁ｰ隕冗匳骭ｲ
               </button>
               <div className="saveActionWithFeedback">
                 <button className="saveButton" type="button" onClick={() => {
@@ -8321,13 +8320,13 @@ return savedEntries
                   if (saved) {
                     const now = new Date()
                     const time = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-                    setSaveFeedback('✓ 保存しました ' + time)
+                    setSaveFeedback('笨・菫晏ｭ倥＠縺ｾ縺励◆ ' + time)
                     window.setTimeout(() => setSaveFeedback(''), 3500)
                   } else {
-                    setSaveFeedback('保存できませんでした')
+                    setSaveFeedback('菫晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆')
                   }
-                }}>保存する</button>
-                {saveFeedback && <div className={`saveFeedbackMessage ${saveFeedback.startsWith('✓') ? 'success' : 'error'}`} role="status">{saveFeedback}</div>}
+                }}>菫晏ｭ倥☆繧・/button>
+                {saveFeedback && <div className={`saveFeedbackMessage ${saveFeedback.startsWith('笨・) ? 'success' : 'error'}`} role="status">{saveFeedback}</div>}
               </div>
               <button
                 className="secondaryButton"
@@ -8346,7 +8345,7 @@ return savedEntries
                   additionalWorks,
                 })}
               >
-                📊 採寸データ出力
+                投 謗｡蟇ｸ繝・・繧ｿ蜃ｺ蜉・
               </button>
               {/* M-CROSS_ESTIMATE_BUTTON_QUICK_EXPORT_V3_EXACT */}
               <button
@@ -8358,13 +8357,13 @@ return savedEntries
                   const rowsForExport = applyEstimateEdits(rawRows, estimateEdits)
                   downloadEstimateExcel({
                     company,
-                    propertyName: selectedProperty?.name || '', // M-CROSS_INITIAL_ESTIMATE_UNMARKED_V1_SAFE: 通常の初回見積は無印
+                    propertyName: selectedProperty?.name || '', // M-CROSS_INITIAL_ESTIMATE_UNMARKED_V1_SAFE: 騾壼ｸｸ縺ｮ蛻晏屓隕狗ｩ阪・辟｡蜊ｰ
                     address: selectedProperty?.address || '',
                     unit,
                   }, rowsForExport, estimateCopyFormat, additionalWorks)
                 }}
               >
-                📄 見積書を出力
+                塘 隕狗ｩ肴嶌繧貞・蜉・
               </button>
               <button
                 className="secondaryButton"
@@ -8374,16 +8373,16 @@ return savedEntries
                   setShowRoomManagement(false)
                 }}
               >
-                {showEstimate ? '← 採寸画面へ戻る' : '💰 見積内容を確認・編集'}
+                {showEstimate ? '竊・謗｡蟇ｸ逕ｻ髱｢縺ｸ謌ｻ繧・ : '腸 隕狗ｩ榊・螳ｹ繧堤｢ｺ隱阪・邱ｨ髮・}
               </button>
             </div>
             <p className={`saveState ${isDirty ? 'dirty' : 'saved'}`} role="status" aria-live="polite">
-              {isDirty ? '未保存' : '保存済み'}
+              {isDirty ? '譛ｪ菫晏ｭ・ : '菫晏ｭ俶ｸ医∩'}
             </p>
             {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
 
             {!showRoomManagement && !showEstimate && (
-              <div className="measurementTypes" aria-label="採寸機能">
+              <div className="measurementTypes" aria-label="謗｡蟇ｸ讖溯・">
                 <button type="button" className={activePage === 'cross' ? 'measurementType active' : 'measurementType'} onClick={() => {
                   setActivePage('cross')
                   requestAnimationFrame(() => {
@@ -8391,12 +8390,12 @@ return savedEntries
                       crossRoomAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                     })
                   })
-                }}>クロス採寸</button>
-                <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
-                <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
-                <button type="button" className={activePage === 'floorTrim' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('floorTrim')}>床見切り</button>
+                }}>繧ｯ繝ｭ繧ｹ謗｡蟇ｸ</button>
+                <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF謗｡蟇ｸ</button>
+                <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>繧ｽ繝輔ヨ蟾ｾ譛ｨ</button>
+                <button type="button" className={activePage === 'floorTrim' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('floorTrim')}>蠎願ｦ句・繧・/button>
                 {/* M-CROSS_RENAME_FINAL_REVIEW_TO_OTHER_WORK_V2_SAFE */}
-                <button type="button" className={activePage === 'review' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('review')}>🔧 その他工事</button>
+                <button type="button" className={activePage === 'review' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('review')}>肌 縺昴・莉門ｷ･莠・/button>
               </div>
             )}
 
@@ -8406,12 +8405,12 @@ return savedEntries
                 type="button"
                 onClick={() => setShowRoomManagement(previous => !previous)}
             >
-                {showRoomManagement ? '← 採寸画面へ戻る' : '⚙ 部屋管理'}
+                {showRoomManagement ? '竊・謗｡蟇ｸ逕ｻ髱｢縺ｸ謌ｻ繧・ : '笞・驛ｨ螻狗ｮ｡逅・}
               </button>
             )}
 
             {showEstimate ? (() => {
-              // お客様向け画面には換算率を表示せず、設定済みの案件換算率だけを計算に使用します。
+              // 縺雁ｮ｢讒伜髄縺醍判髱｢縺ｫ縺ｯ謠帷ｮ礼紫繧定｡ｨ遉ｺ縺帙★縲∬ｨｭ螳壽ｸ医∩縺ｮ譯井ｻｶ謠帷ｮ礼紫縺縺代ｒ險育ｮ励↓菴ｿ逕ｨ縺励∪縺吶・
               const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
               const rawEstimateRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
               /* M-CROSS_ESTIMATE_EXCLUSION_V5_EXACT_SAFE */
@@ -8423,27 +8422,27 @@ return savedEntries
               const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0) + additionalWorkTotal
               return (
                 <section className="card">
-                  <h2>{selectedProperty?.name} {unit}号室{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
+                  <h2>{selectedProperty?.name} {unit}蜿ｷ螳､{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
                   {/* M-CROSS_SIMPLIFY_ESTIMATE_TEXT_V1_SAFE */}
                   <div className="restorationWorkOrderAction">
                     {workOrders.some(item => item.sourceType === 'restoration' && item.sourceId === [selectedProperty?.id || selectedProperty?.name || '', String(unit || '').trim()].join('|')) ? (
-                      <button className="secondaryButton" type="button" onClick={() => { setStarted(false); setShowWorkOrders(true) }}>工事案件を開く</button>
+                      <button className="secondaryButton" type="button" onClick={() => { setStarted(false); setShowWorkOrders(true) }}>蟾･莠区｡井ｻｶ繧帝幕縺・/button>
                     ) : (
                       <button className="primary" type="button" onClick={() => {
-                        if (!window.confirm('この原状回復案件から工事案件を作成しますか？\n物件・号室と施工項目を引き継ぎます。')) return
+                        if (!window.confirm('縺薙・蜴溽憾蝗槫ｾｩ譯井ｻｶ縺九ｉ蟾･莠区｡井ｻｶ繧剃ｽ懈・縺励∪縺吶°・歃n迚ｩ莉ｶ繝ｻ蜿ｷ螳､縺ｨ譁ｽ蟾･鬆・岼繧貞ｼ輔″邯吶℃縺ｾ縺吶・)) return
                         createWorkOrderFromRestoration(estimateRows, totalAmount)
-                      }}>工事案件へ進む</button>
+                      }}>蟾･莠区｡井ｻｶ縺ｸ騾ｲ繧</button>
                     )}
                   </div>
 
                   {estimateRows.length === 0 && additionalWorks.length === 0 ? (
-                    <p className="empty">概算できる採寸データがありません</p>
+                    <p className="empty">讎らｮ励〒縺阪ｋ謗｡蟇ｸ繝・・繧ｿ縺後≠繧翫∪縺帙ｓ</p>
                   ) : [
                     ...rooms.map(roomName => ({ title: roomName, key: roomName, rows: estimateRows.filter(row => row.room === roomName) })),
-                    { title: 'ソフト巾木', key: '__ALL_ROOMS__', rows: estimateRows.filter(row => row.room === '__ALL_ROOMS__') },
-                    { title: '床見切り', key: '__FLOOR_TRIM__', rows: estimateRows.filter(row => row.room === '__FLOOR_TRIM__') },
+                    { title: '繧ｽ繝輔ヨ蟾ｾ譛ｨ', key: '__ALL_ROOMS__', rows: estimateRows.filter(row => row.room === '__ALL_ROOMS__') },
+                    { title: '蠎願ｦ句・繧・, key: '__FLOOR_TRIM__', rows: estimateRows.filter(row => row.room === '__FLOOR_TRIM__') },
                     {
-                      title: '内装工事以外',
+                      title: '蜀・｣・ｷ･莠倶ｻ･螟・,
                       key: '__ADDITIONAL_WORKS__',
                       rows: additionalWorks.map((item, additionalWorkIndex) => ({
                         exclusionKey: 'additionalWork:' + (item.id || additionalWorkIndex),
@@ -8459,10 +8458,10 @@ return savedEntries
                           : [item.room, item.work]).filter(Boolean).join(' '),
                         memo: item.memo || '',
                         quantity: Number(item.quantity || 0),
-                        unit: item.unit || '式',
+                        unit: item.unit || '蠑・,
                         rate: Number(item.unitPrice || 0),
                         amount: Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)),
-                      })).filter(row => !estimateEdits[row.exclusionKey]?.excluded), // M-CROSS_ADDITIONAL_WORK_EXCLUSION_V10_MINIMAL_SAFE
+                      })),
                     },
                   ].map(section => {
                     if (section.rows.length === 0) return null
@@ -8475,7 +8474,7 @@ return savedEntries
                             key={row.category + '-' + row.label + '-' + row.memo + '-' + index}
                             role="button"
                             tabIndex={0}
-                            title="タップして見積明細を編集"
+                            title="繧ｿ繝・・縺励※隕狗ｩ肴・邏ｰ繧堤ｷｨ髮・
                             onClick={() => {
                               if (row.category === 'additionalWork') {
                                 const parts = Array.isArray(row.parts) ? row.parts : [row.label || '', '', '', '']
@@ -8515,7 +8514,7 @@ return savedEntries
                           >
                             <strong>{row.label}{row.memo && <small className="estimateMemo">{row.memo}</small>}</strong>
                             <span className="estimateNumber estimateUnit">{formatQuantity(row.quantity)}{row.unit}</span>
-                            <span className="estimateNumber estimateRate">× {formatYen(row.rate)}</span>
+                            <span className="estimateNumber estimateRate">ﾃ・{formatYen(row.rate)}</span>
                             <span className="estimateNumber"><strong>{formatYen(row.amount)}</strong></span>
                           </div>
                         ))}
@@ -8532,11 +8531,11 @@ return savedEntries
                       unit,
                     }, estimateRows, estimateCopyFormat, additionalWorks)}
                   >
-                    📊 見積用Excel出力
+                    投 隕狗ｩ咲畑Excel蜃ｺ蜉・
                   </button>
                   {Object.values(estimateEdits).some(edit => edit && typeof edit === 'object' && edit.excluded) && (
                     <div className="estimateExcludedRestoreV4">
-                      <span>見積から外した項目があります</span>
+                      <span>隕狗ｩ阪°繧牙､悶＠縺滄・岼縺後≠繧翫∪縺・/span>
                       <button type="button" onClick={() => {
                         setEstimateEdits(previous => {
                           const next = Object.fromEntries(Object.entries(previous).map(([key, edit]) => {
@@ -8549,8 +8548,8 @@ return savedEntries
                           return next
                         })
                         setIsDirty(true)
-                        setSaveStatus('見積から外した項目をすべて戻しました')
-                      }}>↩ すべて見積へ戻す</button>
+                        setSaveStatus('隕狗ｩ阪°繧牙､悶＠縺滄・岼繧偵☆縺ｹ縺ｦ謌ｻ縺励∪縺励◆')
+                      }}>竊ｩ 縺吶∋縺ｦ隕狗ｩ阪∈謌ｻ縺・/button>
                     </div>
                   )}
 
@@ -8559,7 +8558,7 @@ return savedEntries
                     onClose={() => setEstimateEditor(null)}
                     onExclude={form => {
                       if (!form?.key) return
-                      if (!window.confirm('この項目を見積から外しますか？\n採寸データは削除されません。')) return
+                      if (!window.confirm('縺薙・鬆・岼繧定ｦ狗ｩ阪°繧牙､悶＠縺ｾ縺吶°・歃n謗｡蟇ｸ繝・・繧ｿ縺ｯ蜑企勁縺輔ｌ縺ｾ縺帙ｓ縲・)) return
                       setEstimateEdits(previous => {
                         const next = {
                           ...previous,
@@ -8570,7 +8569,7 @@ return savedEntries
                       })
                       setEstimateEditor(null)
                       setIsDirty(true)
-                      setSaveStatus('見積から項目を外しました。採寸データは残っています。')
+                      setSaveStatus('隕狗ｩ阪°繧蛾・岼繧貞､悶＠縺ｾ縺励◆縲よ治蟇ｸ繝・・繧ｿ縺ｯ谿九▲縺ｦ縺・∪縺吶・)
                     }}
                     onReset={key => {
                       if (estimateEditor?.additionalWorkId || Number.isInteger(estimateEditor?.additionalWorkIndex)) {
@@ -8583,7 +8582,7 @@ return savedEntries
                         }))
                         setEstimateEditor(null)
                         setIsDirty(true)
-                        setSaveStatus('追加作業の見積明細を元に戻しました')
+                        setSaveStatus('霑ｽ蜉菴懈･ｭ縺ｮ隕狗ｩ肴・邏ｰ繧貞・縺ｫ謌ｻ縺励∪縺励◆')
                         return
                       }
                       setEstimateEdits(previous => {
@@ -8594,7 +8593,7 @@ return savedEntries
                       })
                       setEstimateEditor(null)
                       setIsDirty(true)
-                      setSaveStatus('見積明細を元に戻しました')
+                      setSaveStatus('隕狗ｩ肴・邏ｰ繧貞・縺ｫ謌ｻ縺励∪縺励◆')
                     }}
                     onSave={form => {
                       const parseNumber = value => {
@@ -8607,7 +8606,7 @@ return savedEntries
                       const rate = parseNumber(form.rate)
                       const amount = parseNumber(form.amount)
                       if (quantity === null || rate === null || amount === null) {
-                        window.alert('数量・単価・金額は0以上の数字で入力してください。')
+                        window.alert('謨ｰ驥上・蜊倅ｾ｡繝ｻ驥鷹｡阪・0莉･荳翫・謨ｰ蟄励〒蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・)
                         return
                       }
                       const cleanParts = form.parts.map(value => String(value || '').trim())
@@ -8620,7 +8619,7 @@ return savedEntries
                         }))
                         setEstimateEditor(null)
                         setIsDirty(true)
-                        setSaveStatus('追加作業の見積明細を変更しました')
+                        setSaveStatus('霑ｽ蜉菴懈･ｭ縺ｮ隕狗ｩ肴・邏ｰ繧貞､画峩縺励∪縺励◆')
                         return
                       }
                       const edit = { parts: cleanParts, memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), rate, amount, amountMode: amount === '' ? 'auto' : 'manual' }
@@ -8631,7 +8630,7 @@ return savedEntries
                       })
                       setEstimateEditor(null)
                       setIsDirty(true)
-                      setSaveStatus('見積明細を変更しました')
+                      setSaveStatus('隕狗ｩ肴・邏ｰ繧貞､画峩縺励∪縺励◆')
                     }}
                   />
 
@@ -8656,10 +8655,10 @@ return savedEntries
                       try {
                         localStorage.setItem(estimateVersionStorageKey, JSON.stringify(next))
                         setEstimateVersions(next)
-                        setSaveStatus('お見積り' + version + 'を保存し、修正版' + (version + 1) + 'を作成しました')
+                        setSaveStatus('縺願ｦ狗ｩ阪ｊ' + version + '繧剃ｿ晏ｭ倥＠縲∽ｿｮ豁｣迚・ + (version + 1) + '繧剃ｽ懈・縺励∪縺励◆')
                       } catch (error) {
                         console.error(error)
-                        window.alert('見積履歴を保存できませんでした。')
+                        window.alert('隕狗ｩ榊ｱ･豁ｴ繧剃ｿ晏ｭ倥〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・)
                       }
                     }}
                     onDownloadVersion={version => downloadEstimateExcel({
@@ -8670,7 +8669,7 @@ return savedEntries
                       estimateVersion: version.version,
                     }, version.rows || [], version.copyFormat || estimateCopyFormat, version.additionalWorks || [])}
                     onDeleteVersion={version => {
-                      if (!window.confirm('お見積り' + version.version + 'を削除しますか？')) return
+                      if (!window.confirm('縺願ｦ狗ｩ阪ｊ' + version.version + '繧貞炎髯､縺励∪縺吶°・・)) return
                       const next = estimateVersions.filter(item => item.id !== version.id)
                       localStorage.setItem(estimateVersionStorageKey, JSON.stringify(next))
                       setEstimateVersions(next)
@@ -8678,15 +8677,15 @@ return savedEntries
                   />
 
                   <div className="estimateTotal">
-                    <span>合計金額</span>
+                    <span>蜷郁ｨ磯≡鬘・/span>
                     <strong>{formatYen(totalAmount)}</strong>
                   </div>
-                  <p className="estimateNote">概算金額です。実際の施工内容、使用材料、下地の状態、現場状況などにより金額が変更となる場合があります。</p>
+                  <p className="estimateNote">讎らｮ鈴≡鬘阪〒縺吶ょｮ滄圀縺ｮ譁ｽ蟾･蜀・ｮｹ縲∽ｽｿ逕ｨ譚先侭縲∽ｸ句慍縺ｮ迥ｶ諷九∫樟蝣ｴ迥ｶ豕√↑縺ｩ縺ｫ繧医ｊ驥鷹｡阪′螟画峩縺ｨ縺ｪ繧句ｴ蜷医′縺ゅｊ縺ｾ縺吶・/p>
                 </section>
               )
             })() : showRoomManagement ? (
               <section className="card">
-                <h2>部屋管理</h2>
+                <h2>驛ｨ螻狗ｮ｡逅・/h2>
                 <RoomManagementControls
                   rooms={rooms}
                   onAddRoom={addCustomRoom}
@@ -8715,7 +8714,7 @@ return savedEntries
               <LengthMeasurementPage
                 key="cf"
                 title="CF"
-                rooms={rooms.includes('土間') ? rooms : [...rooms, '土間']}
+                rooms={rooms.includes('蝨滄俣') ? rooms : [...rooms, '蝨滄俣']}
                 records={cfRecords}
                 setRecords={setCfRecords}
                 materialGroups={cfMaterialGroups}
@@ -8730,7 +8729,7 @@ return savedEntries
               ) : activePage === 'soft' ? (
               <LengthMeasurementPage
                 key="soft"
-                title="ソフト巾木"
+                title="繧ｽ繝輔ヨ蟾ｾ譛ｨ"
                 rooms={rooms}
                 records={softRecords}
                 setRecords={setSoftRecords}
@@ -8742,15 +8741,15 @@ return savedEntries
               />
             ) : (
               <>
-                <nav ref={crossRoomAreaRef} className="roomTabs" aria-label="クロスの部屋">
+                <nav ref={crossRoomAreaRef} className="roomTabs" aria-label="繧ｯ繝ｭ繧ｹ縺ｮ驛ｨ螻・>
                   {rooms.map((name, index) => (
                     <button key={name} type="button" className={pageIndex === index ? 'room active' : 'room'} onClick={() => goToPage(index)}>{name}</button>
                   ))}
-                  <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>全室合計</button>
+                  <button type="button" className={isSummaryPage ? 'room active' : 'room'} onClick={() => goToPage(rooms.length)}>蜈ｨ螳､蜷郁ｨ・/button>
                 </nav>
                 {isSummaryPage ? (
                   <section className="card">
-                    <h2>部屋ごとの合計</h2>
+                    <h2>驛ｨ螻九＃縺ｨ縺ｮ蜷郁ｨ・/h2>
                     {rooms.map(roomName => {
                       const roomTotalsByType = measurementTypes.reduce((totals, type) => {
                         totals[type] = sumRecords(records, roomName, type)
@@ -8769,7 +8768,7 @@ return savedEntries
                             </div>
                           ))}
                           <div className="summaryLine">
-                            <span>部屋合計</span>
+                            <span>驛ｨ螻句粋險・/span>
                             <strong>{formatQuantity(roomTotal)}m</strong>
                           </div>
                         </div>
@@ -8778,12 +8777,12 @@ return savedEntries
                     <div className="summary">
                       {measurementTypes.map(type => (
                         <div className="summaryLine" key={type}>
-                          <span>{type}合計</span>
+                          <span>{type}蜷郁ｨ・/span>
                           <strong>{formatQuantity(totalsByType[type])}m</strong>
                         </div>
                       ))}
                       <div className="summaryLine summaryGrand">
-                        <span>全区分合計</span>
+                        <span>蜈ｨ蛹ｺ蛻・粋險・/span>
                         <strong>{formatQuantity(grandTotal)}m</strong>
                       </div>
                     </div>
@@ -8792,7 +8791,7 @@ return savedEntries
                   <>
                     <section className="card">
                       <h2>{room}</h2>
-                      <div ref={crossTypeAreaRef} className="measurementTypes" aria-label="採寸区分">
+                      <div ref={crossTypeAreaRef} className="measurementTypes" aria-label="謗｡蟇ｸ蛹ｺ蛻・>
                         {measurementTypes.map(type => (
                           <button key={type} type="button" className={measurementType === type ? 'measurementType active' : 'measurementType'} onClick={() => {
                             setMeasurementType(type)
@@ -8805,7 +8804,7 @@ return savedEntries
                         <div className="crossInputArea" ref={crossInputAreaRef}>
                           <div className="inputRow">
                             <label>
-                              <span>高さ</span>
+                              <span>鬮倥＆</span>
                               <input
                                 ref={heightInputRef}
                                 type="text"
@@ -8814,11 +8813,11 @@ return savedEntries
                                 value={height}
                                 onFocus={() => setActiveInput('height')}
                                 onClick={() => setActiveInput('height')}
-                                placeholder="タップ"
+                                placeholder="繧ｿ繝・・"
                               />
                             </label>
                             <label>
-                              <span>本数</span>
+                              <span>譛ｬ謨ｰ</span>
                               <input
                                 ref={countInputRef}
                                 type="text"
@@ -8827,7 +8826,7 @@ return savedEntries
                                 value={count}
                                 onFocus={() => setActiveInput('count')}
                                 onClick={() => setActiveInput('count')}
-                                placeholder="タップ"
+                                placeholder="繧ｿ繝・・"
                               />
                             </label>
                           </div>
@@ -8842,7 +8841,7 @@ return savedEntries
                         </div>
 
                         <label>
-                          <span>メモ</span>
+                          <span>繝｡繝｢</span>
                           <input
                             ref={memoInputRef}
                             className="memoInput"
@@ -8852,35 +8851,35 @@ return savedEntries
                               setMemo(event.target.value)
                               markUnsaved()
                             }}
-                            placeholder="例：窓面、部分張替え"
+                            placeholder="萓具ｼ夂ｪ馴擇縲・Κ蛻・ｼｵ譖ｿ縺・
                           />
                         </label>
-                        <div className="quickMemos" aria-label="よく使うメモ">
+                        <div className="quickMemos" aria-label="繧医￥菴ｿ縺・Γ繝｢">
                           {configuredQuickMemos.map(text => <button key={text} className="quickMemoButton" type="button" onClick={() => addQuickMemo(text)}>{text}</button>)}
-                          <button className="quickMemoButton" type="button" onClick={() => memoInputRef.current?.focus()}>その他</button>
+                          <button className="quickMemoButton" type="button" onClick={() => memoInputRef.current?.focus()}>縺昴・莉・/button>
                         </div>
                       </form>
                       <div className="records">
                         {roomRecords.length === 0 ? (
-                          <p className="empty">{room}の{measurementType}の登録内容はありません</p>
+                          <p className="empty">{room}縺ｮ{measurementType}縺ｮ逋ｻ骭ｲ蜀・ｮｹ縺ｯ縺ゅｊ縺ｾ縺帙ｓ</p>
                         ) : roomRecords.map(item => (
                           <div className="record" key={item.id}>
                             <div>
                               <strong>{item.type}</strong>
-                              <small>{Number(item.height).toFixed(2)}m × {item.count}本</small>
-                              {item.memo && <small>メモ：{item.memo}</small>}
+                              <small>{Number(item.height).toFixed(2)}m ﾃ・{item.count}譛ｬ</small>
+                              {item.memo && <small>繝｡繝｢・嘴item.memo}</small>}
                             </div>
                             <b>{formatQuantity(getRecordQuantity(item))}m</b>
-                            <button type="button" onClick={() => deleteCrossRecord(item.id)} aria-label={`${room}の${item.type}の登録を削除`}>×</button>
+                            <button type="button" onClick={() => deleteCrossRecord(item.id)} aria-label={`${room}縺ｮ${item.type}縺ｮ逋ｻ骭ｲ繧貞炎髯､`}>ﾃ・/button>
                           </div>
                         ))}
                       </div>
                     </section>
 
                     <div className="roomNavigation">
-                      <button className="back" type="button" disabled={pageIndex === 0} onClick={() => goToPage(pageIndex - 1)}>← 前の部屋</button>
+                      <button className="back" type="button" disabled={pageIndex === 0} onClick={() => goToPage(pageIndex - 1)}>竊・蜑阪・驛ｨ螻・/button>
                       <button className="primary roomNavigationNext" type="button" onClick={() => goToPage(pageIndex + 1)}>
-                        {pageIndex === rooms.length - 1 ? '全室合計へ →' : '次の部屋 →'}
+                        {pageIndex === rooms.length - 1 ? '蜈ｨ螳､蜷郁ｨ医∈ 竊・ : '谺｡縺ｮ驛ｨ螻・竊・}
                       </button>
                     </div>
                   </>
@@ -8893,16 +8892,16 @@ return savedEntries
         {showComplete && (
           <div className="completeBackdrop" onClick={() => setShowComplete(false)}>
             <section className="completeCard" onClick={event => event.stopPropagation()}>
-              <small>MEASUREMENT</small><h2>✓ 採寸 COMPLETE</h2>
-              <div><span>クロス</span><strong>{formatQuantity(records.reduce((sum,item) => sum + getRecordQuantity(item),0) * Math.max(0,Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0))}㎡</strong></div>
-              <div><span>CF</span><strong>{formatQuantity(cfRecords.reduce((sum,item) => sum + getLengthQuantity(item),0) * 1.8)}㎡</strong></div>
-              <div><span>巾木</span><strong>{formatQuantity(softRecords.reduce((sum,item) => sum + getSoftBaseboardQuantity(item),0))}枚</strong></div>
-              <p>お疲れさまでした！</p><button className="primary" type="button" onClick={() => setShowComplete(false)}>閉じる</button>
+              <small>MEASUREMENT</small><h2>笨・謗｡蟇ｸ COMPLETE</h2>
+              <div><span>繧ｯ繝ｭ繧ｹ</span><strong>{formatQuantity(records.reduce((sum,item) => sum + getRecordQuantity(item),0) * Math.max(0,Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0))}緕｡</strong></div>
+              <div><span>CF</span><strong>{formatQuantity(cfRecords.reduce((sum,item) => sum + getLengthQuantity(item),0) * 1.8)}緕｡</strong></div>
+              <div><span>蟾ｾ譛ｨ</span><strong>{formatQuantity(softRecords.reduce((sum,item) => sum + getSoftBaseboardQuantity(item),0))}譫・/strong></div>
+              <p>縺顔夢繧後＆縺ｾ縺ｧ縺励◆・・/p><button className="primary" type="button" onClick={() => setShowComplete(false)}>髢峨§繧・/button>
             </section>
           </div>
         )}
         {showSplash && <div className={`splashScreen splash-${theme}`}><strong>M-CROSS</strong><span>{theme === 'cyber' ? 'FIELD MEASUREMENT SYSTEM / READY' : 'MavieSelect Field Measurement'}</span></div>}
-        {showGalaxyUnlock && <div className="galaxyUnlock"><small>SECRET THEME</small><strong>GALAXY UNLOCKED</strong><span>★</span></div>}
+        {showGalaxyUnlock && <div className="galaxyUnlock"><small>SECRET THEME</small><strong>GALAXY UNLOCKED</strong><span>笘・/span></div>}
         {showDraftRecovery && workingDraft && (
           <div className="leaveConfirmBackdrop">
             <section
@@ -8911,20 +8910,20 @@ return savedEntries
               aria-modal="true"
               aria-labelledby="draft-recovery-title"
             >
-              <h2 id="draft-recovery-title">前回の作業中データがあります</h2>
+              <h2 id="draft-recovery-title">蜑榊屓縺ｮ菴懈･ｭ荳ｭ繝・・繧ｿ縺後≠繧翫∪縺・/h2>
               <p>
-                保存する前にM-Crossが終了した可能性があります。<br />
-                続きから再開できます。
+                菫晏ｭ倥☆繧句燕縺ｫM-Cross縺檎ｵゆｺ・＠縺溷庄閭ｽ諤ｧ縺後≠繧翫∪縺吶・br />
+                邯壹″縺九ｉ蜀埼幕縺ｧ縺阪∪縺吶・
               </p>
               <p className="savedMeta">
-                {workingDraft.propertyName || '物件名なし'}
-                {workingDraft.unit ? `　${workingDraft.unit}号室` : ''}
+                {workingDraft.propertyName || '迚ｩ莉ｶ蜷阪↑縺・}
+                {workingDraft.unit ? `縲${workingDraft.unit}蜿ｷ螳､` : ''}
               </p>
               <button className="saveButton" type="button" onClick={restoreWorkingDraft}>
-                続きから再開
+                邯壹″縺九ｉ蜀埼幕
               </button>
               <button className="dangerButton" type="button" onClick={discardWorkingDraft}>
-                破棄して新規開始
+                遐ｴ譽・＠縺ｦ譁ｰ隕城幕蟋・
               </button>
             </section>
           </div>
@@ -8938,16 +8937,16 @@ return savedEntries
               aria-labelledby="leave-confirm-title"
               aria-describedby="leave-confirm-description"
             >
-              <h2 id="leave-confirm-title">未保存の変更</h2>
+              <h2 id="leave-confirm-title">譛ｪ菫晏ｭ倥・螟画峩</h2>
               <p id="leave-confirm-description">
-                変更内容が保存されていません。<br />
-                保存せずに移動しますか？
+                螟画峩蜀・ｮｹ縺御ｿ晏ｭ倥＆繧後※縺・∪縺帙ｓ縲・br />
+                菫晏ｭ倥○縺壹↓遘ｻ蜍輔＠縺ｾ縺吶°・・
               </p>
               <button className="saveButton" type="button" onClick={saveAndNavigate}>
-                保存して移動
+                菫晏ｭ倥＠縺ｦ遘ｻ蜍・
               </button>
               <button className="dangerButton" type="button" onClick={discardAndNavigate}>
-                保存せずに移動
+                菫晏ｭ倥○縺壹↓遘ｻ蜍・
               </button>
               {saveStatus && <p className="saveStatus" role="alert">{saveStatus}</p>}
               <button
@@ -8958,7 +8957,7 @@ return savedEntries
                   setShowLeaveConfirmation(false)
                 }}
               >
-                キャンセル
+                繧ｭ繝｣繝ｳ繧ｻ繝ｫ
               </button>
             </section>
           </div>
