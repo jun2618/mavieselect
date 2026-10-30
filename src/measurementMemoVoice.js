@@ -21,6 +21,7 @@ function correctMCrossVoiceText(value) {
 
 /* M-CROSS_MEASUREMENT_MEMO_VOICE_V2_SAFE */
 import './measurementMemoVoice.css'
+import { openVoiceRecognitionReview, openVoiceDictionaryManager } from './voiceCorrectionDictionary' // M-CROSS_EDITABLE_VOICE_DICTIONARY_V2_SAFE
 
 const BUTTON_CLASS = 'measurementMemoVoiceButtonV2'
 const STATUS_CLASS = 'measurementMemoVoiceStatusV2'
@@ -92,9 +93,16 @@ function addVoiceButton(label) {
     status.textContent = '話してください'
 
     recognition.onresult = event => {
-      const transcript = correctMCrossVoiceText(event.results?.[0]?.[0]?.transcript || '')
-      appendTranscript(field, transcript)
-      status.textContent = transcript ? '✓ メモへ追記しました' : '音声を認識できませんでした'
+      const rawText = String(event.results?.[0]?.[0]?.transcript || '').trim()
+      openVoiceRecognitionReview({
+        rawText,
+        suggestedText: correctMCrossVoiceText(rawText),
+        onApply: finalText => {
+          appendTranscript(field, finalText)
+          status.textContent = finalText ? '✓ メモへ追記しました' : '音声を認識できませんでした'
+          field.dispatchEvent(new Event('blur', { bubbles: true }))
+        },
+      })
       field.dispatchEvent(new Event('blur', { bubbles: true }))
     }
     recognition.onerror = event => {
@@ -119,7 +127,12 @@ function addVoiceButton(label) {
     }
   })
 
-  wrapper.append(button, status)
+  const dictionaryButton = document.createElement('button')
+  dictionaryButton.type = 'button'
+  dictionaryButton.className = BUTTON_CLASS
+  dictionaryButton.textContent = '📖 音声辞書'
+  dictionaryButton.addEventListener('click', openVoiceDictionaryManager)
+  wrapper.append(button, dictionaryButton, status)
   field.insertAdjacentElement('afterend', wrapper)
 }
 

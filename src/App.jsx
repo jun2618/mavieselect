@@ -4,6 +4,7 @@ import OneDriveSyncPanel from './OneDriveSyncPanel'
 import EstimateRowEditor from './EstimateRowEditor'
 import './App.css'
 
+import { openVoiceRecognitionReview, applyUserVoiceCorrections } from './voiceCorrectionDictionary' // M-CROSS_EDITABLE_VOICE_DICTIONARY_V2_SAFE
 import './measurementMemoVoice' // M-CROSS_MEASUREMENT_MEMO_VOICE_V2_SAFE
 const defaultRooms = [
   '居間', 'LDK', '台所', '洋間', '洋間2', '洋間3', '和室',
@@ -3663,8 +3664,12 @@ function FinalReviewPage({
       setVoiceListening(true)
       setVoiceInputStatus('🎤 聞き取り中… 例：台所 混合栓 漏水修理')
       recognition.onresult = event => {
-        const transcript = correctOtherWorkVoiceText(event.results?.[0]?.[0]?.transcript || '')
-        applyOtherWorkVoiceText(transcript)
+        const rawText = String(event.results?.[0]?.[0]?.transcript || '').trim()
+        openVoiceRecognitionReview({
+          rawText,
+          suggestedText: applyUserVoiceCorrections(correctOtherWorkVoiceText(rawText)),
+          onApply: finalText => applyOtherWorkVoiceText(finalText),
+        })
       }
       recognition.onerror = event => {
         setVoiceInputStatus('音声入力エラー: ' + (event.error || '認識できませんでした'))
