@@ -229,3 +229,13 @@ textarea:disabled {
 
 /* M-CROSS_PROMOTE_SAVED_LIST_V1_SAFE */
 .savedListHeroButton{display:grid;gap:4px;width:100%;margin:14px 0 10px;padding:18px 20px;border:0;border-radius:16px;background:linear-gradient(135deg,#6a4fd6,#8b5dd9);color:#fff;box-shadow:0 12px 28px rgba(93,63,180,.28);text-align:left;cursor:pointer}.savedListHeroButton span{font-size:20px;font-weight:900;color:inherit!important}.savedListHeroButton small{font-size:14px!important;color:rgba(255,255,255,.92)!important;opacity:1!important}.savedListHeroButton:hover{transform:translateY(-1px);box-shadow:0 15px 32px rgba(93,63,180,.34)}.savedListHeroButton:focus-visible{outline:3px solid rgba(106,79,214,.4);outline-offset:3px}@media(max-width:620px){.savedListHeroButton{padding:16px}.savedListHeroButton span{font-size:18px}}
+
+/* M-CROSS_SAVE_FEEDBACK_AND_EXPORT_LABEL_V1_SAFE */
+.saveActionWithFeedback{display:grid;gap:7px}.saveFeedbackMessage{padding:8px 12px;border-radius:10px;font-size:14px;font-weight:800;text-align:center}.saveFeedbackMessage.success{background:rgba(24,145,90,.12);color:#087443}.saveFeedbackMessage.error{background:rgba(200,50,50,.12);color:#b42318}.theme-dark .saveFeedbackMessage.success,.theme-cyber .saveFeedbackMessage.success,.theme-luxury .saveFeedbackMessage.success,.theme-retro .saveFeedbackMessage.success,.theme-galaxy .saveFeedbackMessage.success{color:#8dffc5}.theme-dark .saveFeedbackMessage.error,.theme-cyber .saveFeedbackMessage.error,.theme-luxury .saveFeedbackMessage.error,.theme-retro .saveFeedbackMessage.error,.theme-galaxy .saveFeedbackMessage.error{color:#ffb4ab}
+
+/* M-CROSS_ESTIMATE_BUTTON_QUICK_EXPORT_V3_EXACT */
+.estimateQuickExportButton{font-weight:850!important;border:2px solid rgba(106,79,214,.45)!important}
+.theme-dark .estimateQuickExportButton,.theme-cyber .estimateQuickExportButton,.theme-luxury .estimateQuickExportButton,.theme-retro .estimateQuickExportButton,.theme-galaxy .estimateQuickExportButton{border-color:#bda6ff!important}
+
+/* M-CROSS_OTHER_WORK_VOICE_INPUT_V1_SAFE */
+.otherWorkVoiceBox{display:grid;gap:7px;margin-bottom:16px;padding:14px;border:1px solid rgba(39,111,191,.25);border-radius:14px;background:rgba(39,111,191,.06)}.otherWorkVoiceButton{min-height:48px;border:0;border-radius:12px;background:linear-gradient(135deg,#2878db,#0aa6a6);color:#fff;font-weight:900;font-size:17px;cursor:pointer}.otherWorkVoiceButton:disabled{opacity:.75}.otherWorkVoiceBox small{font-size:13px!important;opacity:.8}.otherWorkVoiceStatus{margin:0;font-size:14px;font-weight:700}.theme-dark .otherWorkVoiceBox,.theme-cyber .otherWorkVoiceBox,.theme-luxury .otherWorkVoiceBox,.theme-retro .otherWorkVoiceBox,.theme-galaxy .otherWorkVoiceBox{background:rgba(51,230,255,.08);border-color:rgba(51,230,255,.35)}

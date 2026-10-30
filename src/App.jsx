@@ -3546,6 +3546,9 @@ function FinalReviewPage({
   const [quantity, setQuantity] = useState('1')
   const [unit, setUnit] = useState('式')
   const [unitPrice, setUnitPrice] = useState('')
+  /* M-CROSS_OTHER_WORK_VOICE_INPUT_V1_SAFE */
+  const [voiceInputStatus, setVoiceInputStatus] = useState('')
+  const [voiceListening, setVoiceListening] = useState(false)
   const [memo, setMemo] = useState('')
   const [editingAdditionalWorkId, setEditingAdditionalWorkId] = useState('')
 
@@ -3607,6 +3610,58 @@ function FinalReviewPage({
     window.setTimeout(() => {
       document.querySelector('.additionalWorkForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 0)
+  }
+
+  function applyOtherWorkVoiceText(transcript) {
+    const text = String(transcript || '').trim()
+    if (!text) return
+    const normalized = text.replace(/[、，,。]/g, ' ').replace(/\s+/g, ' ').trim()
+    const roomCandidate = rooms.find(name => normalized.startsWith(name + ' ') || normalized === name)
+      || rooms.find(name => normalized.includes(name))
+      || ''
+    let remainder = normalized
+    if (roomCandidate) {
+      setRoom(roomCandidate)
+      remainder = remainder.replace(roomCandidate, '').trim()
+    }
+    const quantityMatch = remainder.match(/(?:数量)?\s*(\d+(?:\.\d+)?)\s*(式|個|本|枚|台|箇所)?$/)
+    if (quantityMatch) {
+      setQuantity(quantityMatch[1])
+      if (quantityMatch[2]) setUnit(quantityMatch[2])
+      remainder = remainder.slice(0, quantityMatch.index).trim()
+    }
+    if (remainder) setWork(remainder)
+    setVoiceInputStatus('認識結果を入力欄へ反映しました。内容を確認して登録してください。')
+  }
+
+  function startOtherWorkVoiceInput() {
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!Recognition) {
+      setVoiceInputStatus('このブラウザーでは音声入力を利用できません。端末のキーボード音声入力を使ってください。')
+      return
+    }
+    try {
+      const recognition = new Recognition()
+      recognition.lang = 'ja-JP'
+      recognition.continuous = false
+      recognition.interimResults = false
+      recognition.maxAlternatives = 1
+      setVoiceListening(true)
+      setVoiceInputStatus('🎤 聞き取り中… 例：台所 混合栓 漏水修理')
+      recognition.onresult = event => {
+        const transcript = event.results?.[0]?.[0]?.transcript || ''
+        applyOtherWorkVoiceText(transcript)
+      }
+      recognition.onerror = event => {
+        setVoiceInputStatus('音声入力エラー: ' + (event.error || '認識できませんでした'))
+      }
+      recognition.onend = () => setVoiceListening(false)
+      recognition.start()
+    } catch (error) {
+      setVoiceListening(false)
+      setVoiceInputStatus('音声入力を開始できませんでした。マイク権限を確認してください。')
+      console.error(error)
+    }
   }
 
   function addWork(event) {
@@ -3793,6 +3848,13 @@ function FinalReviewPage({
         </section>
 
         <form className="additionalWorkForm" onSubmit={addWork}>
+          <div className="otherWorkVoiceBox">
+            <button className="otherWorkVoiceButton" type="button" disabled={voiceListening} onClick={startOtherWorkVoiceInput}>
+              {voiceListening ? '🎤 聞き取り中…' : '🎤 音声で入力'}
+            </button>
+            <small>例：台所 混合栓 漏水修理 ／ 台所 混合栓 カートリッジ交換 1個</small>
+            {voiceInputStatus && <p className="otherWorkVoiceStatus" role="status">{voiceInputStatus}</p>}
+          </div>
           {editingAdditionalWorkId && (
             <div className="additionalWorkEditNotice">
               <strong>✏️ 追加作業を編集中</strong>
@@ -3981,6 +4043,8 @@ export default function App() {
   const [showMeasurementCheck, setShowMeasurementCheck] = useState(false)
   const [showRoomManagement, setShowRoomManagement] = useState(false)
   const [showEstimate, setShowEstimate] = useState(false)
+  /* M-CROSS_SAVE_FEEDBACK_AND_EXPORT_LABEL_V1_SAFE */
+  const [saveFeedback, setSaveFeedback] = useState('')
   const [estimateEditor, setEstimateEditor] = useState(null)
   const [estimateEdits, setEstimateEdits] = useState({})
   const [caseCrossFactor, setCaseCrossFactor] = useState(() => String(loadPricingSettings().crossFactor))
@@ -8038,18 +8102,31 @@ return savedEntries
             <p className="propertyLine">{selectedProperty?.name}　{unit}号室</p>
             <h1>
               {showEstimate
-                ? '概算金額'
+                ? '見積内容'
                 : showRoomManagement
                   ? '部屋管理'
                   : activePage === 'cross'
                 ? isSummaryPage ? '全室の合計' : '採寸入力'
-                : activePage === 'cf' ? 'CF採寸' : activePage === 'soft' ? 'ソフト巾木' : activePage === 'floorTrim' ? '床見切り' : '最終確認'}
+                : activePage === 'cf' ? 'CF採寸' : activePage === 'soft' ? 'ソフト巾木' : activePage === 'floorTrim' ? '床見切り' : 'その他工事'}
             </h1>
             <div className="measurementActions">
               <button className="newRegistrationInlineButton" type="button" onClick={startNewRegistration}>
                 ＋ 新規登録
               </button>
-              <button className="saveButton" type="button" onClick={saveCurrentData}>保存する</button>
+              <div className="saveActionWithFeedback">
+                <button className="saveButton" type="button" onClick={() => {
+                  const saved = saveCurrentData()
+                  if (saved) {
+                    const now = new Date()
+                    const time = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                    setSaveFeedback('✓ 保存しました ' + time)
+                    window.setTimeout(() => setSaveFeedback(''), 3500)
+                  } else {
+                    setSaveFeedback('保存できませんでした')
+                  }
+                }}>保存する</button>
+                {saveFeedback && <div className={`saveFeedbackMessage ${saveFeedback.startsWith('✓') ? 'success' : 'error'}`} role="status">{saveFeedback}</div>}
+              </div>
               <button
                 className="secondaryButton"
                 type="button"
@@ -8067,7 +8144,25 @@ return savedEntries
                   additionalWorks,
                 })}
               >
-                Excel出力
+                📊 採寸データ出力
+              </button>
+              {/* M-CROSS_ESTIMATE_BUTTON_QUICK_EXPORT_V3_EXACT */}
+              <button
+                className="secondaryButton estimateQuickExportButton"
+                type="button"
+                onClick={() => {
+                  const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
+                  const rawRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
+                  const rowsForExport = applyEstimateEdits(rawRows, estimateEdits)
+                  downloadEstimateExcel({
+                    company,
+                    propertyName: selectedProperty?.name || '',
+                    address: selectedProperty?.address || '',
+                    unit,
+                  }, rowsForExport, estimateCopyFormat, additionalWorks)
+                }}
+              >
+                📄 見積書を出力
               </button>
               <button
                 className="secondaryButton"
@@ -8077,7 +8172,7 @@ return savedEntries
                   setShowRoomManagement(false)
                 }}
               >
-                {showEstimate ? '← 採寸画面へ戻る' : '💰 概算金額'}
+                {showEstimate ? '← 採寸画面へ戻る' : '💰 見積内容を確認・編集'}
               </button>
             </div>
             <p className={`saveState ${isDirty ? 'dirty' : 'saved'}`} role="status" aria-live="polite">
@@ -8098,7 +8193,8 @@ return savedEntries
                 <button type="button" className={activePage === 'cf' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('cf')}>CF採寸</button>
                 <button type="button" className={activePage === 'soft' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('soft')}>ソフト巾木</button>
                 <button type="button" className={activePage === 'floorTrim' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('floorTrim')}>床見切り</button>
-                <button type="button" className={activePage === 'review' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('review')}>✅ 最終確認</button>
+                {/* M-CROSS_RENAME_FINAL_REVIEW_TO_OTHER_WORK_V2_SAFE */}
+                <button type="button" className={activePage === 'review' ? 'measurementType active' : 'measurementType'} onClick={() => setActivePage('review')}>🔧 その他工事</button>
               </div>
             )}
 
@@ -8122,7 +8218,7 @@ return savedEntries
               return (
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室</h2>
-                  <p className="estimateIntro">退去時にお客様へ提示するための概算です。正式見積ではありません。</p>
+                  {/* M-CROSS_SIMPLIFY_ESTIMATE_TEXT_V1_SAFE */}
                   <div className="restorationWorkOrderAction">
                     {workOrders.some(item => item.sourceType === 'restoration' && item.sourceId === [selectedProperty?.id || selectedProperty?.name || '', String(unit || '').trim()].join('|')) ? (
                       <button className="secondaryButton" type="button" onClick={() => { setStarted(false); setShowWorkOrders(true) }}>工事案件を開く</button>
@@ -8298,7 +8394,7 @@ return savedEntries
                   />
 
                   <div className="estimateTotal">
-                    <span>概算合計</span>
+                    <span>合計金額</span>
                     <strong>{formatYen(totalAmount)}</strong>
                   </div>
                   <p className="estimateNote">概算金額です。実際の施工内容、使用材料、下地の状態、現場状況などにより金額が変更となる場合があります。</p>
