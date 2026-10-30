@@ -17,9 +17,30 @@ function writeItems(items) {
   window.dispatchEvent(new CustomEvent('mcross-voice-dictionary-changed'))
 }
 
+/* M-CROSS_VOICE_DICTIONARY_SPACING_FIX_V3_SAFE */
+function normalizeVoiceKey(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase('ja')
+    .replace(/[\s　、，,。・]+/g, '')
+    .trim()
+}
+
 export function applyUserVoiceCorrections(value) {
   let text = String(value || '').trim()
-  for (const item of readItems()) text = text.split(item.from).join(item.to)
+  const items = readItems()
+
+  // まず従来どおり完全一致・部分一致で置換する。
+  for (const item of items) {
+    if (item?.from) text = text.split(String(item.from)).join(String(item.to || ''))
+  }
+
+  // 音声認識が「貼り 覗く」のように空白を挟んでも、
+  // 辞書の「貼り覗く」と同じ語として扱う。
+  const normalizedText = normalizeVoiceKey(text)
+  const exact = items.find(item => normalizeVoiceKey(item.from) === normalizedText)
+  if (exact) return String(exact.to || '').trim()
+
   return text
 }
 
