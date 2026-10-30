@@ -51,3 +51,181 @@ h2 { margin: 0 0 18px; font-family: serif; font-size: 20px; font-weight: 500; }
 .dangerButton { color: #f0b6a8; background: #2b1713; border: 1px solid #75443a; border-radius: 7px; cursor: pointer; font-weight: 700; }
 .masterPropertySection > .secondaryButton { width: 100%; min-height: 44px; color: #e2c47b; background: #211d14; border: 1px solid #8a6c37; border-radius: 8px; cursor: pointer; }
 @media (max-width: 380px) { .app { padding-left: 12px; padding-right: 12px; } .card { padding: 16px; } }
+
+
+/* M-CROSS_THEME_READABILITY_V2_SAFE */
+/* App.jsxには触れず、App.cssの末尾から安全に上書きする */
+
+/* 全テーマ共通: 文字サイズ */
+.app,
+.main {
+  font-size: 17px;
+  line-height: 1.58;
+}
+
+button,
+input,
+select,
+textarea {
+  font-size: 16px !important;
+  line-height: 1.4;
+}
+
+button {
+  font-weight: 700;
+}
+
+label > span,
+.fieldLabel {
+  font-size: 15px !important;
+  font-weight: 700;
+}
+
+small,
+.subtitle,
+.estimateNote,
+.oneDriveSyncNote,
+.oneDriveWarning {
+  font-size: 14px !important;
+  line-height: 1.5;
+  opacity: 0.88 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #667085 !important;
+  opacity: 1 !important;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.7 !important;
+}
+
+.propertyListPickerItem strong,
+.selectedPropertySummary strong {
+  font-size: 17px !important;
+}
+
+.propertyListPickerItem small,
+.selectedPropertySummary small {
+  font-size: 14px !important;
+  opacity: 0.88 !important;
+}
+
+/* 暗色テーマ共通 */
+.theme-dark,
+.theme-cyber,
+.theme-luxury,
+.theme-retro,
+.theme-galaxy {
+  --mcross-readable-text: #f7fbff;
+  --mcross-readable-muted: #d8e8f6;
+}
+
+.theme-dark :is(p, span, small, label, strong, h1, h2, h3),
+.theme-cyber :is(p, span, small, label, strong, h1, h2, h3),
+.theme-luxury :is(p, span, small, label, strong, h1, h2, h3),
+.theme-retro :is(p, span, small, label, strong, h1, h2, h3),
+.theme-galaxy :is(p, span, small, label, strong, h1, h2, h3) {
+  color: var(--mcross-readable-text);
+}
+
+.theme-dark :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small),
+.theme-cyber :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small),
+.theme-luxury :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small),
+.theme-retro :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small),
+.theme-galaxy :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small) {
+  color: var(--mcross-readable-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Cyber: 薄い水色を本文に使わず、白と青白を基本にする */
+.theme-cyber {
+  --mcross-readable-text: #f8fcff;
+  --mcross-readable-muted: #d7edf7;
+  --mcross-cyber-accent: #33e6ff;
+}
+
+.theme-cyber :is(h1, h2, h3, .eyebrow, .fieldLabel, label > span) {
+  color: #f8fcff !important;
+  text-shadow: none !important;
+}
+
+.theme-cyber :is(.subtitle, small, .estimateNote, .oneDriveSyncNote, .oneDriveWarning) {
+  color: #d7edf7 !important;
+  opacity: 1 !important;
+}
+
+.theme-cyber :is(input, select, textarea) {
+  color: #ffffff !important;
+  background: #101b2a !important;
+  border-color: #4e7189 !important;
+}
+
+.theme-cyber :is(input, textarea)::placeholder {
+  color: #b6cfdb !important;
+  opacity: 1 !important;
+}
+
+.theme-cyber .secondaryButton {
+  color: #f8fcff !important;
+  border-color: #33e6ff !important;
+}
+
+.theme-cyber :is(.primary, .saveButton) {
+  font-weight: 800 !important;
+}
+
+.theme-cyber :is(.address, .selectedPropertySummary, .propertyListPickerItem, .oneDriveStatus, .oneDriveCount) {
+  color: #f8fcff !important;
+}
+
+.theme-cyber :is(.address small, .selectedPropertySummary small, .propertyListPickerItem small) {
+  color: #d7edf7 !important;
+  opacity: 1 !important;
+}
+
+/* 明色テーマも補足文字を薄くしすぎない */
+.theme-beige :is(small, .subtitle, .estimateNote),
+.theme-sakura :is(small, .subtitle, .estimateNote),
+.theme-ice :is(small, .subtitle, .estimateNote) {
+  opacity: 0.84 !important;
+}
+
+@media (max-width: 620px) {
+  .app,
+  .main {
+    font-size: 17px;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  small,
+  .subtitle {
+    font-size: 14px !important;
+  }
+}
+
+/* M-CROSS_ESTIMATE_ROW_TAP_EDIT_V2_SAFE */
+.estimateRowTapEdit[role="button"]{cursor:pointer;border-radius:10px;transition:background .15s ease,transform .15s ease}.estimateRowTapEdit[role="button"]:hover,.estimateRowTapEdit[role="button"]:focus-visible{background:rgba(38,114,236,.10);outline:2px solid rgba(38,114,236,.45);outline-offset:2px}.estimateRowTapEdit[role="button"]:active{transform:scale(.997)}
+
+/* M-CROSS_ESTIMATE_FULL_ROW_EDIT_V3 */
+.estimateRowTapEdit[role="button"]::after{content:"タップで編集";display:inline-block;margin-left:10px;font-size:12px;font-weight:700;opacity:.62}
+
+/* M-CROSS_NEW_REGISTRATION_BUTTON_V1_SAFE */
+.newRegistrationHeroButton{display:grid;gap:4px;width:100%;margin:16px 0 18px;padding:17px 20px;border:0;border-radius:16px;background:linear-gradient(135deg,#1976d2,#0aa6a6);color:#fff;box-shadow:0 12px 28px rgba(25,118,210,.24);text-align:left;cursor:pointer}
+.newRegistrationHeroButton span{font-size:19px;font-weight:900;color:inherit!important}.newRegistrationHeroButton small{font-size:14px!important;color:rgba(255,255,255,.9)!important;opacity:1!important}.newRegistrationHeroButton:hover{transform:translateY(-1px);box-shadow:0 15px 32px rgba(25,118,210,.3)}.newRegistrationHeroButton:focus-visible{outline:3px solid rgba(25,118,210,.35);outline-offset:3px}
+.newRegistrationInlineButton{border:2px solid #1976d2!important;background:rgba(25,118,210,.08)!important;color:#1565c0!important;font-weight:900!important}
+.theme-dark .newRegistrationInlineButton,.theme-cyber .newRegistrationInlineButton,.theme-luxury .newRegistrationInlineButton,.theme-retro .newRegistrationInlineButton,.theme-galaxy .newRegistrationInlineButton{color:#f7fbff!important;border-color:#33e6ff!important;background:rgba(51,230,255,.1)!important}
+@media(max-width:620px){.newRegistrationHeroButton{padding:16px}.newRegistrationHeroButton span{font-size:18px}.newRegistrationInlineButton{width:100%}}
+
+/* M-CROSS_PROMOTE_SAVED_LIST_V1_SAFE */
+.savedListHeroButton{display:grid;gap:4px;width:100%;margin:14px 0 10px;padding:18px 20px;border:0;border-radius:16px;background:linear-gradient(135deg,#6a4fd6,#8b5dd9);color:#fff;box-shadow:0 12px 28px rgba(93,63,180,.28);text-align:left;cursor:pointer}.savedListHeroButton span{font-size:20px;font-weight:900;color:inherit!important}.savedListHeroButton small{font-size:14px!important;color:rgba(255,255,255,.92)!important;opacity:1!important}.savedListHeroButton:hover{transform:translateY(-1px);box-shadow:0 15px 32px rgba(93,63,180,.34)}.savedListHeroButton:focus-visible{outline:3px solid rgba(106,79,214,.4);outline-offset:3px}@media(max-width:620px){.savedListHeroButton{padding:16px}.savedListHeroButton span{font-size:18px}}

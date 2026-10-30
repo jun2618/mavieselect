@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import properties from './m-cross-properties.json'
 import OneDriveSyncPanel from './OneDriveSyncPanel'
+import EstimateRowEditor from './EstimateRowEditor'
 import './App.css'
 
 const defaultRooms = [
@@ -746,8 +747,250 @@ function estimateRowsToClipboardText(rows, format) {
 }
 
 
+/* M-CROSS_CROSS_CF_PACKAGE_V3 */
+const CROSS_PACKAGE_LIMIT_V3 = 35
+const CF_SQUARE_METRE_START_V3 = 20
+
+function areaTextV3(value) {
+  const rounded = Math.round((Number(value || 0) + Number.EPSILON) * 10) / 10
+  return rounded + '㎡程度'
+}
+
+function blankPriceV3(row) {
+  return { ...row, rate: '', amount: '' }
+}
+
+function crossDetailRowV3(row) {
+  const room = String(row?.room || row?.parts?.[0] || '').trim()
+  const memo = String(row?.memo || '').trim()
+  return {
+    ...blankPriceV3(row),
+    parts: [(room ? room : '') + 'クロス張替'],
+    memo,
+    quantity: '',
+    unit: '',
+  }
+}
+
+function crossPackageRowV3(baseRow, totalArea) {
+  return {
+    ...blankPriceV3(baseRow || {}),
+    room: baseRow?.room || '__CROSS_PACKAGE__',
+    parts: ['上記クロス張替　' + areaTextV3(totalArea)],
+    memo: '',
+    category: 'crossPackage',
+    quantity: 1,
+    unit: '式',
+  }
+}
+
+function cfPackageRowV3(cfRows, totalArea) {
+  const rooms = [...new Set(cfRows
+    .map(row => String(row?.room || row?.parts?.[0] || '').trim())
+    .filter(Boolean))]
+  const roomText = rooms.join('、')
+  return {
+    ...blankPriceV3(cfRows[cfRows.length - 1] || {}),
+    room: cfRows[0]?.room || '__CF_PACKAGE__',
+    parts: [(roomText ? roomText + '　' : '') + 'CF貼り　' + areaTextV3(totalArea)],
+    memo: '',
+    category: 'cfPackage',
+    quantity: 1,
+    unit: '式',
+  }
+}
+
+function applyCrossCfPackageRulesV3(inputRows) {
+  const rows = Array.isArray(inputRows) ? inputRows : []
+  const crossRows = rows.filter(row => row?.category === 'cross')
+  const cfRows = rows.filter(row => row?.category === 'cf')
+  const crossArea = crossRows.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0)
+  const cfArea = cfRows.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0)
+
+  // クロスは35㎡以下を一式。CFは20㎡未満だけ一式で、20㎡ちょうどから㎡単価。
+  const useCrossPackage = crossRows.length > 0 && crossArea > 0 && crossArea <= CROSS_PACKAGE_LIMIT_V3
+  const useCfPackage = cfRows.length > 0 && cfArea > 0 && cfArea < CF_SQUARE_METRE_START_V3
+
+  const result = []
+  let crossSummaryAdded = false
+  let cfSummaryAdded = false
+
+  rows.forEach(row => {
+    if (useCrossPackage && row?.category === 'cross') {
+      result.push(crossDetailRowV3(row))
+      if (!crossSummaryAdded && row === crossRows[crossRows.length - 1]) {
+        result.push(crossPackageRowV3(row, crossArea))
+        crossSummaryAdded = true
+      }
+      return
+    }
+
+    if (useCfPackage && row?.category === 'cf') {
+      if (!cfSummaryAdded && row === cfRows[cfRows.length - 1]) {
+        result.push(cfPackageRowV3(cfRows, cfArea))
+        cfSummaryAdded = true
+      }
+      return
+    }
+
+    result.push(row)
+  })
+
+  return result
+}
+
+/* M-CROSS_ESTIMATE_TEMPLATE_OUTPUT_V2_SAFE */
 async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) {
   try {
+    const baseRows = Array.isArray(rows) ? rows : []
+    const convertedRows = applyCrossCfPackageRulesV3(baseRows)
+
+    const additionalRows = (Array.isArray(additionalWorks) ? additionalWorks : []).map(item => ({
+      parts: Array.isArray(item.estimateParts) && item.estimateParts.length
+        ? [0, 1, 2, 3].map(index => String(item.estimateParts[index] || ''))
+        : [item.room || '', '', item.work || '', ''],
+      memo: item.memo || '',
+      category: 'additionalWork',
+      quantity: Number(item.quantity || 0),
+      unit: item.unit || '式',
+      rate: item.unitPrice === '' || item.unitPrice == null ? '' : Number(item.unitPrice || 0),
+      amount: item.unitPrice === '' || item.unitPrice == null
+        ? ''
+        : Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)),
+    }))
+
+    const outputRows = [...convertedRows, ...additionalRows]
+    if (!outputRows.length) {
+      window.alert('出力できる見積項目がありません。')
+      return
+    }
+    if (outputRows.length > 32) {
+      window.alert('見積明細は32行まで出力できます。現在 ' + outputRows.length + '行あります。')
+      return
+    }
+
+    const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
+    const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
+    if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+
+    const templateResponse = await fetch(
+      new URL('/mcross-estimate-template.xlsx', window.location.origin),
+      { cache: 'no-store' },
+    )
+    if (!templateResponse.ok) {
+      throw new Error('見積書テンプレートを読み込めません HTTP ' + templateResponse.status)
+    }
+
+    const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
+    const ws = workbook.sheet('見積書')
+    if (!ws) throw new Error('「見積書」シートが見つかりません')
+
+    // 元テンプレートの書式、ロゴ、罫線、列幅、行高、印刷設定は維持する。
+    ws.cell('B5').value(entry?.company ? entry.company + '　御中' : '')
+    ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy年m月d日')
+    ws.cell('D13').value(entry?.propertyName || '')
+    ws.cell('F13').value(entry?.unit || '')
+    ws.cell('G13').value(entry?.unit ? '号室' : '')
+    ws.cell('D14').value(entry?.address || '')
+
+    for (let rowNumber = 23; rowNumber <= 54; rowNumber += 1) {
+      /* M-CROSS_TEMPLATE_SPLIT_MERGED_V1 */
+      for (const column of ['C', 'D', 'E', 'F', 'H', 'I', 'J', 'K']) {
+        ws.cell(column + rowNumber).value('')
+      }
+    }
+
+    function joinedParts(row) {
+      if (!Array.isArray(row?.parts)) return String(row?.label || row?.name || '').trim()
+      return row.parts.map(value => String(value || '').trim()).filter(Boolean).join('　')
+    }
+
+    function cellValue(value) {
+      if (value === '' || value == null) return ''
+      const numeric = Number(value)
+      return Number.isFinite(numeric) ? numeric : value
+    }
+
+    outputRows.forEach((row, index) => {
+      const rowNumber = 23 + index
+      /* M-CROSS_TEMPLATE_PRESERVE_BLANK_PARTS_V2 */
+      // 分割形式では「項目2だけ空欄」のような位置情報を維持する。
+      const rawParts = Array.isArray(row?.parts)
+        ? row.parts.map(value => String(value || '').trim())
+        : [String(row?.label || row?.name || '').trim()]
+      const parts = format === 'split'
+        ? [0, 1, 2, 3].map(index => rawParts[index] || '')
+        : rawParts.filter(Boolean)
+      const memo = String(row?.memo || '').trim()
+
+      if (format === 'split') {
+        // 社員用: 工事項目をC～F列へ分ける。
+        const splitParts = [0, 1, 2, 3].map(index => parts[index] || '')
+        ;['C', 'D', 'E', 'F'].forEach((column, partIndex) => {
+          ws.cell(column + rowNumber).value(splitParts[partIndex])
+        })
+        // 分割形式では空白列を詰めない。メモは空いている末尾列へ入れる。
+        if (memo) {
+          let memoIndex = -1
+          for (let index = 3; index >= 0; index -= 1) {
+            if (!splitParts[index]) { memoIndex = index; break }
+          }
+          if (memoIndex >= 0) ws.cell(['C', 'D', 'E', 'F'][memoIndex] + rowNumber).value(memo)
+          else ws.cell('F' + rowNumber).value(splitParts[3] + '　' + memo)
+        }
+      } else {
+        // 自分用: 工事項目をC列へまとめ、メモはF列へ出す。
+        ws.cell('C' + rowNumber).value(parts.join(' '))
+        ws.cell('D' + rowNumber).value('')
+        ws.cell('E' + rowNumber).value('')
+        ws.cell('F' + rowNumber).value(memo)
+      }
+
+      ws.cell('H' + rowNumber).value(cellValue(row?.quantity))
+      ws.cell('I' + rowNumber).value(row?.unit || '')
+      ws.cell('J' + rowNumber).value(cellValue(row?.rate))
+      ws.cell('K' + rowNumber).value(cellValue(row?.amount))
+    })
+
+    const subtotal = outputRows.reduce((sum, row) => {
+      if (row?.amount === '' || row?.amount == null) return sum
+      const amount = Number(row.amount)
+      return sum + (Number.isFinite(amount) ? amount : 0)
+    }, 0)
+    const tax = Math.floor(subtotal * 0.1)
+    const total = subtotal + tax
+    ws.cell('K55').value(subtotal)
+    ws.cell('K56').value(tax)
+    ws.cell('K57').value(total)
+    ws.cell('E19').value(total)
+
+    const output = await workbook.outputAsync()
+    const blob = output instanceof Blob
+      ? output
+      : new Blob([output], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const safeName = [entry?.propertyName || '物件', entry?.unit ? entry.unit + '号室' : '']
+      .filter(Boolean)
+      .join('_')
+      .replace(/[\/:*?"<>|]/g, '_')
+    link.href = url
+    link.download = '見積書_' + safeName + '.xlsx'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error(error)
+    window.alert(error instanceof Error ? error.message : '見積書を出力できませんでした。')
+  }
+}
+
+async function downloadEstimateExcelLegacy(entry, rows, format, additionalWorks = []) {
+  rows = applyCrossCfPackageRulesV3(rows)
+try {
     if (!rows.length && !additionalWorks.length) {
       window.alert('出力できる見積項目がありません。')
       return
@@ -802,8 +1045,8 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
         row.memo || '',
         Number(formatQuantity(row.quantity)),
         row.unit,
-        Number(row.rate || 0),
-        Number(row.amount || 0),
+        row.rate === '' || row.rate == null ? '' : Number(row.rate === '' || row.rate == null ? '' : row.rate),
+        row.amount === '' || row.amount == null ? '' : Number(row.amount === '' || row.amount == null ? '' : row.amount),
       ]
     })
 
@@ -3621,6 +3864,44 @@ function FinalReviewPage({
   )
 }
 
+/* M-CROSS_ESTIMATE_ROW_TAP_EDIT_V2_SAFE */
+function estimateEditKey(row) {
+  return [
+    row?.category || '',
+    row?.room || '',
+    Array.isArray(row?.parts) ? row.parts.join('|') : (row?.label || ''),
+    row?.memo || '',
+  ].join('::')
+}
+
+/* M-CROSS_ESTIMATE_FULL_EDITOR_V5_SAFE */
+function applyEstimateEdits(rows, edits) {
+  const map = edits && typeof edits === 'object' ? edits : {}
+  return (Array.isArray(rows) ? rows : []).map(row => {
+    const key = estimateEditKey(row)
+    if (!Object.prototype.hasOwnProperty.call(map, key)) return row
+    const edit = map[key]
+    if (!edit || typeof edit !== 'object' || Array.isArray(edit)) {
+      const rate = Math.max(0, Number(edit) || 0)
+      return { ...row, rate, amount: (Number(row?.quantity) || 0) * rate }
+    }
+    const parts = Array.isArray(edit.parts) ? edit.parts : row.parts
+    const quantity = edit.quantity === '' ? '' : Math.max(0, Number(edit.quantity) || 0)
+    const rate = edit.rate === '' ? '' : Math.max(0, Number(edit.rate) || 0)
+    const amount = edit.amountMode === 'manual' ? Math.max(0, Number(edit.amount) || 0) : (quantity === '' || rate === '' ? '' : quantity * rate)
+    return { ...row, parts, label: parts.filter(Boolean).join(' '), memo: edit.memo ?? row.memo ?? '', quantity, unit: edit.unit ?? row.unit ?? '', rate, amount }
+  })
+}
+
+function loadEstimateEdits(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '{}')
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+  } catch {
+    return {}
+  }
+}
+
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsPage, setSettingsPage] = useState('home')
@@ -3657,6 +3938,9 @@ export default function App() {
   const [company, setCompany] = useState('')
   const [propertySearch, setPropertySearch] = useState('')
   const [selectedProperty, setSelectedProperty] = useState(null)
+  /* M-CROSS_PROPERTY_LIST_PICKER_V2 */
+  const [showPropertyListPicker, setShowPropertyListPicker] = useState(false)
+  const [propertyListSearch, setPropertyListSearch] = useState('')
   const [unit, setUnit] = useState('')
   const [siteMemo, setSiteMemo] = useState('')
   const [showSimilarSites, setShowSimilarSites] = useState(false)
@@ -3683,12 +3967,22 @@ export default function App() {
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
   const [expandedSavedKeys, setExpandedSavedKeys] = useState([])
   const [currentStorageKey, setCurrentStorageKey] = useState('')
+  const estimateEditStorageKey = 'mcross:estimate-edits:' + [company, selectedProperty?.name || '', String(unit || '').trim()].join('|')
+  useEffect(() => {
+    if (!company || !selectedProperty?.name || !String(unit || '').trim()) {
+      setEstimateEdits({})
+      return
+    }
+    setEstimateEdits(loadEstimateEdits(estimateEditStorageKey))
+  }, [estimateEditStorageKey])
   const [pageIndex, setPageIndex] = useState(0)
   const [projectRooms, setProjectRooms] = useState(() => loadStringList(defaultRoomsKey, defaultRooms))
   const [roomConfirmations, setRoomConfirmations] = useState({})
   const [showMeasurementCheck, setShowMeasurementCheck] = useState(false)
   const [showRoomManagement, setShowRoomManagement] = useState(false)
   const [showEstimate, setShowEstimate] = useState(false)
+  const [estimateEditor, setEstimateEditor] = useState(null)
+  const [estimateEdits, setEstimateEdits] = useState({})
   const [caseCrossFactor, setCaseCrossFactor] = useState(() => String(loadPricingSettings().crossFactor))
   const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
   const [estimateCopyFormat, setEstimateCopyFormat] = useState(() => readPreference(estimateCopyFormatKey, 'merged'))
@@ -5460,6 +5754,62 @@ return savedEntries
 
     setSavedEntries(readSavedEntries())
     setSelectedSavedKeys([])
+  }
+
+  /* M-CROSS_NEW_REGISTRATION_BUTTON_V1_SAFE */
+  function resetForNewRegistration() {
+    try { localStorage.removeItem(workingDraftKey) } catch {}
+    setWorkingDraft(null)
+    setShowDraftRecovery(false)
+    setStarted(false)
+    setShowEstimate(false)
+    setShowRoomManagement(false)
+    setShowMeasurementCheck(false)
+    setCompany('')
+    setPropertySearch('')
+    setSelectedProperty(null)
+    setUnit('')
+    setSiteMemo('')
+    setCurrentStorageKey('')
+    setRecords([])
+    setCfRecords([])
+    setCfMaterialGroups([])
+    setSoftRecords([])
+    setFloorTrimRecords([])
+    setAdditionalWorks([])
+    setMemo('')
+    setIsDirty(false)
+    setSaveStatus('新規登録を開始できます')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function startNewRegistration() {
+    if (!started || !isDirty) {
+      resetForNewRegistration()
+      return
+    }
+
+    const saveFirst = window.confirm(
+      '現在編集中の内容が保存されていません。\n\n' +
+      '［OK］保存して終了し、新規登録へ進む\n' +
+      '［キャンセル］保存せず進むか、操作を中止する'
+    )
+
+    if (saveFirst) {
+      if (!saveCurrentData()) {
+        window.alert('保存できなかったため、新規登録へ進みませんでした。')
+        return
+      }
+      resetForNewRegistration()
+      return
+    }
+
+    const discard = window.confirm(
+      '保存せずに新規登録へ進みますか？\n\n' +
+      '［OK］保存せず新規登録へ進む\n' +
+      '［キャンセル］編集中の画面へ戻る'
+    )
+    if (discard) resetForNewRegistration()
   }
 
   function startMeasurement() {
@@ -7443,6 +7793,15 @@ return savedEntries
             <p className="eyebrow">お部屋の採寸を、かんたんに</p>
             <h1>物件情報</h1>
             <p className="subtitle">採寸する物件を選択してください。</p>
+            {/* M-CROSS_PROMOTE_SAVED_LIST_V1_SAFE */}
+            <button className="savedListHeroButton" type="button" onClick={openSavedList}>
+              <span>📂 保存済み一覧を見る</span>
+              <small>保存した物件を開く・続きから編集</small>
+            </button>
+            <button className="newRegistrationHeroButton" type="button" onClick={startNewRegistration}>
+              <span>＋ 新規で登録する</span>
+              <small>新しい物件・号室の採寸を開始</small>
+            </button>
             <section className="todayStats" aria-label="今日の記録">
               <strong>TODAY</strong><span>完了物件 {todayStats.completed}件</span><span>登録件数 {todayStats.registrations}件</span>
             </section>
@@ -7460,36 +7819,67 @@ return savedEntries
                 </select>
               </label>
 
-              <label>
-                <span>物件名検索</span>
-                <input
-                  value={propertySearch}
-                  disabled={!company}
-                  onChange={event => {
-                    setPropertySearch(event.target.value)
-                    setSelectedProperty(null)
-                  }}
-                  placeholder={company ? '物件名を入力' : '先に管理会社を選択'}
-                />
-              </label>
+              {/* M-CROSS_PROPERTY_LIST_PICKER_V2 */}
+              <button
+                className="secondaryButton propertyListOpenButton"
+                type="button"
+                disabled={!company}
+                onClick={() => { setPropertyListSearch(''); setShowPropertyListPicker(true) }}
+              >
+                {selectedProperty ? '📋 物件を変更する' : '📋 物件を選ぶ'}
+              </button>
 
-              {propertySearch.trim() && !selectedProperty && (
-                <div className="propertyResults">
-                  {filteredProperties.length > 0 ? filteredProperties.map((item, index) => (
-                    <button
-                      className="propertyOption"
-                      key={`${item.name}-${item.address}-${index}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedProperty(item)
-                        setPropertySearch(item.name)
-                      }}
-                    >
-                      {item.name}
-                    </button>
-                  )) : <p className="empty">該当する物件がありません</p>}
+              {showPropertyListPicker && (
+                <div className="propertyListPickerBackdrop" onClick={() => setShowPropertyListPicker(false)}>
+                  <section className="propertyListPickerPanel" role="dialog" aria-modal="true" aria-label="物件一覧から選ぶ" onClick={event => event.stopPropagation()}>
+                    <div className="propertyListPickerHeader">
+                      <div><strong>物件一覧から選ぶ</strong><small>{company}　{companyProperties.length}件</small></div>
+                      <button type="button" onClick={() => setShowPropertyListPicker(false)} aria-label="閉じる">×</button>
+                    </div>
+                    <label className="propertyListPickerSearch">
+                      <span>一覧を絞り込む</span>
+                      <input autoFocus value={propertyListSearch} onChange={event => setPropertyListSearch(event.target.value)} placeholder="物件名・住所を入力" />
+                    </label>
+                    <div className="propertyListPickerItems">
+                      {companyProperties
+                        .filter(item => {
+                          const query = String(propertyListSearch || '').trim().toLocaleLowerCase('ja')
+                          if (!query) return true
+                          return [item.name, item.reading, item.address, item.alias, ...(Array.isArray(item.aliases) ? item.aliases : [])]
+                            .filter(Boolean).some(value => String(value).toLocaleLowerCase('ja').includes(query))
+                        })
+                        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ja'))
+                        .map((item, index) => (
+                          <button className="propertyListPickerItem" key={item.id || [item.name, item.address, index].join('|')} type="button" onClick={() => {
+                            setSelectedProperty(item)
+                            setPropertySearch(item.name)
+                            setSaveStatus('')
+                            setShowPropertyListPicker(false)
+                          }}>
+                            <strong>{item.name}</strong>
+                            <small>{item.address || '住所未登録'}</small>
+                          </button>
+                        ))}
+                    </div>
+                    <style>{`
+                      .propertyListOpenButton{width:100%;margin-top:10px}.selectedPropertySummary{display:grid;gap:3px;margin-top:10px;padding:12px 14px;border:1px solid rgba(90,120,170,.24);border-radius:12px;background:rgba(38,114,236,.06)}.selectedPropertySummary small{opacity:.68}.selectedPropertySummary strong{font-size:1.05rem}
+                      .propertyListPickerBackdrop{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.52)}
+                      .propertyListPickerPanel{width:min(680px,100%);max-height:min(82vh,760px);display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:12px;padding:18px;border-radius:18px;background:#fff;color:#182230;box-shadow:0 24px 70px rgba(0,0,0,.3)}
+                      .propertyListPickerHeader{display:flex;align-items:center;justify-content:space-between;gap:12px}.propertyListPickerHeader strong,.propertyListPickerHeader small{display:block}.propertyListPickerHeader small{margin-top:4px;opacity:.68}.propertyListPickerHeader button{width:42px;height:42px;border:0;border-radius:50%;font-size:24px}
+                      .propertyListPickerSearch span{display:block;margin-bottom:6px;font-weight:700}.propertyListPickerSearch input{width:100%;box-sizing:border-box}
+                      .propertyListPickerItems{min-height:0;overflow:auto;display:grid;gap:8px;padding-right:3px}.propertyListPickerItem{display:block;width:100%;text-align:left;padding:13px 14px;border:1px solid #d8e0eb;border-radius:12px;background:#fff;color:#182230}.propertyListPickerItem strong,.propertyListPickerItem small{display:block}.propertyListPickerItem small{margin-top:4px;opacity:.68}
+                      @media(prefers-color-scheme:dark){.propertyListPickerPanel{background:#101827;color:#f4f7fb}.propertyListPickerItem{background:#172235;color:#f4f7fb;border-color:#34455f}}
+                      @media(max-width:620px){.propertyListPickerBackdrop{padding:0;place-items:stretch}.propertyListPickerPanel{width:100%;height:100%;max-height:none;border-radius:0;box-sizing:border-box;padding:16px}}
+                    `}</style>
+                  </section>
                 </div>
               )}
+
+              {/* M-CROSS_PROPERTY_PICKER_V4_SIMPLE */}
+              <div className="selectedPropertySummary">
+                <small>選択中の物件</small>
+                <strong>{selectedProperty?.name || 'まだ選択されていません'}</strong>
+              </div>
 
               <div className="address">
                 <small>物件住所</small>
@@ -7609,7 +7999,7 @@ return savedEntries
               )}
 
               <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>採寸を開始する →</button>
-              <button className="secondaryButton" type="button" onClick={openSavedList}>保存済み一覧を見る</button>
+
               <OneDriveSyncPanel />
               <button
                 className="secondaryButton residentCasesEntryButton"
@@ -7618,7 +8008,7 @@ return savedEntries
               >
                 入居中案件
               </button>
-              /* M-CROSS_STEP19_BUTTON_PLACEMENT_FIX */
+              {/* M-CROSS_STEP19_BUTTON_PLACEMENT_FIX */}
               <button
                 className="secondaryButton workOrdersEntryButton"
                 type="button"
@@ -7656,6 +8046,9 @@ return savedEntries
                 : activePage === 'cf' ? 'CF採寸' : activePage === 'soft' ? 'ソフト巾木' : activePage === 'floorTrim' ? '床見切り' : '最終確認'}
             </h1>
             <div className="measurementActions">
+              <button className="newRegistrationInlineButton" type="button" onClick={startNewRegistration}>
+                ＋ 新規登録
+              </button>
               <button className="saveButton" type="button" onClick={saveCurrentData}>保存する</button>
               <button
                 className="secondaryButton"
@@ -7722,7 +8115,8 @@ return savedEntries
             {showEstimate ? (() => {
               // お客様向け画面には換算率を表示せず、設定済みの案件換算率だけを計算に使用します。
               const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
-              const estimateRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
+              const rawEstimateRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
+              const estimateRows = applyEstimateEdits(rawEstimateRows, estimateEdits)
               const additionalWorkTotal = additionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
               const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0) + additionalWorkTotal
               return (
@@ -7749,9 +8143,17 @@ return savedEntries
                     {
                       title: '内装工事以外',
                       key: '__ADDITIONAL_WORKS__',
-                      rows: additionalWorks.map(item => ({
+                      rows: additionalWorks.map((item, additionalWorkIndex) => ({
+                        /* M-CROSS_ADDITIONAL_WORK_FULL_EDIT_V3_1_ROBUST */
                         category: 'additionalWork',
-                        label: [item.room, item.work].filter(Boolean).join(' '),
+                        additionalWorkId: item.id || '',
+                        additionalWorkIndex,
+                        parts: Array.isArray(item.estimateParts) && item.estimateParts.length
+                          ? [0, 1, 2, 3].map(index => String(item.estimateParts[index] || ''))
+                          : [item.room || '', '', item.work || '', ''],
+                        label: (Array.isArray(item.estimateParts) && item.estimateParts.length
+                          ? item.estimateParts
+                          : [item.room, item.work]).filter(Boolean).join(' '),
                         memo: item.memo || '',
                         quantity: Number(item.quantity || 0),
                         unit: item.unit || '式',
@@ -7765,7 +8167,49 @@ return savedEntries
                       <section className="estimateRoom" key={section.key}>
                         <h3>{section.title}</h3>
                         {section.rows.map((row, index) => (
-                          <div className="estimateRow" key={row.category + '-' + row.label + '-' + row.memo + '-' + index}>
+                          <div
+                            className="estimateRow estimateRowTapEdit"
+                            key={row.category + '-' + row.label + '-' + row.memo + '-' + index}
+                            role="button"
+                            tabIndex={0}
+                            title="タップして見積明細を編集"
+                            onClick={() => {
+                              if (row.category === 'additionalWork') {
+                                const parts = Array.isArray(row.parts) ? row.parts : [row.label || '', '', '', '']
+                                setEstimateEditor({
+                                  key: 'additionalWork:' + (row.additionalWorkId || row.additionalWorkIndex),
+                                  additionalWorkId: row.additionalWorkId || '',
+                                  additionalWorkIndex: row.additionalWorkIndex,
+                                  parts: [0, 1, 2, 3].map(index => String(parts[index] || '')),
+                                  memo: String(row.memo || ''),
+                                  quantity: String(row.quantity ?? ''),
+                                  unit: String(row.unit || ''),
+                                  rate: String(row.rate ?? ''),
+                                  amount: '',
+                                })
+                                return
+                              }
+                              const key = estimateEditKey(row)
+                              const saved = estimateEdits[key]
+                              const edit = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}
+                              const parts = Array.isArray(edit.parts) ? edit.parts : (Array.isArray(row.parts) ? row.parts : [row.label || ''])
+                              setEstimateEditor({
+                                key,
+                                parts: [0,1,2,3].map(index => String(parts[index] || '')),
+                                memo: String(edit.memo ?? row.memo ?? ''),
+                                quantity: String(edit.quantity ?? row.quantity ?? ''),
+                                unit: String(edit.unit ?? row.unit ?? ''),
+                                rate: String(edit.rate ?? row.rate ?? ''),
+                                amount: edit.amountMode === 'manual' ? String(edit.amount ?? '') : '',
+                              })
+                            }}
+                            onKeyDown={event => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault()
+                                event.currentTarget.click()
+                              }
+                            }}
+                          >
                             <strong>{row.label}{row.memo && <small className="estimateMemo">{row.memo}</small>}</strong>
                             <span className="estimateNumber estimateUnit">{formatQuantity(row.quantity)}{row.unit}</span>
                             <span className="estimateNumber estimateRate">× {formatYen(row.rate)}</span>
@@ -7787,6 +8231,72 @@ return savedEntries
                   >
                     📊 見積用Excel出力
                   </button>
+                  <EstimateRowEditor
+                    value={estimateEditor}
+                    onClose={() => setEstimateEditor(null)}
+                    onReset={key => {
+                      if (estimateEditor?.additionalWorkId || Number.isInteger(estimateEditor?.additionalWorkIndex)) {
+                        setAdditionalWorks(previous => previous.map((item, index) => {
+                          const matched = estimateEditor.additionalWorkId ? item.id === estimateEditor.additionalWorkId : index === estimateEditor.additionalWorkIndex
+                          if (!matched) return item
+                          const next = { ...item }
+                          delete next.estimateParts
+                          return next
+                        }))
+                        setEstimateEditor(null)
+                        setIsDirty(true)
+                        setSaveStatus('追加作業の見積明細を元に戻しました')
+                        return
+                      }
+                      setEstimateEdits(previous => {
+                        const next = { ...previous }
+                        delete next[key]
+                        try { localStorage.setItem(estimateEditStorageKey, JSON.stringify(next)) } catch {}
+                        return next
+                      })
+                      setEstimateEditor(null)
+                      setIsDirty(true)
+                      setSaveStatus('見積明細を元に戻しました')
+                    }}
+                    onSave={form => {
+                      const parseNumber = value => {
+                        const text = String(value || '').replace(/,/g, '').trim()
+                        if (!text) return ''
+                        const number = Number(text)
+                        return Number.isFinite(number) && number >= 0 ? number : null
+                      }
+                      const quantity = parseNumber(form.quantity)
+                      const rate = parseNumber(form.rate)
+                      const amount = parseNumber(form.amount)
+                      if (quantity === null || rate === null || amount === null) {
+                        window.alert('数量・単価・金額は0以上の数字で入力してください。')
+                        return
+                      }
+                      const cleanParts = form.parts.map(value => String(value || '').trim())
+                      if (form.additionalWorkId || Number.isInteger(form.additionalWorkIndex)) {
+                        const finalAmount = amount === '' ? Number(quantity || 0) * Number(rate || 0) : amount
+                        setAdditionalWorks(previous => previous.map((item, index) => {
+                          const matched = form.additionalWorkId ? item.id === form.additionalWorkId : index === form.additionalWorkIndex
+                          if (!matched) return item
+                          return { ...item, room: cleanParts[0] || '', work: cleanParts.slice(1).filter(Boolean).join(' ') || cleanParts[0] || '', estimateParts: cleanParts, memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), unitPrice: rate, amount: finalAmount }
+                        }))
+                        setEstimateEditor(null)
+                        setIsDirty(true)
+                        setSaveStatus('追加作業の見積明細を変更しました')
+                        return
+                      }
+                      const edit = { parts: cleanParts, memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), rate, amount, amountMode: amount === '' ? 'auto' : 'manual' }
+                      setEstimateEdits(previous => {
+                        const next = { ...previous, [form.key]: edit }
+                        try { localStorage.setItem(estimateEditStorageKey, JSON.stringify(next)) } catch {}
+                        return next
+                      })
+                      setEstimateEditor(null)
+                      setIsDirty(true)
+                      setSaveStatus('見積明細を変更しました')
+                    }}
+                  />
+
                   <div className="estimateTotal">
                     <span>概算合計</span>
                     <strong>{formatYen(totalAmount)}</strong>
