@@ -8462,7 +8462,7 @@ return savedEntries
                         unit: item.unit || '式',
                         rate: Number(item.unitPrice || 0),
                         amount: Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)),
-                      })),
+                      })).filter(row => !estimateEdits[row.exclusionKey]?.excluded), // M-CROSS_ADDITIONAL_WORK_EXCLUSION_V10_MINIMAL_SAFE
                     },
                   ].map(section => {
                     if (section.rows.length === 0) return null
