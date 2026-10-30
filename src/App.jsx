@@ -4,6 +4,7 @@ import OneDriveSyncPanel from './OneDriveSyncPanel'
 import EstimateRowEditor from './EstimateRowEditor'
 import EstimateVersionPanel from './EstimateVersionPanel' // M-CROSS_ESTIMATE_VERSION_HISTORY_V1_SAFE
 import './App.css'
+// M-CROSS_VERSION_CARD_TOTAL_FROM_ROWS_V1_SAFE
 
 // M-CROSS_REMOVE_ESTIMATE_SNAPSHOT_VIEWER_STEP1_SAFE
 import { openVoiceRecognitionReview, applyUserVoiceCorrections } from './voiceCorrectionDictionary' // M-CROSS_EDITABLE_VOICE_DICTIONARY_V2_SAFE
@@ -4060,7 +4061,8 @@ export default function App() {
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
   /* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */
-  const [savedViewMode, setSavedViewMode] = useState('list')
+  /* M-CROSS_FORCE_SAVED_EXPLORER_V1_SAFE */
+  const [savedViewMode, setSavedViewMode] = useState('explorer')
   const [savedFolderPath, setSavedFolderPath] = useState([])
   const [showArchived, setShowArchived] = useState(false)
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
@@ -4485,15 +4487,13 @@ return savedEntries
         }
         return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
       })
-  }, [savedEntries, savedSearch, savedCompanyFilter, savedSortOrder, showArchived])
+  }, [savedEntries, savedSearch, savedCompanyFilter, savedSortOrder])
 
   const savedCompanyOptions = [...new Set(
     savedEntries.map(entry => entry.company).filter(Boolean)
   )].sort((a, b) => a.localeCompare(b, 'ja'))
 
-  const savedCount = savedEntries.filter(
-    entry => Boolean(entry.archived) === showArchived
-  ).length
+  const savedCount = savedEntries.length
   const confirmedRoomCount = rooms.filter(roomName => roomConfirmations[roomName]).length
 
   function markRoomUnconfirmed(roomName) {
@@ -5559,7 +5559,7 @@ return savedEntries
 
   function captureAppView() {
     if (settingsOpen) return { kind: 'settings', settingsPage }
-    if (showSavedList && !started) return { kind: 'saved', archived: showArchived }
+    if (showSavedList && !started) return { kind: 'saved' }
     if (started) {
       return {
         kind: 'measurement',
@@ -5646,7 +5646,7 @@ return savedEntries
     if (applyingBrowserBackRef.current) return
     const timer = window.setTimeout(() => pushCurrentAppView(captureAppView()), 0)
     return () => window.clearTimeout(timer)
-  }, [settingsOpen, settingsPage, showSavedList, showArchived, started, activePage, pageIndex, cfPageIndex, softPageIndex, showEstimate, showRoomManagement])
+  }, [settingsOpen, settingsPage, showSavedList, started, activePage, pageIndex, cfPageIndex, softPageIndex, showEstimate, showRoomManagement])
 
   function requestNavigation(action) {
     if (!started || !isDirty) {
@@ -5703,7 +5703,7 @@ return savedEntries
       const storageKey = getSaveKey(imported.company, { name: imported.propertyName, address: imported.address }, imported.unit, imported.workName || '原状回復工事')
       if (localStorage.getItem(storageKey) !== null && !window.confirm(`「${imported.propertyName} ${imported.unit}号室」はすでに保存されています。\n\n上書きして読み込みますか？`)) return
       localStorage.setItem(storageKey, JSON.stringify(imported))
-      setSavedEntries(readSavedEntries()); setShowArchived(false); setSelectedSavedKeys([])
+      setSavedEntries(readSavedEntries()); setSelectedSavedKeys([])
       window.alert(`「${imported.propertyName} ${imported.unit}号室」を読み込みました。`)
     } catch (error) { console.error(error); window.alert(error instanceof Error ? error.message : 'M-Crossデータを読み込めませんでした。') }
   }
@@ -5826,21 +5826,6 @@ return savedEntries
     }
   }
 
-  function setEntryArchived(entry, archived) {
-    if (!entry.storageKey) return
-    try {
-      const stored = JSON.parse(localStorage.getItem(entry.storageKey) || '{}')
-      localStorage.setItem(entry.storageKey, JSON.stringify({
-        ...stored,
-        archived,
-      }))
-      setSavedEntries(readSavedEntries())
-      setSelectedSavedKeys(prev => prev.filter(key => key !== entry.storageKey))
-    } catch {
-      window.alert('アーカイブ状態を更新できませんでした。')
-    }
-  }
-
   function toggleSavedMore(storageKey) {
     setExpandedSavedKeys(previous => previous.includes(storageKey)
       ? previous.filter(key => key !== storageKey)
@@ -5867,26 +5852,6 @@ return savedEntries
       ? prev.filter(key => !visibleKeys.includes(key))
       : [...new Set([...prev, ...visibleKeys])]
     )
-  }
-
-  function bulkArchiveSelected() {
-    if (selectedSavedKeys.length === 0) return
-    const archiveValue = !showArchived
-
-    selectedSavedKeys.forEach(key => {
-      try {
-        const stored = JSON.parse(localStorage.getItem(key) || '{}')
-        localStorage.setItem(key, JSON.stringify({
-          ...stored,
-          archived: archiveValue,
-        }))
-      } catch {
-        // 更新できないデータはスキップ
-      }
-    })
-
-    setSavedEntries(readSavedEntries())
-    setSelectedSavedKeys([])
   }
 
   function bulkDeleteSelected() {
@@ -6120,6 +6085,32 @@ return savedEntries
     try {
       const serialized = JSON.stringify(saveData)
       localStorage.setItem(storageKey, serialized)
+
+      /* M-CROSS_MAIN_SAVE_UPDATES_OPENED_VERSION_V3_ROBUST */
+      if (openedEstimateVersion) {
+        const targetVersion = Number(openedEstimateVersion)
+        const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
+        const rawVersionRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
+        const editedVersionRows = openedEstimateRows ?? applyEstimateEdits(rawVersionRows, estimateEdits)
+        const savedVersionRows = editedVersionRows.filter(row => !estimateEdits[row.exclusionKey || estimateEditKey(row)]?.excluded)
+        const savedAdditionalWorks = additionalWorks.filter((item, index) => {
+          const key = 'additionalWork:' + (item.id || index)
+          return !estimateEdits[key]?.excluded
+        })
+        const savedVersionTotal = savedVersionRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0)
+          + savedAdditionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
+        const savedAt = new Date().toISOString()
+        const nextVersions = estimateVersions.map(version => Number(version.version) === targetVersion ? {
+          ...version,
+          rows: JSON.parse(JSON.stringify(savedVersionRows)),
+          additionalWorks: JSON.parse(JSON.stringify(savedAdditionalWorks)),
+          totalAmount: savedVersionTotal,
+          updatedAt: savedAt,
+        } : version)
+        localStorage.setItem(estimateVersionStorageKey, JSON.stringify(nextVersions))
+        setEstimateVersions(nextVersions)
+        setOpenedEstimateRows(savedVersionRows)
+      }
       localStorage.removeItem(workingDraftKey)
       setWorkingDraft(null)
       setCurrentStorageKey(storageKey)
@@ -7286,34 +7277,9 @@ return savedEntries
           <main className="main">
             <button className="back" type="button" onClick={() => setShowSavedList(false)}>← 物件情報へ戻る</button>
             <p className="eyebrow">保存した採寸データ</p>
-            <h1>{showArchived ? 'アーカイブ一覧' : '保存済み一覧'}</h1>
+            <h1>保存済み一覧</h1>
 
             <section className="card">
-              <div className="settingsOptions" style={{ marginBottom: 18 }}>
-                <button
-                  type="button"
-                  className={`settingsOption${!showArchived ? ' active' : ''}`}
-                  aria-pressed={!showArchived}
-                  onClick={() => {
-                    setShowArchived(false)
-                    setSelectedSavedKeys([])
-                  }}
-                >
-                  保存済み
-                </button>
-                <button
-                  type="button"
-                  className={`settingsOption${showArchived ? ' active' : ''}`}
-                  aria-pressed={showArchived}
-                  onClick={() => {
-                    setShowArchived(true)
-                    setSelectedSavedKeys([])
-                  }}
-                >
-                  アーカイブ
-                </button>
-              </div>
-
               <input ref={importFileInputRef} type="file" accept=".mcross,.json,.txt,application/json,text/plain" onChange={importMCrossData} style={{ display: 'none' }} />
               <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
                 📥 M-Crossファイルを読み込む
@@ -7341,22 +7307,16 @@ return savedEntries
                   </label>
                 </div>
                 <div className="savedListSummary">
-                  <span>{showArchived ? 'アーカイブ' : '保存済み'} {savedCount}件</span>
+                  <span>保存済み {savedCount}件</span>
                   <span>表示 {visibleSavedEntries.length}件</span>
                 </div>
               </div>
 
-              <div className="savedViewSwitch" aria-label="保存済み表示形式">
-                <button type="button" className={savedViewMode === 'list' ? 'active' : ''} onClick={() => setSavedViewMode('list')}>☰ 一覧表示</button>
-                <button type="button" className={savedViewMode === 'explorer' ? 'active' : ''} onClick={() => { setSavedViewMode('explorer'); setSavedFolderPath([]) }}>📁 フォルダ表示</button>
-              </div>
+
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '0 0 18px' }}>
                 <button className="actionButton actionOverwrite" type="button" onClick={toggleSelectAllVisible}>
                   {visibleSavedEntries.length > 0 && visibleSavedEntries.every(entry => selectedSavedKeys.includes(entry.storageKey)) ? '選択解除' : '表示中を全選択'}
-                </button>
-                <button className="actionButton actionCsv" type="button" onClick={bulkArchiveSelected} disabled={selectedSavedKeys.length === 0}>
-                  {showArchived ? '選択を一覧へ戻す' : '選択をアーカイブ'}
                 </button>
                 <button className="actionButton actionDelete" type="button" onClick={bulkDeleteSelected} disabled={selectedSavedKeys.length === 0}>
                   選択を削除（{selectedSavedKeys.length}）
@@ -7364,7 +7324,7 @@ return savedEntries
               </div>
 
               {/* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */}
-              {savedViewMode === 'explorer' && visibleSavedEntries.length > 0 && (() => {
+              {visibleSavedEntries.length > 0 && (() => {
                 const nodes = visibleSavedEntries.map(entry => {
                   const date = new Date(entry.updatedAt || entry.createdAt || 0)
                   const validDate = !Number.isNaN(date.getTime())
@@ -7442,7 +7402,7 @@ return savedEntries
                             items.push(
                               <button className="savedExplorerFile estimateVersionExplorerFile" type="button" key={(entry.storageKey || index) + '-estimate-' + version.version} onClick={() => openSavedEstimateVersion(entry, version)}>
                                 <span>📑</span>
-                                <div><strong>{baseName}{estimateVersionMark(version.version)}</strong><small>{Number(version.version) === 1 ? '最初の見積' : '修正版'} ／ ¥{Math.round(Number(version.totalAmount || 0)).toLocaleString('ja-JP')}</small></div>
+                                <div><strong>{baseName}{estimateVersionMark(version.version)}</strong><small>{Number(version.version) === 1 ? '最初の見積' : '修正版'} ／ ¥{Math.round((Array.isArray(version.rows) ? version.rows : []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + (Array.isArray(version.additionalWorks) ? version.additionalWorks : []).reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)).toLocaleString('ja-JP')}</small></div>
                               </button>
                             )
                           })
@@ -7456,7 +7416,7 @@ return savedEntries
 
               {visibleSavedEntries.length === 0 ? (
                 <p className="empty">
-                  {showArchived ? 'アーカイブされたデータはありません' : '保存済みデータはありません'}
+                  保存済みデータはありません
                 </p>
               ) : (
                 <div className="savedList" style={{ display: savedViewMode === 'list' ? undefined : 'none' }}>
@@ -7490,7 +7450,6 @@ return savedEntries
                         <div className="savedMoreActions">
                           <button className="actionButton actionOverwrite" type="button" onClick={() => overwriteSavedEntry(entry)}>上書き保存</button>
                           <button className="actionButton actionOverwrite" type="button" onClick={() => shareMCrossData(entry)}>📤 M-Crossファイルを送る</button>
-                          <button className="actionButton actionOverwrite" type="button" onClick={() => setEntryArchived(entry, !showArchived)}>{showArchived ? '一覧に戻す' : 'アーカイブ'}</button>
                           <button className="actionButton actionDelete" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
                         </div>
                       )}
@@ -8419,8 +8378,13 @@ return savedEntries
               /* M-CROSS_ADDITIONAL_WORK_ESTIMATE_EXCLUSION_V6_SAFE */
               const estimateRows = allEstimateRows.filter(row => !estimateEdits[row.exclusionKey || estimateEditKey(row)]?.excluded)
               const currentEstimateVersion = estimateVersions.reduce((max, item) => Math.max(max, Number(item.version) || 0), 0) + 1
-              const additionalWorkTotal = additionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
-              const totalAmount = estimateRows.reduce((sum, row) => sum + row.amount, 0) + additionalWorkTotal
+              /* M-CROSS_ESTIMATE_TOTAL_RECALC_V2_SAFE */
+              const visibleAdditionalWorks = additionalWorks.filter((item, index) => {
+                const key = 'additionalWork:' + (item.id || index)
+                return !estimateEdits[key]?.excluded
+              })
+              const additionalWorkTotal = visibleAdditionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
+              const totalAmount = estimateRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + additionalWorkTotal
               return (
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
@@ -8436,7 +8400,7 @@ return savedEntries
                     )}
                   </div>
 
-                  {estimateRows.length === 0 && additionalWorks.length === 0 ? (
+                  {estimateRows.length === 0 && visibleAdditionalWorks.length === 0 ? (
                     <p className="empty">概算できる採寸データがありません</p>
                   ) : [
                     ...rooms.map(roomName => ({ title: roomName, key: roomName, rows: estimateRows.filter(row => row.room === roomName) })),
@@ -8445,7 +8409,7 @@ return savedEntries
                     {
                       title: '内装工事以外',
                       key: '__ADDITIONAL_WORKS__',
-                      rows: additionalWorks.map((item, additionalWorkIndex) => ({
+                      rows: visibleAdditionalWorks.map((item, additionalWorkIndex) => ({
                         exclusionKey: 'additionalWork:' + (item.id || additionalWorkIndex),
                         /* M-CROSS_ADDITIONAL_WORK_FULL_EDIT_V3_1_ROBUST */
                         category: 'additionalWork',
@@ -8631,6 +8595,29 @@ return savedEntries
                       })
                       setEstimateEditor(null)
                       setIsDirty(true)
+                      /* M-CROSS_UPDATE_SAVED_VERSION_ON_EDIT_V1_SAFE */
+                      if (openedEstimateVersion) {
+                        const savedVersionNumber = Number(openedEstimateVersion)
+                        const updatedRows = allEstimateRows.map(row => {
+                          if (estimateEditKey(row) !== form.key) return row
+                          const numericAmount = amount === '' ? Number(quantity || 0) * Number(rate || 0) : Number(amount || 0)
+                          return { ...row, parts: cleanParts, label: cleanParts.filter(Boolean).join(' '), memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), rate, amount: numericAmount }
+                        }).filter(row => !estimateEdits[estimateEditKey(row)]?.excluded)
+                        const updatedAdditionalTotal = additionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
+                        const updatedTotal = updatedRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + updatedAdditionalTotal
+                        setEstimateVersions(previous => {
+                          const next = previous.map(version => Number(version.version) === savedVersionNumber ? {
+                            ...version,
+                            rows: JSON.parse(JSON.stringify(updatedRows)),
+                            additionalWorks: JSON.parse(JSON.stringify(additionalWorks)),
+                            totalAmount: updatedTotal,
+                            updatedAt: new Date().toISOString(),
+                          } : version)
+                          try { localStorage.setItem(estimateVersionStorageKey, JSON.stringify(next)) } catch {}
+                          return next
+                        })
+                        setOpenedEstimateRows(updatedRows)
+                      }
                       setSaveStatus('見積明細を変更しました')
                     }}
                   />

@@ -1,3 +1,4 @@
+// M-CROSS_VERSION_CARD_TOTAL_FROM_ROWS_V1_SAFE
 /* M-CROSS_ROUND_ESTIMATE_AMOUNTS_V1_SAFE */
 /* M-CROSS_ESTIMATE_VERSION_HISTORY_V1_SAFE */
 import './EstimateVersionPanel.css'
@@ -10,6 +11,7 @@ function versionLabel(version) {
   return number === 1 ? 'お見積り（初回・無印）' : 'お見積り' + (marks[number] || '（' + number + '）')
 }
 
+// M-CROSS_ESTIMATE_VERSION_UPDATED_DATETIME_V2_EXACT_SAFE
 export default function EstimateVersionPanel({
   propertyName,
   unit,
@@ -43,7 +45,7 @@ export default function EstimateVersionPanel({
                 <span className="estimateVersionFileIcon">📄</span>
                 <div>
                   <strong>{versionLabel(item.version)} <span className="estimateVersionSavedBadge">保存済み</span></strong>
-                  <small>{new Date(item.createdAt).toLocaleString('ja-JP')} ／ ¥{Math.round(Number(item.totalAmount || 0)).toLocaleString('ja-JP')}</small>
+                  <small>{new Date(item.updatedAt || item.createdAt).toLocaleString('ja-JP')} ／ ¥{Math.round((Array.isArray(item.rows) ? item.rows : []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + (Array.isArray(item.additionalWorks) ? item.additionalWorks : []).reduce((sum, work) => sum + (Number(work.amount) || (Number(work.quantity) || 0) * (Number(work.unitPrice) || 0)), 0)).toLocaleString('ja-JP')}</small>
                 </div>
               </div>
               <div className="estimateVersionActions">
