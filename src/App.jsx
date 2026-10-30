@@ -4060,7 +4060,8 @@ export default function App() {
   const [savedSearch, setSavedSearch] = useState('')
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
-  /* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */  /* M-CROSS_FORCE_FOLDER_VIEW_V3_STRUCTURAL_SAFE */
+  /* M-CROSS_INDIVIDUAL_FOLDER_DELETE_V1_SAFE */
+              /* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */  /* M-CROSS_FORCE_FOLDER_VIEW_V3_STRUCTURAL_SAFE */
   const savedViewMode = 'explorer'
   const [savedFolderPath, setSavedFolderPath] = useState([])
   const [showArchived, setShowArchived] = useState(false)
@@ -7313,14 +7314,8 @@ return savedEntries
 
               
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '0 0 18px' }}>
-                <button className="actionButton actionOverwrite" type="button" onClick={toggleSelectAllVisible}>
-                  {visibleSavedEntries.length > 0 && visibleSavedEntries.every(entry => selectedSavedKeys.includes(entry.storageKey)) ? '選択解除' : '表示中を全選択'}
-                </button>
-                <button className="actionButton actionDelete" type="button" onClick={bulkDeleteSelected} disabled={selectedSavedKeys.length === 0}>
-                  選択を削除（{selectedSavedKeys.length}）
-                </button>
-              </div>
+              {/* M-CROSS_SIMPLIFY_FOLDER_DELETE_V2_SAFE */}
+
 
               {/* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */}
               {visibleSavedEntries.length > 0 && (() => {
@@ -7385,7 +7380,8 @@ return savedEntries
                             versions = Array.isArray(stored) ? stored : []
                           } catch {}
                           const items = [
-                            <button className="savedExplorerFile" type="button" key={(entry.storageKey || index) + '-current'} onClick={() => {
+                            <div className="savedExplorerFileRow" key={(entry.storageKey || index) + '-current-row'}>
+                              <button className="savedExplorerFile" type="button" onClick={() => {
                                 const currentVersion = versions.length
                                   ? Math.max(...versions.map(item => Number(item.version) || 0)) + 1
                                   : 1
@@ -7395,14 +7391,24 @@ return savedEntries
                               }} /* M-CROSS_CURRENT_REVISION_BUTTON_V6_SAFE */>
                               <span>📄</span>
                               <div><strong>{baseName}{versions.length ? estimateVersionMark(Math.max(...versions.map(item => Number(item.version) || 0)) + 1) : ''}</strong><small>{versions.length ? '現在編集中の見積' : '最初の見積'} ／ 更新 {formatSavedDate(entry.updatedAt)}</small></div>
-                            </button>,
+                            </button>
+                              <button className="actionButton actionDelete savedExplorerDeleteButton" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
+                            </div>,
                           ]
                           versions.sort((a,b) => Number(a.version)-Number(b.version)).forEach(version => {
                             items.push(
-                              <button className="savedExplorerFile estimateVersionExplorerFile" type="button" key={(entry.storageKey || index) + '-estimate-' + version.version} onClick={() => openSavedEstimateVersion(entry, version)}>
+                              <div className="savedExplorerFileRow" key={(entry.storageKey || index) + '-estimate-row-' + version.version}>
+                              <button className="savedExplorerFile estimateVersionExplorerFile" type="button" onClick={() => openSavedEstimateVersion(entry, version)}>
                                 <span>📑</span>
                                 <div><strong>{baseName}{estimateVersionMark(version.version)}</strong><small>{Number(version.version) === 1 ? '最初の見積' : '修正版'} ／ ¥{Math.round((Array.isArray(version.rows) ? version.rows : []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + (Array.isArray(version.additionalWorks) ? version.additionalWorks : []).reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)).toLocaleString('ja-JP')}</small></div>
                               </button>
+                              <button className="actionButton actionDelete savedExplorerDeleteButton" type="button" onClick={() => {
+                                if (!window.confirm('この保存済み見積を削除しますか？')) return
+                                const next = estimateVersions.filter(item => item.id !== version.id)
+                                try { localStorage.setItem(estimateVersionStorageKey, JSON.stringify(next)) } catch {}
+                                setEstimateVersions(next)
+                              }}>削除</button>
+                            </div>
                             )
                           })
                           return items
