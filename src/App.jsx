@@ -3613,6 +3613,19 @@ function FinalReviewPage({
     }, 0)
   }
 
+  /* M-CROSS_VOICE_CORRECTION_DICTIONARY_V1_SAFE */
+  function correctOtherWorkVoiceText(value) {
+    const corrections = [
+      ['針覗く', '梁除く'], ['針のぞく', '梁除く'], ['針除く', '梁除く'],
+      ['梁覗く', '梁除く'], ['梁のぞく', '梁除く'],
+      ['ソフト幅木', 'ソフト巾木'], ['クッションフロアー', 'クッションフロア'],
+      ['カートリッヂ', 'カートリッジ'],
+    ]
+    let text = String(value || '').trim()
+    corrections.forEach(([from, to]) => { text = text.split(from).join(to) })
+    return text
+  }
+
   function applyOtherWorkVoiceText(transcript) {
     const text = String(transcript || '').trim()
     if (!text) return
@@ -3650,7 +3663,7 @@ function FinalReviewPage({
       setVoiceListening(true)
       setVoiceInputStatus('🎤 聞き取り中… 例：台所 混合栓 漏水修理')
       recognition.onresult = event => {
-        const transcript = event.results?.[0]?.[0]?.transcript || ''
+        const transcript = correctOtherWorkVoiceText(event.results?.[0]?.[0]?.transcript || '')
         applyOtherWorkVoiceText(transcript)
       }
       recognition.onerror = event => {

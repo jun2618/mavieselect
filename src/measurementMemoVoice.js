@@ -1,3 +1,24 @@
+/* M-CROSS_VOICE_CORRECTION_DICTIONARY_V1_SAFE */
+const mCrossVoiceCorrections = [
+  ['針覗く', '梁除く'],
+  ['針のぞく', '梁除く'],
+  ['針除く', '梁除く'],
+  ['梁覗く', '梁除く'],
+  ['梁のぞく', '梁除く'],
+  ['ソフト幅木', 'ソフト巾木'],
+  ['ソフト幅木', 'ソフト巾木'],
+  ['クッションフロアー', 'クッションフロア'],
+  ['カートリッヂ', 'カートリッジ'],
+]
+
+function correctMCrossVoiceText(value) {
+  let text = String(value || '').trim()
+  for (const [from, to] of mCrossVoiceCorrections) {
+    text = text.split(from).join(to)
+  }
+  return text
+}
+
 /* M-CROSS_MEASUREMENT_MEMO_VOICE_V2_SAFE */
 import './measurementMemoVoice.css'
 
@@ -71,7 +92,7 @@ function addVoiceButton(label) {
     status.textContent = '話してください'
 
     recognition.onresult = event => {
-      const transcript = event.results?.[0]?.[0]?.transcript || ''
+      const transcript = correctMCrossVoiceText(event.results?.[0]?.[0]?.transcript || '')
       appendTranscript(field, transcript)
       status.textContent = transcript ? '✓ メモへ追記しました' : '音声を認識できませんでした'
       field.dispatchEvent(new Event('blur', { bubbles: true }))
