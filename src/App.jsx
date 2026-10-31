@@ -635,35 +635,63 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
   }
 
   // 1. クロスを全部屋分、指定した部屋順で先に並べます。
+  /* M-CROSS_CROSS_COMPANY_RULES_ESTIMATE_V7_SAFE */
   orderedRooms.forEach(roomName => {
     const definitions = [
       {
-        parts: [roomName, '天井', 'クロス貼替'],
+        kind: 'ceiling',
         records: records.filter(record => record.room === roomName && record.type === '天井'),
         amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['天井'] || 0),
       },
       {
-        parts: [roomName, '壁', 'クロス貼替'],
+        kind: 'wall',
         records: records.filter(record => record.room === roomName && record.type === '壁'),
         amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates['壁'] || 0),
       },
       {
-        parts: [roomName, '収納', 'クロス貼替'],
+        kind: 'storage',
         records: records.filter(record => record.room === roomName && (record.type === '収納天井' || record.type === '収納壁')),
         amountForRecord: record => getRecordQuantity(record) * factor * Number(pricingSettings.crossRates[record.type] || 0),
-        storage: true,
       },
     ]
 
     definitions.forEach(definition => {
-      groupByMemo(definition.records).forEach((groupRecords, inputMemo) => {
+      const groups = new Map()
+      definition.records.forEach(record => {
+        const finish = definition.kind === 'wall' && record.crossFinish === 'color' ? 'color' : 'normal'
+        const surface = finish === 'color' ? String(record.surfaceName || '').trim() : ''
+        const recordMemo = String(record.memo || '').trim()
+        const key = [finish, surface, recordMemo].join('||')
+        if (!groups.has(key)) groups.set(key, [])
+        groups.get(key).push(record)
+      })
+
+      groups.forEach(groupRecords => {
+        const first = groupRecords[0] || {}
+        const finish = definition.kind === 'wall' && first.crossFinish === 'color' ? 'color' : 'normal'
+        const surface = finish === 'color' ? String(first.surfaceName || '').trim() : ''
+        const inputMemo = String(first.memo || '').trim()
         const quantity = groupRecords.reduce((sum, record) => sum + getRecordQuantity(record), 0) * factor
         if (quantity <= 0) return
         const amount = groupRecords.reduce((sum, record) => sum + definition.amountForRecord(record), 0)
+
+        let parts
+        let outputMemo = inputMemo
+        if (definition.kind === 'wall') {
+          parts = finish === 'color'
+            ? [roomName, surface || '壁', 'カラークロス施工']
+            : [roomName, '壁', 'クロス部分張替']
+        } else if (definition.kind === 'storage') {
+          parts = [roomName, '収納', 'クロス貼替']
+          outputMemo = ['天井壁', inputMemo].filter(Boolean).join('・')
+        } else {
+          parts = [roomName, '天井', 'クロス貼替']
+        }
+
         crossRows.push({
           room: roomName,
-          parts: definition.parts,
-          memo: definition.storage ? ['天井壁', inputMemo].filter(Boolean).join('・') : inputMemo,
+          parts,
+          memo: outputMemo,
           category: 'cross',
           quantity,
           unit: '㎡',
@@ -934,17 +962,26 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
         : rawParts.filter(Boolean)
       const memo = String(row?.memo || '').trim()
 
-      /* M-CROSS_ESTIMATE_NAME_FULL_WIDTH_V1_SAFE */
-      // 名称欄は C:F を分割せず、C に全文を入れて右隣の空セルへ表示させる。
-      // テンプレートの列幅・罫線・数量以降(H:K)は変更しない。
-      const nameText = format === 'split'
-        ? [...parts.filter(Boolean), memo].filter(Boolean).join(' ')
-        : [parts.join(' '), memo].filter(Boolean).join(' ')
-      ws.cell('C' + rowNumber).value(nameText)
-      ws.cell('D' + rowNumber).value('')
-      ws.cell('E' + rowNumber).value('')
-      ws.cell('F' + rowNumber).value('')
-      ws.cell('G' + rowNumber).value('')
+      /* M-CROSS_ESTIMATE_SPLIT_COMBINED_FINAL_V4_ROBUST_SAFE */
+      if (format === 'split') {
+        // 社員見本: C=項目1 D=項目2 E=項目3 F=項目4+メモ G=空欄
+        const splitRange = ws.range('C' + rowNumber + ':G' + rowNumber)
+        if (splitRange.merged()) splitRange.merged(false)
+        const p0 = String(rawParts[0] || '').trim()
+        const p1 = String(rawParts[1] || '').trim()
+        const p2 = String(rawParts[2] || '').trim()
+        const p3 = String(rawParts[3] || '').trim()
+        ws.cell('C' + rowNumber).value(p0)
+        ws.cell('D' + rowNumber).value(p1)
+        ws.cell('E' + rowNumber).value(p2)
+        ws.cell('F' + rowNumber).value([p3, memo].filter(Boolean).join(' '))
+        ws.cell('G' + rowNumber).value('')
+      } else {
+        // まとめる: C:G結合、項目1〜4+メモを1行表示
+        const combinedRange = ws.range('C' + rowNumber + ':G' + rowNumber)
+        if (!combinedRange.merged()) combinedRange.merged(true)
+        ws.cell('C' + rowNumber).value([...rawParts.filter(Boolean), memo].filter(Boolean).join(' '))
+      }
       ws.cell('H' + rowNumber).value(cellValue(row?.quantity))
       ws.cell('I' + rowNumber).value(row?.unit || '')
       ws.cell('J' + rowNumber).value(cellValue(row?.rate))
@@ -1561,6 +1598,7 @@ const styles = `
   .crossInputArea .keypadButton { min-height:42px; }
   .crossInputArea .crossRegister { min-height:50px; margin:10px 0 0; }
   .measurementActions { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin:16px 0 20px; }
+  .crossFinishPanel{display:grid;gap:10px;margin:0 0 18px;padding:14px;border:1px solid #ead8cb;border-radius:14px;background:#fffaf5}.crossFinishPanel>span,.crossFinishPanel label>span{color:#817183;font-size:15px;font-weight:800}.crossFinishButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.crossFinishButtons button{min-height:48px;border:1px solid #d8c9df;border-radius:12px;background:#fff;color:#65596a;font:inherit;font-weight:800}.crossFinishButtons button.active{color:#fff;border-color:#6e91e8;background:#6e91e8}.crossFinishPanel label{margin:0}
   .requestContentButton { background:linear-gradient(180deg,#ffbf66,#ee9638); box-shadow:0 5px 0 #bd6d25; }
   .requestContentBackdrop { position:fixed; z-index:1900; inset:0; display:grid; place-items:center; padding:14px; background:rgba(15,12,20,.72); backdrop-filter:blur(7px); }
   .requestContentPanel { width:min(100%,620px); max-height:92vh; overflow:auto; padding:20px; border-radius:22px; background:#fffaf5; box-shadow:0 20px 60px rgba(0,0,0,.35); }
@@ -4123,6 +4161,9 @@ export default function App() {
   const [height, setHeight] = useState('')
   const [count, setCount] = useState('')
   const [memo, setMemo] = useState('')
+  /* M-CROSS_CROSS_FINISH_STEP1_V4_SAFE */
+  const [crossFinish, setCrossFinish] = useState('normal')
+  const [surfaceName, setSurfaceName] = useState('')
   const [activeInput, setActiveInput] = useState('')
   const heightInputRef = useRef(null)
   const countInputRef = useRef(null)
@@ -6317,6 +6358,10 @@ return savedEntries
     const numericHeight = Number(height.replace(/[。．]/g, '.'))
     const numericCount = Number(count)
     if (!Number.isFinite(numericHeight) || numericHeight <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
+    if (measurementType === '壁' && crossFinish === 'color' && !surfaceName.trim()) {
+      window.alert('カラークロスの施工面を入力してください。')
+      return
+    }
 
     setRecords(prev => [...prev, {
       id: createRecordId(),
@@ -6325,6 +6370,8 @@ return savedEntries
       height: numericHeight,
       count: numericCount,
       quantity: numericHeight * numericCount,
+      crossFinish: measurementType === '壁' ? crossFinish : 'normal',
+      surfaceName: measurementType === '壁' && crossFinish === 'color' ? surfaceName.trim() : '',
       memo: memo.trim(),
     }])
     markRoomUnconfirmed(room)
@@ -8862,6 +8909,16 @@ return savedEntries
                           />
                         </div>
 
+                        {measurementType === '壁' && (
+                          <section className="crossFinishPanel" aria-label="クロス種別">
+                            <span>クロス種別</span>
+                            <div className="crossFinishButtons">
+                              <button type="button" className={crossFinish === 'normal' ? 'active' : ''} onClick={() => { setCrossFinish('normal'); setSurfaceName(''); markUnsaved() }}>通常クロス</button>
+                              <button type="button" className={crossFinish === 'color' ? 'active' : ''} onClick={() => { setCrossFinish('color'); markUnsaved() }}>カラークロス</button>
+                            </div>
+                            {crossFinish === 'color' && <label><span>施工面</span><input value={surfaceName} onChange={event => { setSurfaceName(event.target.value); markUnsaved() }} placeholder="例：バルコニー、正面" /></label>}
+                          </section>
+                        )}
                         <label>
                           <span>メモ</span>
                           <input
@@ -8887,8 +8944,11 @@ return savedEntries
                         ) : roomRecords.map(item => (
                           <div className="record" key={item.id}>
                             <div>
-                              <strong>{item.type}</strong>
+                              {/* M-CROSS_CROSS_FINISH_REGISTRATION_V6_MINIMAL_SAFE */}
+                              <strong>{item.type}{item.type === '壁' ? (item.crossFinish === 'color' ? '・カラークロス' : '・通常クロス') : ''}</strong>
+
                               <small>{Number(item.height).toFixed(2)}m × {item.count}本</small>
+                              {item.type === '壁' && item.crossFinish === 'color' && item.surfaceName && <small>施工面：{item.surfaceName}</small>}
                               {item.memo && <small>メモ：{item.memo}</small>}
                             </div>
                             <b>{formatQuantity(getRecordQuantity(item))}m</b>
