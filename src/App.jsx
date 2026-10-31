@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import properties from './m-cross-properties.json'
 import OneDriveSyncPanel from './OneDriveSyncPanel'
 import EstimateRowEditor from './EstimateRowEditor'
@@ -2029,7 +2029,7 @@ const styles = `
     .purchaseOrderExplorer{width:100vw!important;max-width:100vw!important;min-height:100vh!important;margin:0!important;padding:8px!important;border-radius:0!important;box-sizing:border-box!important;overflow-x:hidden!important}
     .purchaseOrderExplorer>header{position:sticky!important;top:0!important;z-index:5!important;padding:6px 2px!important;background:#fffaf6!important}
     .purchaseOrderExplorerBody{display:block!important;margin-top:6px!important;width:100%!important;max-width:100%!important}
-    .purchaseOrderTree{display:none!important}
+    .purchaseOrderTree{display:block!important;width:100%!important;min-height:0!important;max-height:42vh!important;margin-bottom:10px!important;padding:8px!important;box-sizing:border-box!important;overflow:auto!important}.purchaseOrderDocuments{margin-left:10px!important}.purchaseOrderDocuments button{width:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow-wrap:anywhere!important}.purchaseOrderPreview dl{grid-template-columns:minmax(0,1fr)!important}.purchaseOrderPreviewItems section,.purchaseOrderPreviewItems section>div{min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow-wrap:anywhere!important}.purchaseOrderPreviewItems section>div{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:start!important}.mcrossFinalOrderDocument{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;overflow:hidden!important}
     .purchaseOrderPreview{width:100%!important;max-width:100%!important;min-width:0!important;padding:8px!important;border-radius:10px!important;box-sizing:border-box!important;overflow:hidden!important}
     .purchaseOrderPreviewHeader{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
     .purchaseOrderPreviewHeader>div{min-width:0!important}
