@@ -885,7 +885,7 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
         : [item.room || '', '', item.work || '', ''],
       memo: item.memo || '',
       category: 'additionalWork',
-      quantity: Number(item.quantity || 0),
+      quantity: normalizeMaterialQuantity(item.quantity),
       unit: item.unit || '式',
       rate: item.unitPrice === '' || item.unitPrice == null ? '' : Number(item.unitPrice || 0),
       amount: item.unitPrice === '' || item.unitPrice == null
@@ -1119,7 +1119,7 @@ try {
         parts: [item.room || '', '', item.work || ''],
         memo: item.memo || '',
         category: 'additionalWork',
-        quantity: Number(item.quantity || 0),
+        quantity: normalizeMaterialQuantity(item.quantity),
         unit: item.unit || '式',
         rate: Number(item.unitPrice || 0),
         amount: Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)),
@@ -4262,6 +4262,8 @@ export default function App() {
   const [pendingPurchaseOrderItems, setPendingPurchaseOrderItems] = useState([])
   /* M-CROSS_MATERIAL_ORDER_SCREEN_V1_SAFE */
   const [materialOrderItems, setMaterialOrderItems] = useState([])
+  /* M-CROSS_MATERIAL_QUANTITY_ROUND_V4_SAFE */
+  const normalizeMaterialQuantity=value=>{if(value===''||value==null)return '';const n=Number(value);return Number.isFinite(n)?Math.round(n*100)/100:''}
   /* M-CROSS_MATERIAL_V3A_SAFE */
   /* M-CROSS_MATERIAL_PRICEBOOK_V3B_SAFE */
   const [materialSupplierId, setMaterialSupplierId] = useState('')
@@ -9658,7 +9660,7 @@ return savedEntries
                   exclusionKey: 'additionalWork:' + (item.id || index), category: 'additionalWork', additionalWorkId: item.id || '', additionalWorkIndex: index,
                   parts: Array.isArray(item.estimateParts) && item.estimateParts.length ? [0,1,2,3].map(i => String(item.estimateParts[i] || '')) : [item.room || '', '', item.work || '', ''],
                   label: (Array.isArray(item.estimateParts) && item.estimateParts.length ? item.estimateParts : [item.room,item.work]).filter(Boolean).join(' '),
-                  memo: item.memo || '', quantity: Number(item.quantity || 0), unit: item.unit || '式', rate: Number(item.unitPrice || 0), amount: Number(item.amount || (Number(item.quantity)||0)*(Number(item.unitPrice)||0)),
+                  memo: item.memo || '', quantity: normalizeMaterialQuantity(item.quantity), unit: item.unit || '式', rate: Number(item.unitPrice || 0), amount: Number(item.amount || (Number(item.quantity)||0)*(Number(item.unitPrice)||0)),
                 }))
               ]
               const allOrderKeys = orderCandidateRows.map((row,index) => orderKeyForRow(row,index))
@@ -9813,7 +9815,7 @@ return savedEntries
                                 materialType: 'cross',
                                 productCode: String(item.code || '').trim(),
                                 description: '',
-                                quantity: Number(item.quantity || 0),
+                                quantity: normalizeMaterialQuantity(item.quantity),
                                 unit: 'm'
                               }))
 
@@ -9832,7 +9834,7 @@ return savedEntries
                                     materialType: 'cross',
                                     productCode: '',
                                     description: '',
-                                    quantity: noCodeCrossQuantity,
+                                    quantity: normalizeMaterialQuantity(noCodeCrossQuantity),
                                     unit: 'm'
                                   }]
                                 : [])
@@ -9846,7 +9848,7 @@ return savedEntries
                                 item.room || 'CF',
                                 item.memo || ''
                               ].filter(Boolean).join(' '),
-                              quantity: Number(item.length || 0),
+                              quantity: normalizeMaterialQuantity(item.length),
                               unit: 'm'
                             }))
 
@@ -9856,7 +9858,7 @@ return savedEntries
                                   materialType: 'soft',
                                   productCode: '',
                                   description: 'ソフト巾木',
-                                  quantity: Number(softReferenceQuantity || 0),
+                                  quantity: normalizeMaterialQuantity(softReferenceQuantity),
                                   unit: '枚'
                                 }]
                               : []
@@ -10298,19 +10300,17 @@ return savedEntries
                                   <input
                                     type="number"
                                     min="0"
-                                    step="0.1"
+                                    step="0.01"
                                     inputMode="decimal"
                                     value={item.quantity ?? ''}
-                                    onFocus={event => event.target.select()}
-                                    onChange={event => {
-                                      const raw = event.target.value
-                                      setMaterialOrderItems(previous =>
-                                        previous.map((current, index) =>
-                                          index === itemIndex
-                                            ? {...current, quantity: raw === '' ? '' : Math.max(0, Number(raw) || 0)}
-                                            : current
-                                        )
-                                      )
+                                    onFocus={event=>event.target.select()}
+                                    onChange={event=>{
+                                      const raw=event.target.value
+                                      setMaterialOrderItems(previous=>previous.map((current,index)=>index===itemIndex?{...current,quantity:raw===''?'':raw}:current))
+                                    }}
+                                    onBlur={event=>{
+                                      const value=normalizeMaterialQuantity(event.target.value)
+                                      setMaterialOrderItems(previous=>previous.map((current,index)=>index===itemIndex?{...current,quantity:value}:current))
                                     }}
                                   />
                                 </label>
@@ -10643,7 +10643,7 @@ return savedEntries
                           ? item.estimateParts
                           : [item.room, item.work]).filter(Boolean).join(' '),
                         memo: item.memo || '',
-                        quantity: Number(item.quantity || 0),
+                        quantity: normalizeMaterialQuantity(item.quantity),
                         unit: item.unit || '式',
                         rate: Number(item.unitPrice || 0),
                         amount: Number(item.amount || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)),
