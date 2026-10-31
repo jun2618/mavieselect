@@ -1694,6 +1694,280 @@ const styles = `
   .orderSelectCheckbox{width:24px;height:24px;min-width:24px;margin:0 8px 0 0;accent-color:#6e91e8;align-self:center}.estimateRowTapEdit:has(.orderSelectCheckbox){grid-template-columns:auto minmax(0,1fr) auto auto auto}
   .theme-dark .orderSelectionPanel,.theme-cyber .orderSelectionPanel,.theme-luxury .orderSelectionPanel,.theme-retro .orderSelectionPanel,.theme-galaxy .orderSelectionPanel{background:rgba(5,12,24,.72)}.theme-dark .orderSelectionQuickButtons button,.theme-cyber .orderSelectionQuickButtons button,.theme-luxury .orderSelectionQuickButtons button,.theme-retro .orderSelectionQuickButtons button,.theme-galaxy .orderSelectionQuickButtons button{color:#f3ffff;background:rgba(5,12,24,.92)}
   @media(max-width:520px){.orderSelectionQuickButtons{grid-template-columns:1fr}.estimateRowTapEdit:has(.orderSelectCheckbox){grid-template-columns:auto minmax(0,1fr);gap:8px}.estimateRowTapEdit:has(.orderSelectCheckbox)>.estimateNumber{grid-column:2}}
+  /* M-CROSS_SERVICE_ORDER_STEP1_UI_SAFE */
+  .serviceOrderPanel .materialOrderReferenceBoard{display:none!important}
+  .serviceOrderPanel .orderExcelSheetTitle strong{letter-spacing:.12em}
+  .serviceOrderPanel .orderExcelSheetTitle strong::after{content:' 施工';font-size:12px;letter-spacing:0;margin-left:6px;color:#65727c}
+  @media(max-width:620px){
+    .serviceOrderPanel{width:calc(100vw - 12px)!important;max-width:calc(100vw - 12px)!important;position:relative!important;left:50%!important;transform:translateX(-50%)!important;margin:6px 0!important;padding:10px!important;overflow-x:hidden!important}
+    .serviceOrderPanel .orderExcelWorkspace{display:block!important;width:100%!important;overflow:visible!important}
+    .serviceOrderPanel .orderExcelSheet{width:100%!important;min-width:0!important;overflow:visible!important}
+    .serviceOrderPanel .orderExcelHeader{display:none!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItems{display:grid!important;gap:10px!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;min-width:0!important;width:100%!important;gap:8px!important;padding:10px!important;border:1px solid #aeb4b8!important;border-radius:12px!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem>strong{grid-column:1/-1!important;grid-row:auto!important;padding:4px 0!important;border:0!important;font-size:16px!important;white-space:normal!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem>small{grid-column:1/-1!important;grid-row:auto!important;padding:0!important}
+    .serviceOrderPanel .orderExcelSheet .orderQuantityCompare,.serviceOrderPanel .orderExcelSheet .orderSourceQuantity{grid-column:1!important;grid-row:auto!important;display:grid!important;justify-items:start!important;padding:8px!important;border:0!important;border-radius:9px!important;background:rgba(110,145,232,.08)!important}
+    .serviceOrderPanel .orderExcelSheet .orderRateField{grid-column:2!important;grid-row:auto!important;display:grid!important;grid-template-columns:1fr auto!important;gap:6px!important;padding:8px!important;margin:0!important;border-radius:9px!important;background:rgba(216,77,131,.06)!important}
+    .serviceOrderPanel .orderExcelSheet .orderRateField>span{grid-column:1/-1!important}
+    .serviceOrderPanel .orderExcelSheet .orderRateField input{width:100%!important;min-width:0!important;min-height:42px!important;font-size:16px!important}
+    .serviceOrderPanel .orderExcelSheet .orderLineAmount{grid-column:1/-1!important;grid-row:auto!important;display:flex!important;justify-content:space-between!important;padding:9px!important;border-top:1px solid rgba(110,145,232,.25)!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem:has(.orderQuantityCompare)::after{display:none!important}
+    .serviceOrderPanel .contractorPriceBookPane{width:100%!important;min-width:0!important;max-height:none!important;margin-top:12px!important;position:static!important;overflow:visible!important}
+    .serviceOrderPanel .priceBookViewHead{display:none!important}
+    .serviceOrderPanel .priceBookViewRow{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;min-width:0!important;padding:8px!important;gap:5px!important;border:1px solid #c4c8cb!important;border-radius:8px!important;margin-bottom:6px!important}
+    .serviceOrderPanel .priceBookViewRow>*{padding:0!important;border:0!important}
+    .serviceOrderPanel .priceBookViewRow small{grid-column:1/-1!important}
+  }
+  /* M-CROSS_SERVICE_PRICEBOOK_STEP2_V3_SAFE */
+  .servicePriceBookToolbar{display:flex;justify-content:flex-end;margin:-4px 0 2px}.servicePriceBookToolbar button{min-height:42px;padding:8px 12px;border:1px solid #6e91e8;border-radius:10px;background:#fff;color:#5b6270;font:inherit;font-weight:800}
+  .serviceInlinePriceBook{display:grid;gap:10px;padding:12px;border:1px solid #86919a;border-radius:12px;background:#f7f9fa;color:#20252a}.serviceInlinePriceBookHeader{display:flex;align-items:center;justify-content:space-between;gap:10px}.serviceInlinePriceBookHeader>div{display:grid}.serviceInlinePriceBookHeader small{color:#67717a}.serviceInlinePriceBookHeader button{min-height:40px}.servicePriceAddRow{display:grid;grid-template-columns:minmax(180px,1fr) 90px 120px auto;gap:8px;align-items:end}.servicePriceAddRow label{margin:0}.servicePriceRows{display:grid;gap:7px}.servicePriceRow{display:grid;grid-template-columns:minmax(180px,1fr) 70px minmax(120px,.7fr) auto;align-items:center;gap:8px;padding:9px;border:1px solid #c4c8cb;border-radius:9px;background:#fff}.servicePriceRow label{display:flex;align-items:center;gap:4px;margin:0}.servicePriceRow input{width:92px;min-width:0}.servicePriceRow .danger{min-height:36px;padding:6px 9px}
+  @media(max-width:620px){.servicePriceBookToolbar{justify-content:stretch}.servicePriceBookToolbar button{width:100%}.serviceInlinePriceBookHeader{align-items:stretch;flex-direction:column}.serviceInlinePriceBookHeader button{width:100%}.servicePriceAddRow{grid-template-columns:1fr 1fr}.servicePriceAddRow label:first-child{grid-column:1/-1}.servicePriceAddRow button{grid-column:1/-1}.servicePriceRow{grid-template-columns:minmax(0,1fr) auto;gap:6px}.servicePriceRow>strong{grid-column:1/-1}.servicePriceRow label{justify-content:flex-end}.servicePriceRow .danger{width:auto}.serviceInlinePriceBook{padding:9px}}
+  .theme-dark .serviceInlinePriceBook,.theme-cyber .serviceInlinePriceBook,.theme-luxury .serviceInlinePriceBook,.theme-retro .serviceInlinePriceBook,.theme-galaxy .serviceInlinePriceBook{background:rgba(5,12,24,.88);color:#f3ffff}.theme-dark .servicePriceRow,.theme-cyber .servicePriceRow,.theme-luxury .servicePriceRow,.theme-retro .servicePriceRow,.theme-galaxy .servicePriceRow{background:rgba(5,12,24,.75);color:#f3ffff}
+  /* M-CROSS_SERVICE_ORDER_OVERLAP_STEP3_SAFE */
+  /* 施工発注PC: 見積数量・発注数量・施工単価・金額の重なりを解消 */
+  .serviceOrderPanel .orderExcelWorkspace{
+    display:block;
+    width:100%;
+    overflow:visible;
+  }
+  .serviceOrderPanel .orderExcelSheet{
+    width:100%;
+    min-width:0;
+    overflow:visible;
+  }
+  .serviceOrderPanel .orderExcelHeader{
+    grid-template-columns:minmax(260px,1fr) 140px 150px 145px;
+  }
+  .serviceOrderPanel .orderExcelHeader span:nth-child(3){display:none}
+  .serviceOrderPanel .orderExcelSheet .orderDraftItem{
+    grid-template-columns:minmax(260px,1fr) 140px 150px 145px!important;
+    min-width:0!important;
+    min-height:96px;
+    align-items:stretch;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderDraftItem>strong{
+    grid-column:1!important;
+    grid-row:1!important;
+    padding:12px!important;
+    border-right:1px solid #aeb4b8!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderDraftItem>small{
+    grid-column:1!important;
+    grid-row:2!important;
+    padding:0 12px 10px!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityCompare{
+    grid-column:2!important;
+    grid-row:1!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    align-content:center!important;
+    justify-items:center!important;
+    gap:4px!important;
+    padding:10px!important;
+    border-left:0!important;
+    border-right:1px solid #aeb4b8!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityCompare span,
+  .serviceOrderPanel .orderExcelSheet .orderQuantityCompare b{
+    display:block!important;
+    width:100%!important;
+    text-align:center!important;
+    white-space:normal!important;
+    line-height:1.35!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityField{
+    grid-column:2!important;
+    grid-row:2!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:5px!important;
+    padding:6px 10px 10px!important;
+    border-left:0!important;
+    border-right:1px solid #aeb4b8!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityField span{
+    grid-column:1/-1!important;
+    text-align:center!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityField input{
+    width:100%!important;
+    min-width:0!important;
+    min-height:40px!important;
+    text-align:right!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderRateField{
+    grid-column:3!important;
+    grid-row:1 / span 2!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-content:center!important;
+    align-items:center!important;
+    gap:6px!important;
+    padding:10px!important;
+    border-left:0!important;
+    border-right:1px solid #aeb4b8!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderRateField span{
+    grid-column:1/-1!important;
+    text-align:center!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderRateField input{
+    width:100%!important;
+    min-width:0!important;
+    min-height:42px!important;
+    text-align:right!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderLineAmount{
+    grid-column:4!important;
+    grid-row:1 / span 2!important;
+    display:grid!important;
+    align-content:center!important;
+    justify-items:center!important;
+    gap:6px!important;
+    padding:10px!important;
+    border-left:0!important;
+    border-top:0!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderLineAmount span,
+  .serviceOrderPanel .orderExcelSheet .orderLineAmount strong{
+    display:block!important;
+    width:100%!important;
+    text-align:center!important;
+    white-space:normal!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderDraftItem:has(.orderQuantityCompare)::after{
+    display:none!important;
+  }
+
+  /* スマホ: 1施工項目1カードで入力欄を分離 */
+  @media(max-width:620px){
+    .serviceOrderPanel .orderExcelHeader{display:none!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+      min-height:0!important;
+      gap:8px!important;
+      padding:10px!important;
+      border:1px solid #aeb4b8!important;
+      border-radius:12px!important;
+      margin-bottom:10px!important;
+    }
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem>strong,
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem>small{
+      grid-column:1/-1!important;
+      grid-row:auto!important;
+      border:0!important;
+      padding:2px 0!important;
+    }
+    .serviceOrderPanel .orderExcelSheet .orderQuantityCompare{
+      grid-column:1!important;
+      grid-row:auto!important;
+      border:0!important;
+      border-radius:9px!important;
+      background:rgba(110,145,232,.09)!important;
+      padding:8px!important;
+    }
+    .serviceOrderPanel .orderExcelSheet .orderQuantityField{
+      grid-column:1!important;
+      grid-row:auto!important;
+      border:0!important;
+      border-radius:9px!important;
+      background:rgba(110,145,232,.09)!important;
+      padding:8px!important;
+    }
+    .serviceOrderPanel .orderExcelSheet .orderRateField{
+      grid-column:2!important;
+      grid-row:auto!important;
+      border:0!important;
+      border-radius:9px!important;
+      background:rgba(216,77,131,.07)!important;
+      padding:8px!important;
+    }
+    .serviceOrderPanel .orderExcelSheet .orderLineAmount{
+      grid-column:1/-1!important;
+      grid-row:auto!important;
+      border-top:1px solid rgba(110,145,232,.25)!important;
+      padding:9px!important;
+    }
+  }
+  /* M-CROSS_CONTRACTOR_TRADE_PRICEBOOK_STEP1_V2_SAFE */
+  /* 内装業者だけ従来の固定6項目を表示。清掃など他業種は自由単価表を使用 */
+  .trade-price-form.trade-custom .contractorRateMaster{
+    display:none!important;
+  }
+  .trade-price-form.trade-custom .contractorPriceBookEditor{
+    grid-column:1/-1;
+    border:2px solid rgba(99,190,161,.55);
+    background:rgba(99,190,161,.08);
+  }
+  .trade-price-form.trade-custom .contractorPriceBookEditor::before{
+    content:'業種別 基本単価';
+    display:block;
+    margin-bottom:2px;
+    font-size:18px;
+    font-weight:900;
+  }
+  .trade-price-form.trade-custom .contractorPriceBookEditor::after{
+    content:'清掃費・エアコン洗浄など、業者ごとの項目・単位・単価を自由に追加できます。';
+    display:block;
+    order:-1;
+    margin-bottom:8px;
+    color:#756a78;
+    font-size:13px;
+  }
+  .trade-price-form.trade-interior .contractorPriceBookEditor::before{
+    content:'追加の基本単価';
+    display:block;
+    margin-bottom:6px;
+    font-weight:900;
+  }
+  @media(max-width:620px){
+    .trade-price-form.trade-custom .contractorPriceBookEditor{
+      padding:10px;
+    }
+    .trade-price-form.trade-custom .priceBookEditorHead{
+      display:none;
+    }
+    .trade-price-form.trade-custom .priceBookEditorTable{
+      overflow:visible;
+    }
+    .trade-price-form.trade-custom .priceBookEditorRow{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(80px,.45fr);
+      min-width:0;
+      gap:7px;
+      padding:9px;
+      margin-bottom:9px;
+      border:1px solid #c4c8cb;
+      border-radius:10px;
+    }
+    .trade-price-form.trade-custom .priceBookEditorRow>*{
+      padding:6px;
+      border:1px solid #c4c8cb;
+      min-width:0;
+    }
+    .trade-price-form.trade-custom .priceBookEditorRow>*:first-child{
+      grid-column:1/-1;
+    }
+  }
+  .theme-dark .trade-price-form.trade-custom .contractorPriceBookEditor,
+  .theme-cyber .trade-price-form.trade-custom .contractorPriceBookEditor,
+  .theme-luxury .trade-price-form.trade-custom .contractorPriceBookEditor,
+  .theme-retro .trade-price-form.trade-custom .contractorPriceBookEditor,
+  .theme-galaxy .trade-price-form.trade-custom .contractorPriceBookEditor{
+    background:rgba(5,12,24,.82);
+    color:#f3ffff;
+  }
+  .theme-dark .trade-price-form.trade-custom .contractorPriceBookEditor::after,
+  .theme-cyber .trade-price-form.trade-custom .contractorPriceBookEditor::after,
+  .theme-luxury .trade-price-form.trade-custom .contractorPriceBookEditor::after,
+  .theme-retro .trade-price-form.trade-custom .contractorPriceBookEditor::after,
+  .theme-galaxy .trade-price-form.trade-custom .contractorPriceBookEditor::after{
+    color:#bfefff;
+  }
   .crossFinishPanel{display:grid;gap:10px;margin:0 0 18px;padding:14px;border:1px solid #ead8cb;border-radius:14px;background:#fffaf5}.crossFinishPanel>span,.crossFinishPanel label>span{color:#817183;font-size:15px;font-weight:800}.crossFinishButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.crossFinishButtons button{min-height:48px;border:1px solid #d8c9df;border-radius:12px;background:#fff;color:#65596a;font:inherit;font-weight:800}.crossFinishButtons button.active{color:#fff;border-color:#6e91e8;background:#6e91e8}.crossFinishPanel label{margin:0}
   .requestContentButton { background:linear-gradient(180deg,#ffbf66,#ee9638); box-shadow:0 5px 0 #bd6d25; }
   .requestContentBackdrop { position:fixed; z-index:1900; inset:0; display:grid; place-items:center; padding:14px; background:rgba(15,12,20,.72); backdrop-filter:blur(7px); }
@@ -5270,6 +5544,64 @@ export default function App() {
     return {merged,changed}
   }
 
+  /* M-CROSS_SERVICE_VENDOR_PRICEBOOKS_V1_SAFE */
+  const serviceVendorPriceBooks=[
+    {aliases:['インテリアヒサスエ'],trade:'内装',rows:[
+      ['クロス施工費','㎡',430,''],['CF施工費','㎡',650,''],['巾木施工費','㎡',130,'']
+    ]},
+    {aliases:['NAKANO'],trade:'内装',rows:[
+      ['クロス施工費','㎡',430,''],['CF施工費','㎡',650,''],['巾木施工費','㎡',130,'']
+    ]},
+    {aliases:['山本内装'],trade:'内装',rows:[
+      ['クロス施工費','㎡',450,''],['CF施工費','㎡',650,''],['巾木施工費','㎡',130,'']
+    ]},
+    {aliases:['合同会社東勝'],trade:'内装',rows:[
+      ['クロス施工費','㎡',450,''],['CF施工費','㎡',650,''],['巾木施工費','㎡',130,'']
+    ]},
+    {aliases:['ドリームインテリア'],trade:'内装',rows:[
+      ['クロス施工費','㎡',430,''],['CF施工費','㎡',650,''],['巾木施工費','㎡',130,'']
+    ]},
+    {aliases:['有限会社衛生洗浄設備','衛生洗浄設備'],trade:'設備',rows:[
+      ['シャンプードレッサー交換','式',18000,'溶接などがあれば別途'],
+      ['レンジフード交換','式',16500,''],
+      ['混合栓交換','式',10000,'点検口造作＋1,500円'],
+      ['排水つまり抜き ラバーカップ','式',9000,''],
+      ['オーバーフロー管交換','式',19500,'タンク脱着込み'],
+      ['トイレ交換','式','', '単価未設定'],
+      ['フランジ交換','式',17000,'便器脱着あり'],
+      ['ボールタップ・ゴムフロート交換','式',15000,''],
+      ['水抜栓・ピストン修理 パッキン交換','式',13000,''],
+      ['ゲートバルブ交換','式',25000,'保温管3,000円別途'],
+      ['ゲートバルブ交換附随工事','式',8000,'ポンプ止水・通水'],
+      ['ワンホール混合栓交換（材工）','式',21000,'']
+    ]},
+    {aliases:['工藤畳商会'],trade:'畳',rows:[
+      ['畳表替え','枚',3800,''],['新畳','枚',7200,''],['畳処分','枚',1300,'新畳を入れた場合'],['畳処分のみ','枚',1500,''],['琉球畳処分','枚',650,'']
+    ]},
+    {aliases:['泰平建材','泰平建材株式会社'],trade:'材料',rows:[
+      ['シャンプードレッサー W600','台',29500,''],['シャンプードレッサー W750','台',32500,''],['シャンプードレッサー キャビネット W600','台',8000,''],['シャンプードレッサー キャビネット W750','台',9000,''],['シャンプードレッサー 洗面台 W600','台',21500,''],['シャンプードレッサー 洗面台 W750','台',23500,'']
+    ]},
+    {aliases:['株式会社ガラスフリーク','ガラスフリーク'],trade:'ガラス',rows:[
+      ['ガラス交換','枚',5000,'']
+    ]}
+  ]
+  const normalizeServiceVendorName=value=>String(value||'').replace(/[\s　・＆&()（）]/g,'').toLowerCase()
+  const mergeServiceVendorPriceBooks=list=>{
+    let changed=false
+    const result=list.map(contractor=>{
+      const name=normalizeServiceVendorName(contractor?.name)
+      const source=serviceVendorPriceBooks.find(book=>book.aliases.some(alias=>{const a=normalizeServiceVendorName(alias);return name===a||name.includes(a)||a.includes(name)}))
+      if(!source)return contractor
+      const current=Array.isArray(contractor.priceBook)?contractor.priceBook:[]
+      const known=new Set(current.map(row=>normalizeServiceVendorName(row?.name)).filter(Boolean))
+      const additions=source.rows.filter(row=>!known.has(normalizeServiceVendorName(row[0]))).map((row,index)=>({id:'service-reference-'+String(contractor.id||'vendor')+'-'+index,name:row[0],unit:row[1],priceType:'fixed',price:row[2],rate:'',note:row[3]||'',referenceOnly:true}))
+      if(!additions.length)return contractor
+      changed=true
+      return {...contractor,priceBook:[...current,...additions]}
+    })
+    return {result,changed}
+  }
+
   const [contractors, setContractors] = useState(() => {
     try {
       const stored=JSON.parse(localStorage.getItem(contractorMasterStorageKey)||'[]')
@@ -5292,6 +5624,13 @@ export default function App() {
       return result.merged
     }
   })
+  useEffect(()=>{
+    const merged=mergeServiceVendorPriceBooks(contractors)
+    if(!merged.changed)return
+    setContractors(merged.result)
+    localStorage.setItem(contractorMasterStorageKey,JSON.stringify(merged.result))
+  },[])
+
   const [showContractorPicker, setShowContractorPicker] = useState(false)
   const [contractorSearch, setContractorSearch] = useState('')
   const [contractorForm, setContractorForm] = useState({name:'',trade:'内装',contact:'',phone:'',memo:'',postalCode:'',address:'',rates:{cross:'',cf:'',soft:'',floorTrim:'',wallBase:'',floorBase:''},priceBook:[],orderMode:'service'})
@@ -5300,6 +5639,10 @@ export default function App() {
   const [editingContractorId, setEditingContractorId] = useState('')
   /* M-CROSS_EXCEL_STYLE_ORDER_PRICEBOOK_V1_SAFE */
   const [contractorPriceSearch,setContractorPriceSearch]=useState('')
+  /* M-CROSS_SERVICE_PRICEBOOK_STEP2_V3_SAFE */
+  const [showServicePriceBook,setShowServicePriceBook]=useState(false)
+  const [showServicePriceAdd,setShowServicePriceAdd]=useState(false)
+  const [servicePriceAddForm,setServicePriceAddForm]=useState({name:'',unit:'m²',price:''})
   const blankPriceRow=()=>({id:'price-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:'',unit:'',priceType:'fixed',price:'',rate:'',note:''})
 
   /* M-CROSS_TRADE_MASTER_EDIT_V4_SAFE */
@@ -10437,10 +10780,11 @@ return savedEntries
                   )}
 
                   {orderDraft && (
-                    <section className="orderDraftPanel" aria-label="発注書作成 STEP2">
+                    <section className={"orderDraftPanel " + ((orderDraft.orderMode||'service')==='service'?'serviceOrderPanel':'')} aria-label="発注書作成 STEP2">
+                      {/* M-CROSS_SERVICE_ORDER_STEP1_UI_SAFE */}
                       {/* M-CROSS_ORDER_STEP2_GROUP_RATES_V2_SAFE */}
                       <div className="orderDraftHeader">
-                        <div><small>ORDER STEP 2</small><h3>発注先・発注掛率</h3></div>
+                        <div><small>ORDER STEP 2</small><h3>{(orderDraft.orderMode||'service')==='service'?'施工発注書作成':'発注先・発注掛率'}</h3></div>
                         <button type="button" onClick={() => setOrderDraft(null)}>× 閉じる</button>
                       </div>
                       <section className="contractorPickerField">
@@ -10450,6 +10794,13 @@ return savedEntries
                         </button>
                         {orderDraft.contractor && <button type="button" className="contractorClearButton" onClick={() => setOrderDraft(previous => ({...previous,contractor:'',contractorId:''}))}>選択解除</button>}
                       </section>
+                      {(orderDraft.orderMode||'service')==='service' && orderDraft.contractorId && (
+                        <section className="servicePriceBookToolbar">
+                          <button type="button" onClick={()=>setShowServicePriceBook(previous=>!previous)}>
+                            {showServicePriceBook?'施工単価表を閉じる':'施工単価表を見る'}
+                          </button>
+                        </section>
+                      )}
                       {(() => {
                         const applyGroupFactor=(category,value)=>setOrderDraft(previous=>({...previous,items:previous.items.map(item=>item.category===category?{...item,factor:value,orderQuantity:Math.round(item.sourceQuantity*value*10)/10}:item)}))
                         const crossItems=orderDraft.items.filter(item=>item.category==='cross')
@@ -10475,7 +10826,7 @@ return savedEntries
                         </div>
                       </section>}
                       {/* M-CROSS_MATERIAL_ORDER_REFERENCE_V5_SAFE */}
-                      <section className="materialOrderReferenceBoard">
+                      {(orderDraft.orderMode||'service')!=='service' && (<><section className="materialOrderReferenceBoard">
                         <details open><summary>クロス品番・参考数量</summary>
                           <div className="materialReferenceList">{crossProductReferences.map((item,index)=><div key={(item.code||'none')+'-'+index}><strong>{item.code||'品番未入力'}</strong><span>{formatQuantity(item.quantity)}m</span><small>{item.label}</small></div>)}</div>
                         </details>
@@ -10483,11 +10834,11 @@ return savedEntries
                           <div className="materialReferenceList">{cfCutReferences.map(item=><div key={item.id}><strong>{item.room||'部屋未設定'}</strong><span>{formatQuantity(item.length)}m</span><small>{item.memo||'裁断1本'}</small></div>)}</div>
                         </details>
                         <details><summary>巾木 必要枚数</summary><div className="materialReferenceList"><div><strong>必要枚数</strong><span>{formatQuantity(softReferenceQuantity)}枚</span><small>ケース・バラの組み合わせは発注書で自由入力</small></div></div></details>
-                      </section>
+                      </section></>)}
                       <div className="orderExcelWorkspace">
                         <section className="orderExcelSheet">
                           <div className="orderExcelSheetTitle"><strong>発 注 書</strong><span>{orderDraft.contractor||'発注先未選択'}</span></div>
-                          <div className="orderExcelHeader"><span>商品名</span><span>数量</span><span>単位</span><span>単価</span><span>金額</span></div>
+                          <div className="orderExcelHeader"><span>{(orderDraft.orderMode||'service')==='service'?'施工内容':'商品名'}</span><span>数量</span><span>単位</span><span>{(orderDraft.orderMode||'service')==='service'?'施工単価':'単価'}</span><span>金額</span></div>
                           <div className="orderDraftItems">
                         {orderDraft.items.map((item,itemIndex)=><article className="orderDraftItem" key={item.id+'-'+itemIndex}>
                           {item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,i)=>i===itemIndex?{...current,label:event.target.value}:current)}))} placeholder="品番・商品名"/><button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:previous.items.filter((_,i)=>i!==itemIndex)}))}>×</button></div>:<strong>{item.label}</strong>}{item.memo&&<small>{item.memo}</small>}
@@ -10501,7 +10852,7 @@ return savedEntries
                           <details open><summary>今回の見積・品番</summary><div className="materialReferenceRows">{orderCandidateRows.filter(row=>row.category==='cross').map((row,index)=><div key={'cross-ref-'+index}><strong>{(Array.isArray(row.parts)&&row.parts[0])||'品番未入力'}</strong><span>{formatQuantity(row.quantity)}m</span><small>{row.label}</small></div>)}</div></details>
                           <details><summary>CF採寸データ</summary><div className="cfReferenceRows">{cfRecords.map((row,index)=><div key={row.id||index}><strong>{row.room}</strong><span>{Number(row.length||0).toFixed(2)}m × {row.count}本</span><small>{row.memo||''}</small></div>)}</div></details>
                         </aside>}
-                        <aside className="contractorPriceBookPane">
+                        {(orderDraft.orderMode||'service')!=='service' && (<aside className="contractorPriceBookPane">
                           <div className="priceBookPaneHeader"><div><strong>業者単価表</strong><small>{orderDraft.contractor||'発注先を選択してください'}</small></div><input value={contractorPriceSearch} onChange={event=>setContractorPriceSearch(event.target.value)} placeholder="🔎 品名を検索"/></div>
                           <div className="priceBookViewHead"><span>品名</span><span>単位</span><span>単価/掛率</span><span>備考</span></div>
                           <div className="priceBookViewRows">{(((contractors.find(contractor=>contractor.id===orderDraft.contractorId))?.priceBook)||[]).filter(row=>[row.name,row.unit,row.note].join(' ').toLocaleLowerCase('ja').includes(contractorPriceSearch.trim().toLocaleLowerCase('ja'))).map((row,index)=><button type="button" className="priceBookViewRow" key={row.id||index} onClick={()=>{
@@ -10514,9 +10865,49 @@ return savedEntries
                           }}><strong>{row.name}</strong><span>{row.unit}</span><b>{row.priceType==='rate'?'掛率 '+formatQuantity(row.rate)+'%':row.priceType==='unset'?'未定':formatYen(row.price)}</b><small>{row.note}</small></button>)}</div>
                           {!(contractors.find(contractor=>contractor.id===orderDraft.contractorId))&&<p className="empty">発注先を選ぶと単価表を表示します</p>}
                           {(contractors.find(contractor=>contractor.id===orderDraft.contractorId))&&!((contractors.find(contractor=>contractor.id===orderDraft.contractorId))?.priceBook||[]).length&&<p className="empty">この業者の単価表は未登録です</p>}
-                        </aside>
+                        </aside>)}
                       </div>
-                      </div><div className="orderDraftFooter"><span>{orderDraft.items.length}項目</span><button className="primary" type="button" onClick={saveCurrentPurchaseOrder}>📦 発注書を下書き保存</button></div><small className="purchaseOrderSaveNote">保存後は採寸・見積とは独立した発注書データとして保持します。</small>
+                      </div>
+
+                      {(orderDraft.orderMode||'service')==='service' && showServicePriceBook && orderDraft.contractorId && (()=>{
+                        const supplier=contractors.find(item=>item.id===orderDraft.contractorId)
+                        if(!supplier)return null
+                        const priceBook=Array.isArray(supplier.priceBook)?supplier.priceBook:[]
+                        return <section className="serviceInlinePriceBook">
+                          <div className="serviceInlinePriceBookHeader">
+                            <div><strong>{supplier.name} 施工単価表</strong><small>確認用。発注書の施工単価には自動反映しません。</small></div>
+                            <button type="button" onClick={()=>setShowServicePriceAdd(previous=>!previous)}>＋ 項目追加</button>
+                          </div>
+                          {showServicePriceAdd&&<div className="servicePriceAddRow">
+                            <label><span>施工項目</span><input value={servicePriceAddForm.name} onChange={e=>setServicePriceAddForm(p=>({...p,name:e.target.value}))}/></label>
+                            <label><span>単位</span><input value={servicePriceAddForm.unit} onChange={e=>setServicePriceAddForm(p=>({...p,unit:e.target.value}))}/></label>
+                            <label><span>単価</span><input type="number" min="0" step="1" value={servicePriceAddForm.price} onChange={e=>setServicePriceAddForm(p=>({...p,price:e.target.value}))}/></label>
+                            <button type="button" className="primary" onClick={()=>{
+                              const name=String(servicePriceAddForm.name||'').trim();if(!name){window.alert('施工項目を入力してください。');return}
+                              const row={id:'service-price-'+Date.now(),name,unit:String(servicePriceAddForm.unit||'').trim(),priceType:'fixed',price:servicePriceAddForm.price===''?'':Math.max(0,Number(servicePriceAddForm.price)||0),rate:'',note:'',referenceOnly:false}
+                              saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:[...(Array.isArray(current.priceBook)?current.priceBook:[]),row],updatedAt:new Date().toISOString()}:current))
+                              setServicePriceAddForm({name:'',unit:'m²',price:''});setShowServicePriceAdd(false)
+                            }}>追加して保存</button>
+                          </div>}
+                          <div className="servicePriceRows">
+                            {priceBook.length===0?<p className="empty">施工単価表は未登録です。</p>:priceBook.map((row,index)=><div className="servicePriceRow" key={row.id||index}>
+                              <strong>{row.name||''}</strong>
+                              <span>{row.unit||''}</span>
+                              {row.priceType==='rate'?<span>掛率 {formatQuantity(Number(row.rate||0))}%</span>:<label><input type="number" min="0" step="1" value={row.price??''} onChange={event=>{
+                                const value=event.target.value
+                                const nextPriceBook=priceBook.map((current,rowIndex)=>rowIndex===index?{...current,priceType:'fixed',price:value===''?'':Math.max(0,Number(value)||0),rate:''}:current)
+                                saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                              }}/><b>円</b></label>}
+                              <button type="button" className="danger" onClick={()=>{
+                                if(!window.confirm(String(row.name||'')+'を施工単価表から削除しますか？'))return
+                                const nextPriceBook=priceBook.filter((_,rowIndex)=>rowIndex!==index)
+                                saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                              }}>削除</button>
+                            </div>)}
+                          </div>
+                        </section>
+                      })()}
+                      <div className="orderDraftFooter"><span>{orderDraft.items.length}項目</span><button className="primary" type="button" onClick={saveCurrentPurchaseOrder}>📦 発注書を下書き保存</button></div><small className="purchaseOrderSaveNote">保存後は採寸・見積とは独立した発注書データとして保持します。</small>
                     </section>
                   )}
                   {showContractorPicker && (
@@ -10525,9 +10916,11 @@ return savedEntries
                         <div className="contractorPickerHeader"><div><small>CONTRACTOR MASTER</small><h3>協力業者を選択</h3></div><button type="button" onClick={() => {setShowContractorPicker(false);setShowContractorForm(false)}}>× 閉じる</button></div>
                         <input className="contractorSearchInput" value={contractorSearch} onChange={event => setContractorSearch(event.target.value)} placeholder="業者名・業種・担当者を検索" />
                         <div className="contractorPickerActions"><button className="primary" type="button" onClick={() => { setEditingContractorId(''); setContractorForm({name:'',trade:'内装',contact:'',phone:'',memo:'',postalCode:'',address:'',rates:{cross:'',cf:'',soft:'',floorTrim:'',wallBase:'',floorBase:''},priceBook:[],orderMode:'service'}); setShowContractorForm(true) }}>＋ 新規業者</button><button type="button" onClick={() => setContractorSearch('')}>検索クリア</button></div>
-                        {showContractorForm && <form className="contractorForm" onSubmit={event => {
+                        {showContractorForm && <form className={"contractorForm trade-price-form " + (contractorForm.trade==='内装'?'trade-interior':'trade-custom')} onSubmit={event => {
+                          /* M-CROSS_CONTRACTOR_TRADE_PRICEBOOK_STEP1_V2_SAFE */
                           event.preventDefault(); const name=contractorForm.name.trim(); if(!name)return;
-                          const values={name,trade:contractorForm.trade||'その他',contact:contractorForm.contact.trim(),phone:contractorForm.phone.trim(),memo:contractorForm.memo.trim(),postalCode:String(contractorForm.postalCode||'').trim(),address:String(contractorForm.address||'').trim(),rates:{cross:contractorForm.rates?.cross??'',cf:contractorForm.rates?.cf??'',soft:contractorForm.rates?.soft??'',floorTrim:contractorForm.rates?.floorTrim??'',wallBase:contractorForm.rates?.wallBase??'',floorBase:contractorForm.rates?.floorBase??'',priceBook:(Array.isArray(contractorForm.priceBook)?contractorForm.priceBook:[]).map(row=>({...row,name:String(row.name||'').trim(),unit:String(row.unit||'').trim(),note:String(row.note||'').trim(),orderMode:contractorForm.orderMode||'service'})).filter(row=>row.name)}}
+                          /* M-CROSS_CONTRACTOR_PRICEBOOK_SAVE_V2_SAFE */
+                          const values={name,trade:contractorForm.trade||'その他',contact:contractorForm.contact.trim(),phone:contractorForm.phone.trim(),memo:contractorForm.memo.trim(),postalCode:String(contractorForm.postalCode||'').trim(),address:String(contractorForm.address||'').trim(),rates:{cross:contractorForm.rates?.cross??'',cf:contractorForm.rates?.cf??'',soft:contractorForm.rates?.soft??'',floorTrim:contractorForm.rates?.floorTrim??'',wallBase:contractorForm.rates?.wallBase??'',floorBase:contractorForm.rates?.floorBase??''},priceBook:(Array.isArray(contractorForm.priceBook)?contractorForm.priceBook:[]).map(row=>({...row,name:String(row.name||'').trim(),unit:String(row.unit||'').trim(),note:String(row.note||'').trim()})).filter(row=>row.name),orderMode:contractorForm.orderMode||'service'}
                           if(editingContractorId){ const next=contractors.map(current=>current.id===editingContractorId?{...current,...values,updatedAt:new Date().toISOString()}:current); saveContractors(next); if(orderDraft?.contractorId===editingContractorId)setOrderDraft(previous=>({...previous,contractor:name})); } else { const item={id:'contractor-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),...values,hidden:false,createdAt:new Date().toISOString()}; saveContractors([...contractors,item]); setOrderDraft(previous=>({...previous,contractor:item.name,contractorId:item.id})); } setContractorForm({name:'',trade:'内装',contact:'',phone:'',memo:'',postalCode:'',address:'',rates:{cross:'',cf:'',soft:'',floorTrim:'',wallBase:'',floorBase:''},priceBook:[],orderMode:'service'}); setEditingContractorId(''); setShowContractorForm(false)
                         }}>
                           <label><span>業者名 *</span><input value={contractorForm.name} onChange={event => setContractorForm(previous => ({...previous,name:event.target.value}))} required /></label>
