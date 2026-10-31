@@ -899,7 +899,12 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
     ws.cell('G13').value(entry?.unit ? '号室' : '')
     ws.cell('D14').value(entry?.address || '')
 
+    /* M-CROSS_MERGE_ESTIMATE_NAME_CELLS_V2_SAFE */
+    // 名称欄はテンプレート見出しと同じ横幅を使うため C:F を1セルとして結合する。
     for (let rowNumber = 23; rowNumber <= 54; rowNumber += 1) {
+      /* M-CROSS_ESTIMATE_NAME_C_TO_G_V3_SAFE */
+      const nameRange = ws.range('C' + rowNumber + ':G' + rowNumber)
+      if (!nameRange.merged()) nameRange.merged(true)
       /* M-CROSS_TEMPLATE_SPLIT_MERGED_V1 */
       for (const column of ['C', 'D', 'E', 'F', 'H', 'I', 'J', 'K']) {
         ws.cell(column + rowNumber).value('')
@@ -929,29 +934,17 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
         : rawParts.filter(Boolean)
       const memo = String(row?.memo || '').trim()
 
-      if (format === 'split') {
-        // 社員用: 工事項目をC～F列へ分ける。
-        const splitParts = [0, 1, 2, 3].map(index => parts[index] || '')
-        ;['C', 'D', 'E', 'F'].forEach((column, partIndex) => {
-          ws.cell(column + rowNumber).value(splitParts[partIndex])
-        })
-        // 分割形式では空白列を詰めない。メモは空いている末尾列へ入れる。
-        if (memo) {
-          let memoIndex = -1
-          for (let index = 3; index >= 0; index -= 1) {
-            if (!splitParts[index]) { memoIndex = index; break }
-          }
-          if (memoIndex >= 0) ws.cell(['C', 'D', 'E', 'F'][memoIndex] + rowNumber).value(memo)
-          else ws.cell('F' + rowNumber).value(splitParts[3] + '　' + memo)
-        }
-      } else {
-        // 自分用: 工事項目をC列へまとめ、メモはF列へ出す。
-        ws.cell('C' + rowNumber).value(parts.join(' '))
-        ws.cell('D' + rowNumber).value('')
-        ws.cell('E' + rowNumber).value('')
-        ws.cell('F' + rowNumber).value(memo)
-      }
-
+      /* M-CROSS_ESTIMATE_NAME_FULL_WIDTH_V1_SAFE */
+      // 名称欄は C:F を分割せず、C に全文を入れて右隣の空セルへ表示させる。
+      // テンプレートの列幅・罫線・数量以降(H:K)は変更しない。
+      const nameText = format === 'split'
+        ? [...parts.filter(Boolean), memo].filter(Boolean).join(' ')
+        : [parts.join(' '), memo].filter(Boolean).join(' ')
+      ws.cell('C' + rowNumber).value(nameText)
+      ws.cell('D' + rowNumber).value('')
+      ws.cell('E' + rowNumber).value('')
+      ws.cell('F' + rowNumber).value('')
+      ws.cell('G' + rowNumber).value('')
       ws.cell('H' + rowNumber).value(cellValue(row?.quantity))
       ws.cell('I' + rowNumber).value(row?.unit || '')
       ws.cell('J' + rowNumber).value(cellValue(row?.rate))
@@ -1568,6 +1561,15 @@ const styles = `
   .crossInputArea .keypadButton { min-height:42px; }
   .crossInputArea .crossRegister { min-height:50px; margin:10px 0 0; }
   .measurementActions { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin:16px 0 20px; }
+  .requestContentButton { background:linear-gradient(180deg,#ffbf66,#ee9638); box-shadow:0 5px 0 #bd6d25; }
+  .requestContentBackdrop { position:fixed; z-index:1900; inset:0; display:grid; place-items:center; padding:14px; background:rgba(15,12,20,.72); backdrop-filter:blur(7px); }
+  .requestContentPanel { width:min(100%,620px); max-height:92vh; overflow:auto; padding:20px; border-radius:22px; background:#fffaf5; box-shadow:0 20px 60px rgba(0,0,0,.35); }
+  .requestContentHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .requestContentHeader h2 { margin:0; }
+  .requestContentHeader button { min-height:42px; padding:8px 12px; border:0; border-radius:11px; color:#fff; background:#8a7584; font:inherit; font-weight:800; }
+  .requestContentProperty { margin:10px 0; color:#d27f6d; font-weight:800; }
+  .requestContentPanel textarea { width:100%; min-height:48vh; padding:14px; border:2px solid #ead8cb; border-radius:14px; box-sizing:border-box; font:inherit; font-size:16px; line-height:1.65; resize:vertical; background:#fff; color:#514751; }
+  .requestContentPanel .primary { margin-top:14px; }
   .measurementActions .saveButton,.measurementActions .secondaryButton { width:100%; margin:0; }
   .saveState { margin:8px 0 0; padding:6px 10px; border-radius:10px; font-size:13px; font-weight:800; text-align:center; }
   .saveState.saved { color:#548c73; background:#edf8f0; }
@@ -2283,6 +2285,7 @@ function normalizeImportedEntry(value) {
     additionalWorks: Array.isArray(value.additionalWorks) ? value.additionalWorks : [],
     draftMemo: typeof value.draftMemo === 'string' ? value.draftMemo : '',
     siteMemo: typeof value.siteMemo === 'string' ? value.siteMemo : '',
+    requestContent: typeof value.requestContent === 'string' ? value.requestContent : '',
     rooms: Array.isArray(value.rooms) && value.rooms.length ? value.rooms : defaultRooms,
     roomConfirmations: value.roomConfirmations && typeof value.roomConfirmations === 'object' && !Array.isArray(value.roomConfirmations) ? value.roomConfirmations : {},
     pageIndex: Number.isInteger(value.pageIndex) ? value.pageIndex : 0,
@@ -4040,6 +4043,9 @@ export default function App() {
   /* M-CROSS_WORK_NAME_V7_EXACT */
   const [workName, setWorkName] = useState('原状回復工事')
   const [siteMemo, setSiteMemo] = useState('')
+  /* M-CROSS_REQUEST_CONTENT_OVERLAY_V2_SAFE */
+  const [requestContent, setRequestContent] = useState('')
+  const [showRequestContent, setShowRequestContent] = useState(false)
   const [showSimilarSites, setShowSimilarSites] = useState(false)
   const [showAllPropertyHistory, setShowAllPropertyHistory] = useState(false)
   const [propertyHistoryOrder, setPropertyHistoryOrder] = useState('newest')
@@ -4204,6 +4210,7 @@ export default function App() {
       setSelectedProperty(null)
       setUnit('')
       setSiteMemo('')
+    setRequestContent('')
       setShowSimilarSites(false)
       setShowAllPropertyHistory(false)
       setPropertyHistoryOrder('newest')
@@ -4248,6 +4255,7 @@ export default function App() {
       unit: unit.trim(),
       workName: String(workName || '').trim() || '原状回復工事',
       siteMemo: siteMemo.trim(),
+      requestContent: requestContent.trim(),
       records,
       cfRecords,
 
@@ -5717,6 +5725,7 @@ return savedEntries
     setUnit(entry.unit || '')
     setWorkName(entry.workName || '原状回復工事')
     setSiteMemo(entry.siteMemo || '')
+    setRequestContent(entry.requestContent || '')
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
     setCfMaterialGroups(Array.isArray(entry.cfMaterialGroups) ? entry.cfMaterialGroups : [])
@@ -5787,6 +5796,7 @@ return savedEntries
         unit: entry.unit || '',
         workName: entry.workName || '原状回復工事',
         siteMemo: entry.siteMemo || '',
+        requestContent: entry.requestContent || '',
         records: Array.isArray(entry.records) ? entry.records : [],
         cfRecords: Array.isArray(entry.cfRecords) ? entry.cfRecords : [],
         softRecords: Array.isArray(entry.softRecords) ? entry.softRecords : [],
@@ -5885,6 +5895,7 @@ return savedEntries
     setUnit('')
     setWorkName('原状回復工事')
     setSiteMemo('')
+    setRequestContent('')
     setCurrentStorageKey('')
     setRecords([])
     setCfRecords([])
@@ -5999,6 +6010,7 @@ return savedEntries
     setUnit(draft.unit || '')
     setWorkName(draft.workName || '原状回復工事')
     setSiteMemo(draft.siteMemo || '')
+    setRequestContent(draft.requestContent || '')
     setRecords(Array.isArray(draft.records) ? draft.records : [])
     setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
     setCfMaterialGroups(Array.isArray(draft.cfMaterialGroups) ? draft.cfMaterialGroups : [])
@@ -6062,6 +6074,7 @@ return savedEntries
       unit: unit.trim(),
       workName: String(workName || '').trim() || '原状回復工事',
       siteMemo: siteMemo.trim(),
+      requestContent: requestContent.trim(),
       records,
       cfRecords,
 
@@ -8266,6 +8279,16 @@ return savedEntries
               ← 物件情報へ戻る
             </button>
             <p className="propertyLine">{selectedProperty?.name}　{unit}号室　{workName}</p>
+            {showRequestContent && (
+              <div className="requestContentBackdrop" role="dialog" aria-modal="true" aria-label="依頼内容">
+                <section className="requestContentPanel">
+                  <div className="requestContentHeader"><h2>📋 依頼内容</h2><button type="button" onClick={() => setShowRequestContent(false)}>× 閉じる</button></div>
+                  <p className="requestContentProperty">{selectedProperty?.name} {unit}号室</p>
+                  <textarea value={requestContent} onChange={event => { setRequestContent(event.target.value); markUnsaved() }} placeholder="TimeTreeの依頼内容をここへ貼り付け" rows={14} />
+                  <button className="primary" type="button" onClick={() => setShowRequestContent(false)}>入力画面へ戻る</button>
+                </section>
+              </div>
+            )}
             <h1>
               {showEstimate
                 ? '見積内容'
@@ -8276,9 +8299,9 @@ return savedEntries
                 : activePage === 'cf' ? 'CF採寸' : activePage === 'soft' ? 'ソフト巾木' : activePage === 'floorTrim' ? '床見切り' : 'その他工事'}
             </h1>
             <div className="measurementActions">
-              <button className="newRegistrationInlineButton" type="button" onClick={startNewRegistration}>
-                ＋ 新規登録
-              </button>
+              <button className="secondaryButton requestContentButton" type="button" onClick={() => setShowRequestContent(true)}>📋 依頼内容</button>
+              {/* M-CROSS_REMOVE_MEASUREMENT_NEW_REGISTRATION_V1_SAFE */}
+              
               <div className="saveActionWithFeedback">
                 <button className="saveButton" type="button" onClick={() => {
                   const saved = saveCurrentData()
