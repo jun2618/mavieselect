@@ -1024,6 +1024,77 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
   }
 }
 
+/* M-CROSS_COMBINED_ESTIMATE_MEASUREMENT_EXPORT_V2_STRUCTURAL_SAFE */
+async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, additionalWorks = []) {
+  try {
+    const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
+    const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
+    if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+    const response = await fetch(new URL('/mcross-estimate-template.xlsx', window.location.origin), { cache:'no-store' })
+    if (!response.ok) throw new Error('見積書テンプレートを読み込めません HTTP ' + response.status)
+    const workbook = await XlsxPopulate.fromDataAsync(await response.arrayBuffer())
+    const ws = workbook.sheet('見積書')
+    if (!ws) throw new Error('「見積書」シートが見つかりません')
+    const convertedRows=applyCrossCfPackageRulesV3(Array.isArray(rows)?rows:[])
+    const additionalRows=(Array.isArray(additionalWorks)?additionalWorks:[]).map(item=>({parts:Array.isArray(item.estimateParts)&&item.estimateParts.length?[0,1,2,3].map(i=>String(item.estimateParts[i]||'')):[item.room||'','',item.work||'',''],memo:item.memo||'',quantity:Number(item.quantity||0),unit:item.unit||'式',rate:item.unitPrice===''||item.unitPrice==null?'':Number(item.unitPrice||0),amount:item.unitPrice===''||item.unitPrice==null?'':Number(item.amount||(Number(item.quantity)||0)*(Number(item.unitPrice)||0))}))
+    const out=[...convertedRows,...additionalRows]
+    if(!out.length)throw new Error('出力できる見積項目がありません。')
+    if(out.length>32)throw new Error('見積明細は32行まで出力できます。現在 '+out.length+'行あります。')
+    ws.cell('B5').value(entry.company?entry.company+'　御中':''); ws.cell('J5').value(new Date()).style('numberFormat','yyyy年m月d日'); ws.cell('D13').value(entry.propertyName||''); ws.cell('F13').value(entry.unit||''); ws.cell('G13').value(entry.unit?'号室':''); ws.cell('D14').value(entry.address||'')
+    for(let r=23;r<=54;r++){try{const rg=ws.range('C'+r+':G'+r);if(rg.merged())rg.merged(false)}catch{};for(const c of ['C','D','E','F','G','H','I','J','K'])ws.cell(c+r).value('')}
+    const cv=v=>{if(v===''||v==null)return '';const n=Number(v);return Number.isFinite(n)?n:v}
+    out.forEach((row,i)=>{const r=23+i,raw=Array.isArray(row.parts)?row.parts.map(v=>String(v||'').trim()):[],memo=String(row.memo||'').trim();if(format==='split'){const q=[0,1,2,3].map(j=>raw[j]||'');ws.cell('C'+r).value(q[0]);ws.cell('D'+r).value(q[1]);ws.cell('E'+r).value(q[2]);ws.cell('F'+r).value([q[3],memo].filter(Boolean).join(' '));ws.cell('G'+r).value('')}else{const rg=ws.range('C'+r+':G'+r);if(!rg.merged())rg.merged(true);ws.cell('C'+r).value([...raw.filter(Boolean),memo].filter(Boolean).join(' '))}ws.cell('H'+r).value(cv(row.quantity));ws.cell('I'+r).value(row.unit||'');ws.cell('J'+r).value(cv(row.rate));ws.cell('K'+r).value(cv(row.amount))})
+    const subtotal=out.reduce((sum,row)=>sum+(row.amount===''||row.amount==null?0:(Number(row.amount)||0)),0),tax=Math.floor(subtotal*.1),total=subtotal+tax;ws.cell('K55').value(subtotal);ws.cell('K56').value(tax);ws.cell('K57').value(total);ws.cell('E19').value(total)
+    /* M-CROSS_COLOR_CODED_MEASUREMENT_SHEETS_V1_SAFE */
+    /* M-CROSS_COMBINED_COLORS_V3_EXACT_SAFE */
+    /* M-CROSS_ROOM_PART_COLOR_V1_SAFE */
+    const roomColors=['EAF2FF','EAF8EF','FFF7D6','F3ECFF','FFF0DF','E5FAFB','FFEAF0','F1F3F5']
+    /* M-CROSS_ROOM_PART_ROW_COLOR_V3_SAFE */
+    const roomBaseColors=['EAF2FF','EAF8EF','FFF7D6','F3ECFF','FFF0DF','E5FAFB','FFEAF0','F1F3F5']
+    const partTints={ ceiling:'D8E9FF', wall:'DDF3E4', storage:'FFE5C2', other:'EEF2F6' }
+    function roomBaseIndex(room){
+      const name=String(room||'').trim()
+      if(!name)return 0
+      let hash=0; for(const ch of name)hash=(hash*31+ch.charCodeAt(0))>>>0
+      return hash%roomBaseColors.length
+    }
+    function hexMix(a,b,weight=.38){
+      const parse=h=>[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]
+      const x=parse(a),y=parse(b)
+      return x.map((v,i)=>Math.round(v*(1-weight)+y[i]*weight).toString(16).padStart(2,'0')).join('').toUpperCase()
+    }
+    function rowFill(room,part,name){
+      const roomColor=roomBaseColors[roomBaseIndex(room)]
+      if(name!=='クロス採寸')return roomColor
+      const v=String(part||'')
+      const tint=v.includes('天井')?partTints.ceiling:v.includes('収納')?partTints.storage:v.includes('壁')?partTints.wall:partTints.other
+      return hexMix(roomColor,tint,.48)
+    }
+    function addSheet(name,headers,data){
+      const safeHeaders=Array.isArray(headers)?headers:[]
+      const safeData=Array.isArray(data)?data:[]
+      const old=workbook.sheet(name); if(old)workbook.deleteSheet(name)
+      const sh=workbook.addSheet(name)
+      sh.cell('A1').value(name+' 採寸データ').style({bold:true,fontSize:16,fill:'475569',fontColor:'FFFFFF'})
+      ;[['管理会社',entry.company||''],['物件名',entry.propertyName||''],['住所',entry.address||''],['号室',entry.unit||'']].forEach((v,i)=>{sh.cell(3+i,1).value(v[0]).style({bold:true,fill:'F1F5F9'});sh.cell(3+i,2).value(v[1])})
+      safeHeaders.forEach((h,i)=>sh.cell(8,i+1).value(h).style({bold:true,fill:'64748B',fontColor:'FFFFFF'}))
+      safeData.forEach((row,ri)=>{
+        const values=Array.isArray(row)?row:[]
+        const base=rowFill(values[0],values[1],name)
+        // 部屋 × 部位 の組み合わせ色を、その行の全セルへ適用する。
+        values.forEach((v,ci)=>sh.cell(9+ri,1+ci).value(v).style('fill',base))
+      })
+      safeHeaders.forEach((_,i)=>sh.column(i+1).width(i===0?16:14))
+    }
+    addSheet('クロス採寸',['部屋','採寸区分','クロス種別','施工面','メモ','高さ(m)','本数','数量'],(entry.records||[]).map(r=>[r.room||'',r.type||'',r.type==='壁'?(r.crossFinish==='color'?'カラークロス':'通常クロス'):'',r.surfaceName||'',r.memo||'',Number(r.height||0),Number(r.count||0),Number(formatQuantity(getRecordQuantity(r)))]))
+    addSheet('CF採寸',['部屋','メモ','長さ(m)','本数','数量'],(entry.cfRecords||[]).map(r=>[r.room||'',r.memo||'',Number(r.length||0),Number(r.count||0),Number(formatQuantity(getLengthQuantity(r)))]))
+    addSheet('ソフト巾木',['部屋','メモ','枚数'],(entry.softRecords||[]).map(r=>[r.room||'',r.memo||'',Number(formatQuantity(getSoftBaseboardQuantity(r)))]))
+    addSheet('床見切り',['部屋1','部屋2','カラー','数量'],(entry.floorTrimRecords||[]).map(r=>[r.roomA||'',r.roomB||'',r.color||'',Number(r.quantity||0)]))
+    addSheet('その他工事',['部屋','工事内容','メモ','数量','単位','単価','金額'],(entry.additionalWorks||[]).map(r=>[r.room||'',r.work||'',r.memo||'',Number(r.quantity||0),r.unit||'',Number(r.unitPrice||0),Number(r.amount||(Number(r.quantity)||0)*(Number(r.unitPrice)||0))]))
+    const output=await workbook.outputAsync(),blob=output instanceof Blob?output:new Blob([output],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),link=document.createElement('a'),safe=[entry.propertyName||'物件',entry.unit?entry.unit+'号室':''].filter(Boolean).join('_').replace(/[\/:*?"<>|]/g,'_');link.href=url;link.download=safe+'_見積採寸.xlsx';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url)
+  } catch(error){console.error(error);window.alert(error instanceof Error?error.message:'見積・採寸Excelを出力できませんでした。')}
+}
+
 async function downloadEstimateExcelLegacy(entry, rows, format, additionalWorks = []) {
   rows = applyCrossCfPackageRulesV3(rows)
 try {
@@ -8409,7 +8480,15 @@ return savedEntries
               >
                 📄 見積書を出力
               </button>
-              <button
+
+              <button className="secondaryButton" type="button" onClick={() => {
+                const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
+                const rawRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
+                const allRows = applyEstimateEdits(rawRows, estimateEdits)
+                const rowsForCombined = allRows.filter(row => !estimateEdits[row.exclusionKey || estimateEditKey(row)]?.excluded)
+                const worksForCombined = additionalWorks.filter((item,index) => !estimateEdits['additionalWork:' + (item.id || index)]?.excluded)
+                downloadCombinedEstimateMeasurementExcel({company,propertyName:selectedProperty?.name||'',address:selectedProperty?.address||'',unit,records,cfRecords,cfMaterialGroups,softRecords,floorTrimRecords,additionalWorks}, rowsForCombined, estimateCopyFormat, worksForCombined)
+              }}>📊 見積・採寸を一括出力</button>              <button
                 className="secondaryButton"
                 type="button"
                 onClick={() => {
