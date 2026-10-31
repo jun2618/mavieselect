@@ -2013,6 +2013,76 @@ const styles = `
   @media(max-width:620px){.finalOrderExcelButton{width:100%}}
   /* M-CROSS_FINAL_ORDER_STAFF_DROPDOWN_V9_SAFE */
   .finalOrderStaffPicker{display:flex!important;align-items:center!important;gap:6px!important;margin:0!important}.finalOrderStaffPicker span{font-size:12px;font-weight:900}.finalOrderStaffPicker select{min-height:40px;padding:6px 28px 6px 9px;border:1px solid #86919a;border-radius:8px;background:#fff;color:#20252a;font:inherit}.theme-dark .finalOrderStaffPicker select,.theme-cyber .finalOrderStaffPicker select,.theme-luxury .finalOrderStaffPicker select,.theme-retro .finalOrderStaffPicker select,.theme-galaxy .finalOrderStaffPicker select{background:#071522;color:#fff}.finalOrderStaffPicker{min-width:160px}@media(max-width:620px){.finalOrderStaffPicker{width:100%;justify-content:space-between}.finalOrderStaffPicker select{flex:1}}
+  /* M-CROSS_PURCHASE_ORDER_DRAFT_EDIT_V1_SAFE */
+  .draftOrderEditButton{min-height:40px;padding:7px 12px;border:1px solid #c78731;border-radius:9px;background:#fff7e8;color:#8b5614;font:inherit;font-weight:900}.draftOrderEditor{display:grid;gap:12px;margin:14px 0;padding:14px;border:2px solid #e3a646;border-radius:14px;background:#fffaf0}.draftOrderEditor>header{display:grid;gap:3px}.draftOrderEditor>header small{color:#756a78}.draftOrderEditRows{display:grid;gap:9px}.draftOrderEditRow{display:grid;grid-template-columns:minmax(180px,1.6fr) 100px 80px 110px 120px auto;gap:8px;align-items:end;padding:10px;border:1px solid #e1c99f;border-radius:10px;background:#fff}.draftOrderEditRow label{display:grid;gap:4px;margin:0}.draftOrderEditRow label span,.draftOrderEditAmount span{font-size:11px;font-weight:900;color:#756a78}.draftOrderEditRow input{width:100%;min-width:0;min-height:40px;padding:7px;border:1px solid #c9b897;border-radius:8px;font:inherit}.draftOrderEditAmount{display:grid;gap:4px;padding-bottom:8px;text-align:right}.draftOrderAddRow{min-height:42px;border:1px dashed #c78731;border-radius:9px;background:#fff;color:#8b5614;font:inherit;font-weight:900}.draftOrderEditor>footer{display:flex;justify-content:flex-end;gap:8px}.draftOrderEditor>footer button{min-height:44px;padding:8px 13px}.theme-dark .draftOrderEditor,.theme-cyber .draftOrderEditor,.theme-luxury .draftOrderEditor,.theme-retro .draftOrderEditor,.theme-galaxy .draftOrderEditor{background:#071522;color:#fff}.theme-dark .draftOrderEditRow,.theme-cyber .draftOrderEditRow,.theme-luxury .draftOrderEditRow,.theme-retro .draftOrderEditRow,.theme-galaxy .draftOrderEditRow{background:#101b27;color:#fff}@media(max-width:720px){.draftOrderEditButton{width:100%}.draftOrderEditRow{grid-template-columns:1fr 1fr}.draftOrderEditRow .wide{grid-column:1/-1}.draftOrderEditAmount{align-self:center;text-align:left}.draftOrderEditRow>.danger{width:100%}.draftOrderEditor>footer{display:grid;grid-template-columns:1fr}.draftOrderEditor>footer button{width:100%}}
+  /* M-CROSS_PURCHASE_ORDER_DRAFT_EDIT_LAYOUT_V2_SAFE */
+  .purchaseOrderPreviewAmount{display:block;margin-top:5px;color:#d84d83;font-size:16px;text-align:right}
+  .purchaseOrderExplorer{width:min(calc(100vw - 24px),1320px)!important;max-width:1320px!important}
+  .purchaseOrderExplorerBody{grid-template-columns:minmax(230px,.55fr) minmax(0,1.75fr)!important}
+  .purchaseOrderPreview{min-width:0!important;overflow:visible!important}
+  .draftOrderEditor{width:100%!important;max-width:100%!important;min-width:0!important;overflow:hidden!important;box-sizing:border-box!important}
+  .draftOrderEditRows,.draftOrderEditRow{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+  .draftOrderEditRow{grid-template-columns:minmax(220px,1.8fr) minmax(90px,.65fr) minmax(80px,.5fr) minmax(100px,.65fr) minmax(110px,.7fr) auto!important}
+  .draftOrderEditAmount strong{display:block;color:#d84d83;font-size:16px;white-space:nowrap}
+  @media(max-width:720px){
+    .purchaseOrderExplorerBackdrop{padding:0!important;align-items:stretch!important;justify-items:stretch!important}
+    .purchaseOrderExplorer{width:100vw!important;max-width:100vw!important;min-height:100vh!important;margin:0!important;padding:8px!important;border-radius:0!important;box-sizing:border-box!important;overflow-x:hidden!important}
+    .purchaseOrderExplorer>header{position:sticky!important;top:0!important;z-index:5!important;padding:6px 2px!important;background:#fffaf6!important}
+    .purchaseOrderExplorerBody{display:block!important;margin-top:6px!important;width:100%!important;max-width:100%!important}
+    .purchaseOrderTree{display:none!important}
+    .purchaseOrderPreview{width:100%!important;max-width:100%!important;min-width:0!important;padding:8px!important;border-radius:10px!important;box-sizing:border-box!important;overflow:hidden!important}
+    .purchaseOrderPreviewHeader{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+    .purchaseOrderPreviewHeader>div{min-width:0!important}
+    .draftOrderEditor{margin:8px 0!important;padding:8px!important;border-radius:10px!important;overflow:hidden!important}
+    .draftOrderEditRow{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important;padding:8px!important;overflow:hidden!important}
+    .draftOrderEditRow .wide{grid-column:1/-1!important}
+    .draftOrderEditRow label,.draftOrderEditRow input{min-width:0!important;max-width:100%!important;width:100%!important;box-sizing:border-box!important}
+    .draftOrderEditAmount{min-width:0!important;text-align:left!important;align-self:center!important}
+    .draftOrderEditRow>.danger{width:100%!important;min-width:0!important}
+    .draftOrderAddRow{width:100%!important}
+    .draftOrderEditor>footer{display:grid!important;grid-template-columns:1fr!important;width:100%!important}
+    .draftOrderEditor>footer button{width:100%!important}
+    .purchaseOrderPreviewAmount{text-align:right!important;font-size:15px!important}
+  }
+  /* M-CROSS_PURCHASE_ORDER_FINAL_EDIT_V3_SAFE */
+  .finalOrderEditButton{min-height:42px;padding:8px 13px;border:1px solid #c78731;border-radius:9px;background:#fff7e8;color:#8b5614;font:inherit;font-weight:900}@media(max-width:720px){.finalOrderEditButton{width:100%}}
+  /* M-CROSS_SIMPLIFY_PURCHASE_ORDER_SELECTION_V25_SAFE */
+  .orderSelectionQuickButtons{grid-template-columns:minmax(0,1fr) minmax(120px,.34fr)!important}.orderSelectionIndividualNote{display:block;margin:2px 2px 8px;color:#756a78;font-size:12px;line-height:1.5}.theme-dark .orderSelectionIndividualNote,.theme-cyber .orderSelectionIndividualNote,.theme-luxury .orderSelectionIndividualNote,.theme-retro .orderSelectionIndividualNote,.theme-galaxy .orderSelectionIndividualNote{color:#d9f8ff}@media(max-width:520px){.orderSelectionQuickButtons{grid-template-columns:1fr!important}}
+  /* M-CROSS_REMOVE_ESTIMATE_VERSION_CARD_EXPORT_V29_SAFE */
+  /* 保存済み見積カードの「この版を出力」だけ非表示。削除ボタンは維持。 */
+  .savedEstimateVersionExportButton,
+  .estimateVersionDownloadButton,
+  button[aria-label="この版を出力"],
+  button[title="この版を出力"]{display:none!important}
+  /* M-CROSS_PURCHASE_ORDER_EXPLORER_CURRENT_PROPERTY_V32_SAFE */
+  .purchaseOrderCurrentScope{display:block;margin-top:3px;color:#756a78;font-size:12px;font-weight:800}.theme-dark .purchaseOrderCurrentScope,.theme-cyber .purchaseOrderCurrentScope,.theme-luxury .purchaseOrderCurrentScope,.theme-retro .purchaseOrderCurrentScope,.theme-galaxy .purchaseOrderCurrentScope{color:#cfefff}
+  /* M-CROSS_MATERIAL_PRICEBOOK_TO_ORDER_AND_BLANK_V38_SAFE */
+  .materialPriceBookAddToOrder{min-height:38px;padding:6px 10px;border:1px solid #2f7d57;border-radius:8px;background:#eefaf4;color:#226443;font:inherit;font-weight:900}
+  .materialBlankOrderButton{min-height:42px;padding:7px 12px;border:1px solid #c78731;border-radius:9px;background:#fff7e8;color:#8b5614;font:inherit;font-weight:900}
+  @media(max-width:620px){.materialPriceBookAddToOrder,.materialBlankOrderButton{width:100%}}
+  /* M-CROSS_MATERIAL_ORDER_QUICK_SUMMARY_V39_SAFE */
+  .materialOrderQuickSummary{position:sticky;top:12px;z-index:7;width:min(100%,340px);margin:10px 0 14px auto;padding:11px;border:1px solid rgba(47,125,87,.38);border-radius:12px;background:#f5fff9;box-shadow:0 8px 22px rgba(0,0,0,.08);display:grid;gap:8px}.materialOrderQuickSummaryTop{display:flex;align-items:center;justify-content:space-between;gap:10px}.materialOrderQuickSummaryTop>div{display:grid}.materialOrderQuickSummaryTop small{color:#756a78}.materialOrderQuickRows{display:grid;gap:5px}.materialOrderQuickRows>div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px;align-items:center;font-size:12px}.materialOrderQuickRows span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.materialOrderQuickRows strong{color:#d84d83;text-align:right}.materialOrderQuickSummary>button{min-height:38px;border:1px solid #2f7d57;border-radius:8px;background:#2f7d57;color:#fff;font:inherit;font-weight:900}.materialOrderAddNotice{padding:6px 8px;border-radius:8px;background:#dff7e9;color:#226443;font-size:12px;font-weight:900}.materialBlankOrderPrimary{margin-top:8px!important;width:100%!important;background:#fff7e8!important;color:#8b5614!important;border-color:#c78731!important}
+  @media(max-width:620px){.materialOrderQuickSummary{position:fixed!important;left:0!important;right:0!important;bottom:max(0px,env(safe-area-inset-bottom))!important;top:auto!important;z-index:2300!important;width:100%!important;max-width:none!important;margin:0!important;padding:8px 10px calc(8px + env(safe-area-inset-bottom))!important;border-radius:12px 12px 0 0!important;box-shadow:0 -6px 22px rgba(0,0,0,.21)!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important}.materialOrderQuickSummaryTop{min-width:0!important}.materialOrderQuickRows{display:none!important}.materialOrderAddNotice{grid-column:1/-1!important}.materialOrderQuickSummary>button{min-height:42px!important;white-space:nowrap!important}.materialMobilePanel{padding-bottom:110px!important}}
+  /* M-CROSS_BLANK_MATERIAL_ORDER_OPEN_V40_SAFE */
+  .blankMaterialOrderGuide{margin:0 0 10px;padding:9px 11px;border:1px solid rgba(199,135,49,.4);border-radius:10px;background:#fff7e8;color:#7c5017;font-size:13px;font-weight:800}.theme-dark .blankMaterialOrderGuide,.theme-cyber .blankMaterialOrderGuide,.theme-luxury .blankMaterialOrderGuide,.theme-retro .blankMaterialOrderGuide,.theme-galaxy .blankMaterialOrderGuide{background:#251b0c;color:#ffe1a8}@media(max-width:620px){.blankMaterialOrderGuide{margin:6px 0 10px}}
+  /* M-CROSS_MATERIAL_ADD_FEEDBACK_V43_SAFE */
+  .materialPriceBookAddToOrder.added,.materialPriceBookAddToOrder:disabled{border-color:#78a98d!important;background:#dff2e6!important;color:#52705e!important;opacity:1!important;cursor:default!important}
+  .materialOrderAddNotice{animation:mcrossMaterialNoticeV43 .18s ease-out}
+  @keyframes mcrossMaterialNoticeV43{from{transform:translateY(-4px);opacity:.25}to{transform:translateY(0);opacity:1}}
+  /* M-CROSS_MATERIAL_ORDER_LIKE_SERVICE_V45_SAFE */
+  .materialOrderQuickSummary{display:none!important}
+  .materialMobilePanel{width:100%!important;max-width:none!important}.materialMobilePanel>div[style]{width:100%!important;box-sizing:border-box!important}.materialOrderTopPreview{width:100%!important;box-sizing:border-box!important;display:grid;gap:10px;margin:12px 0 16px;border:1px solid #8493a0;background:#fff;color:#222}
+  .materialOrderTopPreview>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border-bottom:1px solid #8493a0;background:#edf1f4}
+  .materialOrderTopPreview>header>div{display:flex;align-items:center;gap:9px}.materialOrderTopPreview>header strong{font-size:19px;letter-spacing:.18em}.materialOrderTopPreview>header small{color:#68737d;font-weight:900}.materialOrderTopPreview>header>span{font-weight:900;text-align:right}
+  .materialOrderTopPreview>.empty{margin:0;padding:18px;text-align:center}
+  .materialOrderTopRows{display:grid}.materialOrderTopRow{display:grid;grid-template-columns:minmax(0,1fr) 100px 120px 125px;gap:8px;align-items:center;padding:10px 13px;border-bottom:1px solid #d6dadd}.materialOrderTopRow:last-child{border-bottom:0}.materialOrderTopRow>div{display:grid;min-width:0}.materialOrderTopRow small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#777}.materialOrderTopRow>span,.materialOrderTopRow>b{text-align:right}
+  .materialOrderTopPreview>footer{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 13px;border-top:1px solid #8493a0;background:#f7f8f9}.materialOrderTopPreview>footer>strong{text-align:right;color:#d84d83;font-size:18px}.materialOrderTopPreview>footer button{min-height:38px;padding:6px 11px;border:1px solid #59636d;border-radius:8px;background:#59636d;color:#fff;font:inherit;font-weight:900}
+  .materialOrderTopNotice{margin:0 10px 10px;padding:8px 10px;border-radius:8px;background:#dff7e9;color:#226443;font-weight:900;text-align:center}
+  @media(max-width:620px){.materialOrderTopPreview{margin:8px 0 12px}.materialOrderTopPreview>header{align-items:flex-start;flex-direction:column}.materialOrderTopPreview>header>span{text-align:left}.materialOrderTopRow{grid-template-columns:minmax(0,1fr) auto;gap:5px 10px}.materialOrderTopRow>div{grid-column:1/-1}.materialOrderTopRow>span{text-align:left}.materialOrderTopRow>b{text-align:right}.materialOrderTopPreview>footer{grid-template-columns:1fr auto}.materialOrderTopPreview>footer button{grid-column:1/-1;width:100%}.materialMobilePanel{padding-bottom:18px!important}}
+  .theme-dark .materialOrderTopPreview,.theme-cyber .materialOrderTopPreview,.theme-luxury .materialOrderTopPreview,.theme-retro .materialOrderTopPreview,.theme-galaxy .materialOrderTopPreview{background:#071522;color:#fff}.theme-dark .materialOrderTopPreview>header,.theme-dark .materialOrderTopPreview>footer,.theme-cyber .materialOrderTopPreview>header,.theme-cyber .materialOrderTopPreview>footer,.theme-luxury .materialOrderTopPreview>header,.theme-luxury .materialOrderTopPreview>footer,.theme-retro .materialOrderTopPreview>header,.theme-retro .materialOrderTopPreview>footer,.theme-galaxy .materialOrderTopPreview>header,.theme-galaxy .materialOrderTopPreview>footer{background:#101b27}
+  /* M-CROSS_MATERIAL_ORDER_TOP_ADDED_ONLY_V46_SAFE */
+  .materialOrderAddedOnlyLabel{padding:3px 7px;border-radius:999px;background:#dff7e9;color:#226443;font-size:11px;font-style:normal;font-weight:900;letter-spacing:0}
+  .theme-dark .materialOrderAddedOnlyLabel,.theme-cyber .materialOrderAddedOnlyLabel,.theme-luxury .materialOrderAddedOnlyLabel,.theme-retro .materialOrderAddedOnlyLabel,.theme-galaxy .materialOrderAddedOnlyLabel{background:#16452f;color:#baffd4}
   .crossFinishPanel{display:grid;gap:10px;margin:0 0 18px;padding:14px;border:1px solid #ead8cb;border-radius:14px;background:#fffaf5}.crossFinishPanel>span,.crossFinishPanel label>span{color:#817183;font-size:15px;font-weight:800}.crossFinishButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.crossFinishButtons button{min-height:48px;border:1px solid #d8c9df;border-radius:12px;background:#fff;color:#65596a;font:inherit;font-weight:800}.crossFinishButtons button.active{color:#fff;border-color:#6e91e8;background:#6e91e8}.crossFinishPanel label{margin:0}
   .requestContentButton { background:linear-gradient(180deg,#ffbf66,#ee9638); box-shadow:0 5px 0 #bd6d25; }
   .requestContentBackdrop { position:fixed; z-index:1900; inset:0; display:grid; place-items:center; padding:14px; background:rgba(15,12,20,.72); backdrop-filter:blur(7px); }
@@ -4403,7 +4473,17 @@ function FinalReviewPage({
           ))}
         </div>
       </section>
-    </>
+    {/* M-CROSS_MATERIAL_ORDER_QUICK_SUMMARY_V39_SAFE */}
+                        <aside className="materialOrderQuickSummary">
+                          <div className="materialOrderQuickSummaryTop">
+                            <div><strong>今回の発注明細</strong><small>{materialOrderItems.length}件</small></div>
+                            <strong>{formatYen((materialOrderItems||[]).reduce((sum,item)=>sum+((item.unitPrice===''||item.unitPrice==null)?0:(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0))}</strong>
+                          </div>
+                          {materialAddNotice&&<div className="materialOrderAddNotice">✓ {materialAddNotice}</div>}
+                          {materialOrderItems.length>0&&<div className="materialOrderQuickRows">{materialOrderItems.slice(-3).reverse().map((item,index)=><div key={(item.id||'quick')+'-'+index}><span>{item.productCode||'商品名未入力'}</span><b>{formatQuantity(Number(item.quantity)||0)}{item.unit||''}</b><strong>{item.unitPrice===''||item.unitPrice==null?'単価未設定':formatYen((Number(item.quantity)||0)*(Number(item.unitPrice)||0))}</strong></div>)}</div>}
+                          <button type="button" onClick={()=>document.querySelector('.materialOrderMobileHeading')?.scrollIntoView({behavior:'smooth',block:'start'})}>発注明細を確認・編集</button>
+                        </aside>
+                        </>
   )
 }
 
@@ -4581,6 +4661,10 @@ export default function App() {
   const [pendingPurchaseOrderItems, setPendingPurchaseOrderItems] = useState([])
   /* M-CROSS_MATERIAL_ORDER_SCREEN_V1_SAFE */
   const [materialOrderItems, setMaterialOrderItems] = useState([])
+  /* M-CROSS_MATERIAL_ORDER_TOP_ADDED_ONLY_V46_SAFE */
+  const materialAddedOrderItems=materialOrderItems.filter(item=>item.materialType==='other')
+  /* M-CROSS_MATERIAL_ORDER_QUICK_SUMMARY_V39_SAFE */
+  const [materialAddNotice,setMaterialAddNotice]=useState('')
   /* M-CROSS_MATERIAL_ORDER_SAVE_V2_SAFE */
   function saveCurrentMaterialPurchaseOrder(){
     const supplier=contractors.find(item=>item.id===materialSupplierId)||null
@@ -4646,6 +4730,9 @@ export default function App() {
   /* M-CROSS_PURCHASE_ORDER_SAVE_STEP3_V2_STRUCTURAL_SAFE */
   const purchaseOrderStorageKey='mcross_purchase_orders_v1'
   const [purchaseOrders,setPurchaseOrders]=useState(()=>{try{const saved=JSON.parse(localStorage.getItem(purchaseOrderStorageKey)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}})
+  /* M-CROSS_PURCHASE_ORDER_DRAFT_EDIT_V1_SAFE */
+  const [editingPurchaseOrderId,setEditingPurchaseOrderId]=useState('')
+  const [purchaseOrderEditItems,setPurchaseOrderEditItems]=useState([])
   /* M-CROSS_FINAL_ORDER_STAFF_DROPDOWN_V9_SAFE */
   const [finalOrderStaff,setFinalOrderStaff]=useState('')
   const finalOrderStaffMaster={
@@ -10025,6 +10112,8 @@ return savedEntries
 
               <button className="primary" disabled={!selectedProperty || !unit.trim()} onClick={startMeasurement}>採寸を開始する →</button>
 
+              {/* M-CROSS_REMOVE_HOME_EXPORT_SHORTCUTS_V23_SAFE */}
+              {/* M-CROSS_RENAME_ESTIMATE_ORDER_BUTTON_V24_SAFE */}
               <OneDriveSyncPanel />
               <button
                 className="secondaryButton residentCasesEntryButton"
@@ -10098,49 +10187,9 @@ return savedEntries
                 }}>保存する</button>
                 {saveFeedback && <div className={`saveFeedbackMessage ${saveFeedback.startsWith('✓') ? 'success' : 'error'}`} role="status">{saveFeedback}</div>}
               </div>
-              <button
-                className="secondaryButton"
-                type="button"
-                onClick={() => downloadExcel({
-                  company,
-                  propertyName: selectedProperty?.name || '',
-                  address: selectedProperty?.address || '',
-                  unit,
-                  records,
-                  cfRecords,
-
-                  cfMaterialGroups,
-                  softRecords,
-                  floorTrimRecords,
-                  additionalWorks,
-                })}
-              >
-                📊 採寸データ出力
-              </button>
+              
               {/* M-CROSS_ESTIMATE_BUTTON_QUICK_EXPORT_V3_EXACT */}
-              <button
-                className="secondaryButton estimateQuickExportButton"
-                type="button"
-                onClick={() => {
-                  const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
-                  const rawRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
-                  /* M-CROSS_ESTIMATE_EXPORT_EXCLUSIONS_V2_STRUCTURAL_SAFE */
-                  const allRowsForExport = applyEstimateEdits(rawRows, estimateEdits)
-                  const rowsForExport = allRowsForExport.filter(row => !estimateEdits[row.exclusionKey || estimateEditKey(row)]?.excluded)
-                  const additionalWorksForExport = additionalWorks.filter((item, index) => {
-                    const key = 'additionalWork:' + (item.id || index)
-                    return !estimateEdits[key]?.excluded
-                  })
-                  downloadEstimateExcel({
-                    company,
-                    propertyName: selectedProperty?.name || '', // M-CROSS_INITIAL_ESTIMATE_UNMARKED_V1_SAFE: 通常の初回見積は無印
-                    address: selectedProperty?.address || '',
-                    unit,
-                  }, rowsForExport, estimateCopyFormat, additionalWorksForExport)
-                }}
-              >
-                📄 見積書を出力
-              </button>
+              
 
               <button className="secondaryButton" type="button" onClick={() => {
                 const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
@@ -10157,7 +10206,7 @@ return savedEntries
                   setShowRoomManagement(false)
                 }}
               >
-                {showEstimate ? '← 採寸画面へ戻る' : '💰 見積内容を確認・編集'}
+                {showEstimate ? '← 採寸画面へ戻る' : '💰 見積・発注書'}
               </button>
             </div>
             <p className={`saveState ${isDirty ? 'dirty' : 'saved'}`} role="status" aria-live="polite">
@@ -10265,15 +10314,26 @@ return savedEntries
                   <section className="orderSelectionPanel" aria-label="発注項目の選択">
                     <strong>📦 発注する項目を選択</strong>
                     <div className="orderSelectionQuickButtons">
-                      <button type="button" className="orderQuickPrimary" onClick={() => setSelectedOrderKeys(finishContractorKeys)}>内装一括</button>
-                      <button type="button" onClick={() => setSelectedOrderKeys(allOrderKeys)}>全選択</button>
-                      <button type="button" onClick={() => setSelectedOrderKeys(additionalOrderKeys)}>その他のみ</button>
+                      <button type="button" className="orderQuickPrimary" onClick={() => setSelectedOrderKeys(finishContractorKeys)}>クロス・CF・巾木を一括選択</button>
+                      
+                      
                       <button type="button" onClick={() => setSelectedOrderKeys([])}>クリア</button>
                     </div>
-                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => setShowPurchaseOrderExplorer(true)}>📁 保存済み発注書 <span>{purchaseOrders.length}</span></button>
+                    {/* M-CROSS_PURCHASE_ORDER_CURRENT_COUNT_V33_SAFE */}
+                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => setShowPurchaseOrderExplorer(true)}>📁 保存済み発注書 <span>{purchaseOrders.filter(order=>{
+                      const currentCompany=String(company||'').trim()
+                      const currentProperty=String(selectedProperty?.name||'').trim()
+                      const currentUnit=String(unit||'').trim().replace(/号室$/,'')
+                      const orderCompany=String(order.company||'').trim()
+                      const orderProperty=String(order.propertyName||'').trim()
+                      const orderUnit=String(order.unit||'').trim().replace(/号室$/,'')
+                      return (!currentCompany||orderCompany===currentCompany) && (!currentProperty||orderProperty===currentProperty) && (!currentUnit||orderUnit===currentUnit)
+                    }).length}</span></button>
+                    {/* M-CROSS_SIMPLIFY_PURCHASE_ORDER_SELECTION_V25_SAFE */}
+                    <small className="orderSelectionIndividualNote">その他工事は下の見積明細から必要な項目だけ選択してください。</small>
                     <div className="orderSelectionSummary"><span>選択中</span><strong>{selectedOrderKeys.length}件</strong></div>
                     <button className="primary" type="button" disabled={selectedOrderKeys.length===0} onClick={() => {
-                      const selected=orderCandidateRows.filter((row,index)=>selectedOrderKeys.includes(orderKeyForRow(row,index)))
+                      const individuallySelectedAdditional=orderCandidateRows.filter((row,index)=>row.category==='additionalWork'&&selectedOrderKeys.includes(orderKeyForRow(row,index))); const selected=individuallySelectedAdditional.length>0?individuallySelectedAdditional:orderCandidateRows.filter((row,index)=>selectedOrderKeys.includes(orderKeyForRow(row,index)))
                       const items=selected.map((row,index)=>({
                         id: orderKeyForRow(row,index),
                         label: row.label || (Array.isArray(row.parts) ? row.parts.filter(Boolean).join(' ') : '発注明細'),
@@ -10290,6 +10350,26 @@ return savedEntries
                       setPendingPurchaseOrderItems(items)
                       setPurchaseOrderBranch('select')
                     }}>📦 選択した項目から発注書を作成</button>
+                    {/* M-CROSS_BLANK_MATERIAL_ORDER_OPEN_V40_SAFE */}<button type="button" className="materialBlankOrderButton materialBlankOrderPrimary" onClick={()=>{
+                      setSelectedOrderKeys([])
+                      setOrderDraft(null)
+                      setMaterialSupplierId('')
+                      setShowMaterialSupplierPicker(false)
+                      setShowMaterialPriceBook(false)
+                      setCopiedMaterialRate('')
+                      setMaterialOrderItems([{
+                        id:'material-blank-'+Date.now(),
+                        materialType:'other',
+                        productCode:'',
+                        description:'',
+                        unitPrice:'',
+                        quantity:1,
+                        unit:''
+                      }])
+                      setPurchaseOrderBranch('material')
+                      setSaveStatus('空の材料発注書を作成しました')
+                      window.setTimeout(()=>document.querySelector('.materialMobilePanel')?.scrollIntoView({behavior:'smooth',block:'start'}),60)
+                    }}>＋ 空の発注書を作成</button>
                   </section>
                   {showPurchaseOrderExplorer && (() => {
                     const selected=purchaseOrders.find(item=>item.id===selectedPurchaseOrderId)||null
@@ -10304,9 +10384,17 @@ return savedEntries
                     })
                     return <div className="purchaseOrderExplorerBackdrop" role="dialog" aria-modal="true" aria-label="発注書エクスプローラー">
                       <section className="purchaseOrderExplorer">
-                        <header><div><small>PURCHASE ORDERS</small><h2>📁 発注書</h2></div><button type="button" onClick={()=>{setShowPurchaseOrderExplorer(false);setSelectedPurchaseOrderId('')}}>× 閉じる</button></header>
+                        <header><div><small>PURCHASE ORDERS</small><h2>📁 発注書</h2><small className="purchaseOrderCurrentScope">現在の物件・号室のみ</small></div><button type="button" onClick={()=>{setShowPurchaseOrderExplorer(false);setSelectedPurchaseOrderId('')}}>× 閉じる</button></header>
                         {purchaseOrders.length===0?<p className="empty">保存済み発注書はありません</p>:<div className="purchaseOrderExplorerBody">
-                          <nav className="purchaseOrderTree">{[...groups.values()].map(group=><details open key={[group.companyName,group.propertyName,group.unitName].join('|')}>
+                          <nav className="purchaseOrderTree">{/* M-CROSS_PURCHASE_ORDER_EXPLORER_CURRENT_PROPERTY_V32_SAFE */}{[...groups.values()].filter(group=>{
+                              const currentCompany=String(company||'').trim()
+                              const currentProperty=String(selectedProperty?.name||'').trim()
+                              const currentUnit=String(unit||'').trim().replace(/号室$/,'')
+                              const groupCompany=String(group.companyName||'').trim()
+                              const groupProperty=String(group.propertyName||'').trim()
+                              const groupUnit=String(group.unitName||'').trim().replace(/号室$/,'')
+                              return (!currentCompany||groupCompany===currentCompany) && (!currentProperty||groupProperty===currentProperty) && (!currentUnit||groupUnit===currentUnit)
+                            }).map(group=><details open key={[group.companyName,group.propertyName,group.unitName].join('|')}>
                             <summary>📁 {group.companyName}</summary>
                             <div className="purchaseOrderTreeLevel">📁 {group.propertyName}</div>
                             <div className="purchaseOrderTreeLevel">📁 {group.unitName}</div>
@@ -10318,13 +10406,36 @@ return savedEntries
                                 
                                 {/* M-CROSS_FINAL_PURCHASE_ORDER_STEP2_TEMPLATE_V2_SAFE */}
                                 
-                                {selected.status!=='本発注'&&<button className="primary finalOrderConfirmButton" type="button" onClick={()=>finalizePurchaseOrder(selected.id)}>✓ 本発注書にする</button>}{selected.status==='本発注'&&<button className="excelStylePrintButton" type="button" onClick={()=>window.print()}>🖨 Excel書式で印刷 / PDF</button>}{selected.status==='本発注'&&<button className="finalOrderExcelButton" type="button" onClick={()=>exportFinalPurchaseOrderExcel(selected)}>⬇ Excel書式で出力</button>}{selected.status==='本発注'&&<label className="finalOrderStaffPicker"><span>担当</span><select value={finalOrderStaff} onChange={event=>setFinalOrderStaff(event.target.value)}><option value="">選択なし</option><option value="町田">町田</option><option value="佐々木">佐々木</option><option value="坂下">坂下</option></select></label>}<button className="danger" type="button" onClick={()=>deletePurchaseOrder(selected.id)}>削除</button>
+                                {selected.status!=='本発注'&&<button className="draftOrderEditButton" type="button" onClick={()=>{setEditingPurchaseOrderId(selected.id);setPurchaseOrderEditItems((selected.items||[]).map(item=>({...item})))}}>✏ 下書きを編集</button>}{selected.status!=='本発注'&&<button className="primary finalOrderConfirmButton" type="button" onClick={()=>finalizePurchaseOrder(selected.id)}>✓ 本発注書にする</button>}{selected.status==='本発注'&&<button className="excelStylePrintButton" type="button" onClick={()=>window.print()}>🖨 Excel書式で印刷 / PDF</button>}{/* M-CROSS_PURCHASE_ORDER_FINAL_EDIT_V3_SAFE */}{selected.status==='本発注'&&<button className="finalOrderEditButton" type="button" onClick={()=>{if(!window.confirm('本発注書を編集しますか？\n保存すると現在の本発注書を更新します。'))return;setEditingPurchaseOrderId(selected.id);setPurchaseOrderEditItems((selected.items||[]).map(item=>({...item})))}}>✏ 本発注書を編集</button>}{selected.status==='本発注'&&<button className="finalOrderExcelButton" type="button" onClick={()=>exportFinalPurchaseOrderExcel(selected)}>⬇ Excel書式で出力</button>}{selected.status==='本発注'&&<label className="finalOrderStaffPicker"><span>担当</span><select value={finalOrderStaff} onChange={event=>setFinalOrderStaff(event.target.value)}><option value="">選択なし</option><option value="町田">町田</option><option value="佐々木">佐々木</option><option value="坂下">坂下</option></select></label>}<button className="danger" type="button" onClick={()=>deletePurchaseOrder(selected.id)}>削除</button>
                               </div></div>
-                            <dl><div><dt>管理会社</dt><dd>{selected.company||'未設定'}</dd></div><div><dt>工事名</dt><dd>{selected.workName||'未設定'}</dd></div><div><dt>業種</dt><dd>{selected.contractorTrade||'未設定'}</dd></div><div><dt>作成日時</dt><dd>{new Date(selected.createdAt).toLocaleString('ja-JP')}</dd></div></dl><div className="purchaseOrderPreviewItems">{(selected.items||[]).map((item,index)=><section key={(item.id||'item')+'-'+index}>{item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,label:event.target.value}:current)}))} placeholder={
+                            <dl><div><dt>管理会社</dt><dd>{selected.company||'未設定'}</dd></div><div><dt>工事名</dt><dd>{selected.workName||'未設定'}</dd></div><div><dt>業種</dt><dd>{selected.contractorTrade||'未設定'}</dd></div><div><dt>作成日時</dt><dd>{new Date(selected.createdAt).toLocaleString('ja-JP')}</dd></div></dl>{editingPurchaseOrderId===selected.id&&<section className="draftOrderEditor">
+                              <header><strong>{selected.status==='本発注'?'本発注書編集':'下書き編集'}</strong><small>{selected.status==='本発注'?'この本発注書を更新します。採寸・見積データは変更しません。':'この発注書だけを変更します。採寸・見積データは変更しません。'}</small></header>
+                              <div className="draftOrderEditRows">
+                                {purchaseOrderEditItems.map((item,index)=><article className="draftOrderEditRow" key={(item.id||'draft')+'-'+index}>
+                                  <label className="wide"><span>{selected.orderMode==='material'?'品番・商品名':'施工内容'}</span><input value={item.label||item.productCode||''} onChange={event=>setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,label:event.target.value,productCode:selected.orderMode==='material'?event.target.value:current.productCode}:current))}/></label>
+                                  <label><span>数量</span><input type="number" inputMode="decimal" min="0" step="0.01" value={item.orderQuantity??''} onFocus={event=>event.target.select()} onChange={event=>{const raw=event.target.value;setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,orderQuantity:raw}:current))}}/></label>
+                                  <label><span>単位</span><input value={item.unit||''} onChange={event=>setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,unit:event.target.value}:current))}/></label>
+                                  <label><span>単価</span><input type="number" inputMode="numeric" min="0" step="1" value={item.orderRate??''} onFocus={event=>event.target.select()} onChange={event=>{const raw=event.target.value;setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,orderRate:raw}:current))}}/></label>
+                                  <div className="draftOrderEditAmount"><span>金額</span><strong>{formatYen((Number(item.orderQuantity)||0)*(Number(item.orderRate)||0))}</strong></div>
+                                  <button type="button" className="danger" onClick={()=>setPurchaseOrderEditItems(previous=>previous.filter((_,i)=>i!==index))}>削除</button>
+                                </article>)}
+                              </div>
+                              <button type="button" className="draftOrderAddRow" onClick={()=>setPurchaseOrderEditItems(previous=>[...previous,{id:'draft-item-'+Date.now(),category:selected.orderMode==='material'?'material':'service',label:'',productCode:'',memo:'',sourceQuantity:0,factor:1,orderQuantity:'',unit:selected.orderMode==='material'?'':'式',orderRate:'',orderAmount:null}])}>＋ 明細追加</button>
+                              <footer>
+                                <button type="button" onClick={()=>{setEditingPurchaseOrderId('');setPurchaseOrderEditItems([])}}>取消</button>
+                                <button type="button" className="primary" onClick={()=>{
+                                  const cleaned=purchaseOrderEditItems.map(item=>{const quantity=item.orderQuantity===''?'':Math.max(0,Number(item.orderQuantity)||0);const rate=item.orderRate===''?'':Math.max(0,Number(item.orderRate)||0);return {...item,label:String(item.label||item.productCode||'').trim(),productCode:selected.orderMode==='material'?String(item.label||item.productCode||'').trim():item.productCode,orderQuantity:quantity,unit:String(item.unit||'').trim(),orderRate:rate,orderAmount:quantity===''||rate===''?null:Number(quantity)*Number(rate)}}).filter(item=>item.label||Number(item.orderQuantity)>0)
+                                  if(!cleaned.length){window.alert('明細を1件以上入力してください。');return}
+                                  const updatedAt=new Date().toISOString();const updated=purchaseOrders.map(order=>order.id===selected.id?{...order,items:cleaned,updatedAt,revisionHistory:selected.status==='本発注'?[...(Array.isArray(order.revisionHistory)?order.revisionHistory:[]),{updatedAt,items:(order.items||[]).map(item=>({...item}))}]:order.revisionHistory}:order)
+                                  savePurchaseOrders(updated);setEditingPurchaseOrderId('');setPurchaseOrderEditItems([]);setSaveStatus(selected.status==='本発注'?'本発注書を更新しました':'下書きを上書き保存しました');window.alert(selected.status==='本発注'?'本発注書を更新しました。':'下書きを上書き保存しました。')
+                                }}>{selected.status==='本発注'?'本発注書を更新':'下書きを上書き保存'}</button>
+                              </footer>
+                            </section>}
+                            <div className="purchaseOrderPreviewItems" style={editingPurchaseOrderId===selected.id?{display:"none"}:undefined}>{(selected.items||[]).map((item,index)=><section key={(item.id||'item')+'-'+index}>{item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,label:event.target.value}:current)}))} placeholder={
                                       item.materialType === 'cf'
                                         ? String(item.description || '')
                                         : ''
-                                    }/><button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:previous.items.filter((_,index)=>index!==itemIndex)}))}>×</button></div>:<strong>{item.label}</strong>}{item.memo&&<small>{item.memo}</small>}<div><span>見積 {formatQuantity(item.sourceQuantity)}{item.unit}</span><span>×{Number(item.factor||1).toFixed(2)}</span><b>発注 {formatQuantity(item.orderQuantity)}{item.unit}</b></div></section>)}</div>
+                                    }/></div>:<strong>{item.label}</strong>}{item.memo&&<small>{item.memo}</small>}<div><span>見積 {formatQuantity(item.sourceQuantity)}{item.unit}</span><span>×{Number(item.factor||1).toFixed(2)}</span><b>発注 {formatQuantity(item.orderQuantity)}{item.unit}</b><span className="purchaseOrderPreviewRate">単価 {item.orderRate===''||item.orderRate==null?'未設定':formatYen(Number(item.orderRate)||0)+'/'+(item.unit||'式')}</span><strong className="purchaseOrderPreviewAmount">{item.orderRate===''||item.orderRate==null?'単価未設定':formatYen(item.orderAmount==null||item.orderAmount===''?(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0):Number(item.orderAmount||0))}</strong></div></section>)}</div>
                             {selected.status==='本発注' && (()=>{
                               const subtotal=(selected.items||[]).reduce((sum,item)=>{
                                 const amount=item.orderAmount==null||item.orderAmount===''?(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0):Number(item.orderAmount||0)
@@ -10544,18 +10655,7 @@ return savedEntries
                               ...softItems
                             ]
 
-                            setMaterialOrderItems(
-                              initialItems.length
-                                ? initialItems
-                                : [{
-                                    id: 'material-free-' + now,
-                                    materialType: 'other',
-                                    productCode: '',
-                                    description: '',
-                                    quantity: 1,
-                                    unit: ''
-                                  }]
-                            )
+                            setMaterialOrderItems([])
 
                             setPurchaseOrderBranch('material')
                           }}
@@ -10567,6 +10667,7 @@ return savedEntries
                   )}
 
                   {/* M-CROSS_MATERIAL_ORDER_SCREEN_V1_SAFE */}
+                  {purchaseOrderBranch==='material'&&materialOrderItems.length===1&&!materialOrderItems[0]?.productCode&&<div className="blankMaterialOrderGuide">見積にない材料を自由に入力して発注できます。</div>}
                   {/* M-CROSS_ORDER_IME_INPUT_V1_SAFE */}
                   {purchaseOrderBranch === 'material' && (
                     <section className="orderDraftPanel materialMobilePanel" aria-label="材料発注">
@@ -10593,9 +10694,10 @@ return savedEntries
                           alignItems:'center',
                           gap:'12px',
                           flexWrap:'wrap',
-                          marginBottom:'14px'
+                          marginBottom:'14px',
+                          width:'100%'
                         }}>
-                          <div>
+                          <div style={{width:'100%'}}>
                             
                           {/* M-CROSS_MATERIAL_PRICEBOOK_V3B_SAFE */}
                           <div style={{
@@ -10697,7 +10799,31 @@ return savedEntries
                               </div>
                             )}
 
-                            {showMaterialPriceBook &&
+                            {/* M-CROSS_MATERIAL_ADD_TOP_V48_SAFE */}<button type="button" className="materialAddTopButton" onClick={()=>setMaterialOrderItems(previous=>[...previous,{id:'material-free-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),materialType:'other',productCode:'',description:'',quantity:1,unit:''}])}>{'\uFF0B \u6750\u6599\u884C\u3092\u8FFD\u52A0'}</button>{/* M-CROSS_MATERIAL_ORDER_LIKE_SERVICE_V45_SAFE */}
+                        <section className="materialOrderTopPreview" aria-label="材料発注書プレビュー">
+                          <header>
+                            <div><strong>発　注　書</strong><small>材料</small><em className="materialOrderAddedOnlyLabel">追加した商品のみ</em></div>
+                            <span>{materialSupplierId?(contractors.find(item=>item.id===materialSupplierId)?.name||'発注先未設定'):'発注先未設定'}</span>
+                          </header>
+                          {materialAddedOrderItems.length===0?
+                            <p className="empty">単価表の「発注書へ追加」または「空の発注書を作成」から商品を追加してください。</p>
+                            :<div className="materialOrderTopRows">
+                              {materialAddedOrderItems.map((item,index)=><article key={(item.id||'top-item')+'-'+index} className="materialOrderTopRow">
+                                <div><strong>{item.productCode||'商品名未入力'}</strong><small>{item.description||''}</small></div>
+                                <span>{formatQuantity(Number(item.quantity)||0)}{item.unit||''}</span>
+                                <span>{item.unitPrice===''||item.unitPrice==null?'単価未設定':formatYen(Number(item.unitPrice)||0)}</span>
+                                <b>{item.unitPrice===''||item.unitPrice==null?'未設定':formatYen((Number(item.quantity)||0)*(Number(item.unitPrice)||0))}</b>
+                              </article>)}
+                            </div>
+                          }
+                          <footer>
+                            <span>{materialAddedOrderItems.length}件</span>
+                            <strong>{formatYen((materialAddedOrderItems||[]).reduce((sum,item)=>sum+((item.unitPrice===''||item.unitPrice==null)?0:(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0))}</strong>
+                            <button type="button" onClick={()=>document.querySelector('.materialOrderMobileHeading')?.scrollIntoView({behavior:'smooth',block:'start'})}>数量・単価を編集</button><button type="button" className="primary" onClick={saveCurrentMaterialPurchaseOrder}>{'\uD83D\uDCE6 \u3053\u306E\u5185\u5BB9\u3067\u767A\u6CE8\u66F8\u3092\u4F5C\u6210'}</button>
+                          </footer>
+                          {materialAddNotice&&<div className="materialOrderTopNotice">✓ {materialAddNotice}</div>}
+                        </section>
+                        {showMaterialPriceBook &&
                               materialSupplierId && (() => {
 
                                 const supplier =
@@ -10832,8 +10958,24 @@ return savedEntries
                                             <small>{row.note || ''}</small>
 
                                             <div style={{display:'flex',gap:'5px',flexWrap:'wrap'}}>
-                                              {row.priceType==='fixed' && row.price!=='' && row.price!=null && typeof setCopiedMaterialRate==='function' && (
-                                                <button type="button" onClick={()=>setCopiedMaterialRate(Number(row.price)||0)}>単価コピー</button>
+                                              {row.priceType==='fixed' && row.price!=='' && row.price!=null && (
+                                                <button
+                                                type="button"
+                                                className={'materialPriceBookAddToOrder'+(materialOrderItems.some(item=>String(item.productCode||'').trim()===String(row.name||'').trim())?' added':'')}
+                                                disabled={materialOrderItems.some(item=>String(item.productCode||'').trim()===String(row.name||'').trim())}
+                                                onClick={()=>{
+                                                  const code=String(row.name||'').trim()
+                                                  if(materialOrderItems.some(item=>String(item.productCode||'').trim()===code))return
+                                                  setMaterialOrderItems(previous=>[...(Array.isArray(previous)?previous:[]),{
+                                                    id:'material-order-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+                                                    materialType:'other',productCode:code,description:String(row.note||''),
+                                                    unitPrice:Math.max(0,Number(row.price)||0),quantity:1,unit:String(row.unit||'')
+                                                  }])
+                                                  setSaveStatus('単価表から発注書へ追加しました')
+                                                  setMaterialAddNotice(code+' を追加しました')
+                                                  window.setTimeout(()=>setMaterialAddNotice(''),2200)
+                                                }}
+                                              >{materialOrderItems.some(item=>String(item.productCode||'').trim()===String(row.name||'').trim())?'✓ 追加済み':'＋ 発注書へ追加'}</button>
                                               )}
                                               <button
                                                 type="button"
@@ -10867,6 +11009,8 @@ return savedEntries
                             </div>
                           </div>
 
+                          {/* M-CROSS_MATERIAL_PRICEBOOK_TO_ORDER_AND_BLANK_V38_SAFE */}
+                          
                           <button
                             type="button"
                             onClick={() => {
@@ -11161,10 +11305,7 @@ return savedEntries
                         </>
                       })()}
                       <div className="materialOrderModeBlock">{/* M-CROSS_CONTRACTOR_ORDER_MODE_V2_SAFE */}
-                      {(orderDraft.orderMode==='material'||orderDraft.orderMode==='both')&&<section className="materialOrderToolbar">
-                        <div><strong>材料発注モード</strong><small>商品名・数量・単位・単価をExcel感覚で直接入力</small></div>
-                        <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[...previous.items,{id:'material-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>＋ 商品行を追加</button>
-                      </section>}
+                      {/* M-CROSS_MATERIAL_ORDER_DUPLICATE_PANEL_V35_SAFE */}
                       {/* M-CROSS_SEPARATE_SERVICE_MATERIAL_V4_SAFE */}
                       {(orderDraft.orderMode==='material'||orderDraft.orderMode==='both')&&<section className="materialOrderToolbar">
                         <div><strong>材料発注</strong><small>見積明細とは別に、品番・数量・単位・単価を自由入力します。</small></div>
@@ -11246,7 +11387,7 @@ return savedEntries
                                 const nextPriceBook=priceBook.map((current,rowIndex)=>rowIndex===index?{...current,priceType:'fixed',price:value===''?'':Math.max(0,Number(value)||0),rate:''}:current)
                                 saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
                               }}/><b>円</b></label>}
-                              <button type="button" className="danger" onClick={()=>{
+                              <button type="button" disabled={orderDraft.items.some(item=>String(item.label||"").trim()===String(row.name||"").trim())} onClick={()=>{const name=String(row.name||"").trim();if(!name)return;setOrderDraft(previous=>({...previous,items:[...previous.items,{id:"service-price-add-"+Date.now()+"-"+Math.random().toString(36).slice(2,6),label:name,memo:String(row.note||""),category:"service",sourceQuantity:1,factor:1,orderQuantity:1,unit:String(row.unit||"式"),orderRate:row.priceType==="fixed"&&row.price!==""?Math.max(0,Number(row.price)||0):"",rate:0,amount:0}]}))}}>{orderDraft.items.some(item=>String(item.label||"").trim()===String(row.name||"").trim())?"✓ 追加済み":"＋ 発注書へ追加"}</button><button type="button" className="danger" onClick={()=>{
                                 if(!window.confirm(String(row.name||'')+'を施工単価表から削除しますか？'))return
                                 const nextPriceBook=priceBook.filter((_,rowIndex)=>rowIndex!==index)
                                 saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
@@ -11338,7 +11479,7 @@ return savedEntries
                         </section>}</form>}
                         <div className="contractorList">
                           {contractors.filter(item => !item.hidden).filter(item => [item.name,item.trade,item.contact].join(' ').toLocaleLowerCase('ja').includes(contractorSearch.trim().toLocaleLowerCase('ja'))).length===0 ? <p className="empty">表示できる協力業者がありません</p> : contractors.filter(item => !item.hidden).filter(item => [item.name,item.trade,item.contact].join(' ').toLocaleLowerCase('ja').includes(contractorSearch.trim().toLocaleLowerCase('ja'))).map(item => <article className="contractorCard" key={item.id}>
-                            <button type="button" className="contractorCardMain" onClick={() => {setOrderDraft(previous => ({...previous,contractor:item.name,contractorId:item.id,orderMode:item.orderMode||(item.trade==='材料'?'material':'service'),orderMode:item.orderMode||(item.trade==='材料'?'material':'service'),items:previous.items.map(current=>{
+                            <button type="button" className="contractorCardMain" onClick={() => {setOrderDraft(previous => ({...previous,contractor:item.name,contractorId:item.id,orderMode:previous.orderMode||'service',items:previous.items.map(current=>{
                               const text=[current.label,current.memo].filter(Boolean).join(' ')
                               const rateKey=current.category==='cross'?'cross':current.category==='cf'?'cf':current.category==='soft'?'soft':current.category==='floorTrim'?'floorTrim':text.includes('壁下地')?'wallBase':text.includes('床下地')?'floorBase':''
                               const masterRate=rateKey && item.rates?.[rateKey]!=='' && item.rates?.[rateKey]!=null ? Number(item.rates[rateKey]) : current.orderRate
@@ -11445,7 +11586,7 @@ return savedEntries
                             <input className="orderSelectCheckbox" type="checkbox"
                               checked={selectedOrderKeys.includes(orderKeyForRow(row,index))}
                               onClick={event => event.stopPropagation()}
-                              onChange={event => { event.stopPropagation(); const key=orderKeyForRow(row,index); setSelectedOrderKeys(previous => event.target.checked ? [...new Set([...previous,key])] : previous.filter(value => value !== key)) }}
+                              onChange={event => { event.stopPropagation(); const key=orderKeyForRow(row,index); setSelectedOrderKeys(previous => event.target.checked ? [...new Set([...previous.filter(value => !finishContractorKeys.includes(value)),key])] : previous.filter(value => value !== key)) }}
                               aria-label={(row.label || '見積項目') + 'を発注対象に選択'}
                             />
                             <strong>{row.label}{row.memo && <small className="estimateMemo">{row.memo}</small>}</strong>
@@ -11471,21 +11612,9 @@ return savedEntries
                   </button>
                   {Object.values(estimateEdits).some(edit => edit && typeof edit === 'object' && edit.excluded) && (
                     <div className="estimateExcludedRestoreV4">
-                      <span>見積から外した項目があります</span>
-                      <button type="button" onClick={() => {
-                        setEstimateEdits(previous => {
-                          const next = Object.fromEntries(Object.entries(previous).map(([key, edit]) => {
-                            if (!edit || typeof edit !== 'object' || Array.isArray(edit)) return [key, edit]
-                            const restored = { ...edit }
-                            delete restored.excluded
-                            return [key, restored]
-                          }))
-                          try { localStorage.setItem(estimateEditStorageKey, JSON.stringify(next)) } catch {}
-                          return next
-                        })
-                        setIsDirty(true)
-                        setSaveStatus('見積から外した項目をすべて戻しました')
-                      }}>↩ すべて見積へ戻す</button>
+
+                  {/* M-CROSS_REMOVE_ESTIMATE_EXCLUDED_NOTICE_V31_SAFE */}
+                      
                     </div>
                   )}
 
@@ -11620,13 +11749,7 @@ return savedEntries
                         window.alert('見積履歴を保存できませんでした。')
                       }
                     }}
-                    onDownloadVersion={version => downloadEstimateExcel({
-                      company,
-                      propertyName: (selectedProperty?.name || '') + estimateVersionMark(version.version),
-                      address: selectedProperty?.address || '',
-                      unit,
-                      estimateVersion: version.version,
-                    }, version.rows || [], version.copyFormat || estimateCopyFormat, version.additionalWorks || [])}
+                    /* M-CROSS_REMOVE_SAVED_ESTIMATE_VERSION_EXPORT_V28_SAFE */
                     onDeleteVersion={version => {
                       if (!window.confirm('お見積り' + version.version + 'を削除しますか？')) return
                       const next = estimateVersions.filter(item => item.id !== version.id)
@@ -12060,3 +12183,16 @@ if (!globalThis.__mCrossThemeButtonSoundsV2Installed) {
 
 
 /* M-CROSS_AUTO_THEME_SOUNDS_APPLIED */
+
+
+
+
+
+
+
+
+
+
+
+
+
