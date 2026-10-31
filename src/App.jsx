@@ -9894,6 +9894,7 @@ return savedEntries
                   {/* M-CROSS_MATERIAL_ORDER_SCREEN_V1_SAFE */}
                   {purchaseOrderBranch === 'material' && (
                     <section className="orderDraftPanel materialMobilePanel" aria-label="材料発注">
+                      {/* M-CROSS_MATERIAL_MOBILE_LAYOUT_V42_SAFE */}
                       {/* M-CROSS_MATERIAL_MOBILE_CYBER_CSS_V2_SAFE */}
                       <div className="orderDraftHeader">
                         <div>
@@ -10103,7 +10104,7 @@ return savedEntries
                                       }}>
                                         {/* M-CROSS_PRICEBOOK_V41_INLINE_EDIT_SAFE */}
                                         {priceBook.map((row, index) => (
-                                          <div
+                                          <div className="materialPriceBookRow"
                                             key={row.id || index}
                                             style={{
                                               display:'grid',
@@ -10221,7 +10222,7 @@ return savedEntries
                           gap:'10px'
                         }}>
                           {materialOrderItems.map((item, itemIndex) => (
-                            <article
+                            <article className="materialOrderMobileCard"
                               key={item.id}
                               style={{
                                 border:'1px solid rgba(120,120,120,.28)',
