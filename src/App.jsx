@@ -9891,7 +9891,8 @@ return savedEntries
 
                   {/* M-CROSS_MATERIAL_ORDER_SCREEN_V1_SAFE */}
                   {purchaseOrderBranch === 'material' && (
-                    <section className="orderDraftPanel" aria-label="材料発注">
+                    <section className="orderDraftPanel materialMobilePanel" aria-label="材料発注">
+                      {/* M-CROSS_MATERIAL_MOBILE_CYBER_CSS_V2_SAFE */}
                       <div className="orderDraftHeader">
                         <div>
                           <small>MATERIAL ORDER</small>
@@ -10298,20 +10299,15 @@ return savedEntries
                                     type="number"
                                     min="0"
                                     step="0.1"
-                                    value={item.quantity}
+                                    inputMode="decimal"
+                                    value={item.quantity ?? ''}
+                                    onFocus={event => event.target.select()}
                                     onChange={event => {
-                                      const value = Math.max(
-                                        0,
-                                        Number(event.target.value) || 0
-                                      )
-
+                                      const raw = event.target.value
                                       setMaterialOrderItems(previous =>
                                         previous.map((current, index) =>
                                           index === itemIndex
-                                            ? {
-                                                ...current,
-                                                quantity:value
-                                              }
+                                            ? {...current, quantity: raw === '' ? '' : Math.max(0, Number(raw) || 0)}
                                             : current
                                         )
                                       )
@@ -10347,6 +10343,7 @@ return savedEntries
                                     type="number"
                                     min="0"
                                     step="1"
+                                    onFocus={event => event.target.select()}
                                     value={item.unitPrice ?? ''}
                                     onChange={event => {
                                       const value = event.target.value
