@@ -6378,6 +6378,9 @@ return savedEntries
     setHeight('')
     setCount('')
     setMemo('')
+    /* M-CROSS_RESET_CROSS_FINISH_AFTER_REGISTRATION_V7_SAFE */
+    setCrossFinish('normal')
+    setSurfaceName('')
     setActiveInput('height')
     requestAnimationFrame(() => {
       heightInputRef.current?.focus()
