@@ -9,7 +9,7 @@ const residentPcMasterKey = 'mcross_resident_pc_master_v1'
 const residentAutoSaveDelay = 2500
 const residentAutoSaveDirtyKey = 'mcross_resident_auto_save_dirty_v1'
 const AUTO_SAVE_MARKER = 'M-CROSS_RESIDENT_AUTO_SAVE_V1'
-const graphScopes = ['User.Read', 'Files.ReadWrite.AppFolder']
+const graphScopes = ['User.Read', 'Files.ReadWrite.AppFolder', 'Files.ReadWrite']
 const backupFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-backup.json:/content'
 
 const msal = new PublicClientApplication({
@@ -326,6 +326,49 @@ export default function OneDriveSyncPanel() {
   }
 
 
+  /* M-CROSS_ONEDRIVE_PURCHASE_TEMPLATE_STEP1_SAFE */
+  async function uploadPurchaseOrderTemplate(){
+    try{
+      setStatus('発注書テンプレートをOneDriveへ準備しています…')
+      /* M-CROSS_ONEDRIVE_PURCHASE_TEMPLATE_TOKEN_V2_SAFE */
+      await ensureMsalInitialized()
+      let activeAccount=msal.getActiveAccount()||msal.getAllAccounts()[0]||null
+      if(!activeAccount){
+        const loginResult=await msal.loginPopup({scopes:graphScopes})
+        activeAccount=loginResult.account
+        if(activeAccount)msal.setActiveAccount(activeAccount)
+      }
+      if(!activeAccount)throw new Error('Microsoftアカウントへサインインできませんでした')
+      let token=''
+      try{
+        token=(await msal.acquireTokenSilent({scopes:graphScopes,account:activeAccount})).accessToken
+      }catch{
+        token=(await msal.acquireTokenPopup({scopes:graphScopes,account:activeAccount})).accessToken
+      }
+      const templateResponse=await fetch(new URL('/templates/工事カードNew3.xlsm',window.location.origin),{cache:'no-store'})
+      if(!templateResponse.ok)throw new Error('テンプレート読込失敗 HTTP '+templateResponse.status)
+      const bytes=await templateResponse.arrayBuffer()
+      const templateUrl='https://graph.microsoft.com/v1.0/me/drive/special/approot:/templates/%E5%B7%A5%E4%BA%8B%E3%82%AB%E3%83%BC%E3%83%89New3.xlsm:/content'
+      const response=await fetch(templateUrl,{
+        method:'PUT',
+        headers:{
+          Authorization:'Bearer '+token,
+          'Content-Type':'application/vnd.ms-excel.sheet.macroEnabled.12'
+        },
+        body:bytes
+      })
+      if(!response.ok){
+        const detail=await response.text().catch(()=>'')
+        throw new Error('OneDrive保存失敗 HTTP '+response.status+(detail?' '+detail.slice(0,180):''))
+      }
+      const item=await response.json()
+      localStorage.setItem('mcross_purchase_template_driveitem_v1',JSON.stringify({id:item.id,name:item.name,webUrl:item.webUrl||'',updatedAt:new Date().toISOString()}))
+      setStatus('発注書テンプレートをOneDriveへ準備しました。PC・スマホ共通で使用できます。')
+    }catch(error){
+      setStatus('発注書テンプレート準備失敗: '+(error?.message||String(error)))
+    }
+  }
+
   async function backupToOneDrive() {
     try {
       const entries = readLocalEntries()
@@ -410,7 +453,8 @@ export default function OneDriveSyncPanel() {
           <div className="oneDriveCount">この端末の正式保存物件：<strong>{localEntries.length}件</strong></div>
           {account && (
             <>
-              <button className="oneDriveAction" type="button" onClick={backupToOneDrive}>端末 → OneDriveへバックアップ</button>
+              <button className="oneDriveAction purchaseTemplateAction" type="button" onClick={uploadPurchaseOrderTemplate}>📄 発注書テンプレートをOneDriveへ準備</button>
+            <button className="oneDriveAction" type="button" onClick={backupToOneDrive}>端末 → OneDriveへバックアップ</button>
               <button className="oneDriveAction" type="button" onClick={compareWithOneDrive}>端末とOneDriveを比較</button>
               <button className="oneDriveAction residentSyncAction" type="button" onClick={uploadResidentCasesToOneDrive}>PC専用：入居中案件をOneDriveへ保存</button>
               <button className="oneDriveAction residentSyncAction" type="button" onClick={downloadResidentCasesFromOneDrive}>スマホ・確認端末：入居中案件をOneDriveから取得</button>
