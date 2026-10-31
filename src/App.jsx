@@ -4473,16 +4473,6 @@ function FinalReviewPage({
           ))}
         </div>
       </section>
-    {/* M-CROSS_MATERIAL_ORDER_QUICK_SUMMARY_V39_SAFE */}
-                        <aside className="materialOrderQuickSummary">
-                          <div className="materialOrderQuickSummaryTop">
-                            <div><strong>今回の発注明細</strong><small>{materialOrderItems.length}件</small></div>
-                            <strong>{formatYen((materialOrderItems||[]).reduce((sum,item)=>sum+((item.unitPrice===''||item.unitPrice==null)?0:(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0))}</strong>
-                          </div>
-                          {materialAddNotice&&<div className="materialOrderAddNotice">✓ {materialAddNotice}</div>}
-                          {materialOrderItems.length>0&&<div className="materialOrderQuickRows">{materialOrderItems.slice(-3).reverse().map((item,index)=><div key={(item.id||'quick')+'-'+index}><span>{item.productCode||'商品名未入力'}</span><b>{formatQuantity(Number(item.quantity)||0)}{item.unit||''}</b><strong>{item.unitPrice===''||item.unitPrice==null?'単価未設定':formatYen((Number(item.quantity)||0)*(Number(item.unitPrice)||0))}</strong></div>)}</div>}
-                          <button type="button" onClick={()=>document.querySelector('.materialOrderMobileHeading')?.scrollIntoView({behavior:'smooth',block:'start'})}>発注明細を確認・編集</button>
-                        </aside>
                         </>
   )
 }
@@ -4600,7 +4590,8 @@ export default function App() {
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
   const [savedSortOrder, setSavedSortOrder] = useState('newest')
   /* M-CROSS_INDIVIDUAL_FOLDER_DELETE_V1_SAFE */
-              /* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */  /* M-CROSS_FORCE_FOLDER_VIEW_V3_STRUCTURAL_SAFE */
+              /* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */
+  /* M-CROSS_FORCE_FOLDER_VIEW_V3_STRUCTURAL_SAFE */
   const savedViewMode = 'explorer'
   const [savedFolderPath, setSavedFolderPath] = useState([])
   const [showArchived, setShowArchived] = useState(false)
