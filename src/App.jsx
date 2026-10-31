@@ -8342,13 +8342,19 @@ return savedEntries
                 onClick={() => {
                   const factor = Math.max(0, Number(caseCrossFactor) || Number(pricingSettings.crossFactor) || 0)
                   const rawRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
-                  const rowsForExport = applyEstimateEdits(rawRows, estimateEdits)
+                  /* M-CROSS_ESTIMATE_EXPORT_EXCLUSIONS_V2_STRUCTURAL_SAFE */
+                  const allRowsForExport = applyEstimateEdits(rawRows, estimateEdits)
+                  const rowsForExport = allRowsForExport.filter(row => !estimateEdits[row.exclusionKey || estimateEditKey(row)]?.excluded)
+                  const additionalWorksForExport = additionalWorks.filter((item, index) => {
+                    const key = 'additionalWork:' + (item.id || index)
+                    return !estimateEdits[key]?.excluded
+                  })
                   downloadEstimateExcel({
                     company,
                     propertyName: selectedProperty?.name || '', // M-CROSS_INITIAL_ESTIMATE_UNMARKED_V1_SAFE: 通常の初回見積は無印
                     address: selectedProperty?.address || '',
                     unit,
-                  }, rowsForExport, estimateCopyFormat, additionalWorks)
+                  }, rowsForExport, estimateCopyFormat, additionalWorksForExport)
                 }}
               >
                 📄 見積書を出力
