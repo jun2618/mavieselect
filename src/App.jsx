@@ -4676,7 +4676,8 @@ export default function App() {
       const XlsxPopulate=populateModule.default||globalThis.XlsxPopulate||populateModule
       if(!XlsxPopulate?.fromDataAsync)throw new Error('xlsx-populateブラウザ版を初期化できません')
 
-      const response=await fetch(new URL('/templates/工事カードNew3.xlsm',window.location.origin),{cache:'no-store'})
+      /* M-CROSS_MOBILE_PURCHASE_TEMPLATE_404_V18_SAFE */
+      const response=await fetch(new URL('/mcross-purchase-order-template.xlsm',window.location.origin),{cache:'no-store'})
       if(!response.ok)throw new Error('発注書テンプレート読込失敗 HTTP '+response.status)
       const workbook=await XlsxPopulate.fromDataAsync(await response.arrayBuffer())
       const ws=workbook.sheet('発注書')
