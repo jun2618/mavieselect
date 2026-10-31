@@ -10431,7 +10431,7 @@ return savedEntries
                                 }}>{selected.status==='本発注'?'本発注書を更新':'下書きを上書き保存'}</button>
                               </footer>
                             </section>}
-                            <div className="purchaseOrderPreviewItems" style={editingPurchaseOrderId===selected.id?{display:"none"}:undefined}>{(selected.items||[]).map((item,index)=><section key={(item.id||'item')+'-'+index}>{item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,label:event.target.value}:current)}))} placeholder={
+                            <div className="purchaseOrderPreviewItems">{(selected.items||[]).map((item,index)=><section key={(item.id||'item')+'-'+index}>{item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,label:event.target.value}:current)}))} placeholder={
                                       item.materialType === 'cf'
                                         ? String(item.description || '')
                                         : ''
@@ -12183,7 +12183,6 @@ if (!globalThis.__mCrossThemeButtonSoundsV2Installed) {
 
 
 /* M-CROSS_AUTO_THEME_SOUNDS_APPLIED */
-
 
 
 
