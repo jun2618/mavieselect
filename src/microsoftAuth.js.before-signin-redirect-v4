@@ -1,0 +1,49 @@
+import { PublicClientApplication } from '@azure/msal-browser'
+
+const msalConfig = {
+  auth: {
+    clientId: '783680c7-c4fc-4028-bacd-e25497f40334',
+    authority: 'https://login.microsoftonline.com/3ac7d9e7-5765-41cc-8e82-3c27d62cea00',
+    redirectUri: window.location.origin + '/',
+    postLogoutRedirectUri: window.location.origin + '/',
+  },
+  cache: {
+    cacheLocation: 'localStorage',
+    storeAuthStateInCookie: false,
+  },
+}
+
+const loginRequest = {
+  scopes: ['User.Read', 'Files.ReadWrite.AppFolder'],
+}
+
+export const microsoftAuth = new PublicClientApplication(msalConfig)
+let initialized = false
+
+export async function initializeMicrosoftAuth() {
+  if (!initialized) {
+    await microsoftAuth.initialize()
+    initialized = true
+  }
+  const account = microsoftAuth.getActiveAccount() || microsoftAuth.getAllAccounts()[0] || null
+  if (account) microsoftAuth.setActiveAccount(account)
+  return account
+}
+
+export async function signInMicrosoft() {
+  await initializeMicrosoftAuth()
+  const result = await microsoftAuth.loginPopup(loginRequest)
+  microsoftAuth.setActiveAccount(result.account)
+  return result.account
+}
+
+export async function signOutMicrosoft() {
+  await initializeMicrosoftAuth()
+  const account = microsoftAuth.getActiveAccount() || microsoftAuth.getAllAccounts()[0]
+  if (!account) return
+  await microsoftAuth.logoutPopup({ account, postLogoutRedirectUri: window.location.origin + '/' })
+}
+
+export function getMicrosoftAccount() {
+  return microsoftAuth.getActiveAccount() || microsoftAuth.getAllAccounts()[0] || null
+}

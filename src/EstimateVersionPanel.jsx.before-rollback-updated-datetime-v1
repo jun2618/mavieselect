@@ -1,0 +1,68 @@
+// M-CROSS_ESTIMATE_VERSION_UPDATED_DATETIME_V1_SAFE
+// M-CROSS_VERSION_CARD_TOTAL_FROM_ROWS_V1_SAFE
+/* M-CROSS_ROUND_ESTIMATE_AMOUNTS_V1_SAFE */
+/* M-CROSS_ESTIMATE_VERSION_HISTORY_V1_SAFE */
+import './EstimateVersionPanel.css'
+
+/* M-CROSS_ESTIMATE_VERSION_1_VISIBILITY_V2_SAFE */
+/* M-CROSS_ESTIMATE_VERSION_NUMBERING_V4_SAFE */
+function versionLabel(version) {
+  const marks = ['', '', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
+  const number = Number(version) || 0
+  return number === 1 ? 'お見積り（初回・無印）' : 'お見積り' + (marks[number] || '（' + number + '）')
+}
+
+export default function EstimateVersionPanel({
+  propertyName,
+  unit,
+  currentVersion,
+  versions,
+  currentTotal,
+  onCreateRevision,
+  onDownloadVersion,
+  onDeleteVersion,
+}) {
+  const sorted = [...versions].sort((a, b) => Number(b.version) - Number(a.version))
+
+  return (
+    <section className="estimateVersionPanel" aria-label="見積履歴">
+      <div className="estimateVersionCurrent">
+        <div>
+          <small>現在編集中</small>
+          <strong>{propertyName || '物件名未設定'} {unit ? unit + '号室 ' : ''}{versionLabel(currentVersion)}</strong>
+        </div>
+        <strong className="estimateVersionAmount">¥{Math.round(Number(currentTotal || 0)).toLocaleString('ja-JP')}</strong>
+      </div>
+
+      <div className="estimateVersionHistory estimateVersionHistoryVisible">
+        <h3>📂 保存済みの見積</h3>
+        {sorted.length === 0 ? (
+          <p className="estimateVersionEmpty">まだ保存済みの見積はありません。下のボタンを押すと、現在の内容が「初回見積（無印）」としてここに残ります。</p>
+        ) : (
+          sorted.map(item => (
+            <article className="estimateVersionItem" key={item.id}>
+              <div className="estimateVersionItemName">
+                <span className="estimateVersionFileIcon">📄</span>
+                <div>
+                  <strong>{versionLabel(item.version)} <span className="estimateVersionSavedBadge">保存済み</span></strong>
+                  <small>{new Date((item.updatedAt || $1.createdAt)).toLocaleString('ja-JP')} ／ ¥{Math.round((Array.isArray(item.rows) ? item.rows : []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + (Array.isArray(item.additionalWorks) ? item.additionalWorks : []).reduce((sum, work) => sum + (Number(work.amount) || (Number(work.quantity) || 0) * (Number(work.unitPrice) || 0)), 0)).toLocaleString('ja-JP')}</small>
+                </div>
+              </div>
+              <div className="estimateVersionActions">
+                <button type="button" onClick={() => onDownloadVersion(item)}>📄 この版を出力</button>
+                <button className="delete" type="button" onClick={() => onDeleteVersion(item)}>削除</button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      <button className="estimateRevisionButton" type="button" onClick={onCreateRevision}>
+        📑 現在の見積を残して修正版{currentVersion + 1}を作る
+      </button>
+      <small className="estimateVersionHelp">現在の内容を保存してから、同じ内容を引き継いだ次の見積を編集できます。</small>
+
+
+    </section>
+  )
+}

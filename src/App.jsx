@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import properties from './m-cross-properties.json'
 import OneDriveSyncPanel from './OneDriveSyncPanel'
 import EstimateRowEditor from './EstimateRowEditor'
@@ -1669,6 +1669,31 @@ const styles = `
   .crossInputArea .keypadButton { min-height:42px; }
   .crossInputArea .crossRegister { min-height:50px; margin:10px 0 0; }
   .measurementActions { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin:16px 0 20px; }
+  .orderSelectionPanel{display:grid;gap:12px;margin:14px 0 20px;padding:14px;border:1px solid rgba(110,145,232,.42);border-radius:16px;background:rgba(110,145,232,.08)}
+  .orderDraftPanel{display:grid;gap:14px;margin:16px 0 22px;padding:16px;border:2px solid rgba(99,190,161,.55);border-radius:18px;background:rgba(99,190,161,.08)}.orderDraftHeader{display:flex;align-items:center;justify-content:space-between;gap:12px}.orderDraftHeader h3{margin:2px 0 0}.orderDraftHeader>button{min-height:40px;padding:6px 12px;border:0;border-radius:10px;background:#806f7e;color:#fff;font:inherit;font-weight:800}.orderContractorField{margin:0}.orderContractorField input{width:100%;box-sizing:border-box}.contractorPickerField{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}.contractorPickerField>span{grid-column:1/-1;font-weight:800}.contractorSelectButton{min-height:48px;padding:9px 12px;border:1px solid rgba(99,190,161,.55);border-radius:11px;background:#fff;color:inherit;text-align:left;font:inherit;font-weight:800}.contractorClearButton{min-height:48px;border:1px solid #d7c8d2;border-radius:11px;background:#fff;color:inherit;font:inherit;font-weight:800}.contractorPickerBackdrop{position:fixed;z-index:2200;inset:0;display:grid;grid-template-columns:minmax(0,1fr);align-items:start;justify-items:center;padding:18px 12px;background:rgba(8,10,18,.72);backdrop-filter:blur(6px);overflow:auto}.contractorPickerPanel{position:relative;z-index:2201;width:min(100%,720px);max-height:none;overflow:visible;padding:18px;border-radius:20px;background:#fffaf6!important;color:#514751!important;box-shadow:0 20px 60px rgba(0,0,0,.35);opacity:1!important;filter:none!important;transform:none!important}.contractorPickerPanel{border:2px solid rgba(99,190,161,.72)}/* M-CROSS_CONTRACTOR_PICKER_INVISIBLE_V3_SAFE */.contractorPickerHeader{display:flex;align-items:center;justify-content:space-between;gap:12px}.contractorPickerHeader h3{margin:2px 0 0}.contractorPickerHeader>button{min-height:40px;border:0;border-radius:10px;padding:7px 11px;background:#806f7e;color:#fff;font:inherit;font-weight:800}.contractorSearchInput{width:100%;box-sizing:border-box;margin-top:12px}.contractorPickerActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.contractorPickerActions button{min-height:44px}.contractorForm{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;padding:13px;border:1px solid rgba(99,190,161,.45);border-radius:14px;background:rgba(99,190,161,.08)}.contractorForm label{margin:0}.contractorFormWide{grid-column:1/-1}.contractorRateMaster{display:grid;gap:10px;padding:13px;border:1px solid rgba(110,145,232,.4);border-radius:13px;background:rgba(110,145,232,.06)}.contractorRateTitle{display:flex;align-items:center;justify-content:space-between;gap:8px}.contractorRateTitle small,.contractorRateMaster>small{color:#756a78}.contractorRateGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.contractorRateGrid label{margin:0}.contractorRateInput{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px}.contractorRateInput input{text-align:right}.contractorRateInput b{font-size:12px;white-space:nowrap;color:#756a78}@media(max-width:520px){.contractorRateGrid{grid-template-columns:1fr}}.tradeManageRow{display:flex;align-items:end}.tradeManageRow button{min-height:42px;border:1px solid #d7c8d2;border-radius:9px;background:#fff;color:inherit;font:inherit;font-weight:800}.tradeManager{grid-column:1/-1;display:grid;gap:10px;padding:12px;border:1px solid rgba(110,145,232,.42);border-radius:12px;background:rgba(110,145,232,.06)}.tradeAddRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.tradeAddRow button{min-height:42px}.tradeChipList{display:flex;flex-wrap:wrap;gap:7px}.tradeChip{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #d7c8d2;border-radius:999px;background:#fff}.tradeChip button{width:28px;height:28px;border:0;border-radius:50%;background:#f5e9ed;color:#b73f53;font-weight:900}.tradeChip button:disabled{opacity:.3}@media(max-width:520px){.tradeAddRow{grid-template-columns:1fr}}.contractorList{display:grid;gap:9px}.contractorCard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:10px;border:1px solid #ead8cb;border-radius:13px;background:#fff}.contractorCardMain{display:grid;gap:3px;border:0;background:transparent;color:inherit;text-align:left;font:inherit}.contractorCardMain strong{font-size:16px}.contractorCardMain small{color:#796e79}.contractorCardActions{display:flex;align-items:center;gap:6px}.contractorCardActions button,.hiddenContractors button{min-height:36px;border:1px solid #d7c8d2;border-radius:8px;background:#fff;color:inherit;font:inherit;font-weight:800}.contractorCardActions .danger{color:#b73f53}.hiddenContractors{margin-top:14px}.hiddenContractors>div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #ead8cb}.theme-dark .contractorSelectButton,.theme-cyber .contractorSelectButton,.theme-luxury .contractorSelectButton,.theme-retro .contractorSelectButton,.theme-galaxy .contractorSelectButton{background:rgba(5,12,24,.88);color:#f3ffff}@media(max-width:520px){.contractorForm{grid-template-columns:1fr}.contractorFormWide{grid-column:auto}.contractorCard{grid-template-columns:1fr}.contractorCardActions{justify-content:flex-end}.contractorPickerActions{grid-template-columns:1fr}}.orderDraftItems{display:grid;gap:12px}.orderExcelWorkspace{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,.9fr);gap:14px;align-items:start}.materialOrderReferenceBoard{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 12px}.materialOrderReferenceBoard details{border:1px solid #86919a;background:#fff;color:#20252a}.materialOrderReferenceBoard summary{padding:9px 10px;background:#eef1f3;font-weight:900;cursor:pointer}.materialReferenceList{display:grid;max-height:260px;overflow:auto}.materialReferenceList>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px;padding:8px 10px;border-top:1px solid #c4c8cb}.materialReferenceList small{grid-column:1/-1;color:#666}@media(max-width:850px){.materialOrderReferenceBoard{grid-template-columns:1fr}}.materialOrderToolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;padding:11px 12px;border:1px solid #86919a;background:#eef1f3;color:#20252a}.materialOrderToolbar>div:first-child{display:grid}.materialOrderToolbarButtons{display:flex;gap:8px}.materialOrderToolbar button{min-height:42px;border:1px solid #6e91e8;border-radius:9px;background:#6e91e8;color:#fff;font:inherit;font-weight:800}.materialProductCell{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:5px;padding:6px}.materialProductCell input{min-width:0}.materialProductCell button{border:0;border-radius:7px;background:#f5e9ed;color:#b73f53;font-weight:900}.materialReferencePane{display:grid;gap:10px}.materialReferencePane details{border:1px solid #86919a;background:#fff;color:#20252a}.materialReferencePane summary{padding:9px;background:#eef1f3;font-weight:900;cursor:pointer}.materialReferenceRows,.cfReferenceRows{display:grid;max-height:300px;overflow:auto}.materialReferenceRows>div,.cfReferenceRows>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px;padding:8px;border-bottom:1px solid #c4c8cb}.materialReferenceRows small,.cfReferenceRows small{grid-column:1/-1;color:#666}@media(max-width:850px){.materialOrderToolbar{align-items:stretch;flex-direction:column}.materialOrderToolbarButtons{display:grid;grid-template-columns:1fr 1fr}.materialReferencePane{order:2}}@media(max-width:520px){.materialOrderToolbarButtons{grid-template-columns:1fr}}.materialOrderToolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid #86919a;background:#eef1f3;color:#20252a}.materialOrderToolbar>div{display:grid}.materialOrderToolbar button{min-height:42px;border:1px solid #6e91e8;border-radius:9px;background:#6e91e8;color:#fff;font:inherit;font-weight:800}.materialProductCell{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:5px;padding:6px}.materialProductCell input{min-width:0}.materialProductCell button{border:0;border-radius:7px;background:#f5e9ed;color:#b73f53;font-weight:900}.materialUnitInput{width:100%;min-width:0;text-align:center}.priceBookViewRow{width:100%;padding:0;border:0;border-bottom:1px solid #c4c8cb;background:#fff;color:#20252a;text-align:left;font:inherit;cursor:pointer}.priceBookViewRow:hover,.priceBookViewRow:focus-visible{background:#edf2ff;outline:2px solid #6e91e8;outline-offset:-2px}.contractorOrderModeField{margin:0}@media(max-width:620px){.materialOrderToolbar{align-items:stretch;flex-direction:column}.materialOrderToolbar button{width:100%}}
+  /* M-CROSS_ORDER_LAYOUT_V2_SAFE */
+  .orderDraftPanel{overflow:visible}
+  .orderExcelWorkspace{grid-template-columns:minmax(620px,1.35fr) minmax(360px,.9fr);overflow-x:auto;padding-bottom:4px}
+  .orderExcelSheet{min-width:620px;overflow:hidden}
+  .orderExcelHeader{grid-template-columns:minmax(260px,1fr) 94px 64px 116px 120px}
+  .orderExcelSheet .orderDraftItem{display:grid!important;grid-template-columns:minmax(260px,1fr) 94px 64px 116px 120px!important;align-items:center;min-height:58px}
+  .orderExcelSheet .orderDraftItem>strong{grid-column:1;grid-row:1;padding:8px 10px;min-width:0;overflow-wrap:anywhere}
+  .orderExcelSheet .orderDraftItem>small{grid-column:1;grid-row:2;padding:0 10px 8px;min-width:0}
+  .orderExcelSheet .orderSourceQuantity,.orderExcelSheet .orderQuantityCompare{grid-column:2;grid-row:1 / span 2;display:grid;justify-items:center;gap:2px;padding:8px;border-left:1px solid #aeb4b8}
+  .orderExcelSheet .orderQuantityField{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-columns:1fr;gap:3px;padding:6px;border-left:1px solid #aeb4b8}
+  .orderExcelSheet .orderQuantityField span{font-size:11px}.orderExcelSheet .orderQuantityField b{font-size:11px}
+  .orderExcelSheet .orderRateField{grid-column:4;grid-row:1 / span 2;display:grid;grid-template-columns:1fr;gap:3px;padding:6px;border-left:1px solid #aeb4b8}
+  .orderExcelSheet .orderRateField span{font-size:11px}.orderExcelSheet .orderRateField b{font-size:11px}
+  .orderExcelSheet .orderLineAmount{grid-column:5;grid-row:1 / span 2;display:grid;align-content:center;padding:8px;border-left:1px solid #aeb4b8;border-top:0}
+  .orderExcelSheet .orderFactorButtons{display:none}
+  .orderExcelSheet .orderDraftItem:has(.orderQuantityCompare)::after{content:'';grid-column:3;grid-row:1 / span 2;border-left:1px solid #aeb4b8;height:100%}
+  .contractorPriceBookPane{min-width:360px}
+  @media(max-width:850px){.orderExcelWorkspace{grid-template-columns:1fr;overflow:visible}.orderExcelSheet{min-width:0;overflow-x:auto}.contractorPriceBookPane{min-width:0;position:static}.orderExcelHeader,.orderExcelSheet .orderDraftItem{min-width:690px}}
+.orderExcelSheet,.contractorPriceBookPane{border:1px solid #86919a;background:#fff;color:#20252a}.orderExcelSheetTitle{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:2px solid #59636d;background:#eef1f3}.orderExcelSheetTitle strong{font-size:20px;letter-spacing:.3em}.orderExcelHeader,.priceBookViewHead{display:grid;grid-template-columns:minmax(180px,1fr) 80px 60px 100px 110px;background:#737a80;color:#fff;font-weight:800}.orderExcelHeader span,.priceBookViewHead span{padding:7px;border-right:1px solid #aeb4b8;text-align:center}.orderExcelSheet .orderDraftItems{gap:0}.orderExcelSheet .orderDraftItem{grid-template-columns:minmax(180px,1fr) 80px 60px 100px 110px;gap:0;padding:0;border:0;border-bottom:1px solid #aeb4b8;border-radius:0;background:#fff}.orderExcelSheet .orderDraftItem>strong{padding:8px;border-right:1px solid #aeb4b8}.orderExcelSheet .orderDraftItem>small{grid-column:1;padding:0 8px 7px}.contractorPriceBookPane{position:sticky;top:12px;max-height:80vh;overflow:auto}.priceBookPaneHeader{display:grid;gap:8px;padding:10px;background:#eff3f7;border-bottom:1px solid #86919a}.priceBookPaneHeader input{width:100%;box-sizing:border-box}.priceBookViewHead{grid-template-columns:minmax(160px,1fr) 60px 105px minmax(120px,.8fr)}.priceBookViewRows{display:grid}.priceBookViewRow{display:grid;grid-template-columns:minmax(160px,1fr) 60px 105px minmax(120px,.8fr);border-bottom:1px solid #c4c8cb}.priceBookViewRow>*{padding:7px;border-right:1px solid #c4c8cb}.priceBookViewRow b{text-align:right}.priceBookViewRow small{color:#555}.contractorPriceBookEditor{display:grid;gap:10px;padding:12px;border:1px solid #86919a;border-radius:12px;background:#f7f9fa}.priceBookTitle{display:flex;align-items:center;justify-content:space-between;gap:10px}.priceBookTitle>div{display:grid}.priceBookTitle button{min-height:40px}.priceBookEditorTable{overflow:auto}.priceBookEditorHead,.priceBookEditorRow{display:grid;grid-template-columns:minmax(180px,1.2fr) 70px 100px 100px minmax(140px,1fr) 40px;min-width:720px}.priceBookEditorHead{background:#737a80;color:#fff;font-weight:800}.priceBookEditorHead span,.priceBookEditorRow>*{padding:6px;border:1px solid #c4c8cb}.priceBookEditorRow input,.priceBookEditorRow select{min-width:0;border-radius:0}.priceBookEditorRow .danger{color:#b73f53;background:#fff}@media(max-width:850px){.orderExcelWorkspace{grid-template-columns:1fr}.contractorPriceBookPane{position:static;max-height:none}}@media(max-width:620px){.orderExcelSheet{overflow:auto}.orderExcelHeader,.orderExcelSheet .orderDraftItem{min-width:650px}.contractorPriceBookPane{display:block}.priceBookViewHead,.priceBookViewRow{min-width:620px}.contractorPriceBookPane{overflow:auto}}.orderGroupRate{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.8fr);align-items:center;gap:12px;padding:13px;border:1px solid rgba(110,145,232,.42);border-radius:14px;background:rgba(255,255,255,.72)}.orderGroupRate>div:first-child{display:grid;gap:2px}.orderGroupRate small{color:#756a78}.orderQuantityCompare{display:flex;align-items:center;justify-content:space-between;gap:10px}.orderRateField{display:grid;grid-template-columns:auto minmax(90px,1fr) auto;align-items:center;gap:8px;margin:0}.orderRateField input{text-align:right}.orderLineAmount{display:flex;align-items:center;justify-content:space-between;padding-top:6px;border-top:1px solid rgba(110,145,232,.22)}.orderLineAmount strong{color:#d84d83}.contractorRateMaster{display:grid;gap:8px;padding:12px;border:1px solid rgba(110,145,232,.36);border-radius:12px;background:rgba(110,145,232,.06)}.contractorRateGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.contractorRateGrid label{margin:0}.contractorRateGrid label>div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px}.contractorRateGrid b{font-size:12px;color:#756a78}@media(max-width:520px){.contractorRateGrid{grid-template-columns:1fr}}.orderQuantityCompare b{color:#d84d83}@media(max-width:520px){.orderGroupRate{grid-template-columns:1fr}}.orderDraftItem{display:grid;gap:9px;padding:13px;border:1px solid rgba(99,190,161,.42);border-radius:14px;background:rgba(255,255,255,.78)}.orderDraftItem small{color:#756a78}.orderSourceQuantity,.orderDraftFooter{display:flex;align-items:center;justify-content:space-between;gap:10px}.orderFactorButtons{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.orderFactorButtons button{min-height:42px;border:1px solid rgba(110,145,232,.5);border-radius:10px;background:#fff;color:#5b6270;font:inherit;font-weight:800}.orderFactorButtons button.active{background:#6e91e8;color:#fff}.orderQuantityField{display:grid;grid-template-columns:auto minmax(90px,1fr) auto;align-items:center;gap:8px;margin:0}.orderQuantityField input{text-align:right}.orderDraftFooter{padding-top:4px}.purchaseOrderSaveNote{display:block;color:#756a78;text-align:center}.purchaseOrderExplorerOpen{min-height:46px;border:1px solid rgba(99,190,161,.55);border-radius:11px;background:#fff;color:inherit;font:inherit;font-weight:800}.purchaseOrderExplorerOpen span{display:inline-grid;place-items:center;min-width:24px;height:24px;margin-left:5px;border-radius:999px;background:#63bea1;color:#fff}.purchaseOrderExplorerBackdrop{position:fixed;z-index:2400;inset:0;display:grid;align-items:start;justify-items:center;padding:16px 10px;background:rgba(8,10,18,.76);overflow:auto}.purchaseOrderExplorer{width:min(100%,1000px);min-height:520px;padding:18px;border-radius:20px;background:#fffaf6;color:#514751;box-shadow:0 20px 70px rgba(0,0,0,.4)}.purchaseOrderExplorer>header{display:flex;align-items:center;justify-content:space-between;gap:12px}.purchaseOrderExplorer>header h2{margin:2px 0}.purchaseOrderExplorer>header button{min-height:42px;border:0;border-radius:10px;padding:7px 12px;background:#806f7e;color:#fff;font:inherit;font-weight:800}.purchaseOrderExplorerBody{display:grid;grid-template-columns:minmax(280px,.8fr) minmax(0,1.4fr);gap:14px;margin-top:14px}.purchaseOrderTree,.purchaseOrderPreview{min-height:420px;padding:12px;border:1px solid #ead8cb;border-radius:14px;background:#fff}.purchaseOrderTree details{margin-bottom:10px}.purchaseOrderTree summary{cursor:pointer;font-weight:900}.purchaseOrderTreeLevel{margin:7px 0 0 18px;font-weight:800}.purchaseOrderDocuments{display:grid;gap:6px;margin:8px 0 0 36px}.purchaseOrderDocuments button{display:grid;gap:2px;padding:8px;border:1px solid transparent;border-radius:9px;background:transparent;color:inherit;text-align:left;font:inherit}.purchaseOrderDocuments button.active{border-color:#6e91e8;background:#edf2ff}.purchaseOrderDocuments small{color:#786f79}.purchaseOrderPreviewHeader{display:flex;align-items:start;justify-content:space-between;gap:12px}.purchaseOrderPreviewHeader h3{margin:2px 0}.purchaseOrderPreviewHeader p{margin:2px 0}.purchaseOrderPreviewHeader .danger{min-height:40px;border:1px solid #d58995;border-radius:9px;background:#fff;color:#b73f53;font:inherit;font-weight:800}.purchaseOrderPreview dl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.purchaseOrderPreview dl div{padding:8px;border-radius:9px;background:#f7f1ed}.purchaseOrderPreview dt{font-size:12px;color:#796e79}.purchaseOrderPreview dd{margin:2px 0 0;font-weight:800}.purchaseOrderPreviewItems{display:grid;gap:8px}.purchaseOrderPreviewItems section{display:grid;gap:4px;padding:10px;border:1px solid #ead8cb;border-radius:11px}.purchaseOrderPreviewItems section>div{display:flex;align-items:center;justify-content:space-between;gap:8px}.purchaseOrderPreviewItems small{color:#796e79}@media(max-width:720px){.purchaseOrderExplorerBody{grid-template-columns:1fr}.purchaseOrderTree,.purchaseOrderPreview{min-height:auto}.purchaseOrderPreview dl{grid-template-columns:1fr}}.theme-dark .purchaseOrderSaveNote,.theme-cyber .purchaseOrderSaveNote,.theme-luxury .purchaseOrderSaveNote,.theme-retro .purchaseOrderSaveNote,.theme-galaxy .purchaseOrderSaveNote{color:#dffcff}.theme-dark .orderDraftPanel,.theme-cyber .orderDraftPanel,.theme-luxury .orderDraftPanel,.theme-retro .orderDraftPanel,.theme-galaxy .orderDraftPanel{background:rgba(5,12,24,.8)}.theme-dark .orderDraftItem,.theme-cyber .orderDraftItem,.theme-luxury .orderDraftItem,.theme-retro .orderDraftItem,.theme-galaxy .orderDraftItem{background:rgba(5,12,24,.72)}.theme-dark .orderFactorButtons button,.theme-cyber .orderFactorButtons button,.theme-luxury .orderFactorButtons button,.theme-retro .orderFactorButtons button,.theme-galaxy .orderFactorButtons button{background:rgba(5,12,24,.9);color:#efffff}.theme-dark .orderFactorButtons button.active,.theme-cyber .orderFactorButtons button.active,.theme-luxury .orderFactorButtons button.active,.theme-retro .orderFactorButtons button.active,.theme-galaxy .orderFactorButtons button.active{background:#6e91e8;color:#fff}@media(max-width:520px){.orderDraftFooter{align-items:stretch;flex-direction:column}.orderDraftFooter .primary{width:100%}}
+  .orderSelectionQuickButtons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.orderSelectionQuickButtons button{min-height:44px;border:1px solid rgba(110,145,232,.5);border-radius:11px;background:#fff;color:#5b6270;font:inherit;font-weight:800}.orderSelectionQuickButtons .orderQuickPrimary{background:#6e91e8;color:#fff;border-color:#6e91e8}.orderSelectionSummary{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.72)}
+  .orderSelectCheckbox{width:24px;height:24px;min-width:24px;margin:0 8px 0 0;accent-color:#6e91e8;align-self:center}.estimateRowTapEdit:has(.orderSelectCheckbox){grid-template-columns:auto minmax(0,1fr) auto auto auto}
+  .theme-dark .orderSelectionPanel,.theme-cyber .orderSelectionPanel,.theme-luxury .orderSelectionPanel,.theme-retro .orderSelectionPanel,.theme-galaxy .orderSelectionPanel{background:rgba(5,12,24,.72)}.theme-dark .orderSelectionQuickButtons button,.theme-cyber .orderSelectionQuickButtons button,.theme-luxury .orderSelectionQuickButtons button,.theme-retro .orderSelectionQuickButtons button,.theme-galaxy .orderSelectionQuickButtons button{color:#f3ffff;background:rgba(5,12,24,.92)}
+  @media(max-width:520px){.orderSelectionQuickButtons{grid-template-columns:1fr}.estimateRowTapEdit:has(.orderSelectCheckbox){grid-template-columns:auto minmax(0,1fr);gap:8px}.estimateRowTapEdit:has(.orderSelectCheckbox)>.estimateNumber{grid-column:2}}
   .crossFinishPanel{display:grid;gap:10px;margin:0 0 18px;padding:14px;border:1px solid #ead8cb;border-radius:14px;background:#fffaf5}.crossFinishPanel>span,.crossFinishPanel label>span{color:#817183;font-size:15px;font-weight:800}.crossFinishButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.crossFinishButtons button{min-height:48px;border:1px solid #d8c9df;border-radius:12px;background:#fff;color:#65596a;font:inherit;font-weight:800}.crossFinishButtons button.active{color:#fff;border-color:#6e91e8;background:#6e91e8}.crossFinishPanel label{margin:0}
   .requestContentButton { background:linear-gradient(180deg,#ffbf66,#ee9638); box-shadow:0 5px 0 #bd6d25; }
   .requestContentBackdrop { position:fixed; z-index:1900; inset:0; display:grid; place-items:center; padding:14px; background:rgba(15,12,20,.72); backdrop-filter:blur(7px); }
@@ -3430,7 +3455,7 @@ function LengthMeasurementPage({
                   </label>
 
                   <label>
-                    <span>品番・商品名</span>
+                    <span>商品名・品番</span>
                     <input
                       type="text"
                       value={materialProductCode}
@@ -4228,6 +4253,1065 @@ export default function App() {
   const [caseCrossFactor, setCaseCrossFactor] = useState(() => String(loadPricingSettings().crossFactor))
   const [returnToMeasurementCheck, setReturnToMeasurementCheck] = useState(false)
   const [estimateCopyFormat, setEstimateCopyFormat] = useState(() => readPreference(estimateCopyFormatKey, 'merged'))
+  /* M-CROSS_ORDER_SELECTION_STEP1_V4_STRUCTURAL_SAFE */
+  const [selectedOrderKeys, setSelectedOrderKeys] = useState([])
+  /* M-CROSS_ORDER_CREATION_STEP2_V1_SAFE */
+  const [orderDraft, setOrderDraft] = useState(null)
+  /* M-CROSS_PURCHASE_ORDER_BRANCH_V1_SAFE */
+  const [purchaseOrderBranch, setPurchaseOrderBranch] = useState(null)
+  const [pendingPurchaseOrderItems, setPendingPurchaseOrderItems] = useState([])
+  /* M-CROSS_MATERIAL_ORDER_SCREEN_V1_SAFE */
+  const [materialOrderItems, setMaterialOrderItems] = useState([])
+  /* M-CROSS_MATERIAL_V3A_SAFE */
+  /* M-CROSS_MATERIAL_PRICEBOOK_V3B_SAFE */
+  const [materialSupplierId, setMaterialSupplierId] = useState('')
+  const [showMaterialSupplierPicker, setShowMaterialSupplierPicker] = useState(false)
+  const [showMaterialPriceBook, setShowMaterialPriceBook] = useState(false)
+  /* M-CROSS_PRICEBOOK_V42_ADD_SAFE */
+  const [showMaterialPriceAdd,setShowMaterialPriceAdd]=useState(false)
+  const [materialPriceAddForm,setMaterialPriceAddForm]=useState({name:'',unit:'',priceType:'fixed',value:'',note:''})
+  /* M-CROSS_PRICEBOOK_V4_COPY_EDIT_SAFE */
+  const [copiedMaterialRate,setCopiedMaterialRate]=useState(null)
+  /* M-CROSS_PURCHASE_ORDER_SAVE_STEP3_V2_STRUCTURAL_SAFE */
+  const purchaseOrderStorageKey='mcross_purchase_orders_v1'
+  const [purchaseOrders,setPurchaseOrders]=useState(()=>{try{const saved=JSON.parse(localStorage.getItem(purchaseOrderStorageKey)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}})
+  /* M-CROSS_PURCHASE_ORDER_EXPLORER_STEP4_V1_SAFE */
+  const [showPurchaseOrderExplorer,setShowPurchaseOrderExplorer]=useState(false)
+  const [selectedPurchaseOrderId,setSelectedPurchaseOrderId]=useState('')
+  function deletePurchaseOrder(id){
+    const target=purchaseOrders.find(item=>item.id===id)
+    if(!target||!window.confirm((target.contractorName||'発注書')+'を削除しますか？'))return
+    const next=purchaseOrders.filter(item=>item.id!==id)
+    savePurchaseOrders(next)
+    if(selectedPurchaseOrderId===id)setSelectedPurchaseOrderId('')
+  }
+  function savePurchaseOrders(next){setPurchaseOrders(next);try{localStorage.setItem(purchaseOrderStorageKey,JSON.stringify(next))}catch{}}
+  function saveCurrentPurchaseOrder(){
+    if(!orderDraft)return
+    const contractorName=String(orderDraft.contractor||'').trim()
+    if(!contractorName){window.alert('発注先を選択してください。');return}
+    if(!Array.isArray(orderDraft.items)||orderDraft.items.length===0){window.alert('発注明細がありません。');return}
+    const contractor=contractors.find(item=>item.id===orderDraft.contractorId)||null
+    const now=new Date().toISOString()
+    const snapshot={
+      id:'purchase-order-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),
+      createdAt:now,updatedAt:now,status:'下書き',
+      company:String(company||''),propertyId:selectedProperty?.id||'',propertyName:selectedProperty?.name||'',address:selectedProperty?.address||'',unit:String(unit||''),workName:String(workName||''),
+      orderMode:orderDraft.orderMode||'service',orderMode:orderDraft.orderMode||'service',contractorId:orderDraft.contractorId||'',contractorName,contractorTrade:contractor?.trade||'',contractorPostalCode:contractor?.postalCode||'',contractorAddress:contractor?.address||'',contractorContact:contractor?.contact||'',contractorPhone:contractor?.phone||'',contractorMemo:contractor?.memo||'',
+      items:orderDraft.items.map(item=>({id:item.id||'',label:String(item.label||''),memo:String(item.memo||''),productCode:String(item.productCode||''),category:String(item.category||''),sourceQuantity:Number(item.sourceQuantity||0),factor:Number(item.factor||1),orderQuantity:Number(item.orderQuantity||0),unit:String(item.unit||''),rate:Number(item.rate||0),amount:Number(item.amount||0),orderRate:item.orderRate===''?null:Number(item.orderRate||0),orderAmount:item.orderRate===''?null:(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0)})),
+    }
+    savePurchaseOrders([snapshot,...purchaseOrders])
+    setOrderDraft(null)
+    setSelectedOrderKeys([])
+    setSaveStatus('発注書を下書き保存しました')
+    window.alert('発注書を下書き保存しました。')
+  }
+  /* M-CROSS_CONTRACTOR_MASTER_PICKER_V2_SAFE */
+  const contractorMasterStorageKey = 'mcross_contractor_master_v1'
+  /* M-CROSS_DEFAULT_CONTRACTORS_V1_SAFE */
+  const defaultContractors = [
+    { id:'default-ogura-cross', name:'株式会社 小倉クロス', trade:'内装', postalCode:'', address:'', memo:'' },
+    { id:'default-uesaka-kamiten', name:'株式会社 上坂紙店', trade:'材料', postalCode:'', address:'', memo:'' },
+    { id:'default-sincol', name:'シンコール 株式会社', trade:'材料', postalCode:'', address:'', memo:'' },
+    { id:'default-interior-hisasue', name:'インテリアヒサスエ', trade:'内装', postalCode:'', address:'', memo:'' },
+    { id:'default-yamamoto-naiso', name:'山本内装', trade:'内装', postalCode:'', address:'', memo:'' },
+    { id:'default-nakano', name:'NAKANO', trade:'その他', postalCode:'〒003-0021', address:'北海道札幌市白石区栄通15丁目12-10 プロスト15-105号室', memo:'ドアノブにキーボックス 3956' },
+    { id:'default-tosho', name:'合同会社東勝', trade:'その他', postalCode:'〒', address:'札幌市北区新琴似1条11丁目3-12', memo:'' },
+    { id:'default-dream-interior', name:'ドリームインテリア', trade:'内装', postalCode:'', address:'', memo:'' },
+    { id:'default-idea-clean', name:'イデアトータルクリーン', trade:'清掃', postalCode:'', address:'', memo:'' },
+    { id:'default-eisei-senjo', name:'有限会社衛生洗浄設備', trade:'設備', postalCode:'', address:'', memo:'' },
+    { id:'default-itobiken', name:'ItoBiken', trade:'その他', postalCode:'', address:'', memo:'' },
+    { id:'default-kagawa-tategu', name:'株式会社香川建具製作所', trade:'建具', postalCode:'', address:'', memo:'' },
+    { id:'default-glass-freak', name:'株式会社ガラスフリーク', trade:'ガラス', postalCode:'', address:'', memo:'' },
+    { id:'default-narita-glass', name:'株式会社成田ガラス', trade:'ガラス', postalCode:'', address:'', memo:'' },
+    { id:'default-sapporo-veneer', name:'株式会社札幌ベニヤ商会', trade:'材料', postalCode:'', address:'', memo:'' },
+    { id:'default-taihei-kenzai', name:'泰平建材株式会社', trade:'材料', postalCode:'', address:'', memo:'' },
+    { id:'default-decos', name:'Deco’s', trade:'その他', postalCode:'', address:'', memo:'' },
+    { id:'default-kudo-tatami', name:'工藤畳商会', trade:'畳', postalCode:'', address:'', memo:'' },
+    { id:'default-hokusai', name:'合同会社塗装工房北彩', trade:'塗装', postalCode:'', address:'', memo:'' },
+    { id:'default-egas', name:'株式会社eガス', trade:'設備', postalCode:'', address:'', memo:'' },
+    { id:'default-yek', name:'YEK設備サービス', trade:'設備', postalCode:'', address:'', memo:'' },
+    { id:'default-benrys', name:'ベンリーズ札幌', trade:'その他', postalCode:'', address:'', memo:'' },
+    { id:'default-sclean', name:'S・Clean', trade:'清掃', postalCode:'', address:'', memo:'' },
+    { id:'default-tf-qreate', name:'合同会社TF Qreate', trade:'その他', postalCode:'', address:'', memo:'' },
+    { id:'default-kitagawa', name:'株式会社北川', trade:'その他', postalCode:'〒065-0020', address:'札幌市東区北20条東16丁目5-29', memo:'' },
+    { id:'default-rs', name:'R＆S', trade:'その他', postalCode:'〒063-0826', address:'札幌市西区発寒６条７丁目2-7 コーポ春日 102号室', memo:'' },
+    { id:'default-art-zeal', name:'アートジール', trade:'その他', postalCode:'〒', address:'', memo:'' },
+    { id:'default-reborn', name:'株式会社暮らしのReborn', trade:'その他', postalCode:'〒', address:'札幌市南区石山4条6丁目1-20', memo:'' },
+  ].map(item => ({...item,contact:'',phone:'',hidden:false,createdAt:'default'}))
+
+  /* M-CROSS_MATERIAL_REFERENCE_PRICES_V1_SAFE */
+  /* M-CROSS_COMPLETE_PRICEBOOK_DATA_V3_SAFE */
+  const materialReferencePriceBooks = [
+  {
+    "aliases": [
+      "株式会社 小倉クロス",
+      "小倉クロス",
+      "小倉クロスオグラ"
+    ],
+    "trade": "材料",
+    "rows": [
+      [
+        "クロス (#1000) サンゲツ・リリカラ",
+        "m",
+        "fixed",
+        515,
+        ""
+      ],
+      [
+        "クロス (#500) サンゲツ・リリカラ",
+        "m",
+        "fixed",
+        285,
+        ""
+      ],
+      [
+        "クロス（得値）",
+        "m",
+        "fixed",
+        280,
+        "SP2564 / LB9882 / LB9884"
+      ],
+      [
+        "住宅用CF サンゲツ・リリカラ",
+        "m",
+        "fixed",
+        1800,
+        ""
+      ],
+      [
+        "店舗用CF（1.82m巾）サンゲツ",
+        "m",
+        "rate",
+        55,
+        ""
+      ],
+      [
+        "ソフト巾木 H-40/60 ケース売",
+        "枚",
+        "fixed",
+        175,
+        ""
+      ],
+      [
+        "ソフト巾木 H-60 バラ",
+        "枚",
+        "fixed",
+        225,
+        ""
+      ],
+      [
+        "ソフト巾木 H-75 ケース売",
+        "枚",
+        "fixed",
+        215,
+        ""
+      ],
+      [
+        "ソフト巾木 H-75 バラ",
+        "枚",
+        "fixed",
+        280,
+        ""
+      ],
+      [
+        "ソフト巾木 H-100 バラ",
+        "枚",
+        "fixed",
+        260,
+        ""
+      ],
+      [
+        "ソフト巾木 H-100 ケース売",
+        "枚",
+        "fixed",
+        330,
+        ""
+      ],
+      [
+        "リアテック サンゲツ",
+        "m",
+        "rate",
+        48,
+        ""
+      ],
+      [
+        "フロアタイル サンゲツ・リリカラ",
+        "ケース・枚",
+        "rate",
+        70,
+        ""
+      ],
+      [
+        "カーペット（巾成）サンゲツ",
+        "m",
+        "rate",
+        66,
+        ""
+      ],
+      [
+        "カーペット（フリー）サンゲツ",
+        "m²",
+        "rate",
+        74,
+        ""
+      ],
+      [
+        "NT-350・350V/L サンゲツ",
+        "枚",
+        "fixed",
+        600,
+        "旧価格に誤記の可能性あり"
+      ],
+      [
+        "エスリュームプレーン 2mm",
+        "m",
+        "fixed",
+        3300,
+        ""
+      ],
+      [
+        "エスリュームマーブル 2mm",
+        "m",
+        "fixed",
+        3400,
+        ""
+      ],
+      [
+        "エスリュームミスト/ルーミー/カルド/ウッドⅡ 2mm",
+        "m",
+        "fixed",
+        4200,
+        ""
+      ],
+      [
+        "ストロング サンゲツ",
+        "m",
+        "rate",
+        68,
+        ""
+      ],
+      [
+        "ノンスキッド サンゲツ",
+        "m",
+        "rate",
+        76,
+        ""
+      ],
+      [
+        "溶接棒 サンゲツ",
+        "巻",
+        "fixed",
+        2650,
+        ""
+      ],
+      [
+        "アクアマイルド 18kg",
+        "個",
+        "fixed",
+        4100,
+        ""
+      ],
+      [
+        "アクアノール 18kg",
+        "個",
+        "fixed",
+        3500,
+        ""
+      ],
+      [
+        "ハイライトスーパー（パテ）",
+        "個",
+        "fixed",
+        5200,
+        "3kg×4"
+      ],
+      [
+        "ヤヨイ 水性巾木糊スーパー 3kg",
+        "個",
+        "fixed",
+        4000,
+        ""
+      ],
+      [
+        "FL18K",
+        "個",
+        "fixed",
+        8500,
+        ""
+      ],
+      [
+        "クロス貼施工代（賃貸空室）",
+        "m²",
+        "fixed",
+        450,
+        ""
+      ],
+      [
+        "クロス貼施工代（分譲・戸建）",
+        "m²",
+        "fixed",
+        500,
+        ""
+      ],
+      [
+        "クロス貼施工代（人工精算物件）",
+        "式",
+        "fixed",
+        23000,
+        ""
+      ],
+      [
+        "への字 シルバー",
+        "本",
+        "fixed",
+        2976,
+        ""
+      ],
+      [
+        "への字 アンバー",
+        "本",
+        "fixed",
+        2208,
+        ""
+      ],
+      [
+        "東リ FS（長尺）",
+        "m",
+        "fixed",
+        5800,
+        ""
+      ],
+      [
+        "ダイノックシート",
+        "m",
+        "rate",
+        54,
+        ""
+      ],
+      [
+        "ガラスフィルム（GF）",
+        "m",
+        "fixed",
+        3240,
+        ""
+      ],
+      [
+        "タジマ Pタイル 50枚",
+        "ケース",
+        "fixed",
+        8100,
+        ""
+      ],
+      [
+        "マチコV 50枚",
+        "ケース",
+        "fixed",
+        8100,
+        ""
+      ]
+    ]
+  },
+  {
+    "aliases": [
+      "札幌ベニヤ商会",
+      "株式会社 札幌ベニヤ商会",
+      "株式会社札幌ベニヤ商会"
+    ],
+    "trade": "材料",
+    "rows": [
+      [
+        "キッチンパネル 3×6 BKP-6",
+        "枚",
+        "fixed",
+        7400,
+        ""
+      ],
+      [
+        "ジョイナー H型",
+        "本",
+        "fixed",
+        310,
+        ""
+      ],
+      [
+        "ジョイナー コ型",
+        "本",
+        "fixed",
+        380,
+        ""
+      ],
+      [
+        "アイカ ボンド",
+        "本",
+        "fixed",
+        590,
+        ""
+      ],
+      [
+        "アイカ テープ",
+        "巻",
+        "fixed",
+        420,
+        ""
+      ]
+    ]
+  },
+  {
+    "aliases": [
+      "株式会社 上坂紙店",
+      "上坂紙店",
+      "上坂紙店コウサカカミテン"
+    ],
+    "trade": "材料",
+    "rows": [
+      [
+        "SP/LB",
+        "m",
+        "fixed",
+        285,
+        ""
+      ],
+      [
+        "掲示板クロス",
+        "m",
+        "rate",
+        70,
+        ""
+      ],
+      [
+        "リアテックシート",
+        "m",
+        "rate",
+        58,
+        ""
+      ],
+      [
+        "サンゲツ CF 2.3mm・3.5mm・消臭快適",
+        "m",
+        "rate",
+        57,
+        ""
+      ],
+      [
+        "サンゲツ ソフト巾木 40mm",
+        "ケース",
+        "fixed",
+        3090,
+        ""
+      ],
+      [
+        "サンゲツ ソフト巾木 60mm",
+        "ケース",
+        "fixed",
+        3280,
+        ""
+      ],
+      [
+        "サンゲツ ソフト巾木 75mm",
+        "ケース",
+        "fixed",
+        3690,
+        ""
+      ],
+      [
+        "サンゲツ ソフト巾木 100mm",
+        "ケース",
+        "fixed",
+        4490,
+        ""
+      ],
+      [
+        "リリカラ ソフト巾木 40mm",
+        "ケース",
+        "fixed",
+        3900,
+        ""
+      ],
+      [
+        "リリカラ ソフト巾木 60mm",
+        "ケース",
+        "fixed",
+        4150,
+        ""
+      ],
+      [
+        "リリカラ ソフト巾木 75mm",
+        "ケース",
+        "fixed",
+        4800,
+        ""
+      ],
+      [
+        "リリカラ ソフト巾木 100mm",
+        "ケース",
+        "fixed",
+        6200,
+        ""
+      ],
+      [
+        "サンゲツ フロアタイル",
+        "ケース・枚",
+        "rate",
+        57,
+        ""
+      ],
+      [
+        "サンゲツ カーペット フリー",
+        "m²",
+        "rate",
+        57,
+        ""
+      ],
+      [
+        "サンゲツ カーペット ロール",
+        "m",
+        "rate",
+        53,
+        ""
+      ],
+      [
+        "ストロング・ナーシングフロア",
+        "m",
+        "rate",
+        56,
+        ""
+      ],
+      [
+        "ノンスキッド",
+        "m",
+        "rate",
+        62,
+        ""
+      ],
+      [
+        "NT-350",
+        "枚",
+        "fixed",
+        490,
+        ""
+      ],
+      [
+        "NT-350G",
+        "枚",
+        "fixed",
+        520,
+        ""
+      ],
+      [
+        "NT-350S",
+        "枚",
+        "fixed",
+        590,
+        ""
+      ],
+      [
+        "NT-700",
+        "枚",
+        "fixed",
+        680,
+        ""
+      ],
+      [
+        "NT-700S",
+        "枚",
+        "fixed",
+        720,
+        ""
+      ],
+      [
+        "NT-700H",
+        "枚",
+        "fixed",
+        720,
+        ""
+      ],
+      [
+        "NT-8000",
+        "枚",
+        "rate",
+        50,
+        ""
+      ]
+    ]
+  },
+  {
+    "aliases": [
+      "北川",
+      "株式会社 北川",
+      "株式会社北川",
+      "北川商店",
+      "株式会社 北川商店",
+      "株式会社北川商店"
+    ],
+    "trade": "材料",
+    "rows": [
+      [
+        "サンゲツ・リリカラ #500",
+        "m",
+        "fixed",
+        245,
+        ""
+      ],
+      [
+        "サンゲツ・リリカラ #1000",
+        "m",
+        "rate",
+        45,
+        ""
+      ],
+      [
+        "サンゲツ 掲示板クロス",
+        "m",
+        "rate",
+        60,
+        ""
+      ],
+      [
+        "リアテック",
+        "m",
+        "rate",
+        47,
+        ""
+      ],
+      [
+        "サンゲツ／リリカラ CF",
+        "m",
+        "fixed",
+        1780,
+        ""
+      ],
+      [
+        "Hフロア 1.8mm",
+        "m",
+        "fixed",
+        1540,
+        ""
+      ],
+      [
+        "Hフロア 2.3mm・3.5mm・消臭快適",
+        "m",
+        "rate",
+        45,
+        ""
+      ],
+      [
+        "Hフロア 2m巾",
+        "m",
+        "fixed",
+        2050,
+        ""
+      ],
+      [
+        "L45遮音フロア",
+        "m",
+        "rate",
+        64,
+        ""
+      ],
+      [
+        "エスリュームプレーン 2.0mm",
+        "m",
+        "fixed",
+        2550,
+        ""
+      ],
+      [
+        "エスリュームプレーン 2.5mm",
+        "m",
+        "fixed",
+        2700,
+        ""
+      ],
+      [
+        "エスリュームマーブル 2.0mm",
+        "m",
+        "fixed",
+        2650,
+        ""
+      ],
+      [
+        "エスリュームマーブル 2.5mm",
+        "m",
+        "fixed",
+        2800,
+        ""
+      ],
+      [
+        "東リ FS（長尺）",
+        "m",
+        "fixed",
+        5800,
+        ""
+      ],
+      [
+        "サンゲツ 巾木 40mm",
+        "ケース",
+        "fixed",
+        2700,
+        ""
+      ],
+      [
+        "サンゲツ 巾木 60mm",
+        "ケース",
+        "fixed",
+        2900,
+        ""
+      ],
+      [
+        "サンゲツ 巾木 75mm",
+        "ケース",
+        "fixed",
+        3200,
+        ""
+      ],
+      [
+        "サンゲツ 巾木 100mm",
+        "ケース",
+        "fixed",
+        3900,
+        ""
+      ],
+      [
+        "リリカラ 巾木 40mm",
+        "ケース",
+        "fixed",
+        3375,
+        ""
+      ],
+      [
+        "リリカラ 巾木 60mm",
+        "ケース",
+        "fixed",
+        3625,
+        ""
+      ],
+      [
+        "リリカラ 巾木 75mm",
+        "ケース",
+        "fixed",
+        4000,
+        ""
+      ],
+      [
+        "リリカラ 巾木 100mm",
+        "ケース",
+        "fixed",
+        4875,
+        ""
+      ],
+      [
+        "への字 シルバー 3.64m",
+        "本",
+        "fixed",
+        1850,
+        ""
+      ],
+      [
+        "への字 シルバー 1.82m",
+        "本",
+        "fixed",
+        1540,
+        ""
+      ],
+      [
+        "への字 シルバー 0.91m",
+        "本",
+        "fixed",
+        900,
+        ""
+      ],
+      [
+        "への字 アンバー 3.64m",
+        "本",
+        "fixed",
+        2600,
+        ""
+      ],
+      [
+        "への字 アンバー 1.82m",
+        "本",
+        "fixed",
+        2100,
+        ""
+      ],
+      [
+        "への字 アンバー 0.91m",
+        "本",
+        "fixed",
+        1180,
+        ""
+      ],
+      [
+        "障子 ワーロン 雲竜 15m",
+        "巻",
+        "fixed",
+        6500,
+        ""
+      ],
+      [
+        "障子 ワーロン 雲竜 30m",
+        "巻",
+        "fixed",
+        11700,
+        ""
+      ]
+    ]
+  },
+  {
+    "aliases": [
+      "シンコール",
+      "シンコール株式会社",
+      "シンコール 株式会社"
+    ],
+    "trade": "材料",
+    "rows": [
+      [
+        "SLクロス",
+        "m",
+        "fixed",
+        269,
+        ""
+      ],
+      [
+        "ベストクロス",
+        "m²",
+        "rate",
+        55,
+        ""
+      ],
+      [
+        "ビッグエース",
+        "m",
+        "fixed",
+        465,
+        ""
+      ],
+      [
+        "ポンリューム住宅用",
+        "m",
+        "fixed",
+        1550,
+        ""
+      ],
+      [
+        "E2（2m幅）",
+        "m",
+        "fixed",
+        2120,
+        ""
+      ],
+      [
+        "ソフト巾木 40mm（25枚入）",
+        "箱",
+        "fixed",
+        3000,
+        ""
+      ],
+      [
+        "ソフト巾木 75mm（25枚入）",
+        "箱",
+        "fixed",
+        4100,
+        ""
+      ],
+      [
+        "ロール巾木 60mm（25m巻）",
+        "箱",
+        "fixed",
+        4300,
+        ""
+      ],
+      [
+        "ガード巾木 200mm（10m巻）",
+        "箱",
+        "fixed",
+        9500,
+        ""
+      ],
+      [
+        "木目巾木 60mm（25枚入）",
+        "箱",
+        "fixed",
+        5600,
+        ""
+      ],
+      [
+        "ニューウッディワイド巾木 300mm（10m巻）",
+        "巻",
+        "fixed",
+        13500,
+        ""
+      ],
+      [
+        "巾木 100mm（25m巻）",
+        "巻",
+        "fixed",
+        5800,
+        ""
+      ],
+      [
+        "巾木 60mm（25枚入）",
+        "箱",
+        "fixed",
+        3550,
+        ""
+      ],
+      [
+        "巾木 100mm（25枚入）",
+        "箱",
+        "fixed",
+        4900,
+        ""
+      ]
+    ]
+  }
+]
+
+  /* M-CROSS_PRICEBOOK_V4_COPY_EDIT_SAFE */
+  const kosakaV4Rows = [
+    ['サンゲツ・リリカラ #500','m','fixed',285,''],
+    ['サンゲツ・リリカラ #1000','m','rate',45,''],
+    ['サンゲツ 掲示板クロス','m','rate',70,''],
+    ['リアテック','m','rate',58,''],
+    ['Hフロア 1.8mm','m','fixed',1540,''],
+    ['Hフロア 2.3mm厚・3.5mm厚・消臭快適','m','rate',57,''],
+    ['Hフロア 2m巾','m','fixed',2050,''],
+    ['L45遮音フロア','m','rate',64,''],
+    ['エスリュームプレーン 2.0mm','m','fixed',2550,''],
+    ['エスリュームプレーン 2.5mm','m','fixed',2700,''],
+    ['エスリュームマーブル 2.0mm','m','fixed',2650,''],
+    ['エスリュームマーブル 2.5mm','m','fixed',2800,''],
+    ['サンゲツ フロアタイル','ケース・枚','rate',57,''],
+    ['サンゲツ カーペット フリー','m²','rate',57,''],
+    ['サンゲツ カーペット ロール','m','rate',53,''],
+    ['ストロング・ナーシングフロア','m','rate',56,''],
+    ['ノンスキッド','m','rate',62,''],
+    ['サンゲツ 巾木 40mm','ケース','fixed',3090,''],
+    ['サンゲツ 巾木 60mm','ケース','fixed',3280,''],
+    ['サンゲツ 巾木 75mm','ケース','fixed',3690,''],
+    ['サンゲツ 巾木 100mm','ケース','fixed',4490,''],
+    ['リリカラ 巾木 40mm','ケース','fixed',3900,''],
+    ['リリカラ 巾木 60mm','ケース','fixed',4150,''],
+    ['リリカラ 巾木 75mm','ケース','fixed',4800,''],
+    ['リリカラ 巾木 100mm','ケース','fixed',6200,''],
+    ['カーペットタイル NT-350','枚','fixed',490,''],
+    ['カーペットタイル NT-350G','枚','fixed',520,''],
+    ['カーペットタイル NT-350S','枚','fixed',590,''],
+    ['カーペットタイル NT-700','枚','fixed',680,''],
+    ['カーペットタイル NT-700S','枚','fixed',720,''],
+    ['カーペットタイル NT-700H','枚','fixed',720,''],
+    ['カーペットタイル NT-8000','枚','rate',50,''],
+    ['クロス施工代','m²','fixed',450,''],
+    ['フロアタイル施工代','m²','fixed',920,''],
+    ['CF施工代','m²','fixed',650,''],
+    ['巾木施工代','m²','fixed',130,''],
+    ['への字 アンバー','本','fixed',1800,''],
+    ['東リ FS（長尺）','m','fixed',5800,'']
+  ]
+  const kosakaAliasesV4=['株式会社 上坂紙店','上坂紙店','上坂紙店コウサカカミテン']
+  const normalizePriceBookNameV4=value=>String(value||'').replace(/[\s　・＆&()（）]/g,'').toLowerCase()
+
+  const mergeMaterialReferencePrices = contractorList => {
+    let changed=false
+
+    const merged=contractorList.map(contractor => {
+      const contractorName=String(contractor?.name||'').trim()
+
+      const normalize=value=>String(value||'').replace(/[\s　・＆&()（）]/g,'').toLowerCase()
+      const normalizedContractorName=normalize(contractorName)
+      const source=materialReferencePriceBooks.find(book =>
+        book.aliases.some(alias => {
+          const normalizedAlias=normalize(alias)
+          return normalizedContractorName===normalizedAlias || normalizedContractorName.includes(normalizedAlias) || normalizedAlias.includes(normalizedContractorName)
+        })
+      )
+
+      if(!source) return contractor
+
+      const currentRows=Array.isArray(contractor.priceBook)
+        ? contractor.priceBook
+        : []
+
+      const isKosakaV4=kosakaAliasesV4.some(alias=>normalizePriceBookNameV4(alias)===normalizePriceBookNameV4(contractorName))
+      if(isKosakaV4){
+        const knownV4=new Set(currentRows.map(row=>normalizePriceBookNameV4(row?.name)))
+        kosakaV4Rows.forEach((row,index)=>{
+          if(knownV4.has(normalizePriceBookNameV4(row[0])))return
+          currentRows.push({id:'kosaka-v4-'+index,name:row[0],unit:row[1],priceType:row[2],price:row[2]==='fixed'?row[3]:'',rate:row[2]==='rate'?row[3]:'',note:row[4]||'',referenceOnly:true})
+        })
+      }
+
+      const knownNames=new Set(
+        currentRows
+          .map(row=>String(row?.name||'').trim())
+          .filter(Boolean)
+      )
+
+      const normalizedRows=source.rows.map(row=>Array.isArray(row)?{name:row[0],unit:row[1],priceType:row[2],price:row[2]==='fixed'?row[3]:'',rate:row[2]==='rate'?row[3]:'',note:row[4]||''}:row)
+      const additions=normalizedRows
+        .filter(row=>!knownNames.has(row.name))
+        .map((row,index)=>({id:'reference-price-'+String(contractor.id||'supplier')+'-'+Date.now()+'-'+index,...row,referenceOnly:true}))
+
+      if(!additions.length) return contractor
+
+      changed=true
+
+      return {
+        ...contractor,
+        trade:source.trade||contractor.trade||'材料',
+        orderMode:'material',
+        priceBook:[...currentRows,...additions]
+      }
+    })
+
+    return {merged,changed}
+  }
+
+  const [contractors, setContractors] = useState(() => {
+    try {
+      const stored=JSON.parse(localStorage.getItem(contractorMasterStorageKey)||'[]')
+      const existing=Array.isArray(stored)?stored:[]
+      const normalizedNames=new Set(existing.map(item=>String(item?.name||'').trim()).filter(Boolean))
+      const missing=defaultContractors.filter(item=>!normalizedNames.has(item.name))
+      const base=[...existing,...missing]
+      const result=mergeMaterialReferencePrices(base)
+
+      if(missing.length||result.changed){
+        localStorage.setItem(
+          contractorMasterStorageKey,
+          JSON.stringify(result.merged)
+        )
+      }
+
+      return result.merged
+    } catch {
+      const result=mergeMaterialReferencePrices(defaultContractors)
+      return result.merged
+    }
+  })
+  const [showContractorPicker, setShowContractorPicker] = useState(false)
+  const [contractorSearch, setContractorSearch] = useState('')
+  const [contractorForm, setContractorForm] = useState({name:'',trade:'内装',contact:'',phone:'',memo:'',postalCode:'',address:'',rates:{cross:'',cf:'',soft:'',floorTrim:'',wallBase:'',floorBase:''},priceBook:[],orderMode:'service'})
+  const [showContractorForm, setShowContractorForm] = useState(false)
+  /* M-CROSS_CONTRACTOR_EDIT_V1_SAFE */
+  const [editingContractorId, setEditingContractorId] = useState('')
+  /* M-CROSS_EXCEL_STYLE_ORDER_PRICEBOOK_V1_SAFE */
+  const [contractorPriceSearch,setContractorPriceSearch]=useState('')
+  const blankPriceRow=()=>({id:'price-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:'',unit:'',priceType:'fixed',price:'',rate:'',note:''})
+
+  /* M-CROSS_TRADE_MASTER_EDIT_V4_SAFE */
+  const contractorTradeStorageKey='mcross_contractor_trades_v1'
+  const defaultContractorTrades=['内装','設備','清掃','電気','畳','建具','ガラス','塗装','材料','その他']
+  const [contractorTrades,setContractorTrades]=useState(()=>{try{const saved=JSON.parse(localStorage.getItem(contractorTradeStorageKey)||'[]');const values=Array.isArray(saved)?saved:[];return [...new Set([...defaultContractorTrades,...values])]}catch{return defaultContractorTrades}})
+  const [newContractorTrade,setNewContractorTrade]=useState('')
+  const [showTradeManager,setShowTradeManager]=useState(false)
+  function saveContractorTrades(next){const clean=[...new Set(next.map(value=>String(value||'').trim()).filter(Boolean))];setContractorTrades(clean);try{localStorage.setItem(contractorTradeStorageKey,JSON.stringify(clean))}catch{}}
+  function saveContractors(next){
+    setContractors(next)
+    try { localStorage.setItem(contractorMasterStorageKey,JSON.stringify(next)) } catch {}
+  }
+
   const [measurementType, setMeasurementType] = useState('天井')
   const [height, setHeight] = useState('')
   const [count, setCount] = useState('')
@@ -8548,9 +9632,986 @@ return savedEntries
               })
               const additionalWorkTotal = visibleAdditionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
               const totalAmount = estimateRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + additionalWorkTotal
+              /* M-CROSS_MATERIAL_ORDER_REFERENCE_V5_SAFE */
+              const crossProductReferences=(()=>{
+                const grouped=new Map()
+                estimateRows.filter(row=>row.category==='cross').forEach(row=>{
+                  const parts=Array.isArray(row.parts)?row.parts:[]
+                  const edit=estimateEdits[row.exclusionKey || estimateEditKey(row)]
+                  const code=String((edit && typeof edit==='object' ? edit.productCode : '') || row.productCode || '').trim()
+                  const key=code||'__NO_CODE__:'+String(row.label||parts.join(' '))
+                  if(!grouped.has(key))grouped.set(key,{code,label:row.label||parts.filter(Boolean).join(' '),quantity:0,rows:[]})
+                  const item=grouped.get(key);item.quantity+=Number(row.quantity||0);item.rows.push(row)
+                })
+                return [...grouped.values()]
+              })()
+              const cfCutReferences=(cfRecords||[]).flatMap(record=>{
+                const length=Number(record.length||0),count=Math.max(0,Math.trunc(Number(record.count)||0))
+                return Array.from({length:count},(_,index)=>({id:String(record.id||'cf')+'-'+index,room:record.room||'',length,memo:record.memo||''}))
+              })
+              const softReferenceQuantity=(softRecords||[]).reduce((sum,row)=>sum+Number(getSoftBaseboardQuantity(row)||0),0)
+
+              const orderKeyForRow = (row, index = 0) => row.exclusionKey || (row.category === 'additionalWork' ? 'additionalWork:' + (row.additionalWorkId || row.additionalWorkIndex || index) : estimateEditKey(row))
+              const orderCandidateRows = [
+                ...estimateRows,
+                ...visibleAdditionalWorks.map((item, index) => ({
+                  exclusionKey: 'additionalWork:' + (item.id || index), category: 'additionalWork', additionalWorkId: item.id || '', additionalWorkIndex: index,
+                  parts: Array.isArray(item.estimateParts) && item.estimateParts.length ? [0,1,2,3].map(i => String(item.estimateParts[i] || '')) : [item.room || '', '', item.work || '', ''],
+                  label: (Array.isArray(item.estimateParts) && item.estimateParts.length ? item.estimateParts : [item.room,item.work]).filter(Boolean).join(' '),
+                  memo: item.memo || '', quantity: Number(item.quantity || 0), unit: item.unit || '式', rate: Number(item.unitPrice || 0), amount: Number(item.amount || (Number(item.quantity)||0)*(Number(item.unitPrice)||0)),
+                }))
+              ]
+              const allOrderKeys = orderCandidateRows.map((row,index) => orderKeyForRow(row,index))
+              const interiorOrderKeys = orderCandidateRows.map((row,index) => ({row,key:orderKeyForRow(row,index)})).filter(({row}) => ['cross','cf','soft','floorTrim','crossPackage','cfPackage'].includes(row.category)).map(({key}) => key)
+              /* M-CROSS_WALLPAPER_CONTRACTOR_QUICK_SELECT_V1_SAFE */
+              const wallpaperContractorKeywords = ['壁下地処理','壁下地','床下地処理','床下地']
+              const wallpaperContractorKeys = orderCandidateRows.map((row,index) => ({row,key:orderKeyForRow(row,index)})).filter(({row}) => {
+                if (['cross','cf','soft','floorTrim','crossPackage','cfPackage'].includes(row.category)) return true
+                if (row.category !== 'additionalWork') return false
+                const text = [row.label, ...(Array.isArray(row.parts) ? row.parts : []), row.memo].filter(Boolean).join(' ')
+                return wallpaperContractorKeywords.some(keyword => text.includes(keyword))
+              }).map(({key}) => key)
+              const additionalOrderKeys = orderCandidateRows.map((row,index) => ({row,key:orderKeyForRow(row,index)})).filter(({row}) => row.category === 'additionalWork').map(({key}) => key)
+              /* M-CROSS_ORDER_QUICK_SELECT_V2_SAFE */
+              const finishContractorKeywords=['壁下地処理','壁下地','床下地処理','床下地']
+              const finishContractorKeys=orderCandidateRows.map((row,index)=>({row,key:orderKeyForRow(row,index)})).filter(({row})=>{
+                if(['cross','cf','soft','floorTrim','crossPackage','cfPackage'].includes(row.category))return true
+                if(row.category!=='additionalWork')return false
+                const text=[row.label,...(Array.isArray(row.parts)?row.parts:[]),row.memo].filter(Boolean).join(' ')
+                return finishContractorKeywords.some(keyword=>text.includes(keyword))
+              }).map(({key})=>key)
+
+
               return (
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
+                  <section className="orderSelectionPanel" aria-label="発注項目の選択">
+                    <strong>📦 発注する項目を選択</strong>
+                    <div className="orderSelectionQuickButtons">
+                      <button type="button" className="orderQuickPrimary" onClick={() => setSelectedOrderKeys(finishContractorKeys)}>内装一括</button>
+                      <button type="button" onClick={() => setSelectedOrderKeys(allOrderKeys)}>全選択</button>
+                      <button type="button" onClick={() => setSelectedOrderKeys(additionalOrderKeys)}>その他のみ</button>
+                      <button type="button" onClick={() => setSelectedOrderKeys([])}>クリア</button>
+                    </div>
+                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => setShowPurchaseOrderExplorer(true)}>📁 保存済み発注書 <span>{purchaseOrders.length}</span></button>
+                    <div className="orderSelectionSummary"><span>選択中</span><strong>{selectedOrderKeys.length}件</strong></div>
+                    <button className="primary" type="button" disabled={selectedOrderKeys.length===0} onClick={() => {
+                      const selected=orderCandidateRows.filter((row,index)=>selectedOrderKeys.includes(orderKeyForRow(row,index)))
+                      const items=selected.map((row,index)=>({
+                        id: orderKeyForRow(row,index),
+                        label: row.label || (Array.isArray(row.parts) ? row.parts.filter(Boolean).join(' ') : '発注明細'),
+                        memo: String(row.memo || ''),
+                        sourceQuantity: Number(row.quantity || 0),
+                        unit: String(row.unit || ''),
+                        factor: ['cross','cf'].includes(row.category) ? 0.9 : 1,
+                        orderQuantity: Math.round(Number(row.quantity || 0) * (['cross','cf'].includes(row.category) ? 0.9 : 1) * 10) / 10,
+                        rate: Number(row.rate || 0),
+                        amount: Number(row.amount || 0),
+                        orderRate: '',
+                        category: row.category || '',
+                      }))
+                      setPendingPurchaseOrderItems(items)
+                      setPurchaseOrderBranch('select')
+                    }}>📦 選択した項目から発注書を作成</button>
+                  </section>
+                  {showPurchaseOrderExplorer && (() => {
+                    const selected=purchaseOrders.find(item=>item.id===selectedPurchaseOrderId)||null
+                    const groups=new Map()
+                    purchaseOrders.forEach(order=>{
+                      const companyName=order.company||'管理会社未設定'
+                      const propertyName=order.propertyName||'物件名未設定'
+                      const unitName=(order.unit||'号室未設定')+'号室'
+                      const key=[companyName,propertyName,unitName].join('||')
+                      if(!groups.has(key))groups.set(key,{companyName,propertyName,unitName,orders:[]})
+                      groups.get(key).orders.push(order)
+                    })
+                    return <div className="purchaseOrderExplorerBackdrop" role="dialog" aria-modal="true" aria-label="発注書エクスプローラー">
+                      <section className="purchaseOrderExplorer">
+                        <header><div><small>PURCHASE ORDERS</small><h2>📁 発注書</h2></div><button type="button" onClick={()=>{setShowPurchaseOrderExplorer(false);setSelectedPurchaseOrderId('')}}>× 閉じる</button></header>
+                        {purchaseOrders.length===0?<p className="empty">保存済み発注書はありません</p>:<div className="purchaseOrderExplorerBody">
+                          <nav className="purchaseOrderTree">{[...groups.values()].map(group=><details open key={[group.companyName,group.propertyName,group.unitName].join('|')}>
+                            <summary>📁 {group.companyName}</summary>
+                            <div className="purchaseOrderTreeLevel">📁 {group.propertyName}</div>
+                            <div className="purchaseOrderTreeLevel">📁 {group.unitName}</div>
+                            <div className="purchaseOrderDocuments">{group.orders.map(order=><button type="button" key={order.id} className={selectedPurchaseOrderId===order.id?'active':''} onClick={()=>setSelectedPurchaseOrderId(order.id)}>📄 {order.contractorName||'発注先未設定'}<small>{new Date(order.createdAt).toLocaleString('ja-JP')}・{order.status||'下書き'}</small></button>)}</div>
+                          </details>)}</nav>
+                          <main className="purchaseOrderPreview">{selected?<article>
+                            <div className="purchaseOrderPreviewHeader"><div><small>{selected.status||'下書き'}</small><h3>{selected.contractorName}</h3><p>{selected.propertyName} {selected.unit}号室</p></div><button className="danger" type="button" onClick={()=>deletePurchaseOrder(selected.id)}>削除</button></div>
+                            <dl><div><dt>管理会社</dt><dd>{selected.company||'未設定'}</dd></div><div><dt>工事名</dt><dd>{selected.workName||'未設定'}</dd></div><div><dt>業種</dt><dd>{selected.contractorTrade||'未設定'}</dd></div><div><dt>作成日時</dt><dd>{new Date(selected.createdAt).toLocaleString('ja-JP')}</dd></div></dl>
+                            <div className="purchaseOrderPreviewItems">{(selected.items||[]).map((item,index)=><section key={(item.id||'item')+'-'+index}>{item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,label:event.target.value}:current)}))} placeholder={
+                                      item.materialType === 'cf'
+                                        ? String(item.description || '')
+                                        : ''
+                                    }/><button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:previous.items.filter((_,index)=>index!==itemIndex)}))}>×</button></div>:<strong>{item.label}</strong>}{item.memo&&<small>{item.memo}</small>}<div><span>見積 {formatQuantity(item.sourceQuantity)}{item.unit}</span><span>×{Number(item.factor||1).toFixed(2)}</span><b>発注 {formatQuantity(item.orderQuantity)}{item.unit}</b></div></section>)}</div>
+                          </article>:<p className="empty">左の発注書を選択してください</p>}</main>
+                        </div>}
+                      </section>
+                    </div>
+                  })()}
+                  
+                  {/* M-CROSS_PURCHASE_ORDER_BRANCH_V1_SAFE */}
+                  {purchaseOrderBranch === 'select' && (
+                    <section className="orderDraftPanel" aria-label="発注種類選択">
+                      <div className="orderDraftHeader">
+                        <div>
+                          <small>ORDER TYPE</small>
+                          <h3>発注書の種類を選択</h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPurchaseOrderBranch(null)
+                            setPendingPurchaseOrderItems([])
+                          }}
+                        >
+                          × 閉じる
+                        </button>
+                      </div>
+
+                      <div style={{
+                        display:'grid',
+                        gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',
+                        gap:'14px',
+                        padding:'18px'
+                      }}>
+                        <button
+                          type="button"
+                          style={{
+                            minHeight:'110px',
+                            fontSize:'20px',
+                            fontWeight:800
+                          }}
+                          onClick={() => {
+                            setOrderDraft({
+                              contractor:'',
+                              contractorId:'',
+                              orderMode:'service',
+                              items:pendingPurchaseOrderItems
+                            })
+                            setPurchaseOrderBranch(null)
+                            setPendingPurchaseOrderItems([])
+                          }}
+                        >
+                          🔨 施工発注
+                        </button>
+
+                        <button
+                          type="button"
+                          style={{
+                            minHeight:'110px',
+                            fontSize:'20px',
+                            fontWeight:800
+                          }}
+                          onClick={() => {
+                            const now = Date.now()
+
+                            /* M-CROSS_MATERIAL_ORDER_SCREEN_V2_SIMPLE_SAFE */
+                            const codedCrossItems = crossProductReferences
+                              .filter(item => String(item.code || '').trim())
+                              .map((item, index) => ({
+                                id: 'material-cross-' + now + '-' + index,
+                                materialType: 'cross',
+                                productCode: String(item.code || '').trim(),
+                                description: '',
+                                quantity: Number(item.quantity || 0),
+                                unit: 'm'
+                              }))
+
+                            const noCodeCrossQuantity = crossProductReferences
+                              .filter(item => !String(item.code || '').trim())
+                              .reduce(
+                                (sum, item) => sum + Number(item.quantity || 0),
+                                0
+                              )
+
+                            const crossItems = [
+                              ...codedCrossItems,
+                              ...(noCodeCrossQuantity > 0
+                                ? [{
+                                    id: 'material-cross-no-code-' + now,
+                                    materialType: 'cross',
+                                    productCode: '',
+                                    description: '',
+                                    quantity: noCodeCrossQuantity,
+                                    unit: 'm'
+                                  }]
+                                : [])
+                            ]
+
+                            const cfItems = cfCutReferences.map((item, index) => ({
+                              id: 'material-cf-' + now + '-' + index,
+                              materialType: 'cf',
+                              productCode: '',
+                              description: [
+                                item.room || 'CF',
+                                item.memo || ''
+                              ].filter(Boolean).join(' '),
+                              quantity: Number(item.length || 0),
+                              unit: 'm'
+                            }))
+
+                            const softItems = Number(softReferenceQuantity || 0) > 0
+                              ? [{
+                                  id: 'material-soft-' + now,
+                                  materialType: 'soft',
+                                  productCode: '',
+                                  description: 'ソフト巾木',
+                                  quantity: Number(softReferenceQuantity || 0),
+                                  unit: '枚'
+                                }]
+                              : []
+
+                            const initialItems = [
+                              ...crossItems,
+                              ...cfItems,
+                              ...softItems
+                            ]
+
+                            setMaterialOrderItems(
+                              initialItems.length
+                                ? initialItems
+                                : [{
+                                    id: 'material-free-' + now,
+                                    materialType: 'other',
+                                    productCode: '',
+                                    description: '',
+                                    quantity: 1,
+                                    unit: ''
+                                  }]
+                            )
+
+                            setPurchaseOrderBranch('material')
+                          }}
+                        >
+                          📦 材料発注
+                        </button>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* M-CROSS_MATERIAL_ORDER_SCREEN_V1_SAFE */}
+                  {purchaseOrderBranch === 'material' && (
+                    <section className="orderDraftPanel" aria-label="材料発注">
+                      <div className="orderDraftHeader">
+                        <div>
+                          <small>MATERIAL ORDER</small>
+                          <h3>材料発注書作成</h3>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setPurchaseOrderBranch('select')}
+                        >
+                          ← 種類選択へ戻る
+                        </button>
+                      </div>
+
+                      <div style={{padding:'18px'}}>
+                        <div style={{
+                          display:'flex',
+                          justifyContent:'space-between',
+                          alignItems:'center',
+                          gap:'12px',
+                          flexWrap:'wrap',
+                          marginBottom:'14px'
+                        }}>
+                          <div>
+                            
+                          {/* M-CROSS_MATERIAL_PRICEBOOK_V3B_SAFE */}
+                          <div style={{
+                            marginBottom:'14px',
+                            padding:'12px',
+                            border:'1px solid rgba(120,120,120,.25)',
+                            borderRadius:'10px'
+                          }}>
+                            <div style={{
+                              display:'flex',
+                              justifyContent:'space-between',
+                              alignItems:'center',
+                              gap:'10px',
+                              flexWrap:'wrap'
+                            }}>
+                              <div>
+                                <small>材料発注先</small>
+                                <div style={{
+                                  fontWeight:700,
+                                  marginTop:'3px'
+                                }}>
+                                  {
+                                    contractors.find(
+                                      item =>
+                                        item.id === materialSupplierId
+                                    )?.name || '未選択'
+                                  }
+                                </div>
+                              </div>
+
+                              <div style={{
+                                display:'flex',
+                                gap:'8px',
+                                flexWrap:'wrap'
+                              }}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setShowMaterialSupplierPicker(true)
+                                  }
+                                >
+                                  発注先を選択
+                                </button>
+
+                                <button
+                                  type="button"
+                                  disabled={!materialSupplierId}
+                                  onClick={() =>
+                                    setShowMaterialPriceBook(
+                                      previous => !previous
+                                    )
+                                  }
+                                >
+                                  単価表
+                                </button>
+                              </div>
+                            </div>
+
+                            {showMaterialSupplierPicker && (
+                              <div style={{
+                                marginTop:'12px',
+                                display:'grid',
+                                gap:'6px'
+                              }}>
+                                {contractors
+                                  .filter(item => !item.hidden)
+                                  .map(item => (
+                                    <button
+                                      type="button"
+                                      key={item.id}
+                                      style={{
+                                        textAlign:'left',
+                                        padding:'10px'
+                                      }}
+                                      onClick={() => {
+                                        setMaterialSupplierId(item.id)
+                                        setShowMaterialSupplierPicker(false)
+                                        setShowMaterialPriceBook(true)
+                                      }}
+                                    >
+                                      <strong>{item.name}</strong>
+                                      <small style={{
+                                        display:'block',
+                                        marginTop:'2px'
+                                      }}>
+                                        {item.trade || ''}
+                                      </small>
+                                    </button>
+                                  ))}
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setShowMaterialSupplierPicker(false)
+                                  }
+                                >
+                                  閉じる
+                                </button>
+                              </div>
+                            )}
+
+                            {showMaterialPriceBook &&
+                              materialSupplierId && (() => {
+
+                                const supplier =
+                                  contractors.find(
+                                    item =>
+                                      item.id === materialSupplierId
+                                  );
+
+                                if (!supplier) return null;
+
+                                const priceBook =
+                                  Array.isArray(supplier.priceBook)
+                                    ? supplier.priceBook
+                                    : [];
+
+                                return (
+                                  <div style={{
+                                    marginTop:'12px',
+                                    paddingTop:'12px',
+                                    borderTop:
+                                      '1px solid rgba(120,120,120,.25)'
+                                  }}>
+                                    <div style={{
+                                      display:'flex',
+                                      justifyContent:'space-between',
+                                      alignItems:'center',
+                                      marginBottom:'8px'
+                                    }}>
+                                      <strong>
+                                        {supplier.name} 単価表
+                                      </strong>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setShowMaterialPriceBook(false)
+                                        }
+                                      >
+                                        閉じる
+                                      </button>
+                                    </div>
+
+                                    {/* M-CROSS_PRICEBOOK_V42_ADD_SAFE */}
+                                    <div style={{margin:'10px 0'}}>
+                                      <button type="button" onClick={()=>setShowMaterialPriceAdd(previous=>!previous)}>＋ 項目追加</button>
+                                    </div>
+
+                                    {showMaterialPriceAdd && (
+                                      <div style={{padding:'10px',marginBottom:'12px',border:'1px solid rgba(120,120,120,.25)',borderRadius:'8px'}}>
+                                        <div style={{display:'grid',gridTemplateColumns:'minmax(170px,2fr) 80px 110px 120px minmax(120px,1fr)',gap:'8px'}}>
+                                          <label><span>品名</span><input value={materialPriceAddForm.name} onChange={e=>setMaterialPriceAddForm(p=>({...p,name:e.target.value}))}/></label>
+                                          <label><span>単位</span><input value={materialPriceAddForm.unit} onChange={e=>setMaterialPriceAddForm(p=>({...p,unit:e.target.value}))}/></label>
+                                          <label><span>種類</span><select value={materialPriceAddForm.priceType} onChange={e=>setMaterialPriceAddForm(p=>({...p,priceType:e.target.value,value:''}))}><option value="fixed">固定単価</option><option value="rate">掛率</option></select></label>
+                                          <label><span>{materialPriceAddForm.priceType==='rate'?'掛率 %':'単価 円'}</span><input type="number" min="0" step={materialPriceAddForm.priceType==='rate'?'0.1':'1'} value={materialPriceAddForm.value} onChange={e=>setMaterialPriceAddForm(p=>({...p,value:e.target.value}))}/></label>
+                                          <label><span>備考</span><input value={materialPriceAddForm.note} onChange={e=>setMaterialPriceAddForm(p=>({...p,note:e.target.value}))}/></label>
+                                        </div>
+                                        <div style={{display:'flex',gap:'8px',marginTop:'8px'}}>
+                                          <button type="button" className="primary" onClick={()=>{
+                                            const name=String(materialPriceAddForm.name||'').trim();if(!name){window.alert('品名を入力してください。');return}
+                                            const numeric=materialPriceAddForm.value===''?'':Math.max(0,Number(materialPriceAddForm.value)||0)
+                                            const row={id:'manual-price-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),name,unit:String(materialPriceAddForm.unit||'').trim(),priceType:materialPriceAddForm.priceType==='rate'?'rate':'fixed',price:materialPriceAddForm.priceType==='rate'?'':numeric,rate:materialPriceAddForm.priceType==='rate'?numeric:'',note:String(materialPriceAddForm.note||'').trim(),referenceOnly:false}
+                                            const nextPriceBook=[...priceBook,row]
+                                            saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                                            setMaterialPriceAddForm({name:'',unit:'',priceType:'fixed',value:'',note:''});setShowMaterialPriceAdd(false)
+                                          }}>追加して保存</button>
+                                          <button type="button" onClick={()=>{setShowMaterialPriceAdd(false);setMaterialPriceAddForm({name:'',unit:'',priceType:'fixed',value:'',note:''})}}>取消</button>
+                                        </div>
+                                      </div>
+                                    )}
+
+
+                                    {priceBook.length === 0 ? (
+                                      <p className="empty">
+                                        単価表は未登録です。
+                                      </p>
+                                    ) : (
+                                      <div style={{
+                                        display:'grid',
+                                        gap:'6px'
+                                      }}>
+                                        {/* M-CROSS_PRICEBOOK_V41_INLINE_EDIT_SAFE */}
+                                        {priceBook.map((row, index) => (
+                                          <div
+                                            key={row.id || index}
+                                            style={{
+                                              display:'grid',
+                                              gridTemplateColumns:'minmax(180px,2fr) 70px minmax(125px,.9fr) minmax(110px,1fr) auto',
+                                              gap:'8px',
+                                              padding:'8px',
+                                              alignItems:'center',
+                                              border:'1px solid rgba(120,120,120,.2)',
+                                              borderRadius:'8px'
+                                            }}
+                                          >
+                                            <strong>{row.name || ''}</strong>
+                                            <span>{row.unit || ''}</span>
+
+                                            {row.priceType === 'rate' ? (
+                                              <label style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                                                <input
+                                                  type="number"
+                                                  min="0"
+                                                  step="0.1"
+                                                  value={row.rate ?? ''}
+                                                  onChange={event=>{
+                                                    const value=event.target.value
+                                                    const nextPriceBook=priceBook.map((current,rowIndex)=>rowIndex===index?{...current,priceType:'rate',rate:value===''?'':Math.max(0,Number(value)||0),price:''}:current)
+                                                    saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                                                  }}
+                                                  style={{width:'82px'}}
+                                                />
+                                                <b>%</b>
+                                              </label>
+                                            ) : (
+                                              <label style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                                                <input
+                                                  type="number"
+                                                  min="0"
+                                                  step="1"
+                                                  value={row.price ?? ''}
+                                                  onChange={event=>{
+                                                    const value=event.target.value
+                                                    const nextPriceBook=priceBook.map((current,rowIndex)=>rowIndex===index?{...current,priceType:'fixed',price:value===''?'':Math.max(0,Number(value)||0),rate:''}:current)
+                                                    saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                                                  }}
+                                                  style={{width:'92px'}}
+                                                />
+                                                <b>円</b>
+                                              </label>
+                                            )}
+
+                                            <small>{row.note || ''}</small>
+
+                                            <div style={{display:'flex',gap:'5px',flexWrap:'wrap'}}>
+                                              {row.priceType==='fixed' && row.price!=='' && row.price!=null && typeof setCopiedMaterialRate==='function' && (
+                                                <button type="button" onClick={()=>setCopiedMaterialRate(Number(row.price)||0)}>単価コピー</button>
+                                              )}
+                                              <button
+                                                type="button"
+                                                className="danger"
+                                                onClick={()=>{
+                                                  if(!window.confirm(String(row.name||'')+'を単価表から削除しますか？'))return
+                                                  const nextPriceBook=priceBook.filter((_,rowIndex)=>rowIndex!==index)
+                                                  saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                                                }}
+                                              >削除</button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                          </div>
+
+<strong style={{fontSize:'18px'}}>
+                              材料明細
+                            </strong>
+
+                            <div style={{
+                              marginTop:'4px',
+                              color:'#666',
+                              fontSize:'13px'
+                            }}>
+                              クロスは同じ品番を1行に合算します。品番未入力のクロスも数量を1行にまとめます。
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const id =
+                                'material-free-' +
+                                Date.now() +
+                                '-' +
+                                Math.random().toString(36).slice(2, 7)
+
+                              setMaterialOrderItems(previous => [
+                                ...previous,
+                                {
+                                  id,
+                                  materialType:'other',
+                                  productCode:'',
+                                  description:'',
+                                  quantity:1,
+                                  unit:''
+                                }
+                              ])
+                            }}
+                          >
+                            ＋ 材料行を追加
+                          </button>
+                        </div>
+
+                        <div style={{
+                          display:'grid',
+                          gap:'10px'
+                        }}>
+                          {materialOrderItems.map((item, itemIndex) => (
+                            <article
+                              key={item.id}
+                              style={{
+                                border:'1px solid rgba(120,120,120,.28)',
+                                borderRadius:'12px',
+                                padding:'14px',
+                                background:'rgba(255,255,255,.56)'
+                              }}
+                            >
+                              <div style={{
+                                display:'flex',
+                                justifyContent:'space-between',
+                                alignItems:'center',
+                                gap:'10px',
+                                marginBottom:'10px'
+                              }}>
+                                <strong>
+                                  {item.materialType === 'cross'
+                                    ? 'クロス'
+                                    : item.materialType === 'cf'
+                                      ? 'CF'
+                                      : item.materialType === 'soft'
+                                        ? '巾木'
+                                        : 'その他材料'}
+                                </strong>
+
+                                <button
+                                  type="button"
+                                  className="danger"
+                                  onClick={() => {
+                                    setMaterialOrderItems(previous =>
+                                      previous.filter((_, index) =>
+                                        index !== itemIndex
+                                      )
+                                    )
+                                  }}
+                                >
+                                  削除
+                                </button>
+                              </div>
+
+                              <div style={{
+                                display:'grid',
+                                gridTemplateColumns:'minmax(190px,2fr) minmax(90px,.7fr) minmax(70px,.55fr) minmax(100px,.75fr) minmax(115px,.85fr)',
+                                gap:'10px',
+                                alignItems:'end'
+                              }}>
+                                <label>
+                                  <span>品番・商品名</span>
+                                  <input
+                                    value={item.productCode}
+                                    onChange={event => {
+                                      const value = event.target.value
+
+                                      setMaterialOrderItems(previous =>
+                                        previous.map((current, index) =>
+                                          index === itemIndex
+                                            ? {
+                                                ...current,
+                                                productCode:value
+                                              }
+                                            : current
+                                        )
+                                      )
+                                    }}
+                                    /* M-CROSS_CF_LOCATION_PLACEHOLDER_V1_SAFE */
+                                    placeholder={
+                                      item.materialType === 'cf'
+                                        ? String(item.description || '')
+                                        : ''
+                                    }
+                                  />
+                                </label>
+
+                                <label>
+                                  <span>発注数量</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={item.quantity}
+                                    onChange={event => {
+                                      const value = Math.max(
+                                        0,
+                                        Number(event.target.value) || 0
+                                      )
+
+                                      setMaterialOrderItems(previous =>
+                                        previous.map((current, index) =>
+                                          index === itemIndex
+                                            ? {
+                                                ...current,
+                                                quantity:value
+                                              }
+                                            : current
+                                        )
+                                      )
+                                    }}
+                                  />
+                                </label>
+
+                                <label>
+                                  <span>単位</span>
+                                  <input
+                                    value={item.unit}
+                                    onChange={event => {
+                                      const value = event.target.value
+
+                                      setMaterialOrderItems(previous =>
+                                        previous.map((current, index) =>
+                                          index === itemIndex
+                                            ? {
+                                                ...current,
+                                                unit:value
+                                              }
+                                            : current
+                                        )
+                                      )
+                                    }}
+                                    placeholder="m・枚・箱"
+                                  />
+                                </label>
+
+                                <label>
+                                  <span>単価</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={item.unitPrice ?? ''}
+                                    onChange={event => {
+                                      const value = event.target.value
+                                      setMaterialOrderItems(previous =>
+                                        previous.map((current, index) =>
+                                          index === itemIndex
+                                            ? {
+                                                ...current,
+                                                unitPrice:
+                                                  value === ''
+                                                    ? ''
+                                                    : Math.max(0, Number(value) || 0)
+                                              }
+                                            : current
+                                        )
+                                      )
+                                    }}
+                                  />
+                                
+                                  {copiedMaterialRate!=null && (
+                                    <button type="button" onClick={()=>setMaterialOrderItems(previous=>previous.map((current,index)=>index===itemIndex?{...current,unitPrice:copiedMaterialRate}:current))}>貼付 {formatYen(copiedMaterialRate)}</button>
+                                  )}
+</label>
+
+                                {/* M-CROSS_MATERIAL_AUTO_PRICEBOOK_AMOUNT_V3D_SAFE */}
+                                <div>
+                                  <span style={{
+                                    display:'block',
+                                    marginBottom:'6px',
+                                    fontSize:'13px',
+                                    color:'#777'
+                                  }}>
+                                    金額
+                                  </span>
+
+                                  <strong style={{
+                                    display:'block',
+                                    padding:'11px 8px',
+                                    whiteSpace:'nowrap'
+                                  }}>
+                                    {
+                                      item.unitPrice === '' ||
+                                      item.unitPrice == null
+                                        ? '未設定'
+                                        : formatYen(
+                                            (Number(item.quantity) || 0) *
+                                            (Number(item.unitPrice) || 0)
+                                          )
+                                    }
+                                  </strong>
+                                </div>
+                              </div>
+
+                              {item.materialType === 'cross' &&
+                                !String(item.productCode || '').trim() && (
+                                  <small style={{
+                                    display:'block',
+                                    marginTop:'8px',
+                                    color:'#c25400',
+                                    fontWeight:700
+                                  }}>
+                                    品番未入力です。発注前に品番を入力してください。
+                                  </small>
+                                )}
+                            </article>
+                          ))}
+                        </div>
+
+                        {materialOrderItems.length === 0 && (
+                          <p
+                            className="empty"
+                            style={{marginTop:'14px'}}
+                          >
+                            材料明細がありません。「材料行を追加」から追加してください。
+                          </p>
+                        )}
+
+                        <div style={{
+                          marginTop:'16px',
+                          padding:'12px',
+                          borderRadius:'10px',
+                          background:'rgba(100,100,100,.08)',
+                          color:'#666',
+                          fontSize:'13px'
+                        }}>
+                          現在は材料明細の作成・編集確認段階です。発注先選択と材料発注書の保存は次のSTEPで追加します。
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {orderDraft && (
+                    <section className="orderDraftPanel" aria-label="発注書作成 STEP2">
+                      {/* M-CROSS_ORDER_STEP2_GROUP_RATES_V2_SAFE */}
+                      <div className="orderDraftHeader">
+                        <div><small>ORDER STEP 2</small><h3>発注先・発注掛率</h3></div>
+                        <button type="button" onClick={() => setOrderDraft(null)}>× 閉じる</button>
+                      </div>
+                      <section className="contractorPickerField">
+                        <span>発注先</span>
+                        <button type="button" className="contractorSelectButton" onClick={() => setShowContractorPicker(true)}>
+                          {orderDraft.contractor || '🔎 協力業者を選択'}
+                        </button>
+                        {orderDraft.contractor && <button type="button" className="contractorClearButton" onClick={() => setOrderDraft(previous => ({...previous,contractor:'',contractorId:''}))}>選択解除</button>}
+                      </section>
+                      {(() => {
+                        const applyGroupFactor=(category,value)=>setOrderDraft(previous=>({...previous,items:previous.items.map(item=>item.category===category?{...item,factor:value,orderQuantity:Math.round(item.sourceQuantity*value*10)/10}:item)}))
+                        const crossItems=orderDraft.items.filter(item=>item.category==='cross')
+                        const cfItems=orderDraft.items.filter(item=>item.category==='cf')
+                        const crossFactor=crossItems[0]?.factor ?? 1
+                        const cfFactor=cfItems[0]?.factor ?? 1
+                        return <>
+                          {crossItems.length>0&&<div className="orderGroupRate"><div><strong>クロス</strong><small>{crossItems.length}項目を一括変更</small></div><div className="orderFactorButtons">{[1,0.9,0.85].map(value=><button type="button" key={value} className={crossFactor===value?'active':''} onClick={()=>applyGroupFactor('cross',value)}>×{value.toFixed(2)}</button>)}</div></div>}
+                          {cfItems.length>0&&<div className="orderGroupRate"><div><strong>CF</strong><small>{cfItems.length}項目を一括変更</small></div><div className="orderFactorButtons">{[1,0.9,0.85].map(value=><button type="button" key={value} className={cfFactor===value?'active':''} onClick={()=>applyGroupFactor('cf',value)}>×{value.toFixed(2)}</button>)}</div></div>}
+                        </>
+                      })()}
+                      <div className="materialOrderModeBlock">{/* M-CROSS_CONTRACTOR_ORDER_MODE_V2_SAFE */}
+                      {(orderDraft.orderMode==='material'||orderDraft.orderMode==='both')&&<section className="materialOrderToolbar">
+                        <div><strong>材料発注モード</strong><small>商品名・数量・単位・単価をExcel感覚で直接入力</small></div>
+                        <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[...previous.items,{id:'material-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>＋ 商品行を追加</button>
+                      </section>}
+                      {/* M-CROSS_SEPARATE_SERVICE_MATERIAL_V4_SAFE */}
+                      {(orderDraft.orderMode==='material'||orderDraft.orderMode==='both')&&<section className="materialOrderToolbar">
+                        <div><strong>材料発注</strong><small>見積明細とは別に、品番・数量・単位・単価を自由入力します。</small></div>
+                        <div className="materialOrderToolbarButtons">
+                          <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[{id:'material-'+Date.now(),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>空の発注書にする</button>
+                          <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[...previous.items,{id:'material-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>＋ 空行追加</button>
+                        </div>
+                      </section>}
+                      {/* M-CROSS_MATERIAL_ORDER_REFERENCE_V5_SAFE */}
+                      <section className="materialOrderReferenceBoard">
+                        <details open><summary>クロス品番・参考数量</summary>
+                          <div className="materialReferenceList">{crossProductReferences.map((item,index)=><div key={(item.code||'none')+'-'+index}><strong>{item.code||'品番未入力'}</strong><span>{formatQuantity(item.quantity)}m</span><small>{item.label}</small></div>)}</div>
+                        </details>
+                        <details><summary>CF裁断データ（合算しない）</summary>
+                          <div className="materialReferenceList">{cfCutReferences.map(item=><div key={item.id}><strong>{item.room||'部屋未設定'}</strong><span>{formatQuantity(item.length)}m</span><small>{item.memo||'裁断1本'}</small></div>)}</div>
+                        </details>
+                        <details><summary>巾木 必要枚数</summary><div className="materialReferenceList"><div><strong>必要枚数</strong><span>{formatQuantity(softReferenceQuantity)}枚</span><small>ケース・バラの組み合わせは発注書で自由入力</small></div></div></details>
+                      </section>
+                      <div className="orderExcelWorkspace">
+                        <section className="orderExcelSheet">
+                          <div className="orderExcelSheetTitle"><strong>発 注 書</strong><span>{orderDraft.contractor||'発注先未選択'}</span></div>
+                          <div className="orderExcelHeader"><span>商品名</span><span>数量</span><span>単位</span><span>単価</span><span>金額</span></div>
+                          <div className="orderDraftItems">
+                        {orderDraft.items.map((item,itemIndex)=><article className="orderDraftItem" key={item.id+'-'+itemIndex}>
+                          {item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,i)=>i===itemIndex?{...current,label:event.target.value}:current)}))} placeholder="品番・商品名"/><button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:previous.items.filter((_,i)=>i!==itemIndex)}))}>×</button></div>:<strong>{item.label}</strong>}{item.memo&&<small>{item.memo}</small>}
+                          <div className="orderQuantityCompare"><span>見積 {formatQuantity(item.sourceQuantity)}{item.unit}</span><b>→ 発注 {formatQuantity(item.orderQuantity)}{item.unit}</b></div>
+                          <label className="orderRateField"><span>発注単価</span><input type="number" min="0" step="1" value={item.orderRate ?? ''} onChange={event=>{const value=event.target.value;setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,orderRate:value===''?'':Math.max(0,Number(value)||0)}:current)}))}} placeholder="未設定"/><b>円</b></label>
+                          <div className="orderLineAmount"><span>発注金額</span><strong>{item.orderRate===''||item.orderRate==null?'未設定':formatYen((Number(item.orderQuantity)||0)*(Number(item.orderRate)||0))}</strong></div>
+                          {!['cross','cf'].includes(item.category)&&<label className="orderQuantityField"><span>発注数量</span><input type="number" min="0" step="0.1" value={item.orderQuantity} onChange={event=>{const value=Math.max(0,Number(event.target.value)||0);setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,orderQuantity:value}:current)}))}}/>{item.category==='material'?<input className="materialUnitInput" value={item.unit} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,unit:event.target.value}:current)}))} placeholder="単位"/>:<b>{item.unit}</b>}</label>}
+                        </article>)}
+                      </div></section>
+                        {(orderDraft.orderMode==='material'||orderDraft.orderMode==='both')&&<aside className="materialReferencePane">
+                          <details open><summary>今回の見積・品番</summary><div className="materialReferenceRows">{orderCandidateRows.filter(row=>row.category==='cross').map((row,index)=><div key={'cross-ref-'+index}><strong>{(Array.isArray(row.parts)&&row.parts[0])||'品番未入力'}</strong><span>{formatQuantity(row.quantity)}m</span><small>{row.label}</small></div>)}</div></details>
+                          <details><summary>CF採寸データ</summary><div className="cfReferenceRows">{cfRecords.map((row,index)=><div key={row.id||index}><strong>{row.room}</strong><span>{Number(row.length||0).toFixed(2)}m × {row.count}本</span><small>{row.memo||''}</small></div>)}</div></details>
+                        </aside>}
+                        <aside className="contractorPriceBookPane">
+                          <div className="priceBookPaneHeader"><div><strong>業者単価表</strong><small>{orderDraft.contractor||'発注先を選択してください'}</small></div><input value={contractorPriceSearch} onChange={event=>setContractorPriceSearch(event.target.value)} placeholder="🔎 品名を検索"/></div>
+                          <div className="priceBookViewHead"><span>品名</span><span>単位</span><span>単価/掛率</span><span>備考</span></div>
+                          <div className="priceBookViewRows">{(((contractors.find(contractor=>contractor.id===orderDraft.contractorId))?.priceBook)||[]).filter(row=>[row.name,row.unit,row.note].join(' ').toLocaleLowerCase('ja').includes(contractorPriceSearch.trim().toLocaleLowerCase('ja'))).map((row,index)=><button type="button" className="priceBookViewRow" key={row.id||index} onClick={()=>{
+                            if(row.priceType!=='fixed')return
+                            setOrderDraft(previous=>{
+                              let applied=false
+                              const items=previous.items.map(item=>{if(applied||item.category!=='material'||String(item.label||'').trim())return item;applied=true;return {...item,label:row.name||'',unit:row.unit||item.unit,orderRate:row.price===''?'':Number(row.price||0)}})
+                              return {...previous,items:applied?items:[...items,{id:'material-'+Date.now(),label:row.name||'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:row.unit||'',orderRate:row.price===''?'':Number(row.price||0),rate:0,amount:0}]}
+                            })
+                          }}><strong>{row.name}</strong><span>{row.unit}</span><b>{row.priceType==='rate'?'掛率 '+formatQuantity(row.rate)+'%':row.priceType==='unset'?'未定':formatYen(row.price)}</b><small>{row.note}</small></button>)}</div>
+                          {!(contractors.find(contractor=>contractor.id===orderDraft.contractorId))&&<p className="empty">発注先を選ぶと単価表を表示します</p>}
+                          {(contractors.find(contractor=>contractor.id===orderDraft.contractorId))&&!((contractors.find(contractor=>contractor.id===orderDraft.contractorId))?.priceBook||[]).length&&<p className="empty">この業者の単価表は未登録です</p>}
+                        </aside>
+                      </div>
+                      </div><div className="orderDraftFooter"><span>{orderDraft.items.length}項目</span><button className="primary" type="button" onClick={saveCurrentPurchaseOrder}>📦 発注書を下書き保存</button></div><small className="purchaseOrderSaveNote">保存後は採寸・見積とは独立した発注書データとして保持します。</small>
+                    </section>
+                  )}
+                  {showContractorPicker && (
+                    <div className="contractorPickerBackdrop" role="dialog" aria-modal="true" aria-label="協力業者マスター">
+                      <section className="contractorPickerPanel">
+                        <div className="contractorPickerHeader"><div><small>CONTRACTOR MASTER</small><h3>協力業者を選択</h3></div><button type="button" onClick={() => {setShowContractorPicker(false);setShowContractorForm(false)}}>× 閉じる</button></div>
+                        <input className="contractorSearchInput" value={contractorSearch} onChange={event => setContractorSearch(event.target.value)} placeholder="業者名・業種・担当者を検索" />
+                        <div className="contractorPickerActions"><button className="primary" type="button" onClick={() => { setEditingContractorId(''); setContractorForm({name:'',trade:'内装',contact:'',phone:'',memo:'',postalCode:'',address:'',rates:{cross:'',cf:'',soft:'',floorTrim:'',wallBase:'',floorBase:''},priceBook:[],orderMode:'service'}); setShowContractorForm(true) }}>＋ 新規業者</button><button type="button" onClick={() => setContractorSearch('')}>検索クリア</button></div>
+                        {showContractorForm && <form className="contractorForm" onSubmit={event => {
+                          event.preventDefault(); const name=contractorForm.name.trim(); if(!name)return;
+                          const values={name,trade:contractorForm.trade||'その他',contact:contractorForm.contact.trim(),phone:contractorForm.phone.trim(),memo:contractorForm.memo.trim(),postalCode:String(contractorForm.postalCode||'').trim(),address:String(contractorForm.address||'').trim(),rates:{cross:contractorForm.rates?.cross??'',cf:contractorForm.rates?.cf??'',soft:contractorForm.rates?.soft??'',floorTrim:contractorForm.rates?.floorTrim??'',wallBase:contractorForm.rates?.wallBase??'',floorBase:contractorForm.rates?.floorBase??'',priceBook:(Array.isArray(contractorForm.priceBook)?contractorForm.priceBook:[]).map(row=>({...row,name:String(row.name||'').trim(),unit:String(row.unit||'').trim(),note:String(row.note||'').trim(),orderMode:contractorForm.orderMode||'service'})).filter(row=>row.name)}}
+                          if(editingContractorId){ const next=contractors.map(current=>current.id===editingContractorId?{...current,...values,updatedAt:new Date().toISOString()}:current); saveContractors(next); if(orderDraft?.contractorId===editingContractorId)setOrderDraft(previous=>({...previous,contractor:name})); } else { const item={id:'contractor-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),...values,hidden:false,createdAt:new Date().toISOString()}; saveContractors([...contractors,item]); setOrderDraft(previous=>({...previous,contractor:item.name,contractorId:item.id})); } setContractorForm({name:'',trade:'内装',contact:'',phone:'',memo:'',postalCode:'',address:'',rates:{cross:'',cf:'',soft:'',floorTrim:'',wallBase:'',floorBase:''},priceBook:[],orderMode:'service'}); setEditingContractorId(''); setShowContractorForm(false)
+                        }}>
+                          <label><span>業者名 *</span><input value={contractorForm.name} onChange={event => setContractorForm(previous => ({...previous,name:event.target.value}))} required /></label>
+                          <label><span>業種</span><select value={contractorForm.trade} onChange={event => setContractorForm(previous => ({...previous,trade:event.target.value}))}>{contractorTrades.map(value => <option key={value}>{value}</option>)}</select></label>
+                          {/* M-CROSS_SEPARATE_SERVICE_MATERIAL_V4_SAFE */}
+                          <label><span>発注タイプ</span><select value={contractorForm.orderMode||'service'} onChange={event=>setContractorForm(previous=>({...previous,orderMode:event.target.value}))}><option value="service">施工発注</option><option value="material">材料発注</option><option value="both">施工・材料</option></select></label>
+                          {/* M-CROSS_CONTRACTOR_ORDER_MODE_V2_SAFE */}
+                          <label className="contractorOrderModeField"><span>発注タイプ</span><select value={contractorForm.orderMode||'service'} onChange={event=>setContractorForm(previous=>({...previous,orderMode:event.target.value}))}><option value="service">施工</option><option value="material">材料</option><option value="both">施工・材料</option></select></label><div className="tradeManageRow"><button type="button" onClick={() => setShowTradeManager(previous => !previous)}>⚙ 業種管理</button></div>
+                          <label><span>担当者</span><input value={contractorForm.contact} onChange={event => setContractorForm(previous => ({...previous,contact:event.target.value}))} /></label>
+                          <label><span>電話番号</span><input value={contractorForm.phone} onChange={event => setContractorForm(previous => ({...previous,phone:event.target.value}))} /></label>
+                          {/* M-CROSS_CONTRACTOR_BASE_RATES_ORDER_OVERRIDE_V1_SAFE */}<section className="contractorRateMaster contractorFormWide">
+                            <strong>基本単価</strong>
+                            <small>空欄の項目は発注時に手入力できます。</small>
+                            <div className="contractorRateGrid">
+                              {[['cross','クロス施工','㎡'],['cf','CF施工','㎡'],['soft','ソフト巾木','枚'],['floorTrim','床見切り','本'],['wallBase','壁下地処理','式'],['floorBase','床下地処理','式']].map(([key,label,unitName])=><label key={key}><span>{label}</span><div><input type="number" min="0" step="1" value={contractorForm.rates?.[key] ?? ''} onChange={event=>setContractorForm(previous=>({...previous,rates:{...(previous.rates||{}),[key]:event.target.value}}))} placeholder="未設定"/><b>円/{unitName}</b></div></label>)}
+                            </div>
+                          </section>
+                          <label><span>郵便番号</span><input value={contractorForm.postalCode || ''} onChange={event => setContractorForm(previous => ({...previous,postalCode:event.target.value}))} placeholder="〒000-0000" /></label>
+                          <label className="contractorFormWide"><span>住所</span><input value={contractorForm.address || ''} onChange={event => setContractorForm(previous => ({...previous,address:event.target.value}))} /></label>
+                          {/* M-CROSS_CONTRACTOR_BASE_RATES_EDITOR_V2_SAFE */}
+                          <section className="contractorRateMaster contractorFormWide">
+                            <div className="contractorRateTitle"><strong>基本単価</strong><small>通常はこの単価を発注時に使用</small></div>
+                            <div className="contractorRateGrid">
+                              {[
+                                ['cross','クロス施工','㎡'],
+                                ['cf','CF施工','㎡'],
+                                ['soft','ソフト巾木','枚'],
+                                ['floorTrim','床見切り','本'],
+                                ['wallBase','壁下地処理','式'],
+                                ['floorBase','床下地処理','式'],
+                              ].map(([key,label,unitName]) => (
+                                <label key={key}>
+                                  <span>{label}</span>
+                                  <div className="contractorRateInput">
+                                    <input type="number" min="0" step="1" value={contractorForm.rates?.[key] ?? ''} onChange={event => setContractorForm(previous => ({...previous,rates:{...(previous.rates||{}),[key]:event.target.value}}))} placeholder="未設定" />
+                                    <b>円/{unitName}</b>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                            <small>塗装など案件ごとに変わる工事は未設定のままでOKです。</small>
+                          </section>
+                          {/* M-CROSS_EXCEL_STYLE_ORDER_PRICEBOOK_V1_SAFE */}
+                          <section className="contractorPriceBookEditor contractorFormWide">
+                            <div className="priceBookTitle"><div><strong>業者単価表</strong><small>Excelと同じ感覚で品名・単位・単価・掛率・備考を管理</small></div><button type="button" onClick={()=>setContractorForm(previous=>({...previous,priceBook:[...(previous.priceBook||[]),blankPriceRow()]}))}>＋ 行追加</button></div>
+                            <div className="priceBookEditorTable">
+                              <div className="priceBookEditorHead"><span>品名</span><span>単位</span><span>価格方式</span><span>価格</span><span>備考</span><span></span></div>
+                              {(contractorForm.priceBook||[]).map((row,index)=><div className="priceBookEditorRow" key={row.id||index}>
+                                <input value={row.name||''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,name:event.target.value}:current)}))} placeholder="品名"/>
+                                <input value={row.unit||''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,unit:event.target.value}:current)}))} placeholder="㎡・m・枚"/>
+                                <select value={row.priceType||'fixed'} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,priceType:event.target.value}:current)}))}><option value="fixed">固定単価</option><option value="rate">掛率</option><option value="unset">未定</option></select>
+                                <input type="number" min="0" step="0.1" value={(row.priceType==='rate'?row.rate:row.price)??''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,[current.priceType==='rate'?'rate':'price']:event.target.value}:current)}))} placeholder={row.priceType==='rate'?'％':'円'}/>
+                                <input value={row.note||''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,note:event.target.value}:current)}))} placeholder="備考"/>
+                                <button type="button" className="danger" onClick={()=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).filter((_,i)=>i!==index)}))}>×</button>
+                              </div>)}
+                              {(contractorForm.priceBook||[]).length===0&&<p className="empty">単価表は未登録です</p>}
+                            </div>
+                          </section>
+                          <label className="contractorFormWide"><span>メモ</span><input value={contractorForm.memo} onChange={event => setContractorForm(previous => ({...previous,memo:event.target.value}))} /></label>
+                          <button className="primary contractorFormWide" type="submit">{editingContractorId ? '変更を保存' : '登録して発注先に選択'}</button>
+                        
+                        {showTradeManager && <section className="tradeManager">
+                          <strong>業種マスター</strong>
+                          <div className="tradeAddRow"><input value={newContractorTrade} onChange={event=>setNewContractorTrade(event.target.value)} placeholder="新しい業種名"/><button type="button" onClick={()=>{const value=newContractorTrade.trim();if(!value)return;saveContractorTrades([...contractorTrades,value]);setNewContractorTrade('');setContractorForm(previous=>({...previous,trade:value}))}}>＋ 追加</button></div>
+                          <div className="tradeChipList">{contractorTrades.map(value=><div className="tradeChip" key={value}><span>{value}</span><button type="button" disabled={contractors.some(item=>item.trade===value)} title={contractors.some(item=>item.trade===value)?'この業種を使用中の業者があります':''} onClick={()=>{if(!window.confirm(value+'を業種マスターから削除しますか？'))return;const next=contractorTrades.filter(item=>item!==value);saveContractorTrades(next);if(contractorForm.trade===value)setContractorForm(previous=>({...previous,trade:next[0]||''}))}}>×</button></div>)}</div>
+                          <small>使用中の業種は、業者を別の業種へ変更してから削除できます。</small>
+                        </section>}</form>}
+                        <div className="contractorList">
+                          {contractors.filter(item => !item.hidden).filter(item => [item.name,item.trade,item.contact].join(' ').toLocaleLowerCase('ja').includes(contractorSearch.trim().toLocaleLowerCase('ja'))).length===0 ? <p className="empty">表示できる協力業者がありません</p> : contractors.filter(item => !item.hidden).filter(item => [item.name,item.trade,item.contact].join(' ').toLocaleLowerCase('ja').includes(contractorSearch.trim().toLocaleLowerCase('ja'))).map(item => <article className="contractorCard" key={item.id}>
+                            <button type="button" className="contractorCardMain" onClick={() => {setOrderDraft(previous => ({...previous,contractor:item.name,contractorId:item.id,orderMode:item.orderMode||(item.trade==='材料'?'material':'service'),orderMode:item.orderMode||(item.trade==='材料'?'material':'service'),items:previous.items.map(current=>{
+                              const text=[current.label,current.memo].filter(Boolean).join(' ')
+                              const rateKey=current.category==='cross'?'cross':current.category==='cf'?'cf':current.category==='soft'?'soft':current.category==='floorTrim'?'floorTrim':text.includes('壁下地')?'wallBase':text.includes('床下地')?'floorBase':''
+                              const masterRate=rateKey && item.rates?.[rateKey]!=='' && item.rates?.[rateKey]!=null ? Number(item.rates[rateKey]) : current.orderRate
+                              return {...current,rateKey,orderRate:Number.isFinite(masterRate)?masterRate:''}
+                            })}));setShowContractorPicker(false)}}><strong>{item.name}</strong><small>{[item.trade,item.contact,item.phone].filter(Boolean).join('・')}</small></button>
+                            <div className="contractorCardActions"><button type="button" onClick={() => { setEditingContractorId(item.id); setContractorForm({name:item.name||'',trade:item.trade||'その他',contact:item.contact||'',phone:item.phone||'',memo:item.memo||'',postalCode:item.postalCode||'',address:item.address||'',priceBook:Array.isArray(item.priceBook)?item.priceBook.map(row=>({...row})):[],orderMode:item.orderMode||(item.trade==='材料'?'material':'service'),orderMode:item.orderMode||(item.trade==='材料'?'material':'service'),rates:{cross:item.rates?.cross??'',cf:item.rates?.cf??'',soft:item.rates?.soft??'',floorTrim:item.rates?.floorTrim??'',wallBase:item.rates?.wallBase??'',floorBase:item.rates?.floorBase??''}}); setShowContractorForm(true); document.querySelector('.contractorForm')?.scrollIntoView({behavior:'smooth',block:'center'}) }}>編集</button><button type="button" onClick={() => {if(!window.confirm(item.name+'を通常の候補から非表示にしますか？'))return;saveContractors(contractors.map(current => current.id===item.id?{...current,hidden:true}:current))}}>非表示</button><button type="button" className="danger" onClick={() => {if(!window.confirm(item.name+'を業者マスターから削除しますか？\n過去の発注書に保存済みの業者名は削除されません。'))return;saveContractors(contractors.filter(current => current.id!==item.id));if(orderDraft?.contractorId===item.id)setOrderDraft(previous => ({...previous,contractor:'',contractorId:''}))}}>削除</button></div>
+                          </article>)}
+                        </div>
+                        {contractors.some(item => item.hidden) && <details className="hiddenContractors"><summary>非表示の業者</summary>{contractors.filter(item => item.hidden).map(item => <div key={item.id}><span>{item.name}（{item.trade}）</span><button type="button" onClick={() => saveContractors(contractors.map(current => current.id===item.id?{...current,hidden:false}:current))}>再表示</button></div>)}</details>}
+                      </section>
+                    </div>
+                  )}
                   {/* M-CROSS_SIMPLIFY_ESTIMATE_TEXT_V1_SAFE */}
                   <div className="restorationWorkOrderAction">
                     {workOrders.some(item => item.sourceType === 'restoration' && item.sourceId === [selectedProperty?.id || selectedProperty?.name || '', String(unit || '').trim()].join('|')) ? (
@@ -8611,6 +10672,7 @@ return savedEntries
                                   additionalWorkId: row.additionalWorkId || '',
                                   additionalWorkIndex: row.additionalWorkIndex,
                                   parts: [0, 1, 2, 3].map(index => String(parts[index] || '')),
+                                  productCode: String(row.productCode || ''),
                                   memo: String(row.memo || ''),
                                   quantity: String(row.quantity ?? ''),
                                   unit: String(row.unit || ''),
@@ -8626,6 +10688,7 @@ return savedEntries
                               setEstimateEditor({
                                 key,
                                 parts: [0,1,2,3].map(index => String(parts[index] || '')),
+                                productCode: String(edit.productCode ?? row.productCode ?? ''),
                                 memo: String(edit.memo ?? row.memo ?? ''),
                                 quantity: String(edit.quantity ?? row.quantity ?? ''),
                                 unit: String(edit.unit ?? row.unit ?? ''),
@@ -8640,6 +10703,12 @@ return savedEntries
                               }
                             }}
                           >
+                            <input className="orderSelectCheckbox" type="checkbox"
+                              checked={selectedOrderKeys.includes(orderKeyForRow(row,index))}
+                              onClick={event => event.stopPropagation()}
+                              onChange={event => { event.stopPropagation(); const key=orderKeyForRow(row,index); setSelectedOrderKeys(previous => event.target.checked ? [...new Set([...previous,key])] : previous.filter(value => value !== key)) }}
+                              aria-label={(row.label || '見積項目') + 'を発注対象に選択'}
+                            />
                             <strong>{row.label}{row.memo && <small className="estimateMemo">{row.memo}</small>}</strong>
                             <span className="estimateNumber estimateUnit">{formatQuantity(row.quantity)}{row.unit}</span>
                             <span className="estimateNumber estimateRate">× {formatYen(row.rate)}</span>
@@ -8743,14 +10812,14 @@ return savedEntries
                         setAdditionalWorks(previous => previous.map((item, index) => {
                           const matched = form.additionalWorkId ? item.id === form.additionalWorkId : index === form.additionalWorkIndex
                           if (!matched) return item
-                          return { ...item, room: cleanParts[0] || '', work: cleanParts.slice(1).filter(Boolean).join(' ') || cleanParts[0] || '', estimateParts: cleanParts, memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), unitPrice: rate, amount: finalAmount }
+                          return { ...item, room: cleanParts[0] || '', work: cleanParts.slice(1).filter(Boolean).join(' ') || cleanParts[0] || '', estimateParts: cleanParts, productCode: String(form.productCode || '').trim(), memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), unitPrice: rate, amount: finalAmount }
                         }))
                         setEstimateEditor(null)
                         setIsDirty(true)
                         setSaveStatus('追加作業の見積明細を変更しました')
                         return
                       }
-                      const edit = { parts: cleanParts, memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), rate, amount, amountMode: amount === '' ? 'auto' : 'manual' }
+                      const edit = { parts: cleanParts, productCode: String(form.productCode || '').trim(), memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), rate, amount, amountMode: amount === '' ? 'auto' : 'manual' }
                       setEstimateEdits(previous => {
                         const next = { ...previous, [form.key]: edit }
                         try { localStorage.setItem(estimateEditStorageKey, JSON.stringify(next)) } catch {}
@@ -8764,7 +10833,7 @@ return savedEntries
                         const updatedRows = allEstimateRows.map(row => {
                           if (estimateEditKey(row) !== form.key) return row
                           const numericAmount = amount === '' ? Number(quantity || 0) * Number(rate || 0) : Number(amount || 0)
-                          return { ...row, parts: cleanParts, label: cleanParts.filter(Boolean).join(' '), memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), rate, amount: numericAmount }
+                          return { ...row, parts: cleanParts, label: cleanParts.filter(Boolean).join(' '), productCode: String(form.productCode || '').trim(), memo: String(form.memo || '').trim(), quantity, unit: String(form.unit || '').trim(), rate, amount: numericAmount }
                         }).filter(row => !estimateEdits[estimateEditKey(row)]?.excluded)
                         const updatedAdditionalTotal = additionalWorks.reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)
                         const updatedTotal = updatedRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + updatedAdditionalTotal

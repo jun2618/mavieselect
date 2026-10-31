@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>M-Cross OneDrive Auth Test</title>
+  <style>
+    body{font-family:system-ui,-apple-system,"Yu Gothic",sans-serif;margin:0;padding:24px;background:#f7f7fb;color:#222}
+    main{max-width:560px;margin:auto;padding:22px;border:1px solid #ddd;border-radius:18px;background:#fff}
+    button{width:100%;min-height:52px;margin-top:12px;border:0;border-radius:12px;background:#2672ec;color:#fff;font:inherit;font-weight:800}
+    #status,#graphStatus{margin-top:16px;padding:12px;border-radius:10px;background:#eef4ff;overflow-wrap:anywhere} button:disabled{opacity:.45;cursor:not-allowed}
+    small{display:block;margin-top:12px;color:#666;line-height:1.5} #localInspector,#backupPanel,#comparePanel,#importPanel{margin-top:18px;padding-top:16px;border-top:1px solid #ddd} #localSummary,#backupStatus,#compareSummary,#importStatus{margin-top:12px;padding:12px;border-radius:10px;background:#f2f6ff;overflow-wrap:anywhere} #localEntries,#compareList{display:grid;gap:8px;margin-top:10px} #localEntries article,#compareList article{padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fff} #localEntries article small,#compareList article small{margin-top:3px}
+   .importCandidate{display:flex;gap:10px;align-items:center;margin:8px 0;padding:10px;border:1px solid #ddd;border-radius:10px}.importCandidate input{width:20px;height:20px} </style>
+</head>
+<body>
+<main>
+  <h1>OneDrive認証テスト</h1>
+  <p>M-Cross本体とは分離したPC開発用テストです。</p>
+  <button id="login" type="button">Microsoftでサインイン</button>
+  <div id="status">未サインイン</div>
+  <!-- M-CROSS_ONEDRIVE_WRITE_READ_TEST_V1 -->
+  <button id="writeTest" type="button" disabled>OneDriveへTESTを保存</button>
+  <button id="readTest" type="button" disabled>OneDriveからTESTを読む</button>
+  <div id="graphStatus">まだOneDriveにはアクセスしていません。</div>
+  <!-- M-CROSS_LOCAL_DATA_INSPECTOR_V3 -->
+  <section id="localInspector">
+    <h2>端末のM-Crossデータ確認</h2>
+    <button id="inspectLocal" type="button">端末データを確認</button>
+    <div id="localSummary">まだ確認していません。</div>
+    <div id="localEntries"></div>
+    <small>読取り専用です。端末データの削除・変更・OneDrive送信は行いません。</small>
+  </section>
+  <!-- M-CROSS_ONEDRIVE_MCROSS_BACKUP_V1 -->
+  <section id="backupPanel">
+    <h2>M-Cross OneDriveバックアップ</h2>
+    <p>正式保存の物件だけを、OneDriveへ一方向でバックアップします。</p>
+    <button id="backupMCross" type="button">端末データをOneDriveへバックアップ</button>
+    <button id="inspectBackup" type="button">OneDriveバックアップ内容を確認</button>
+    <div id="backupStatus">まだM-CrossデータをOneDriveへバックアップしていません。</div>
+    <small>端末側の物件は変更・削除しません。OneDriveから端末への取込みも行いません。</small>
+  </section>
+  <!-- M-CROSS_ONEDRIVE_COMPARE_ONLY_V1 -->
+  <section id="comparePanel">
+    <h2>端末 ⇄ OneDrive 比較</h2>
+    <button id="compareOnly" type="button">端末とOneDriveを比較</button>
+    <div id="compareSummary">まだ比較していません。</div>
+    <div id="compareList"></div>
+    <small>比較だけ行います。端末・OneDriveのデータは変更しません。</small>
+  </section>
+  <!-- M-CROSS_ONEDRIVE_SELECTIVE_IMPORT_V1 -->
+  <section id="importPanel">
+    <h2>OneDriveから選択して取り込む</h2>
+    <p>「OneDriveのみ」「OneDriveが新しい」物件だけ候補にします。</p>
+    <button id="prepareImport" type="button">取込候補を確認</button>
+    <div id="importCandidates"></div>
+    <button id="importSelected" type="button" disabled>選択した物件を取り込む</button>
+    <div id="importStatus">まだ取り込んでいません。</div>
+    <small>「同じ」「端末が新しい」物件は対象外です。実行前に確認画面を出します。</small>
+  </section>
+  <small>このページはOneDriveへデータを保存・読込しません。</small>
+</main>
+<script type="module">
+  import { PublicClientApplication } from '@azure/msal-browser'
+
+  const status = document.querySelector('#status')
+  const login = document.querySelector('#login')
+  const writeTest = document.querySelector('#writeTest')
+  const readTest = document.querySelector('#readTest')
+  const graphStatus = document.querySelector('#graphStatus')
+  const inspectLocal = document.querySelector('#inspectLocal')
+  const localSummary = document.querySelector('#localSummary')
+  const localEntries = document.querySelector('#localEntries')
+  const backupMCross = document.querySelector('#backupMCross')
+  const inspectBackup = document.querySelector('#inspectBackup')
+  const backupStatus = document.querySelector('#backupStatus')
+  const compareOnly = document.querySelector('#compareOnly')
+  const compareSummary = document.querySelector('#compareSummary')
+  const compareList = document.querySelector('#compareList')
+  const prepareImport = document.querySelector('#prepareImport')
+  const importCandidates = document.querySelector('#importCandidates')
+  const importSelected = document.querySelector('#importSelected')
+  const importStatus = document.querySelector('#importStatus')
+  let pendingCloudEntries = []
+  const backupFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-backup.json:/content'
+  const graphScopes = ['Files.ReadWrite.AppFolder']
+  const graphFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-test.json:/content'
+
+  function setSignedInState(account) {
+    const signedIn = Boolean(account)
+    writeTest.disabled = !signedIn
+    readTest.disabled = !signedIn
+    if (signedIn) status.textContent = 'サインイン済み: ' + account.username
+  }
+
+  async function getGraphAccessToken() {
+    const account = msal.getAllAccounts()[0]
+    if (!account) throw new Error('先にMicrosoftへサインインしてください')
+    try {
+      const result = await msal.acquireTokenSilent({ scopes: graphScopes, account })
+      return result.accessToken
+    } catch (error) {
+      const result = await msal.acquireTokenPopup({ scopes: graphScopes, account })
+      return result.accessToken
+    }
+  }
+  const msal = new PublicClientApplication({
+    auth: {
+      clientId: '783680c7-c4fc-4028-bacd-e25497f40334',
+      authority: 'https://login.microsoftonline.com/3ac7d9e7-5765-41cc-8e82-3c27d62cea00',
+      redirectUri: window.location.origin + '/auth-redirect.html',
+    },
+    cache: { cacheLocation: 'sessionStorage' },
+  })
+
+  await msal.initialize()
+  const existing = msal.getAllAccounts()[0]
+  if (existing) setSignedInState(existing)
+
+  login.addEventListener('click', async () => {
+    try {
+      status.textContent = 'Microsoftに接続中…'
+      const result = await msal.loginPopup({ scopes: ['User.Read', 'Files.ReadWrite.AppFolder'] })
+      status.textContent = 'サインイン成功: ' + (result.account?.username || 'アカウント取得済み')
+      setSignedInState(result.account)
+    } catch (error) {
+      console.error(error)
+      status.textContent = 'サインイン失敗: ' + (error?.errorCode || error?.message || String(error))
+    }
+  })
+
+
+  writeTest.addEventListener('click', async () => {
+    try {
+      graphStatus.textContent = 'OneDriveへTESTを保存しています…'
+      const accessToken = await getGraphAccessToken()
+      const payload = {
+        fileType: 'm-cross-test',
+        message: 'TEST',
+        createdAt: new Date().toISOString(),
+        source: 'M-Cross auth sandbox',
+      }
+      const response = await fetch(graphFileUrl, {
+        method: 'PUT',
+        headers: {
+          Authorization: 'Bearer ' + accessToken,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(payload, null, 2),
+      })
+      if (!response.ok) throw new Error('保存失敗 HTTP ' + response.status + ': ' + await response.text())
+      const item = await response.json()
+      graphStatus.textContent = '保存成功: ' + (item.name || 'm-cross-test.json')
+    } catch (error) {
+      console.error(error)
+      graphStatus.textContent = '保存失敗: ' + (error?.message || String(error))
+    }
+  })
+
+  readTest.addEventListener('click', async () => {
+    try {
+      graphStatus.textContent = 'OneDriveからTESTを読み込んでいます…'
+      const accessToken = await getGraphAccessToken()
+      const response = await fetch(graphFileUrl, {
+        headers: { Authorization: 'Bearer ' + accessToken },
+      })
+      if (!response.ok) throw new Error('読込失敗 HTTP ' + response.status + ': ' + await response.text())
+      const data = await response.json()
+      graphStatus.textContent = '読込成功: ' + JSON.stringify(data)
+    } catch (error) {
+      console.error(error)
+      graphStatus.textContent = '読込失敗: ' + (error?.message || String(error))
+    }
+  })
+
+
+
+  function looksLikeMCrossEntry(value) {
+    return value && typeof value === 'object' && !Array.isArray(value)
+      && typeof value.propertyName === 'string'
+      && Array.isArray(value.records)
+  }
+
+  function collectMCrossEntries() {
+    const storagePrefix = 'm-cross:'
+    const entries = []
+    const sources = []
+
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index)
+      if (!key || !key.startsWith(storagePrefix)) continue
+      const raw = localStorage.getItem(key)
+      if (!raw) continue
+
+      try {
+        const data = JSON.parse(raw)
+        if (data && Array.isArray(data.records)) {
+          entries.push({ ...data, archived: Boolean(data.archived), storageKey: key, __sourceKey: key })
+          sources.push({ key, count: 1 })
+        }
+      } catch {
+        // M-Cross本体と同じく、読み込めないデータは除外
+      }
+    }
+
+    entries.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+    return { entries, sources }
+  }
+
+  inspectLocal.addEventListener('click', () => {
+    const { entries, sources } = collectMCrossEntries()
+    localSummary.textContent = entries.length
+      ? '保存物件 ' + entries.length + '件を確認しました。保存元: ' + sources.map(source => source.key + ' (' + source.count + '件)').join(' / ')
+      : 'M-Crossの保存物件を確認できませんでした。このブラウザに保存データがない可能性があります。'
+
+    localEntries.replaceChildren()
+    entries
+      .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+      .slice(0, 20)
+      .forEach(entry => {
+        const card = document.createElement('article')
+        const title = document.createElement('strong')
+        const meta = document.createElement('small')
+        const detail = document.createElement('small')
+
+        title.textContent = (entry.propertyName || '物件名なし') + ' ' + (entry.unit || '') + '号室'
+        meta.textContent = entry.company || '管理会社未設定'
+        detail.textContent = 'クロス ' + (entry.records || []).length
+          + '件 / CF ' + (entry.cfRecords || []).length
+          + '件 / 追加作業 ' + (entry.additionalWorks || []).length + '件'
+
+        card.append(title, meta, detail)
+        localEntries.append(card)
+      })
+  })
+
+
+
+  backupMCross.addEventListener('click', async () => {
+    try {
+      const { entries } = collectMCrossEntries()
+      if (entries.length === 0) {
+        backupStatus.textContent = 'バックアップ対象の正式保存物件がありません。'
+        return
+      }
+
+      const label = entries.length + '件をOneDriveへバックアップします。端末データは変更しません。続けますか？'
+      if (!window.confirm(label)) {
+        backupStatus.textContent = 'バックアップをキャンセルしました。'
+        return
+      }
+
+      backupStatus.textContent = 'OneDriveへバックアップしています…'
+      const accessToken = await getGraphAccessToken()
+      const payload = {
+        fileType: 'm-cross-backup',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        entryCount: entries.length,
+        entries: entries.map(entry => {
+          const clean = { ...entry }
+          delete clean.__sourceKey
+          return clean
+        }),
+      }
+
+      const response = await fetch(backupFileUrl, {
+        method: 'PUT',
+        headers: {
+          Authorization: 'Bearer ' + accessToken,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(payload, null, 2),
+      })
+      if (!response.ok) throw new Error('バックアップ失敗 HTTP ' + response.status + ': ' + await response.text())
+      const item = await response.json()
+      backupStatus.textContent = 'バックアップ成功: ' + entries.length + '件 / ' + (item.name || 'm-cross-backup.json')
+    } catch (error) {
+      console.error(error)
+      backupStatus.textContent = 'バックアップ失敗: ' + (error?.message || String(error))
+    }
+  })
+
+  inspectBackup.addEventListener('click', async () => {
+    try {
+      backupStatus.textContent = 'OneDriveのバックアップを確認しています…'
+      const accessToken = await getGraphAccessToken()
+      const response = await fetch(backupFileUrl, {
+        headers: { Authorization: 'Bearer ' + accessToken },
+      })
+      if (response.status === 404) {
+        backupStatus.textContent = 'OneDriveにm-cross-backup.jsonはまだありません。'
+        return
+      }
+      if (!response.ok) throw new Error('確認失敗 HTTP ' + response.status + ': ' + await response.text())
+      const data = await response.json()
+      if (data?.fileType !== 'm-cross-backup' || !Array.isArray(data.entries)) {
+        throw new Error('M-Crossバックアップ形式ではありません。')
+      }
+      const names = data.entries.slice(0, 5).map(entry => (entry.propertyName || '物件名なし') + ' ' + (entry.unit || '') + '号室')
+      backupStatus.textContent = 'OneDrive確認成功: ' + data.entries.length + '件 / 保存日時 ' + (data.exportedAt || '不明') + ' / ' + names.join('、')
+    } catch (error) {
+      console.error(error)
+      backupStatus.textContent = '確認失敗: ' + (error?.message || String(error))
+    }
+  })
+
+
+
+  compareOnly.addEventListener('click', async () => {
+    try {
+      compareSummary.textContent = '比較しています…'
+      compareList.replaceChildren()
+      const local = collectMCrossEntries().entries
+      const accessToken = await getGraphAccessToken()
+      const response = await fetch(backupFileUrl, { headers: { Authorization: 'Bearer ' + accessToken } })
+      if (!response.ok) throw new Error('OneDrive読込失敗 HTTP ' + response.status)
+      const cloud = await response.json()
+      if (cloud?.fileType !== 'm-cross-backup' || !Array.isArray(cloud.entries)) throw new Error('M-Crossバックアップ形式ではありません。')
+      const byKey = entries => new Map(entries.map(entry => [entry.storageKey || [entry.company,entry.propertyName,entry.unit].join('|'), entry]))
+      const lm=byKey(local), cm=byKey(cloud.entries)
+      const keys=[...new Set([...lm.keys(),...cm.keys()])]
+      let same=0, localNewer=0, cloudNewer=0, localOnly=0, cloudOnly=0
+      keys.forEach(key=>{
+        const l=lm.get(key), c=cm.get(key)
+        let label='同じ'
+        if(l&&!c){label='端末のみ';localOnly++}
+        else if(!l&&c){label='OneDriveのみ';cloudOnly++}
+        else {
+          const lt=new Date(l.updatedAt||0).getTime(), ct=new Date(c.updatedAt||0).getTime()
+          if(lt>ct){label='端末が新しい';localNewer++}
+          else if(ct>lt){label='OneDriveが新しい';cloudNewer++}
+          else {same++}
+        }
+        const e=l||c
+        const card=document.createElement('article')
+        const title=document.createElement('strong'); title.textContent=(e.propertyName||'物件名なし')+' '+(e.unit||'')+'号室'
+        const state=document.createElement('small'); state.textContent=label
+        card.append(title,state); compareList.append(card)
+      })
+      compareSummary.textContent='端末 '+local.length+'件 / OneDrive '+cloud.entries.length+'件 / 同じ '+same+' / 端末が新しい '+localNewer+' / OneDriveが新しい '+cloudNewer+' / 端末のみ '+localOnly+' / OneDriveのみ '+cloudOnly
+    } catch(error){console.error(error);compareSummary.textContent='比較失敗: '+(error?.message||String(error))}
+  })
+
+
+
+  async function loadCloudBackup() {
+    const accessToken = await getGraphAccessToken()
+    const response = await fetch(backupFileUrl, { headers: { Authorization: 'Bearer ' + accessToken } })
+    if (!response.ok) throw new Error('OneDrive読込失敗 HTTP ' + response.status)
+    const cloud = await response.json()
+    if (cloud?.fileType !== 'm-cross-backup' || !Array.isArray(cloud.entries)) throw new Error('M-Crossバックアップ形式ではありません。')
+    return cloud
+  }
+
+  prepareImport.addEventListener('click', async () => {
+    try {
+      importStatus.textContent = '取込候補を確認しています…'
+      importCandidates.replaceChildren()
+      const local = collectMCrossEntries().entries
+      const cloud = await loadCloudBackup()
+      const localMap = new Map(local.map(entry => [entry.storageKey, entry]))
+      pendingCloudEntries = cloud.entries.filter(entry => {
+        if (!entry.storageKey || !String(entry.storageKey).startsWith('m-cross:')) return false
+        const localEntry = localMap.get(entry.storageKey)
+        if (!localEntry) return true
+        return new Date(entry.updatedAt || 0).getTime() > new Date(localEntry.updatedAt || 0).getTime()
+      })
+
+      pendingCloudEntries.forEach((entry, index) => {
+        const label = document.createElement('label')
+        label.className = 'importCandidate'
+        const checkbox = document.createElement('input')
+        checkbox.type = 'checkbox'
+        checkbox.dataset.index = String(index)
+        const text = document.createElement('span')
+        const localEntry = localMap.get(entry.storageKey)
+        text.textContent = (entry.propertyName || '物件名なし') + ' ' + (entry.unit || '') + '号室 - ' + (localEntry ? 'OneDriveが新しい' : 'OneDriveのみ')
+        label.append(checkbox, text)
+        importCandidates.append(label)
+      })
+      importSelected.disabled = pendingCloudEntries.length === 0
+      importStatus.textContent = pendingCloudEntries.length ? '取込候補 ' + pendingCloudEntries.length + '件。取り込む物件だけチェックしてください。' : '安全に取り込める候補はありません。'
+    } catch(error){console.error(error);importStatus.textContent='候補確認失敗: '+(error?.message||String(error))}
+  })
+
+  importSelected.addEventListener('click', () => {
+    const indexes = [...importCandidates.querySelectorAll('input[type="checkbox"]:checked')].map(input => Number(input.dataset.index))
+    const selected = indexes.map(index => pendingCloudEntries[index]).filter(Boolean)
+    if (!selected.length) { importStatus.textContent = '取り込む物件を選択してください。'; return }
+    const names = selected.map(entry => (entry.propertyName || '物件名なし') + ' ' + (entry.unit || '') + '号室').join('
+')
+    if (!window.confirm('次の' + selected.length + '件をこの端末へ取り込みます。
+
+' + names + '
+
+続けますか？')) return
+    try {
+      selected.forEach(entry => {
+        const clean = { ...entry }
+        delete clean.__sourceKey
+        localStorage.setItem(entry.storageKey, JSON.stringify(clean))
+      })
+      importStatus.textContent = '取込成功: ' + selected.length + '件。M-Crossを開き直すと保存済み一覧に反映されます。'
+      importSelected.disabled = true
+    } catch(error){console.error(error);importStatus.textContent='取込失敗: '+(error?.message||String(error))}
+  })
+
+</script>
+</body>
+</html>

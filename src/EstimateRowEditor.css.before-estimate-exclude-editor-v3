@@ -1,0 +1,57 @@
+/* M-CROSS_ESTIMATE_FULL_EDITOR_V5_SAFE */
+.estimateEditorBackdrop{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.58)}
+.estimateEditorPanel{width:min(720px,100%);max-height:90vh;overflow:auto;padding:20px;border-radius:18px;background:#fff;color:#182230;box-shadow:0 24px 80px rgba(0,0,0,.36)}
+.estimateEditorHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.estimateEditorHeader strong,.estimateEditorHeader small{display:block}.estimateEditorHeader small{margin-top:4px;opacity:.72}.estimateEditorHeader>button{width:42px;height:42px;border:0;border-radius:50%;font-size:24px}
+.estimateEditorGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.estimateEditorGrid label{display:grid;gap:6px}.estimateEditorGrid .wide{grid-column:1/-1}.estimateEditorGrid input{width:100%;box-sizing:border-box}
+.estimateEditorActions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.estimateEditorActions button{min-width:130px}
+.theme-dark .estimateEditorPanel,.theme-cyber .estimateEditorPanel,.theme-luxury .estimateEditorPanel,.theme-retro .estimateEditorPanel,.theme-galaxy .estimateEditorPanel{background:#101827;color:#f7fbff}
+@media(max-width:620px){.estimateEditorBackdrop{padding:0;place-items:stretch}.estimateEditorPanel{width:100%;height:100%;max-height:none;border-radius:0;box-sizing:border-box;padding:16px}.estimateEditorGrid{grid-template-columns:1fr}.estimateEditorGrid .wide{grid-column:auto}.estimateEditorActions{position:sticky;bottom:0;padding-top:12px;background:inherit}.estimateEditorActions button{min-width:0;flex:1}}
+
+/* M-CROSS_ESTIMATE_EDITOR_MOBILE_SCROLL_V1_SAFE */
+.estimateEditorBackdrop{overscroll-behavior:contain}
+.estimateEditorPanel{scroll-behavior:auto;overscroll-behavior:contain}
+@media(max-width:620px){
+  .estimateEditorBackdrop{align-items:stretch;overflow:hidden}
+  .estimateEditorPanel{position:relative;inset:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+  .estimateEditorHeader{position:sticky;top:0;z-index:2;padding-bottom:10px;background:inherit}
+  .estimateEditorActions{z-index:3;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+}
+
+/* M-CROSS_ESTIMATE_EDITOR_VIEWPORT_V2_SAFE */
+/* PCでも編集パネルを画面上端寄せにし、下側が画面外へ落ちにくくする */
+.estimateEditorBackdrop{display:flex!important;align-items:flex-start!important;justify-content:center!important;overflow:hidden!important;padding:12px!important;box-sizing:border-box!important}
+.estimateEditorPanel{margin:0!important;max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;scrollbar-gutter:stable;box-sizing:border-box!important}
+@media(max-width:620px){.estimateEditorBackdrop{padding:0!important}.estimateEditorPanel{height:100dvh!important;max-height:100dvh!important;border-radius:0!important;padding-top:max(16px,env(safe-area-inset-top))!important;padding-bottom:max(16px,env(safe-area-inset-bottom))!important}.estimateEditorHeader{top:0!important}.estimateEditorActions{bottom:0!important}}
+
+/* M-CROSS_ESTIMATE_EDITOR_PORTAL_V3_SAFE */
+/* transformed祖先の影響を避け、Portalを常に実画面へ固定する */
+.estimateEditorBackdrop{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  z-index:2147483000!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  padding:12px!important;
+  box-sizing:border-box!important;
+}
+.estimateEditorPanel{
+  position:relative!important;
+  top:0!important;
+  margin:0!important;
+  max-height:calc(100dvh - 24px)!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+}
+@media(max-width:620px){
+  .estimateEditorBackdrop{padding:0!important}
+  .estimateEditorPanel{
+    width:100vw!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    border-radius:0!important;
+  }
+}

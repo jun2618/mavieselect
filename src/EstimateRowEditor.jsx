@@ -60,6 +60,8 @@ export default function EstimateRowEditor({ value, onClose, onSave, onReset, onE
           <button type="button" onClick={onClose} aria-label="閉じる">×</button>
         </div>
         <div className="estimateEditorGrid">
+          {/* M-CROSS_ESTIMATE_PRODUCT_CODE_V2_EXACT_SAFE */}
+          <label className="wide estimateProductCodeField"><span>品番（任意）</span><input value={form.productCode || ''} onChange={event => setField('productCode', event.target.value)} placeholder="例：SP-2564 / LB-9882" /></label>
           {form.parts.map((part, index) => <label key={index}><span>項目{index + 1}</span><input value={part} onChange={event => setPart(index, event.target.value)} /></label>)}
           <label className="wide"><span>メモ・仕様</span><input value={form.memo} onChange={event => setField('memo', event.target.value)} /></label>
           <label><span>数量</span><input inputMode="decimal" value={form.quantity} onChange={event => setField('quantity', event.target.value)} /></label>

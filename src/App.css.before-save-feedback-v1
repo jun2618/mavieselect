@@ -1,0 +1,231 @@
+:root { font-family: "Yu Gothic", "Noto Sans JP", sans-serif; color: #f4efdf; background: #080908; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 0; background: #080908; }
+button, input, select { font: inherit; }
+.app { min-height: 100vh; padding: 0 18px 40px; background: radial-gradient(circle at 50% -10%, #2a2417 0, #11110f 33%, #080908 72%); }
+.header { max-width: 520px; height: 76px; margin: auto; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(211,177,109,.25); }
+.brand { color: #d3b16d; font-weight: 800; letter-spacing: .22em; }
+.headerText { color: #857b67; font-size: 10px; letter-spacing: .16em; }
+.main { width: 100%; max-width: 520px; margin: auto; padding-top: 34px; }
+.eyebrow { color: #c9a65d; font-size: 10px; letter-spacing: .2em; text-align: center; }
+h1 { margin: 10px 0; text-align: center; font-family: serif; font-size: 28px; font-weight: 500; letter-spacing: .08em; }
+.subtitle { margin: 0 0 28px; color: #aaa18e; font-size: 12px; text-align: center; }
+.card { padding: 20px; border: 1px solid rgba(211,177,109,.3); border-radius: 14px; background: linear-gradient(145deg, rgba(31,30,26,.97), rgba(16,17,15,.98)); box-shadow: 0 24px 55px rgba(0,0,0,.32); }
+label { display: block; margin-bottom: 18px; }
+label span { display: block; margin-bottom: 8px; color: #c8bfad; font-size: 11px; text-align: center; }
+select, input { width: 100%; min-height: 49px; padding: 0 14px; color: #f4efdf; background: #10110f; border: 1px solid #3b392f; border-radius: 8px; outline: none; }
+select:focus, input:focus { border-color: #d1a94f; box-shadow: 0 0 0 2px rgba(209,169,79,.13); }
+select:disabled { opacity: .45; }
+.address { margin-bottom: 18px; padding: 18px 8px; text-align: center; border-top: 1px solid rgba(211,177,109,.18); border-bottom: 1px solid rgba(211,177,109,.18); }
+.address small { display: block; margin-bottom: 8px; color: #a88d54; letter-spacing: .12em; }
+.address strong { font-size: 13px; font-weight: 500; line-height: 1.7; }
+.primary, .add { width: 100%; min-height: 52px; border: 0; border-radius: 8px; cursor: pointer; font-weight: 700; letter-spacing: .08em; }
+.primary { color: #17130c; background: linear-gradient(105deg, #a98442, #dfc17b 52%, #a88342); }
+.primary:disabled { opacity: .4; cursor: not-allowed; }
+.back { padding: 8px 0; color: #d0ad68; background: none; border: 0; cursor: pointer; }
+.propertyLine { color: #a49b88; text-align: center; font-size: 12px; }
+.roomTabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 22px 0 16px; }
+.room { min-height: 44px; color: #aca493; background: #131411; border: 1px solid #35332a; border-radius: 7px; cursor: pointer; }
+.room.active { color: #ebcc80; background: rgba(196,153,75,.12); border-color: #b48d47; }
+h2 { margin: 0 0 18px; font-family: serif; font-size: 20px; font-weight: 500; }
+.inputRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.add { min-height: 45px; color: #e2c47b; background: #211d14; border: 1px solid #8a6c37; }
+.records { margin-top: 24px; }
+.empty { padding: 18px 8px; color: #777166; text-align: center; font-size: 11px; border: 1px dashed #3a372e; border-radius: 8px; }
+.record { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 13px 4px; border-bottom: 1px solid #302e27; }
+.record small { display: block; margin-top: 4px; color: #918979; }
+.record b { color: #dbba70; white-space: nowrap; }
+.record button { color: #9a8d76; background: none; border: 0; font-size: 20px; cursor: pointer; }
+.summary { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding: 18px; border: 1px solid rgba(211,177,109,.4); border-radius: 10px; background: rgba(196,153,75,.08); }
+.summary span { color: #c4b9a2; font-size: 12px; }
+.summary strong { color: #e6c87e; font-size: 25px; }
+.masterCompanyList, .masterPropertyList { display: grid; gap: 10px; margin-top: 16px; }
+.masterCompanyItem, .masterPropertyItem { display: grid; gap: 10px; padding: 14px; border: 1px solid rgba(211,177,109,.22); border-radius: 8px; background: rgba(10,11,9,.45); }
+.masterCompanyItem strong, .masterPropertyItem strong { color: #e2d5b8; font-size: 14px; }
+.masterPropertySection { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(211,177,109,.2); }
+.masterPropertySection h3, .masterPropertyForm h3 { color: #d8bd7c; font-size: 16px; font-weight: 500; }
+.masterPropertyItem span { color: #aaa18e; font-size: 12px; overflow-wrap: anywhere; }
+.masterPropertyForm { margin-top: 18px; padding: 16px; border: 1px solid rgba(211,177,109,.25); border-radius: 9px; }
+.masterActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.masterActions > button { flex: 1 1 120px; min-height: 42px; padding: 8px; font-size: 12px; }
+.dangerButton { color: #f0b6a8; background: #2b1713; border: 1px solid #75443a; border-radius: 7px; cursor: pointer; font-weight: 700; }
+.masterPropertySection > .secondaryButton { width: 100%; min-height: 44px; color: #e2c47b; background: #211d14; border: 1px solid #8a6c37; border-radius: 8px; cursor: pointer; }
+@media (max-width: 380px) { .app { padding-left: 12px; padding-right: 12px; } .card { padding: 16px; } }
+
+
+/* M-CROSS_THEME_READABILITY_V2_SAFE */
+/* App.jsxには触れず、App.cssの末尾から安全に上書きする */
+
+/* 全テーマ共通: 文字サイズ */
+.app,
+.main {
+  font-size: 17px;
+  line-height: 1.58;
+}
+
+button,
+input,
+select,
+textarea {
+  font-size: 16px !important;
+  line-height: 1.4;
+}
+
+button {
+  font-weight: 700;
+}
+
+label > span,
+.fieldLabel {
+  font-size: 15px !important;
+  font-weight: 700;
+}
+
+small,
+.subtitle,
+.estimateNote,
+.oneDriveSyncNote,
+.oneDriveWarning {
+  font-size: 14px !important;
+  line-height: 1.5;
+  opacity: 0.88 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #667085 !important;
+  opacity: 1 !important;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.7 !important;
+}
+
+.propertyListPickerItem strong,
+.selectedPropertySummary strong {
+  font-size: 17px !important;
+}
+
+.propertyListPickerItem small,
+.selectedPropertySummary small {
+  font-size: 14px !important;
+  opacity: 0.88 !important;
+}
+
+/* 暗色テーマ共通 */
+.theme-dark,
+.theme-cyber,
+.theme-luxury,
+.theme-retro,
+.theme-galaxy {
+  --mcross-readable-text: #f7fbff;
+  --mcross-readable-muted: #d8e8f6;
+}
+
+.theme-dark :is(p, span, small, label, strong, h1, h2, h3),
+.theme-cyber :is(p, span, small, label, strong, h1, h2, h3),
+.theme-luxury :is(p, span, small, label, strong, h1, h2, h3),
+.theme-retro :is(p, span, small, label, strong, h1, h2, h3),
+.theme-galaxy :is(p, span, small, label, strong, h1, h2, h3) {
+  color: var(--mcross-readable-text);
+}
+
+.theme-dark :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small),
+.theme-cyber :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small),
+.theme-luxury :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small),
+.theme-retro :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small),
+.theme-galaxy :is(.subtitle, .estimateNote, .oneDriveSyncNote, .oneDriveWarning, .propertyListPickerItem small, .selectedPropertySummary small) {
+  color: var(--mcross-readable-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Cyber: 薄い水色を本文に使わず、白と青白を基本にする */
+.theme-cyber {
+  --mcross-readable-text: #f8fcff;
+  --mcross-readable-muted: #d7edf7;
+  --mcross-cyber-accent: #33e6ff;
+}
+
+.theme-cyber :is(h1, h2, h3, .eyebrow, .fieldLabel, label > span) {
+  color: #f8fcff !important;
+  text-shadow: none !important;
+}
+
+.theme-cyber :is(.subtitle, small, .estimateNote, .oneDriveSyncNote, .oneDriveWarning) {
+  color: #d7edf7 !important;
+  opacity: 1 !important;
+}
+
+.theme-cyber :is(input, select, textarea) {
+  color: #ffffff !important;
+  background: #101b2a !important;
+  border-color: #4e7189 !important;
+}
+
+.theme-cyber :is(input, textarea)::placeholder {
+  color: #b6cfdb !important;
+  opacity: 1 !important;
+}
+
+.theme-cyber .secondaryButton {
+  color: #f8fcff !important;
+  border-color: #33e6ff !important;
+}
+
+.theme-cyber :is(.primary, .saveButton) {
+  font-weight: 800 !important;
+}
+
+.theme-cyber :is(.address, .selectedPropertySummary, .propertyListPickerItem, .oneDriveStatus, .oneDriveCount) {
+  color: #f8fcff !important;
+}
+
+.theme-cyber :is(.address small, .selectedPropertySummary small, .propertyListPickerItem small) {
+  color: #d7edf7 !important;
+  opacity: 1 !important;
+}
+
+/* 明色テーマも補足文字を薄くしすぎない */
+.theme-beige :is(small, .subtitle, .estimateNote),
+.theme-sakura :is(small, .subtitle, .estimateNote),
+.theme-ice :is(small, .subtitle, .estimateNote) {
+  opacity: 0.84 !important;
+}
+
+@media (max-width: 620px) {
+  .app,
+  .main {
+    font-size: 17px;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  small,
+  .subtitle {
+    font-size: 14px !important;
+  }
+}
+
+/* M-CROSS_ESTIMATE_ROW_TAP_EDIT_V2_SAFE */
+.estimateRowTapEdit[role="button"]{cursor:pointer;border-radius:10px;transition:background .15s ease,transform .15s ease}.estimateRowTapEdit[role="button"]:hover,.estimateRowTapEdit[role="button"]:focus-visible{background:rgba(38,114,236,.10);outline:2px solid rgba(38,114,236,.45);outline-offset:2px}.estimateRowTapEdit[role="button"]:active{transform:scale(.997)}
+
+/* M-CROSS_ESTIMATE_FULL_ROW_EDIT_V3 */
+.estimateRowTapEdit[role="button"]::after{content:"タップで編集";display:inline-block;margin-left:10px;font-size:12px;font-weight:700;opacity:.62}
+
+/* M-CROSS_NEW_REGISTRATION_BUTTON_V1_SAFE */
+.newRegistrationHeroButton{display:grid;gap:4px;width:100%;margin:16px 0 18px;padding:17px 20px;border:0;border-radius:16px;background:linear-gradient(135deg,#1976d2,#0aa6a6);color:#fff;box-shadow:0 12px 28px rgba(25,118,210,.24);text-align:left;cursor:pointer}
+.newRegistrationHeroButton span{font-size:19px;font-weight:900;color:inherit!important}.newRegistrationHeroButton small{font-size:14px!important;color:rgba(255,255,255,.9)!important;opacity:1!important}.newRegistrationHeroButton:hover{transform:translateY(-1px);box-shadow:0 15px 32px rgba(25,118,210,.3)}.newRegistrationHeroButton:focus-visible{outline:3px solid rgba(25,118,210,.35);outline-offset:3px}
+.newRegistrationInlineButton{border:2px solid #1976d2!important;background:rgba(25,118,210,.08)!important;color:#1565c0!important;font-weight:900!important}
+.theme-dark .newRegistrationInlineButton,.theme-cyber .newRegistrationInlineButton,.theme-luxury .newRegistrationInlineButton,.theme-retro .newRegistrationInlineButton,.theme-galaxy .newRegistrationInlineButton{color:#f7fbff!important;border-color:#33e6ff!important;background:rgba(51,230,255,.1)!important}
+@media(max-width:620px){.newRegistrationHeroButton{padding:16px}.newRegistrationHeroButton span{font-size:18px}.newRegistrationInlineButton{width:100%}}
+
+/* M-CROSS_PROMOTE_SAVED_LIST_V1_SAFE */
+.savedListHeroButton{display:grid;gap:4px;width:100%;margin:14px 0 10px;padding:18px 20px;border:0;border-radius:16px;background:linear-gradient(135deg,#6a4fd6,#8b5dd9);color:#fff;box-shadow:0 12px 28px rgba(93,63,180,.28);text-align:left;cursor:pointer}.savedListHeroButton span{font-size:20px;font-weight:900;color:inherit!important}.savedListHeroButton small{font-size:14px!important;color:rgba(255,255,255,.92)!important;opacity:1!important}.savedListHeroButton:hover{transform:translateY(-1px);box-shadow:0 15px 32px rgba(93,63,180,.34)}.savedListHeroButton:focus-visible{outline:3px solid rgba(106,79,214,.4);outline-offset:3px}@media(max-width:620px){.savedListHeroButton{padding:16px}.savedListHeroButton span{font-size:18px}}

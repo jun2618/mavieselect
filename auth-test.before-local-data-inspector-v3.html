@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>M-Cross OneDrive Auth Test</title>
+  <style>
+    body{font-family:system-ui,-apple-system,"Yu Gothic",sans-serif;margin:0;padding:24px;background:#f7f7fb;color:#222}
+    main{max-width:560px;margin:auto;padding:22px;border:1px solid #ddd;border-radius:18px;background:#fff}
+    button{width:100%;min-height:52px;margin-top:12px;border:0;border-radius:12px;background:#2672ec;color:#fff;font:inherit;font-weight:800}
+    #status,#graphStatus{margin-top:16px;padding:12px;border-radius:10px;background:#eef4ff;overflow-wrap:anywhere} button:disabled{opacity:.45;cursor:not-allowed}
+    small{display:block;margin-top:12px;color:#666;line-height:1.5} #localInspector{margin-top:18px;padding-top:16px;border-top:1px solid #ddd} #localSummary{margin-top:12px;padding:12px;border-radius:10px;background:#f2f6ff;overflow-wrap:anywhere} #localEntries{display:grid;gap:8px;margin-top:10px} #localEntries article{padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fff} #localEntries article small{margin-top:3px}
+  </style>
+</head>
+<body>
+<main>
+  <h1>OneDrive認証テスト</h1>
+  <p>M-Cross本体とは分離したPC開発用テストです。</p>
+  <button id="login" type="button">Microsoftでサインイン</button>
+  <div id="status">未サインイン</div>
+  <!-- M-CROSS_ONEDRIVE_WRITE_READ_TEST_V1 -->
+  <button id="writeTest" type="button" disabled>OneDriveへTESTを保存</button>
+  <button id="readTest" type="button" disabled>OneDriveからTESTを読む</button>
+  <div id="graphStatus">まだOneDriveにはアクセスしていません。</div>
+  <!-- M-CROSS_LOCAL_DATA_INSPECTOR_V2 -->
+  <section id="localInspector">
+    <h2>端末のM-Crossデータ確認</h2>
+    <button id="inspectLocal" type="button">端末データを確認</button>
+    <div id="localSummary">まだ確認していません。</div>
+    <div id="localEntries"></div>
+    <small>読取り専用です。端末データの削除・変更・OneDrive送信は行いません。</small>
+  </section>
+  <small>このページはOneDriveへデータを保存・読込しません。</small>
+</main>
+<script type="module">
+  import { PublicClientApplication } from '@azure/msal-browser'
+
+  const status = document.querySelector('#status')
+  const login = document.querySelector('#login')
+  const writeTest = document.querySelector('#writeTest')
+  const readTest = document.querySelector('#readTest')
+  const graphStatus = document.querySelector('#graphStatus')
+  const inspectLocal = document.querySelector('#inspectLocal')
+  const localSummary = document.querySelector('#localSummary')
+  const localEntries = document.querySelector('#localEntries')
+  const graphScopes = ['Files.ReadWrite.AppFolder']
+  const graphFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-test.json:/content'
+
+  function setSignedInState(account) {
+    const signedIn = Boolean(account)
+    writeTest.disabled = !signedIn
+    readTest.disabled = !signedIn
+    if (signedIn) status.textContent = 'サインイン済み: ' + account.username
+  }
+
+  async function getGraphAccessToken() {
+    const account = msal.getAllAccounts()[0]
+    if (!account) throw new Error('先にMicrosoftへサインインしてください')
+    try {
+      const result = await msal.acquireTokenSilent({ scopes: graphScopes, account })
+      return result.accessToken
+    } catch (error) {
+      const result = await msal.acquireTokenPopup({ scopes: graphScopes, account })
+      return result.accessToken
+    }
+  }
+  const msal = new PublicClientApplication({
+    auth: {
+      clientId: '783680c7-c4fc-4028-bacd-e25497f40334',
+      authority: 'https://login.microsoftonline.com/3ac7d9e7-5765-41cc-8e82-3c27d62cea00',
+      redirectUri: window.location.origin + '/auth-redirect.html',
+    },
+    cache: { cacheLocation: 'sessionStorage' },
+  })
+
+  await msal.initialize()
+  const existing = msal.getAllAccounts()[0]
+  if (existing) setSignedInState(existing)
+
+  login.addEventListener('click', async () => {
+    try {
+      status.textContent = 'Microsoftに接続中…'
+      const result = await msal.loginPopup({ scopes: ['User.Read', 'Files.ReadWrite.AppFolder'] })
+      status.textContent = 'サインイン成功: ' + (result.account?.username || 'アカウント取得済み')
+      setSignedInState(result.account)
+    } catch (error) {
+      console.error(error)
+      status.textContent = 'サインイン失敗: ' + (error?.errorCode || error?.message || String(error))
+    }
+  })
+
+
+  writeTest.addEventListener('click', async () => {
+    try {
+      graphStatus.textContent = 'OneDriveへTESTを保存しています…'
+      const accessToken = await getGraphAccessToken()
+      const payload = {
+        fileType: 'm-cross-test',
+        message: 'TEST',
+        createdAt: new Date().toISOString(),
+        source: 'M-Cross auth sandbox',
+      }
+      const response = await fetch(graphFileUrl, {
+        method: 'PUT',
+        headers: {
+          Authorization: 'Bearer ' + accessToken,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(payload, null, 2),
+      })
+      if (!response.ok) throw new Error('保存失敗 HTTP ' + response.status + ': ' + await response.text())
+      const item = await response.json()
+      graphStatus.textContent = '保存成功: ' + (item.name || 'm-cross-test.json')
+    } catch (error) {
+      console.error(error)
+      graphStatus.textContent = '保存失敗: ' + (error?.message || String(error))
+    }
+  })
+
+  readTest.addEventListener('click', async () => {
+    try {
+      graphStatus.textContent = 'OneDriveからTESTを読み込んでいます…'
+      const accessToken = await getGraphAccessToken()
+      const response = await fetch(graphFileUrl, {
+        headers: { Authorization: 'Bearer ' + accessToken },
+      })
+      if (!response.ok) throw new Error('読込失敗 HTTP ' + response.status + ': ' + await response.text())
+      const data = await response.json()
+      graphStatus.textContent = '読込成功: ' + JSON.stringify(data)
+    } catch (error) {
+      console.error(error)
+      graphStatus.textContent = '読込失敗: ' + (error?.message || String(error))
+    }
+  })
+
+
+
+  function looksLikeMCrossEntry(value) {
+    return value && typeof value === 'object' && !Array.isArray(value)
+      && typeof value.propertyName === 'string'
+      && Array.isArray(value.records)
+  }
+
+  function collectMCrossEntries() {
+    const found = []
+    const sources = []
+
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index)
+      if (!key) continue
+      const raw = localStorage.getItem(key)
+      if (!raw) continue
+
+      try {
+        const parsed = JSON.parse(raw)
+
+        // M-Cross本体は保存物件を1件ずつlocalStorageへ保存している。
+        if (looksLikeMCrossEntry(parsed)) {
+          found.push({ ...parsed, storageKey: parsed.storageKey || key, __sourceKey: key })
+          sources.push({ key, count: 1 })
+          continue
+        }
+
+        // 将来の配列形式やバックアップ形式も読取だけ対応。
+        const candidates = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(parsed?.entries)
+            ? parsed.entries
+            : []
+        const matching = candidates.filter(looksLikeMCrossEntry)
+        if (matching.length > 0) {
+          sources.push({ key, count: matching.length })
+          matching.forEach(entry => found.push({ ...entry, storageKey: entry.storageKey || key, __sourceKey: key }))
+        }
+      } catch {
+        // JSONではない設定値は対象外
+      }
+    }
+
+    const unique = new Map()
+    found.forEach(entry => {
+      const identity = entry.storageKey
+        || [entry.company, entry.propertyName, entry.unit, entry.updatedAt].map(value => String(value || '')).join('|')
+      if (!unique.has(identity)) unique.set(identity, entry)
+    })
+
+    return { entries: [...unique.values()], sources }
+  }
+
+  inspectLocal.addEventListener('click', () => {
+    const { entries, sources } = collectMCrossEntries()
+    localSummary.textContent = entries.length
+      ? '保存物件 ' + entries.length + '件を確認しました。保存元: ' + sources.map(source => source.key + ' (' + source.count + '件)').join(' / ')
+      : 'M-Crossの保存物件を確認できませんでした。このブラウザに保存データがない可能性があります。'
+
+    localEntries.replaceChildren()
+    entries
+      .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+      .slice(0, 20)
+      .forEach(entry => {
+        const card = document.createElement('article')
+        const title = document.createElement('strong')
+        const meta = document.createElement('small')
+        const detail = document.createElement('small')
+
+        title.textContent = (entry.propertyName || '物件名なし') + ' ' + (entry.unit || '') + '号室'
+        meta.textContent = entry.company || '管理会社未設定'
+        detail.textContent = 'クロス ' + (entry.records || []).length
+          + '件 / CF ' + (entry.cfRecords || []).length
+          + '件 / 追加作業 ' + (entry.additionalWorks || []).length + '件'
+
+        card.append(title, meta, detail)
+        localEntries.append(card)
+      })
+  })
+
+</script>
+</body>
+</html>

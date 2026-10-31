@@ -1,0 +1,76 @@
+/* M-CROSS_ESTIMATE_SNAPSHOT_VIEWER_V2_SAFE */
+import './estimateSnapshotViewer.css'
+
+function mark(version) {
+  const marks = ['', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
+  const number = Number(version) || 0
+  return marks[number] || '（' + number + '）'
+}
+function yen(value) { return '¥' + Number(value || 0).toLocaleString('ja-JP') }
+function text(value) { return String(value ?? '') }
+
+export function openEstimateSnapshotViewer({ entry, version, onExport, onCreateRevision }) {
+  const old = document.querySelector('.estimateSnapshotBackdropV2')
+  if (old) old.remove()
+
+  const root = document.createElement('div')
+  root.className = 'estimateSnapshotBackdropV2'
+  const previousOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+
+  const panel = document.createElement('section')
+  panel.className = 'estimateSnapshotPanelV2'
+  panel.setAttribute('role', 'dialog')
+  panel.setAttribute('aria-modal', 'true')
+
+  const title = (entry?.propertyName || '物件名未設定') + (entry?.unit ? entry.unit + '号室' : '') + (entry?.workName || '') + mark(version?.version)
+  const rows = Array.isArray(version?.rows) ? version.rows : []
+  const additionalWorks = Array.isArray(version?.additionalWorks) ? version.additionalWorks : []
+
+  const close = () => { root.remove(); document.body.style.overflow = previousOverflow }
+
+  const header = document.createElement('header')
+  header.className = 'estimateSnapshotHeaderV2'
+  const heading = document.createElement('div')
+  const small = document.createElement('small'); small.textContent = '保存済み見積・閲覧専用'
+  const h2 = document.createElement('h2'); h2.textContent = title
+  heading.append(small, h2)
+  const closeButton = document.createElement('button'); closeButton.type = 'button'; closeButton.textContent = '×'; closeButton.setAttribute('aria-label', '閉じる'); closeButton.addEventListener('click', close)
+  header.append(heading, closeButton)
+
+  const notice = document.createElement('div')
+  notice.className = 'estimateSnapshotNoticeV2'
+  notice.textContent = 'この画面は保存済みの過去版です。現在編集中の見積は変更されません。'
+
+  const list = document.createElement('div')
+  list.className = 'estimateSnapshotRowsV2'
+  const addRow = (label, memo, quantity, unit, rate, amount) => {
+    const article = document.createElement('article')
+    const left = document.createElement('div')
+    const strong = document.createElement('strong'); strong.textContent = label || '見積項目'; left.appendChild(strong)
+    if (memo) { const note = document.createElement('small'); note.textContent = memo; left.appendChild(note) }
+    const numbers = document.createElement('div'); numbers.className = 'estimateSnapshotNumbersV2'
+    const q = document.createElement('span'); q.textContent = text(quantity) + text(unit)
+    const r = document.createElement('span'); r.textContent = yen(rate)
+    const a = document.createElement('strong'); a.textContent = yen(amount)
+    numbers.append(q, r, a); article.append(left, numbers); list.appendChild(article)
+  }
+  rows.forEach(row => addRow(Array.isArray(row.parts) ? row.parts.filter(Boolean).join(' ') : (row.label || row.name), row.memo, row.quantity, row.unit, row.rate, row.amount))
+  additionalWorks.forEach(item => addRow([item.room, item.work].filter(Boolean).join(' ') || 'その他工事', item.memo, item.quantity, item.unit, item.unitPrice, item.amount || Number(item.quantity || 0) * Number(item.unitPrice || 0)))
+
+  const total = document.createElement('div'); total.className = 'estimateSnapshotTotalV2'
+  const totalLabel = document.createElement('span'); totalLabel.textContent = '合計金額'
+  const totalValue = document.createElement('strong'); totalValue.textContent = yen(version?.totalAmount)
+  total.append(totalLabel, totalValue)
+
+  const actions = document.createElement('div'); actions.className = 'estimateSnapshotActionsV2'
+  const exportButton = document.createElement('button'); exportButton.type = 'button'; exportButton.className = 'secondary'; exportButton.textContent = '📄 この版を出力'; exportButton.addEventListener('click', () => onExport?.(version))
+  const revisionButton = document.createElement('button'); revisionButton.type = 'button'; revisionButton.className = 'primary'; revisionButton.textContent = '📑 この見積をもとに修正版を作る'; revisionButton.addEventListener('click', () => { close(); onCreateRevision?.(entry, version) })
+  actions.append(exportButton, revisionButton)
+
+  panel.append(header, notice, list, total, actions)
+  root.appendChild(panel)
+  root.addEventListener('click', event => { if (event.target === root) close() })
+  document.body.appendChild(root)
+  panel.scrollTop = 0
+}
