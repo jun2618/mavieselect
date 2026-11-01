@@ -7791,7 +7791,14 @@ return savedEntries
       for(let row=22;row<=56;row++)for(const col of ['L','M','N','O','P','Q']){const value=text(estimate.cell(col+row).value());if(value)legacyEstimateNotes.push({row,cell:col+row,text:value})}
       const rooms=[...new Set(additionalWorks.map(x=>x.room).filter(Boolean))]
       const now=new Date().toISOString()
-      const imported=normalizeImportedEntry({company,propertyName,propertyId:'',address,unit,workName:'諸工事',rooms,customRooms:rooms,records:[],cfRecords:[],cfMaterialGroups:[],softRecords:[],floorTrimRecords:[],additionalWorks,legacyEstimateNotes,draftMemo:'',siteMemo:'',requestContent:'',roomConfirmations:{},estimateEdits:{},estimateVersions:[],pageIndex:0,cfPageIndex:0,softPageIndex:0,activePage:'additional',measurementType:'天井',createdAt:now,updatedAt:now,archived:false,importSource:'旧工事カードExcel'})
+      /* M-CROSS_LEGACY_WORKNAME_FROM_FILENAME_V1_SAFE */
+      const legacyBaseName=String(file.name||'').replace(/\.(xlsm|xlsx)$/i,'').trim()
+      const unitToken=String(unit||'').trim()+'号室'
+      const tokenIndex=legacyBaseName.indexOf(unitToken)
+      let legacyWorkName=tokenIndex>=0?legacyBaseName.slice(tokenIndex+unitToken.length).trim():''
+      legacyWorkName=legacyWorkName.replace(/[①②③④⑤⑥⑦⑧⑨⑩]+$/u,'').replace(/[（(]\s*\d+\s*[）)]$/u,'').trim()
+      if(!legacyWorkName)legacyWorkName='原状回復工事'
+      const imported=normalizeImportedEntry({company,propertyName,propertyId:'',address,unit,workName:legacyWorkName,rooms,customRooms:rooms,records:[],cfRecords:[],cfMaterialGroups:[],softRecords:[],floorTrimRecords:[],additionalWorks,legacyEstimateNotes,draftMemo:'',siteMemo:'',requestContent:'',roomConfirmations:{},estimateEdits:{},estimateVersions:[],pageIndex:0,cfPageIndex:0,softPageIndex:0,activePage:'additional',measurementType:'天井',createdAt:now,updatedAt:now,archived:false,importSource:'旧工事カードExcel'})
       const storageKey=getSaveKey(imported.company,{name:imported.propertyName,address:imported.address},imported.unit,imported.workName||'原状回復工事')
       if(localStorage.getItem(storageKey)!==null&&!window.confirm('同じ物件・号室・工事名が保存済みです。旧工事カードの内容で上書きしますか？'))return
       localStorage.setItem(storageKey,JSON.stringify(imported))
