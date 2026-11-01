@@ -6316,6 +6316,8 @@ export default function App() {
     })()
     return () => { cancelled = true }
   }, [])
+  /* M-CROSS_LIVE_SELECTED_PROPERTY_V1_SAFE */
+  const liveSelectedProperty = selectedProperty ? (mergedPropertyMaster.properties.find(item => (selectedProperty.id && item.id === selectedProperty.id) || (item.company === company && item.name === selectedProperty.name)) || selectedProperty) : null
   const companies = mergedPropertyMaster.companies.map(item => item.name)
   const residentCaseCompany = mergedPropertyMaster.companies.find(item => item.id === residentCaseCompanyId)
   const residentCaseProperties = residentCaseCompanyId
@@ -10098,7 +10100,7 @@ return savedEntries
                 <strong>{selectedProperty?.address || '物件を選択すると住所が表示されます'}</strong>
               </div>
               {/* M-CROSS_TOP_PROPERTY_ACCESS_V1_SAFE */}
-              {selectedProperty && [selectedProperty.autoLock,selectedProperty.keyBox,selectedProperty.joiner,selectedProperty.myLock,selectedProperty.entranceOpen].some(value => String(value || '').trim()) && <div className="address propertyAccessHome"><small>🔑 入館・鍵情報</small>{String(selectedProperty.autoLock || '').trim() && <strong>オートロック　{String(selectedProperty.autoLock)}</strong>}{String(selectedProperty.keyBox || '').trim() && <strong>キーボックス　{String(selectedProperty.keyBox)}</strong>}{String(selectedProperty.joiner || '').trim() && <strong>ドアジョイナー　{String(selectedProperty.joiner)}</strong>}{String(selectedProperty.myLock || '').trim() && <strong>マイロック　{String(selectedProperty.myLock)}</strong>}{String(selectedProperty.entranceOpen || '').trim() && <strong>玄関開放　{String(selectedProperty.entranceOpen)}</strong>}</div>}
+              {liveSelectedProperty && [liveSelectedProperty.autoLock,liveSelectedProperty.keyBox,liveSelectedProperty.joiner,liveSelectedProperty.myLock,liveSelectedProperty.entranceOpen].some(value => String(value || '').trim()) && <div className="address propertyAccessHome"><small>🔑 入館・鍵情報</small>{String(liveSelectedProperty.autoLock || '').trim() && <strong>オートロック　{String(liveSelectedProperty.autoLock)}</strong>}{String(liveSelectedProperty.keyBox || '').trim() && <strong>キーボックス　{String(liveSelectedProperty.keyBox)}</strong>}{String(liveSelectedProperty.joiner || '').trim() && <strong>ドアジョイナー　{String(liveSelectedProperty.joiner)}</strong>}{String(liveSelectedProperty.myLock || '').trim() && <strong>マイロック　{String(liveSelectedProperty.myLock)}</strong>}{String(liveSelectedProperty.entranceOpen || '').trim() && <strong>玄関開放　{String(liveSelectedProperty.entranceOpen)}</strong>}</div>}
               <button
                 className="secondaryButton"
                 type="button"
