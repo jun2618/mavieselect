@@ -4696,6 +4696,7 @@ export default function App() {
   const [globalPropertyVoiceListening, setGlobalPropertyVoiceListening] = useState(false)
   const [globalPropertyVoiceStatus, setGlobalPropertyVoiceStatus] = useState('')
   const [voiceGuideTrigger,setVoiceGuideTrigger]=useState(0)
+  const [eriTakoTrigger,setEriTakoTrigger]=useState(0) // M-CROSS_ERI_TAKO_SAVE_BUTTON_V2_SAFE
   function startGlobalPropertyVoiceSearch() { /* M-CROSS_VOICE_GUIDE_ON_MIC_V2_SAFE */ setVoiceGuideTrigger(value=>value+1)
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
     setShowGlobalPropertySearch(true)
@@ -10587,7 +10588,7 @@ return savedEntries
                   if (saved) {
                     const now = new Date()
                     const time = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-                    setSaveFeedback('✓ 保存しました ' + time)
+                    setSaveFeedback('✓ 保存しました ' + time); setEriTakoTrigger(value=>value+1)
                     window.setTimeout(() => setSaveFeedback(''), 3500)
                   } else {
                     setSaveFeedback('保存できませんでした')
@@ -10621,7 +10622,7 @@ return savedEntries
             <p className={`saveState ${isDirty ? 'dirty' : 'saved'}`} role="status" aria-live="polite">
               {isDirty ? '未保存' : '保存済み'}
             </p>
-            {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}<EriTako trigger={saveStatus}/>
+            {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}<EriTako trigger={eriTakoTrigger}/>
 
             {!showRoomManagement && !showEstimate && (
               <div className="measurementTypes" aria-label="採寸機能">
