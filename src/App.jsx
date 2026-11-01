@@ -7796,7 +7796,6 @@ return savedEntries
       const unitToken=String(unit||'').trim()+'号室'
       const tokenIndex=legacyBaseName.indexOf(unitToken)
       let legacyWorkName=tokenIndex>=0?legacyBaseName.slice(tokenIndex+unitToken.length).trim():''
-      legacyWorkName=legacyWorkName.replace(/[①②③④⑤⑥⑦⑧⑨⑩]+$/u,'').replace(/[（(]\s*\d+\s*[）)]$/u,'').trim()
       if(!legacyWorkName)legacyWorkName='原状回復工事'
       const imported=normalizeImportedEntry({company,propertyName,propertyId:'',address,unit,workName:legacyWorkName,rooms,customRooms:rooms,records:[],cfRecords:[],cfMaterialGroups:[],softRecords:[],floorTrimRecords:[],additionalWorks,legacyEstimateNotes,draftMemo:'',siteMemo:'',requestContent:'',roomConfirmations:{},estimateEdits:{},estimateVersions:[],pageIndex:0,cfPageIndex:0,softPageIndex:0,activePage:'additional',measurementType:'天井',createdAt:now,updatedAt:now,archived:false,importSource:'旧工事カードExcel'})
       const storageKey=getSaveKey(imported.company,{name:imported.propertyName,address:imported.address},imported.unit,imported.workName||'原状回復工事')
