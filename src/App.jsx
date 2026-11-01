@@ -875,8 +875,11 @@ function applyCrossCfPackageRulesV3(inputRows) {
 }
 
 /* M-CROSS_ESTIMATE_TEMPLATE_OUTPUT_V2_SAFE */
-async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) {
+async function downloadEstimateExcel(entry, rows, format, additionalWorks = [], legacyNotes = []) {
   try {
+    /* M-CROSS_DIRECT_LEGACY_EXCEL_PICKER_V2_SAFE */
+    const legacyFile=await new Promise(resolve=>{const input=document.createElement('input');input.type='file';input.accept='.xlsm,.xlsx';input.onchange=()=>resolve(input.files?.[0]||null);input.click()})
+    if(!legacyFile)return
     const baseRows = Array.isArray(rows) ? rows : []
     const convertedRows = applyCrossCfPackageRulesV3(baseRows)
 
@@ -907,6 +910,7 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
     const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
     const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
     if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+    const legacyWorkbook=await XlsxPopulate.fromDataAsync(await legacyFile.arrayBuffer())
 
     const templateResponse = await fetch(
       new URL('/mcross-estimate-template.xlsx', window.location.origin),
@@ -919,6 +923,12 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
     const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
     const ws = workbook.sheet('見積書')
     if (!ws) throw new Error('「見積書」シートが見つかりません')
+    const legacyWs=legacyWorkbook.sheet('見積書')
+    if(!legacyWs)throw new Error('元工事カードに「見積書」シートが見つかりません')
+    let copiedLegacyNotes=0
+    for(let r=22;r<=56;r++){for(const c of ['L','M','N','O','P','Q']){const v=legacyWs.cell(c+r).value();if(v!==undefined&&v!==null&&String(v).trim()){ws.cell(c+r).value(v);copiedLegacyNotes++}}}
+    for(const c of ['L','M','N','O','P','Q']){try{ws.column(c).width(legacyWs.column(c).width())}catch{}}
+    if(!copiedLegacyNotes)throw new Error('元工事カードのL～Q列・22～56行に文章が見つかりません')
 
     // 元テンプレートの書式、ロゴ、罫線、列幅、行高、印刷設定は維持する。
     ws.cell('B5').value(entry?.company ? entry.company + '　御中' : '')
@@ -1001,6 +1011,7 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = []) 
     ws.cell('K57').value(total)
     ws.cell('E19').value(total)
 
+    if(Array.isArray(legacyNotes)){for(let r=22;r<=56;r++)ws.cell('M'+r).value('');legacyNotes.forEach(n=>{const r=Number(n?.row);if(r>=22&&r<=56)ws.cell('M'+r).value(String(n?.text||'')).style({wrapText:true,verticalAlignment:'top',horizontalAlignment:'left'})});ws.column('M').width(95)}
     const output = await workbook.outputAsync()
     const blob = output instanceof Blob
       ? output
@@ -1037,14 +1048,49 @@ async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, add
     const ws = workbook.sheet('見積書')
     if (!ws) throw new Error('「見積書」シートが見つかりません')
     const convertedRows=applyCrossCfPackageRulesV3(Array.isArray(rows)?rows:[])
-    const additionalRows=(Array.isArray(additionalWorks)?additionalWorks:[]).map(item=>({parts:Array.isArray(item.estimateParts)&&item.estimateParts.length?[0,1,2,3].map(i=>String(item.estimateParts[i]||'')):[item.room||'','',item.work||'',''],memo:item.memo||'',quantity:Number(item.quantity||0),unit:item.unit||'式',rate:item.unitPrice===''||item.unitPrice==null?'':Number(item.unitPrice||0),amount:item.unitPrice===''||item.unitPrice==null?'':Number(item.amount||(Number(item.quantity)||0)*(Number(item.unitPrice)||0))}))
+    const additionalRows=(Array.isArray(additionalWorks)?additionalWorks:[]).map(item=>({
+      parts:Array.isArray(item.estimateParts)&&item.estimateParts.length?[0,1,2,3].map(i=>String(item.estimateParts[i]||'')):[item.room||'','',item.work||'',''],
+      memo:'',
+      quantity:item.quantity===''?'':Number(item.quantity||0),
+      unit:item.unit||'',
+      rate:item.unitPrice===''||item.unitPrice==null?'':Number(item.unitPrice||0),
+      amount:item.amount===''||item.amount==null?'':Number(item.amount||0),
+      legacyRawLabel:String(item.legacyRawLabel||'')
+    }))
     const out=[...convertedRows,...additionalRows]
     if(!out.length)throw new Error('出力できる見積項目がありません。')
     if(out.length>32)throw new Error('見積明細は32行まで出力できます。現在 '+out.length+'行あります。')
     ws.cell('B5').value(entry.company?entry.company+'　御中':''); ws.cell('J5').value(new Date()).style('numberFormat','yyyy年m月d日'); ws.cell('D13').value(entry.propertyName||''); ws.cell('F13').value(entry.unit||''); ws.cell('G13').value(entry.unit?'号室':''); ws.cell('D14').value(entry.address||'')
     for(let r=23;r<=54;r++){try{const rg=ws.range('C'+r+':G'+r);if(rg.merged())rg.merged(false)}catch{};for(const c of ['C','D','E','F','G','H','I','J','K'])ws.cell(c+r).value('')}
     const cv=v=>{if(v===''||v==null)return '';const n=Number(v);return Number.isFinite(n)?n:v}
-    out.forEach((row,i)=>{const r=23+i,raw=Array.isArray(row.parts)?row.parts.map(v=>String(v||'').trim()):[],memo=String(row.memo||'').trim();if(format==='split'){const q=[0,1,2,3].map(j=>raw[j]||'');ws.cell('C'+r).value(q[0]);ws.cell('D'+r).value(q[1]);ws.cell('E'+r).value(q[2]);ws.cell('F'+r).value([q[3],memo].filter(Boolean).join(' '));ws.cell('G'+r).value('')}else{const rg=ws.range('C'+r+':G'+r);if(!rg.merged())rg.merged(true);ws.cell('C'+r).value([...raw.filter(Boolean),memo].filter(Boolean).join(' '))}ws.cell('H'+r).value(cv(row.quantity));ws.cell('I'+r).value(row.unit||'');ws.cell('J'+r).value(cv(row.rate));ws.cell('K'+r).value(cv(row.amount))})
+    out.forEach((row,i)=>{
+      const r=23+i,raw=Array.isArray(row.parts)?row.parts.map(v=>String(v||'').trim()):[]
+      const q=[0,1,2,3].map(j=>raw[j]||'')
+      /* M-CROSS_LEGACY_RAW_LABEL_OUTPUT_V1_SAFE */
+      if(row.legacyRawLabel){
+        const rg=ws.range('C'+r+':G'+r);if(!rg.merged())rg.merged(true)
+        ws.cell('C'+r).value(row.legacyRawLabel)
+      }else if(format==='split'){
+        ws.cell('C'+r).value(q[0])
+        ws.cell('D'+r).value(q[1])
+        ws.cell('E'+r).value(q[2])
+        ws.cell('F'+r).value(q[3])
+        ws.cell('G'+r).value('')
+      }else{
+        const rg=ws.range('C'+r+':G'+r);if(!rg.merged())rg.merged(true)
+        ws.cell('C'+r).value(raw.filter(Boolean).join(' '))
+      }
+      for(const c of ['C','D','E','F','G'])ws.cell(c+r).style({wrapText:false,shrinkToFit:true,verticalAlignment:'center',horizontalAlignment:'left'})
+      try{ws.row(r).height(13.15)}catch{}
+      ws.cell('H'+r).value(cv(row.quantity));ws.cell('I'+r).value(row.unit||'');ws.cell('J'+r).value(cv(row.rate));ws.cell('K'+r).value(cv(row.amount))
+    })
+    /* M-CROSS_SEPARATE_LEGACY_IMPORT_EXPORT_V1_SAFE */
+    ;(Array.isArray(entry.legacyEstimateNotes)?entry.legacyEstimateNotes:[]).forEach(note=>{
+      const r=Number(note?.row)
+      const cell=String(note?.cell||'')
+      const m=cell.match(/^([L-Q])(\d+)$/i)
+      if(m&&r>=22&&r<=56)ws.cell(m[1].toUpperCase()+r).value(String(note?.text||''))
+    })
     const subtotal=out.reduce((sum,row)=>sum+(row.amount===''||row.amount==null?0:(Number(row.amount)||0)),0),tax=Math.floor(subtotal*.1),total=subtotal+tax;ws.cell('K55').value(subtotal);ws.cell('K56').value(tax);ws.cell('K57').value(total);ws.cell('E19').value(total)
     /* M-CROSS_COLOR_CODED_MEASUREMENT_SHEETS_V1_SAFE */
     /* M-CROSS_COMBINED_COLORS_V3_EXACT_SAFE */
@@ -1660,6 +1706,8 @@ const styles = `
   .card input.memoInput { height:56px; min-height:56px; padding:14px 15px; line-height:26px; }
   .card input:focus,.card select:focus { border-color:#f0a48f; box-shadow:0 0 0 4px rgba(240,164,143,.18); }
   .companyVoiceSearchRow{display:grid;grid-template-columns:minmax(0,1fr) 58px;gap:10px;align-items:end;margin-bottom:18px}.companyVoiceSearchRow label{margin:0}.globalPropertyVoiceButton{min-height:54px;border:2px solid #efc7b4;border-radius:14px;background:#fff7ed;color:#c96e69;font-size:24px;font-weight:900;cursor:pointer}.globalPropertySearchBackdrop{position:fixed;z-index:2200;inset:0;display:grid;place-items:start center;padding:24px 14px;background:rgba(10,12,18,.72);overflow:auto}.globalPropertySearchPanel{width:min(100%,680px);padding:18px;border-radius:20px;background:#fffaf5;box-shadow:0 20px 60px rgba(0,0,0,.35)}.globalPropertySearchHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.globalPropertySearchHeader>div{display:grid;gap:4px}.globalPropertySearchHeader button{min-width:42px;min-height:42px;border:0;border-radius:12px}.globalPropertySearchInputRow{display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:8px;margin-top:14px}.globalPropertySearchInputRow input{min-width:0;min-height:52px;padding:0 14px;border:2px solid #ead8cb;border-radius:14px;font:inherit}.globalPropertySearchInputRow button{border:0;border-radius:14px;background:#e98c76;color:#fff;font-size:20px}.globalPropertyVoiceStatus{display:block;margin:8px 2px}.globalPropertySearchResults{display:grid;gap:8px;max-height:58vh;margin-top:12px;overflow:auto}.globalPropertySearchItem{display:grid;gap:3px;padding:12px 14px;border:1px solid #ead8cb;border-radius:14px;background:#fff;text-align:left}.globalPropertySearchItem small{color:#d27f6d;font-weight:800}
+  /* M-CROSS_LEGACY_V2_WRAP_V1_SAFE */
+  .estimateTable strong,.estimateTable small,.estimateRow strong,.estimateRow small,.purchaseOrderPreviewItems strong,.purchaseOrderPreviewItems small{white-space:normal!important;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}
   .address { display:grid; gap:8px; margin:8px 0 20px; padding:15px; border:1px dashed #efc7b4; border-radius:15px; background:#fff7ed; }
   .address small { color:#dd8a73; font-size:13px; font-weight:800; }
   .address strong { color:#635865; font-size:15px; font-weight:500; line-height:1.7; }
@@ -2809,6 +2857,8 @@ function normalizeImportedEntry(value) {
     softRecords: Array.isArray(value.softRecords) ? value.softRecords : [],
     floorTrimRecords: Array.isArray(value.floorTrimRecords) ? value.floorTrimRecords : [],
     additionalWorks: Array.isArray(value.additionalWorks) ? value.additionalWorks : [],
+    /* M-CROSS_LEGACY_ESTIMATE_NOTES_V1_SAFE */
+    legacyEstimateNotes: Array.isArray(value.legacyEstimateNotes) ? value.legacyEstimateNotes.map(note => ({ row: Number(note?.row || 0), cell: String(note?.cell || ''), text: String(note?.text || '') })).filter(note => note.row > 0 && note.text) : [],
     draftMemo: typeof value.draftMemo === 'string' ? value.draftMemo : '',
     siteMemo: typeof value.siteMemo === 'string' ? value.siteMemo : '',
     requestContent: typeof value.requestContent === 'string' ? value.requestContent : '',
@@ -4599,6 +4649,9 @@ export default function App() {
   /* M-CROSS_WORK_NAME_V7_EXACT */
   const [workName, setWorkName] = useState('原状回復工事')
   const [siteMemo, setSiteMemo] = useState('')
+  /* M-CROSS_LEGACY_MEMO_TAB_FINAL_V1 */
+  const [legacyEstimateNotes, setLegacyEstimateNotes] = useState([])
+  const [estimateViewTab, setEstimateViewTab] = useState('estimate')
   /* M-CROSS_REQUEST_CONTENT_OVERLAY_V2_SAFE */
   const [requestContent, setRequestContent] = useState('')
   const [showRequestContent, setShowRequestContent] = useState(false)
@@ -4617,7 +4670,11 @@ export default function App() {
   const historySequenceRef = useRef(0)
   const startedRef = useRef(false)
   const isDirtyRef = useRef(false)
-  const importFileInputRef = useRef(null)
+  const importFileInputRef = useRef(null)
+
+  /* M-CROSS_LEGACY_XLSM_DIRECT_IMPORT_V1_SAFE */
+
+  const legacyWorkCardInputRef = useRef(null)
   const [savedEntries, setSavedEntries] = useState([])
   const [savedSearch, setSavedSearch] = useState('')
   const [savedCompanyFilter, setSavedCompanyFilter] = useState('')
@@ -4847,7 +4904,11 @@ export default function App() {
         const r=22+index
         ws.cell('A'+r).value('')
         const parts=Array.isArray(row.parts)?row.parts.map(v=>String(v||'').trim()):[]
-        if(parts.some(Boolean)){ws.cell('B'+r).value(parts[0]||'');ws.cell('C'+r).value(parts[1]||'');ws.cell('D'+r).value(parts[2]||'');ws.cell('E'+r).value(parts[3]||'')}else{ws.cell('B'+r).value(row.name)}
+        /* M-CROSS_ORDER_ITEM_ALWAYS_BLANK_V1_SAFE */
+        const productRange=ws.range('B'+r+':F'+r)
+        try{if(!productRange.merged())productRange.merged(true)}catch{}
+        ws.cell('A'+r).value('')
+        ws.cell('B'+r).value(row.name||parts.filter(Boolean).join(' ')||'')
         ws.cell('F'+r).value(row.memo||'')
         ws.cell('G'+r).value(row.quantity)
         ws.cell('H'+r).value(row.unit)
@@ -4923,6 +4984,8 @@ export default function App() {
       company:String(company||''),propertyId:selectedProperty?.id||'',propertyName:selectedProperty?.name||'',address:selectedProperty?.address||'',unit:String(unit||''),workName:String(workName||''),
       /* M-CROSS_PURCHASE_ORDER_PROPERTY_ACCESS_V1_SAFE */
       propertyAccess:(orderDraft.orderMode||'service')==='service'?{autoLock:String(selectedProperty?.autoLock||''),keyBox:String(selectedProperty?.keyBox||selectedProperty?.accessNote||''),joiner:String(selectedProperty?.joiner||''),myLock:String(selectedProperty?.myLock||''),entranceOpen:String(selectedProperty?.entranceOpen||'')}:null,
+      /* M-CROSS_ORDER_LAYOUT_FOLLOWS_ESTIMATE_FORMAT_V1_SAFE */
+      estimateCopyFormat:String(estimateCopyFormat||'combined'),
       orderMode:orderDraft.orderMode||'service',orderMode:orderDraft.orderMode||'service',contractorId:orderDraft.contractorId||'',contractorName,contractorTrade:contractor?.trade||'',contractorPostalCode:contractor?.postalCode||'',contractorAddress:contractor?.address||'',contractorContact:contractor?.contact||'',contractorPhone:contractor?.phone||'',contractorMemo:contractor?.memo||'',
       items:orderDraft.items.map(item=>({id:item.id||'',label:String(item.label||''),parts:Array.isArray(item.parts)?[0,1,2,3].map(i=>String(item.parts[i]||'')):[],memo:String(item.memo||''),productCode:String(item.productCode||''),category:String(item.category||''),sourceQuantity:Number(item.sourceQuantity||0),factor:Number(item.factor||1),orderQuantity:Number(item.orderQuantity||0),unit:String(item.unit||''),rate:Number(item.rate||0),amount:Number(item.amount||0),orderRate:item.orderRate===''?null:Number(item.orderRate||0),orderAmount:item.orderRate===''?null:(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0)})),
     }
@@ -6146,6 +6209,8 @@ export default function App() {
       unit: unit.trim(),
       workName: String(workName || '').trim() || '原状回復工事',
       siteMemo: siteMemo.trim(),
+      /* M-CROSS_LEGACY_MEMO_SAVE_V4_SAFE */
+      legacyEstimateNotes: JSON.parse(JSON.stringify(legacyEstimateNotes || [])),
       requestContent: requestContent.trim(),
       records,
       cfRecords,
@@ -7694,21 +7759,110 @@ return savedEntries
     })
   }
 
+  /* M-CROSS_LEGACY_XLSM_DIRECT_IMPORT_V1_SAFE */
+  async function importLegacyWorkCardExcel(event) {
+    const file=event.target.files?.[0]
+    event.target.value=''
+    if(!file)return
+    if(!/\.(xlsm|xlsx)$/i.test(file.name)){window.alert('旧工事カードの .xlsm または .xlsx を選択してください。');return}
+    try{
+      const populateModule=await import('xlsx-populate/browser/xlsx-populate.min.js')
+      const XlsxPopulate=populateModule.default||globalThis.XlsxPopulate||populateModule
+      const wb=await XlsxPopulate.fromDataAsync(await file.arrayBuffer())
+      const card=wb.sheet('工事カード'),estimate=wb.sheet('見積書')
+      if(!card||!estimate)throw new Error('工事カード/見積書シートが見つかりません。')
+      const text=v=>String(v??'').replace(/\r\n/g,'\n').trim()
+      const number=v=>Number.isFinite(Number(v))?Number(v):0
+      const company=text(card.cell('C3').value()),propertyName=text(card.cell('C7').value()),unit=text(card.cell('C9').value()).replace(/号室$/u,''),address=text(card.cell('C11').value())
+      if(!company||!propertyName||!unit)throw new Error('管理会社・物件名・号室を読み取れません。')
+      /* M-CROSS_LEGACY_NO_INVENTED_OTHER_V1_SAFE */ const classify=raw=>{const full=text(raw).replace(/[\s　]+/g,' ').trim();const names=['浴室','トイレ','キッチン','台所','居間','洋間','洋室','和室','玄関','廊下','洗面所'];const room=names.find(n=>full.startsWith(n))||'';const work=room?full.slice(room.length).trim():full;return{room,work:work||full}}
+      /* M-CROSS_LEGACY_TRADE_CLASSIFY_V1_SAFE */
+      const classifyLegacyTrade=raw=>{
+        const value=text(raw).replace(/[\s　]+/g,' ').toUpperCase()
+        if(/床見切り|見切り/.test(value))return 'floorTrim'
+        if(/ソフト巾木|巾木/.test(value))return 'soft'
+        if(/クッションフロア|(^|[^A-Z])CF([^A-Z]|$)|ＣＦ/.test(value))return 'cf'
+        if(/アクセントクロス|クロス|壁紙/.test(value))return 'cross'
+        return 'other'
+      }
+      const additionalWorks=[]
+      for(let row=23;row<=56;row++){const raw=text(estimate.cell('C'+row).value());if(!raw)continue;const {room,work}=classify(raw);const legacyTradeType=classifyLegacyTrade(raw);const q=estimate.cell('H'+row).value(),p=estimate.cell('J'+row).value(),a=estimate.cell('K'+row).value();additionalWorks.push({id:'legacy-estimate-row-'+row,room,work,spec:'',estimateParts:[room,'',work,''],quantity:q==null||q===''?'':number(q),unit:text(estimate.cell('I'+row).value()),unitPrice:p==null||p===''?'':number(p),amount:a==null||a===''?'':number(a),memo:'',sourceSheet:'見積書',sourceRow:row,legacyRawLabel:raw,legacyTradeType,category:legacyTradeType})}
+      const legacyEstimateNotes=[]
+      for(let row=22;row<=56;row++)for(const col of ['L','M','N','O','P','Q']){const value=text(estimate.cell(col+row).value());if(value)legacyEstimateNotes.push({row,cell:col+row,text:value})}
+      const rooms=[...new Set(additionalWorks.map(x=>x.room).filter(Boolean))]
+      const now=new Date().toISOString()
+      const imported=normalizeImportedEntry({company,propertyName,propertyId:'',address,unit,workName:'諸工事',rooms,customRooms:rooms,records:[],cfRecords:[],cfMaterialGroups:[],softRecords:[],floorTrimRecords:[],additionalWorks,legacyEstimateNotes,draftMemo:'',siteMemo:'',requestContent:'',roomConfirmations:{},estimateEdits:{},estimateVersions:[],pageIndex:0,cfPageIndex:0,softPageIndex:0,activePage:'additional',measurementType:'天井',createdAt:now,updatedAt:now,archived:false,importSource:'旧工事カードExcel'})
+      const storageKey=getSaveKey(imported.company,{name:imported.propertyName,address:imported.address},imported.unit,imported.workName||'原状回復工事')
+      if(localStorage.getItem(storageKey)!==null&&!window.confirm('同じ物件・号室・工事名が保存済みです。旧工事カードの内容で上書きしますか？'))return
+      localStorage.setItem(storageKey,JSON.stringify(imported))
+      setSavedEntries(readSavedEntries())
+      setSelectedSavedKeys([])
+      const tradeCounts=additionalWorks.reduce((m,x)=>{m[x.legacyTradeType]=(m[x.legacyTradeType]||0)+1;return m},{})
+      window.alert('旧工事カードを取り込みました。\n見積明細: '+additionalWorks.length+'件\n右側文章: '+legacyEstimateNotes.length+'件\nクロス: '+(tradeCounts.cross||0)+'件 / CF: '+(tradeCounts.cf||0)+'件 / 巾木: '+(tradeCounts.soft||0)+'件 / 見切り: '+(tradeCounts.floorTrim||0)+'件 / その他: '+(tradeCounts.other||0)+'件')
+    }catch(error){console.error(error);window.alert(error instanceof Error?error.message:'旧工事カードを読み込めませんでした。')}
+  }
+
+  /* M-CROSS_LEGACY_SINGLE_IMPORT_V1_SAFE */
   async function importMCrossData(event) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!/\.(mcross|json|txt)$/i.test(file.name)) { window.alert('M-Crossから受け取った .mcross、.json、または .txt ファイルを選択してください。'); return }
+    if (!/\.(mcross|json|txt)$/i.test(file.name)) { window.alert('M-Cross用の .mcross、.json、または .txt ファイルを選択してください。'); return }
     try {
       const packageData = JSON.parse(await file.text())
-      if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) throw new Error('M-Cross用ファイルではないか、対応していないバージョンです。')
-      const imported = normalizeImportedEntry(packageData.data)
+
+      let imported
+      let legacyImport = false
+      if (['m-cross-legacy-import:v1','m-cross-legacy-import:v2','m-cross-legacy-import:v3'].includes(packageData?.schema) && packageData?.entry && typeof packageData.entry === 'object') {
+        legacyImport = true
+        imported = normalizeImportedEntry({
+          ...packageData.entry,
+          importSource: '旧工事カード',
+          legacyImportFileName: packageData?.source?.fileName || file.name,
+          legacyImportedAt: new Date().toISOString(),
+          legacyEstimateNotes: Array.isArray(packageData.entry.legacyEstimateNotes) ? packageData.entry.legacyEstimateNotes : [],
+        })
+      } else {
+        if (packageData?.fileType !== mCrossFileType || packageData?.version !== mCrossFileVersion) throw new Error('M-Cross用ファイルではないか、対応していないバージョンです。')
+        imported = normalizeImportedEntry(packageData.data)
+      }
+
+      if (!imported.company || !imported.propertyName || !String(imported.unit || '').trim()) {
+        throw new Error('管理会社・物件名・号室を読み取れません。')
+      }
+      if (legacyImport && !Array.isArray(imported.additionalWorks)) {
+        throw new Error('旧工事カードの明細を読み取れません。')
+      }
+
       const storageKey = getSaveKey(imported.company, { name: imported.propertyName, address: imported.address }, imported.unit, imported.workName || '原状回復工事')
-      if (localStorage.getItem(storageKey) !== null && !window.confirm(`「${imported.propertyName} ${imported.unit}号室」はすでに保存されています。\n\n上書きして読み込みますか？`)) return
+      const exists = localStorage.getItem(storageKey) !== null
+      if (exists) {
+        const label = imported.propertyName + ' ' + imported.unit + '号室 / ' + (imported.workName || '原状回復工事')
+        if (legacyImport) {
+          const current=JSON.parse(localStorage.getItem(storageKey)||'{}')
+          current.legacyEstimateNotes=Array.isArray(imported.legacyEstimateNotes)?imported.legacyEstimateNotes:[]
+          setLegacyEstimateNotes(current.legacyEstimateNotes)
+          localStorage.setItem(storageKey,JSON.stringify(current))
+          setSavedEntries(readSavedEntries())
+          window.alert('既存案件へメモ '+current.legacyEstimateNotes.length+'件を追加しました。')
+          return
+        }
+        if (!window.confirm('「' + imported.propertyName + ' ' + imported.unit + '号室」はすでに保存されています。\n\n上書きして読み込みますか？')) return
+      }
+
       localStorage.setItem(storageKey, JSON.stringify(imported))
-      setSavedEntries(readSavedEntries()); setSelectedSavedKeys([])
-      window.alert(`「${imported.propertyName} ${imported.unit}号室」を読み込みました。`)
-    } catch (error) { console.error(error); window.alert(error instanceof Error ? error.message : 'M-Crossデータを読み込めませんでした。') }
+      setSavedEntries(readSavedEntries())
+      setSelectedSavedKeys([])
+      if (legacyImport) {
+        const count = Array.isArray(imported.additionalWorks) ? imported.additionalWorks.length : 0
+        window.alert('旧工事カードから「' + imported.propertyName + ' ' + imported.unit + '号室 / ' + (imported.workName || '原状回復工事') + '」を1件取り込みました。\n明細: ' + count + '件')
+      } else {
+        window.alert('「' + imported.propertyName + ' ' + imported.unit + '号室」を読み込みました。')
+      }
+    } catch (error) {
+      console.error(error)
+      window.alert(error instanceof Error ? error.message : 'M-Crossデータを読み込めませんでした。')
+    }
   }
 
   function loadSavedEntry(entry) {
@@ -7720,6 +7874,8 @@ return savedEntries
     setUnit(entry.unit || '')
     setWorkName(entry.workName || '原状回復工事')
     setSiteMemo(entry.siteMemo || '')
+    setLegacyEstimateNotes(Array.isArray(entry.legacyEstimateNotes) ? entry.legacyEstimateNotes : [])
+    setEstimateViewTab('estimate')
     setRequestContent(entry.requestContent || '')
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
@@ -8005,6 +8161,8 @@ return savedEntries
     setUnit(draft.unit || '')
     setWorkName(draft.workName || '原状回復工事')
     setSiteMemo(draft.siteMemo || '')
+    setLegacyEstimateNotes(Array.isArray(draft.legacyEstimateNotes) ? draft.legacyEstimateNotes : [])
+    setEstimateViewTab('estimate')
     setRequestContent(draft.requestContent || '')
     setRecords(Array.isArray(draft.records) ? draft.records : [])
     setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
@@ -8069,6 +8227,8 @@ return savedEntries
       unit: unit.trim(),
       workName: String(workName || '').trim() || '原状回復工事',
       siteMemo: siteMemo.trim(),
+      /* M-CROSS_LEGACY_MEMO_SAVE_V4_SAFE */
+      legacyEstimateNotes: JSON.parse(JSON.stringify(legacyEstimateNotes || [])),
       requestContent: requestContent.trim(),
       records,
       cfRecords,
@@ -9308,6 +9468,10 @@ return savedEntries
               <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
                 📥 M-Crossファイルを読み込む
               </button>
+              <input ref={legacyWorkCardInputRef} type="file" accept=".xlsm,.xlsx,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importLegacyWorkCardExcel} style={{ display: 'none' }} />
+              <button className="secondaryButton" type="button" onClick={() => legacyWorkCardInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
+                📥 旧工事カードExcelを取り込む
+              </button>
               <div className="savedToolbar">
                 <label>
                   <span>🔎 かしこい検索</span>
@@ -10351,8 +10515,9 @@ return savedEntries
                 const rawRows = buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, rooms, factor, pricingSettings)
                 const allRows = applyEstimateEdits(rawRows, estimateEdits)
                 const rowsForCombined = allRows.filter(row => !estimateEdits[row.exclusionKey || estimateEditKey(row)]?.excluded)
-                const worksForCombined = additionalWorks.filter((item,index) => !estimateEdits['additionalWork:' + (item.id || index)]?.excluded)
-                downloadCombinedEstimateMeasurementExcel({company,propertyName:selectedProperty?.name||'',address:selectedProperty?.address||'',unit,records,cfRecords,cfMaterialGroups,softRecords,floorTrimRecords,additionalWorks}, rowsForCombined, estimateCopyFormat, worksForCombined)
+                /* M-CROSS_LEGACY_EXACT_LAYOUT_V5_SAFE */
+                const worksForCombined = additionalWorks
+                downloadCombinedEstimateMeasurementExcel({company,propertyName:selectedProperty?.name||'',address:selectedProperty?.address||'',unit,records,cfRecords,cfMaterialGroups,softRecords,floorTrimRecords,additionalWorks,legacyEstimateNotes}, rowsForCombined, estimateCopyFormat, worksForCombined)
               }}>📊 見積・採寸を一括出力</button>              <button
                 className="secondaryButton"
                 type="button"
@@ -10436,7 +10601,7 @@ return savedEntries
               const orderCandidateRows = [
                 ...estimateRows,
                 ...visibleAdditionalWorks.map((item, index) => ({
-                  exclusionKey: 'additionalWork:' + (item.id || index), category: 'additionalWork', additionalWorkId: item.id || '', additionalWorkIndex: index,
+                  /* M-CROSS_LEGACY_ORDER_CATEGORY_V1_SAFE */ exclusionKey: 'additionalWork:' + (item.id || index), category: ['cross','cf','soft','floorTrim'].includes(item.legacyTradeType) ? item.legacyTradeType : 'additionalWork', additionalWorkId: item.id || '', additionalWorkIndex: index,
                   parts: Array.isArray(item.estimateParts) && item.estimateParts.length ? [0,1,2,3].map(i => String(item.estimateParts[i] || '')) : [item.room || '', '', item.work || '', ''],
                   label: (Array.isArray(item.estimateParts) && item.estimateParts.length ? item.estimateParts : [item.room,item.work]).filter(Boolean).join(' '),
                   memo: item.memo || '', quantity: normalizeMaterialQuantity(item.quantity), unit: item.unit || '式', rate: Number(item.unitPrice || 0), amount: Number(item.amount || (Number(item.quantity)||0)*(Number(item.unitPrice)||0)),
@@ -11769,7 +11934,7 @@ return savedEntries
                       propertyName: selectedProperty?.name || '',
                       address: selectedProperty?.address || '',
                       unit,
-                    }, estimateRows, estimateCopyFormat, additionalWorks)}
+                    }, estimateRows, estimateCopyFormat, additionalWorks, legacyEstimateNotes)}
                   >
                     📊 見積用Excel出力
                   </button>
