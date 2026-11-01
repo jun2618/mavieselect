@@ -1,1 +1,3 @@
 .voiceGuideFade{position:fixed;left:10px;bottom:12px;width:145px;height:190px;z-index:99998;pointer-events:none;opacity:0;transition:opacity .8s ease}.voiceGuideFade.show{opacity:.72}.voiceGuideFade img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 8px rgba(0,0,0,.16))}@media(max-width:620px){.voiceGuideFade{left:5px;bottom:8px;width:105px;height:145px}.voiceGuideFade.show{opacity:.68}}@media print{.voiceGuideFade{display:none!important}}
+/* M-CROSS_VOICE_GUIDE_NEAR_MIC_V2_SAFE */
+@media(max-width:620px){.voiceGuideFade{left:auto!important;right:68px!important;top:78px!important;bottom:auto!important;width:92px!important;height:125px!important;z-index:100000!important}.voiceGuideFade.show{opacity:.78!important}}

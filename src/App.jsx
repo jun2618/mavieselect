@@ -4696,7 +4696,7 @@ export default function App() {
   const [globalPropertyVoiceListening, setGlobalPropertyVoiceListening] = useState(false)
   const [globalPropertyVoiceStatus, setGlobalPropertyVoiceStatus] = useState('')
   const [voiceGuideTrigger,setVoiceGuideTrigger]=useState(0)
-  function startGlobalPropertyVoiceSearch() {
+  function startGlobalPropertyVoiceSearch() { /* M-CROSS_VOICE_GUIDE_ON_MIC_V2_SAFE */ setVoiceGuideTrigger(value=>value+1)
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
     setShowGlobalPropertySearch(true)
     if (!Recognition) { setGlobalPropertyVoiceStatus('このブラウザーでは音声検索を利用できません'); return }
