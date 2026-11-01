@@ -6227,7 +6227,7 @@ export default function App() {
 
   /* M-CROSS_WORK_CARD_KEY_IMPORT_V2_SAFE */
   useEffect(() => {
-    const importFlag = 'm-cross:work-card-key-import:v2'
+    const importFlag = 'm-cross:work-card-key-import:v3'
     if (localStorage.getItem(importFlag) === 'done') return undefined
     let cancelled = false
     ;(async () => {
