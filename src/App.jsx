@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import CostCalculationPage from './CostCalculationPage.jsx'
 import properties from './m-cross-properties.json'
 import OneDriveSyncPanel from './OneDriveSyncPanel'
 import EstimateRowEditor from './EstimateRowEditor'
@@ -4876,6 +4877,8 @@ export default function App() {
   const [bulkMaterialRates,setBulkMaterialRates]=useState({cross:'',cf:'',soft:'',floorTrim:''})
   /* M-CROSS_PURCHASE_ORDER_SAVE_STEP3_V2_STRUCTURAL_SAFE */
   const purchaseOrderStorageKey='mcross_purchase_orders_v1'
+  /* M-CROSS_COST_CALCULATION_PAGE_V1_SAFE */
+  const [showCostCalculation,setShowCostCalculation]=useState(false)
   const [purchaseOrders,setPurchaseOrders]=useState(()=>{try{const saved=JSON.parse(localStorage.getItem(purchaseOrderStorageKey)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}})
   /* M-CROSS_PURCHASE_ORDER_DRAFT_EDIT_V1_SAFE */
   const [editingPurchaseOrderId,setEditingPurchaseOrderId]=useState('')
@@ -8615,6 +8618,8 @@ return savedEntries
     ['retro', 'RETRO'],
     ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
   ]
+  if(showCostCalculation)return <CostCalculationPage onBack={()=>setShowCostCalculation(false)}/>
+
   return (
     <>
       <style>{styles}</style>
@@ -9552,7 +9557,7 @@ return savedEntries
               <input ref={legacyWorkCardInputRef} type="file" accept=".xlsm,.xlsx,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importLegacyWorkCardExcel} style={{ display: 'none' }} />
               <button className="secondaryButton" type="button" onClick={() => legacyWorkCardInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
                 📥 旧工事カードExcelを取り込む
-              </button>
+              </button><button type="button" className="primary" onClick={()=>setShowCostCalculation(true)}>📊 原価計算</button>
               <div className="savedToolbar">
                 <label>
                   <span>🔎 かしこい検索</span>
@@ -12496,7 +12501,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
           </div>
         )}
       </div>
-    </>
+    <style>{`/* M-CROSS_SERVICE_ORDER_BLACK_FIX_V2 */ @media(min-width:621px){.serviceOrderPanel .orderExcelSheetTitle *,.serviceOrderPanel .orderExcelHeader span,.serviceOrderPanel .orderDraftItem>strong,.serviceOrderPanel .orderDraftItem>small,.serviceOrderPanel .orderQuantityCompare *,.serviceOrderPanel .orderQuantityField *,.serviceOrderPanel .orderRateField *,.serviceOrderPanel .orderLineAmount *,.serviceOrderPanel .orderDraftItem input{color:#111!important;-webkit-text-fill-color:#111!important}.serviceOrderPanel .orderExcelHeader{grid-template-columns:minmax(260px,1fr) 90px 65px 120px 145px!important}.serviceOrderPanel .orderExcelHeader span:nth-child(3){display:flex!important}.serviceOrderPanel .orderDraftItem{grid-template-columns:minmax(260px,1fr) 90px 65px 120px 145px!important}.serviceOrderPanel .orderQuantityCompare{grid-column:2!important}.serviceOrderPanel .orderQuantityField{grid-column:3!important}.serviceOrderPanel .orderRateField{grid-column:4!important}.serviceOrderPanel .orderLineAmount{grid-column:5!important}}`}</style></>
   )
 }
 
