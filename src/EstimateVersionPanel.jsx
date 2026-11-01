@@ -18,8 +18,7 @@ export default function EstimateVersionPanel({
   currentVersion,
   versions,
   currentTotal,
-  onCreateRevision,
-  onDownloadVersion,
+  onCreateRevision,
   onDeleteVersion,
 }) {
   const sorted = [...versions].sort((a, b) => Number(b.version) - Number(a.version))
@@ -49,7 +48,7 @@ export default function EstimateVersionPanel({
                 </div>
               </div>
               <div className="estimateVersionActions">
-                <button type="button" onClick={() => onDownloadVersion(item)}>📄 この版を出力</button>
+                {/* M-CROSS_REMOVE_ESTIMATE_VERSION_DOWNLOAD_BUTTON_V30_SAFE */}
                 <button className="delete" type="button" onClick={() => onDeleteVersion(item)}>削除</button>
               </div>
             </article>

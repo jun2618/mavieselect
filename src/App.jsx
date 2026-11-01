@@ -2085,7 +2085,7 @@ const styles = `
   .theme-dark .materialOrderAddedOnlyLabel,.theme-cyber .materialOrderAddedOnlyLabel,.theme-luxury .materialOrderAddedOnlyLabel,.theme-retro .materialOrderAddedOnlyLabel,.theme-galaxy .materialOrderAddedOnlyLabel{background:#16452f;color:#baffd4}
   .crossFinishPanel{display:grid;gap:10px;margin:0 0 18px;padding:14px;border:1px solid #ead8cb;border-radius:14px;background:#fffaf5}.crossFinishPanel>span,.crossFinishPanel label>span{color:#817183;font-size:15px;font-weight:800}.crossFinishButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.crossFinishButtons button{min-height:48px;border:1px solid #d8c9df;border-radius:12px;background:#fff;color:#65596a;font:inherit;font-weight:800}.crossFinishButtons button.active{color:#fff;border-color:#6e91e8;background:#6e91e8}.crossFinishPanel label{margin:0}
   .requestContentButton { background:linear-gradient(180deg,#ffbf66,#ee9638); box-shadow:0 5px 0 #bd6d25; }
-  .requestContentBackdrop { position:fixed; z-index:1900; inset:0; display:grid; place-items:center; padding:14px; background:rgba(15,12,20,.72); backdrop-filter:blur(7px); }
+  .requestContentBackdrop { position:fixed; z-index:1900; inset:0; display:grid; place-items:start center; padding:24px 14px 14px; background:rgba(15,12,20,.72); backdrop-filter:none; -webkit-backdrop-filter:none; overflow:auto; }
   .requestContentPanel { width:min(100%,620px); max-height:92vh; overflow:auto; padding:20px; border-radius:22px; background:#fffaf5; box-shadow:0 20px 60px rgba(0,0,0,.35); }
   .requestContentHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .requestContentHeader h2 { margin:0; }
@@ -4077,6 +4077,8 @@ function FinalReviewPage({
 }) {
   const [room, setRoom] = useState(rooms[0] || '')
   const [work, setWork] = useState('')
+  /* M-CROSS_ADDITIONAL_WORK_SPEC_V2_SAFE */
+  const [spec, setSpec] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [unit, setUnit] = useState('式')
   const [unitPrice, setUnitPrice] = useState('')
@@ -4127,6 +4129,7 @@ function FinalReviewPage({
     setEditingAdditionalWorkId('')
     setRoom(rooms[0] || '')
     setWork('')
+    setSpec('')
     setQuantity('1')
     setUnit('式')
     setUnitPrice('')
@@ -4137,6 +4140,7 @@ function FinalReviewPage({
     setEditingAdditionalWorkId(item.id)
     setRoom(item.room || rooms[0] || '')
     setWork(item.work || '')
+    setSpec(item.spec || '')
     setQuantity(String(item.quantity ?? '1'))
     setUnit(item.unit || '式')
     setUnitPrice(String(item.unitPrice ?? ''))
@@ -4225,6 +4229,7 @@ function FinalReviewPage({
       id: editingAdditionalWorkId || createRecordId(),
       room,
       work: work.trim(),
+      spec: spec.trim(),
       quantity: numericQuantity,
       unit,
       unitPrice: numericUnitPrice,
@@ -4413,7 +4418,7 @@ function FinalReviewPage({
             </div>
           )}
           <label><span>部屋</span><select value={room} onChange={event => setRoom(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
-          <label><span>作業内容</span><input value={work} onChange={event => setWork(event.target.value)} placeholder="例：畳表替え、電球交換" /></label>
+          <label><span>作業内容</span><input value={work} onChange={event => setWork(event.target.value)} placeholder="例：畳表替え、電球交換" /></label><label><span>仕様・内容</span><input value={spec} onChange={event => setSpec(event.target.value)} placeholder="例：サーモ式、カートリッジ付き" /></label>
           {pastUnitPriceSuggestions.length > 0 && (
             <section className="pastPriceSuggestions" aria-label="過去の単価候補">
               <strong>💡 過去の単価候補</strong>
@@ -4537,6 +4542,11 @@ export default function App() {
     address: '',
     reading: '',
     aliases: '',
+    autoLock: '',
+    joiner: '',
+    myLock: '',
+    keyBox: '',
+    entranceOpen: '',
   })
   const [managementScrollTarget, setManagementScrollTarget] = useState('')
   const companyFormRef = useRef(null)
@@ -4742,6 +4752,8 @@ export default function App() {
       if(!order)throw new Error('発注書が選択されていません')
       const rows=(order.items||[]).map(item=>({
         name:String(item.label||item.productCode||''),
+        parts:Array.isArray(item.parts)?[0,1,2,3].map(i=>String(item.parts[i]||'')):[],
+        memo:String(item.memo||''),
         quantity:Number(item.orderQuantity||0),
         unit:String(item.unit||''),
         rate:item.orderRate==null||item.orderRate===''?'':Number(item.orderRate||0)
@@ -4796,6 +4808,8 @@ export default function App() {
 
       // 外部リンク由来の欄は空白化。
       for(const address of ['J14','J15','J16','J17','J18'])ws.cell(address).value('')
+      /* M-CROSS_FINAL_ORDER_ACCESS_EXCEL_V1_SAFE */
+      if((order.orderMode||'service')==='service'&&order.propertyAccess){ws.cell('J14').value(String(order.propertyAccess.autoLock||''));ws.cell('J15').value(String(order.propertyAccess.keyBox||order.propertyAccess.accessNote||''));ws.cell('J16').value(String(order.propertyAccess.joiner||''));ws.cell('J17').value(String(order.propertyAccess.myLock||''));ws.cell('J18').value(String(order.propertyAccess.entranceOpen||''))}
 
       // 明細をクリア。項目列は常に空白、未使用行の金額も空白。
       /* M-CROSS_FINAL_ORDER_PRODUCT_MERGE_V8_SAFE */
@@ -4803,14 +4817,15 @@ export default function App() {
         const productRange=ws.range('B'+r+':F'+r)
         try{if(productRange.merged())productRange.merged(false)}catch{}
         for(const c of ['A','B','C','D','E','F','G','H','I','J'])ws.cell(c+r).value('')
-        if(!productRange.merged())productRange.merged(true)
-        ws.cell('B'+r).style({horizontalAlignment:'left',verticalAlignment:'center',wrapText:false})
+        for(const c of ['B','C','D','E','F'])ws.cell(c+r).style({horizontalAlignment:'left',verticalAlignment:'center',wrapText:false})
       }
 
       rows.forEach((row,index)=>{
         const r=22+index
         ws.cell('A'+r).value('')
-        ws.cell('B'+r).value(row.name).style({horizontalAlignment:'left',verticalAlignment:'center',wrapText:false})
+        const parts=Array.isArray(row.parts)?row.parts.map(v=>String(v||'').trim()):[]
+        if(parts.some(Boolean)){ws.cell('B'+r).value(parts[0]||'');ws.cell('C'+r).value(parts[1]||'');ws.cell('D'+r).value(parts[2]||'');ws.cell('E'+r).value(parts[3]||'')}else{ws.cell('B'+r).value(row.name)}
+        ws.cell('F'+r).value(row.memo||'')
         ws.cell('G'+r).value(row.quantity)
         ws.cell('H'+r).value(row.unit)
         if(row.rate!==''){
@@ -4883,8 +4898,10 @@ export default function App() {
       id:'purchase-order-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),
       createdAt:now,updatedAt:now,status:'下書き',
       company:String(company||''),propertyId:selectedProperty?.id||'',propertyName:selectedProperty?.name||'',address:selectedProperty?.address||'',unit:String(unit||''),workName:String(workName||''),
+      /* M-CROSS_PURCHASE_ORDER_PROPERTY_ACCESS_V1_SAFE */
+      propertyAccess:(orderDraft.orderMode||'service')==='service'?{autoLock:String(selectedProperty?.autoLock||''),keyBox:String(selectedProperty?.keyBox||selectedProperty?.accessNote||''),joiner:String(selectedProperty?.joiner||''),myLock:String(selectedProperty?.myLock||''),entranceOpen:String(selectedProperty?.entranceOpen||'')}:null,
       orderMode:orderDraft.orderMode||'service',orderMode:orderDraft.orderMode||'service',contractorId:orderDraft.contractorId||'',contractorName,contractorTrade:contractor?.trade||'',contractorPostalCode:contractor?.postalCode||'',contractorAddress:contractor?.address||'',contractorContact:contractor?.contact||'',contractorPhone:contractor?.phone||'',contractorMemo:contractor?.memo||'',
-      items:orderDraft.items.map(item=>({id:item.id||'',label:String(item.label||''),memo:String(item.memo||''),productCode:String(item.productCode||''),category:String(item.category||''),sourceQuantity:Number(item.sourceQuantity||0),factor:Number(item.factor||1),orderQuantity:Number(item.orderQuantity||0),unit:String(item.unit||''),rate:Number(item.rate||0),amount:Number(item.amount||0),orderRate:item.orderRate===''?null:Number(item.orderRate||0),orderAmount:item.orderRate===''?null:(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0)})),
+      items:orderDraft.items.map(item=>({id:item.id||'',label:String(item.label||''),parts:Array.isArray(item.parts)?[0,1,2,3].map(i=>String(item.parts[i]||'')):[],memo:String(item.memo||''),productCode:String(item.productCode||''),category:String(item.category||''),sourceQuantity:Number(item.sourceQuantity||0),factor:Number(item.factor||1),orderQuantity:Number(item.orderQuantity||0),unit:String(item.unit||''),rate:Number(item.rate||0),amount:Number(item.amount||0),orderRate:item.orderRate===''?null:Number(item.orderRate||0),orderAmount:item.orderRate===''?null:(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0)})),
     }
     savePurchaseOrders([snapshot,...purchaseOrders])
     setOrderDraft(null)
@@ -6207,6 +6224,98 @@ export default function App() {
     () => getMergedPropertyMaster(propertyMasterState.master),
     [propertyMasterState.master]
   )
+
+  /* M-CROSS_WORK_CARD_KEY_IMPORT_V2_SAFE */
+  useEffect(() => {
+    const importFlag = 'm-cross:work-card-key-import:v2'
+    if (localStorage.getItem(importFlag) === 'done') return undefined
+    let cancelled = false
+    ;(async () => {
+      try {
+        const response = await fetch('/工事カード鍵情報.json', { cache: 'no-store' })
+        if (!response.ok) throw new Error('鍵情報JSON読込失敗 HTTP ' + response.status)
+        const payload = await response.json()
+        if (cancelled) return
+
+        const normalize = value => String(value || '')
+          .normalize('NFKC')
+          .toLocaleLowerCase('ja')
+          .replace(/[\s　・･,，.。()（）\[\]［］_ー-]+/g, '')
+
+        const sourceMap = new Map()
+        ;(Array.isArray(payload.rows) ? payload.rows : []).forEach(row => {
+          const companyKey = normalize(row.company)
+          const propertyKey = normalize(row.propertyName)
+          if (!companyKey || !propertyKey) return
+          const key = companyKey + '|' + propertyKey
+          const current = sourceMap.get(key) || {}
+          sourceMap.set(key, {
+            autoLock: current.autoLock || String(row.autoLock || '').trim(),
+            keyBox: current.keyBox || String(row.keyBox || '').trim(),
+            joiner: current.joiner || String(row.joiner || '').trim(),
+            myLock: current.myLock || String(row.myLock || '').trim(),
+            entranceOpen: current.entranceOpen || String(row.entranceOpen || '').trim(),
+          })
+        })
+
+        const master = propertyMasterState.master
+        const nextOverrides = { ...(master.propertyOverrides || {}) }
+        const nextAdded = (master.addedProperties || []).map(item => ({ ...item }))
+        const matchedSourceKeys = new Set()
+        let updated = 0
+
+        mergedPropertyMaster.properties.forEach(property => {
+          const sourceKey = normalize(property.company) + '|' + normalize(property.name)
+          const card = sourceMap.get(sourceKey)
+          if (!card) return
+          matchedSourceKeys.add(sourceKey)
+
+          const access = {
+            autoLock: String(property.autoLock || card.autoLock || ''),
+            keyBox: String(property.keyBox || property.accessNote || card.keyBox || ''),
+            joiner: String(property.joiner || card.joiner || ''),
+            myLock: String(property.myLock || card.myLock || ''),
+            entranceOpen: String(property.entranceOpen || card.entranceOpen || ''),
+          }
+          const changed = ['autoLock', 'keyBox', 'joiner', 'myLock', 'entranceOpen']
+            .some(key => String(property[key] || '') !== access[key])
+          if (!changed) return
+
+          updated += 1
+          if (String(property.id || '').startsWith('base-property:')) {
+            nextOverrides[property.id] = { ...(nextOverrides[property.id] || {}), ...access }
+          } else {
+            const index = nextAdded.findIndex(item => item.id === property.id)
+            if (index >= 0) nextAdded[index] = { ...nextAdded[index], ...access }
+          }
+        })
+
+        const nextMaster = {
+          ...master,
+          propertyOverrides: nextOverrides,
+          addedProperties: nextAdded,
+        }
+        const report = {
+          updated,
+          matched: matchedSourceKeys.size,
+          unmatched: sourceMap.size - matchedSourceKeys.size,
+          importedAt: new Date().toISOString(),
+        }
+
+        localStorage.setItem('m-cross:property-master:v1:before-work-card-key-import-v2', JSON.stringify(master))
+        localStorage.setItem(propertyMasterKey, JSON.stringify(nextMaster))
+        localStorage.setItem(importFlag, 'done')
+        localStorage.setItem(importFlag + ':report', JSON.stringify(report))
+        setPropertyMasterState({ master: nextMaster, error: '' })
+        setMasterStatus('工事カードから鍵情報を ' + updated + ' 件取り込みました。')
+        console.log('WORK CARD KEY IMPORT V2', report)
+      } catch (error) {
+        console.error('工事カード鍵情報取込エラー', error)
+        setMasterStatus('工事カードの鍵情報を取り込めませんでした。')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
   const companies = mergedPropertyMaster.companies.map(item => item.name)
   const residentCaseCompany = mergedPropertyMaster.companies.find(item => item.id === residentCaseCompanyId)
   const residentCaseProperties = residentCaseCompanyId
@@ -7327,6 +7436,11 @@ return savedEntries
       aliases: Array.isArray(property.aliases)
         ? property.aliases.join(', ')
         : String(property.aliases || property.alias || ''),
+      autoLock: String(property.autoLock || ''),
+      joiner: String(property.joiner || ''),
+      myLock: String(property.myLock || ''),
+      keyBox: String(property.keyBox || property.accessNote || ''),
+      entranceOpen: String(property.entranceOpen || ''),
     })
     setManagementScrollTarget('propertyForm')
     setMasterStatus('')
@@ -7343,6 +7457,11 @@ return savedEntries
       reading: propertyForm.reading.trim(),
       aliases,
       alias: null,
+      autoLock: String(propertyForm.autoLock || '').trim(),
+      joiner: String(propertyForm.joiner || '').trim(),
+      myLock: String(propertyForm.myLock || '').trim(),
+      keyBox: String(propertyForm.keyBox || '').trim(),
+      entranceOpen: String(propertyForm.entranceOpen || '').trim(),
     }
     const master = propertyMasterState.master
     let nextMaster
@@ -9129,6 +9248,13 @@ return savedEntries
                           placeholder="例：CHOUCHOU, chou"
                         />
                       </label>
+                      {/* M-CROSS_PROPERTY_ACCESS_FORM_V4_SAFE */}
+                      <h3>🔑 入館・鍵情報</h3>
+                      <label><span>オートロック</span><input value={propertyForm.autoLock || ''} onChange={event => setPropertyForm(prev => ({ ...prev, autoLock: event.target.value }))} placeholder="例：1234 呼出" /></label>
+                      <label><span>キーボックス</span><input value={propertyForm.keyBox || ''} onChange={event => setPropertyForm(prev => ({ ...prev, keyBox: event.target.value }))} placeholder="例：ドアノブ 3956" /></label>
+                      <label><span>ドアジョイナー</span><input value={propertyForm.joiner || ''} onChange={event => setPropertyForm(prev => ({ ...prev, joiner: event.target.value }))} placeholder="番号・暗証番号など" /></label>
+                      <label><span>マイロック</span><input value={propertyForm.myLock || ''} onChange={event => setPropertyForm(prev => ({ ...prev, myLock: event.target.value }))} placeholder="番号・暗証番号など" /></label>
+                      <label><span>玄関開放</span><input value={propertyForm.entranceOpen || ''} onChange={event => setPropertyForm(prev => ({ ...prev, entranceOpen: event.target.value }))} placeholder="例：可・不可・常時開放" /></label>
                       <div className="masterActions">
                         <button className="primary" type="submit">
                           {editingPropertyId ? '物件を保存' : '物件を追加'}
@@ -9971,6 +10097,8 @@ return savedEntries
                 <small>物件住所</small>
                 <strong>{selectedProperty?.address || '物件を選択すると住所が表示されます'}</strong>
               </div>
+              {/* M-CROSS_TOP_PROPERTY_ACCESS_V1_SAFE */}
+              {selectedProperty && [selectedProperty.autoLock,selectedProperty.keyBox,selectedProperty.joiner,selectedProperty.myLock,selectedProperty.entranceOpen].some(value => String(value || '').trim()) && <div className="address propertyAccessHome"><small>🔑 入館・鍵情報</small>{String(selectedProperty.autoLock || '').trim() && <strong>オートロック　{String(selectedProperty.autoLock)}</strong>}{String(selectedProperty.keyBox || '').trim() && <strong>キーボックス　{String(selectedProperty.keyBox)}</strong>}{String(selectedProperty.joiner || '').trim() && <strong>ドアジョイナー　{String(selectedProperty.joiner)}</strong>}{String(selectedProperty.myLock || '').trim() && <strong>マイロック　{String(selectedProperty.myLock)}</strong>}{String(selectedProperty.entranceOpen || '').trim() && <strong>玄関開放　{String(selectedProperty.entranceOpen)}</strong>}</div>}
               <button
                 className="secondaryButton"
                 type="button"
@@ -10146,7 +10274,7 @@ return savedEntries
                 <section className="requestContentPanel">
                   <div className="requestContentHeader"><h2>📋 依頼内容</h2><button type="button" onClick={() => setShowRequestContent(false)}>× 閉じる</button></div>
                   <p className="requestContentProperty">{selectedProperty?.name} {unit}号室</p>
-                  <textarea value={requestContent} onChange={event => { setRequestContent(event.target.value); markUnsaved() }} placeholder="TimeTreeの依頼内容をここへ貼り付け" rows={14} />
+                  <textarea value={requestContent} onChange={event => { setRequestContent(event.target.value); markUnsaved() }} placeholder="依頼内容を入力" rows={14} />
                   <button className="primary" type="button" onClick={() => setShowRequestContent(false)}>入力画面へ戻る</button>
                 </section>
               </div>
@@ -10197,7 +10325,7 @@ return savedEntries
                   setShowRoomManagement(false)
                 }}
               >
-                {showEstimate ? '← 採寸画面へ戻る' : '💰 見積・発注書'}
+                {showEstimate ? '← 工事内容登録へ戻る' : '💰 見積・発注書'}
               </button>
             </div>
             <p className={`saveState ${isDirty ? 'dirty' : 'saved'}`} role="status" aria-live="polite">
@@ -10324,10 +10452,13 @@ return savedEntries
                     <small className="orderSelectionIndividualNote">その他工事は下の見積明細から必要な項目だけ選択してください。</small>
                     <div className="orderSelectionSummary"><span>選択中</span><strong>{selectedOrderKeys.length}件</strong></div>
                     <button className="primary" type="button" disabled={selectedOrderKeys.length===0} onClick={() => {
-                      const individuallySelectedAdditional=orderCandidateRows.filter((row,index)=>row.category==='additionalWork'&&selectedOrderKeys.includes(orderKeyForRow(row,index))); const selected=individuallySelectedAdditional.length>0?individuallySelectedAdditional:orderCandidateRows.filter((row,index)=>selectedOrderKeys.includes(orderKeyForRow(row,index)))
+                      const selected=orderCandidateRows.filter((row,index)=>selectedOrderKeys.includes(orderKeyForRow(row,index)))
                       const items=selected.map((row,index)=>({
                         id: orderKeyForRow(row,index),
                         label: row.label || (Array.isArray(row.parts) ? row.parts.filter(Boolean).join(' ') : '発注明細'),
+                        /* M-CROSS_PURCHASE_ORDER_PARTS_V2_SAFE */
+                        parts: Array.isArray(row.parts) ? [0,1,2,3].map(i => String(row.parts[i] || '')) : [],
+                        parts: Array.isArray(row.parts) ? [0,1,2,3].map(i => String(row.parts[i] || '')) : [],
                         memo: String(row.memo || ''),
                         sourceQuantity: Number(row.quantity || 0),
                         unit: String(row.unit || ''),
@@ -10427,6 +10558,8 @@ return savedEntries
                                         ? String(item.description || '')
                                         : ''
                                     }/></div>:<strong>{item.label}</strong>}{item.memo&&<small>{item.memo}</small>}<div><span>見積 {formatQuantity(item.sourceQuantity)}{item.unit}</span><span>×{Number(item.factor||1).toFixed(2)}</span><b>発注 {formatQuantity(item.orderQuantity)}{item.unit}</b><span className="purchaseOrderPreviewRate">単価 {item.orderRate===''||item.orderRate==null?'未設定':formatYen(Number(item.orderRate)||0)+'/'+(item.unit||'式')}</span><strong className="purchaseOrderPreviewAmount">{item.orderRate===''||item.orderRate==null?'単価未設定':formatYen(item.orderAmount==null||item.orderAmount===''?(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0):Number(item.orderAmount||0))}</strong></div></section>)}</div>
+                            {/* M-CROSS_PURCHASE_ORDER_ACCESS_PREVIEW_V1_SAFE */}
+                            {selected.orderMode==='service' && selected.propertyAccess && [selected.propertyAccess.autoLock,selected.propertyAccess.keyBox,selected.propertyAccess.joiner,selected.propertyAccess.myLock,selected.propertyAccess.entranceOpen].some(value=>String(value||'').trim()) && <section className="purchaseOrderAccessInfo"><strong>🔑 入館・鍵情報</strong><div>{String(selected.propertyAccess.autoLock||'').trim() && <p><b>オートロック：</b>{String(selected.propertyAccess.autoLock)}</p>}{String(selected.propertyAccess.keyBox||'').trim() && <p><b>キーボックス：</b>{String(selected.propertyAccess.keyBox)}</p>}{String(selected.propertyAccess.joiner||'').trim() && <p><b>ドアジョイナー：</b>{String(selected.propertyAccess.joiner)}</p>}{String(selected.propertyAccess.myLock||'').trim() && <p><b>マイロック：</b>{String(selected.propertyAccess.myLock)}</p>}{String(selected.propertyAccess.entranceOpen||'').trim() && <p><b>玄関開放：</b>{String(selected.propertyAccess.entranceOpen)}</p>}</div></section>}
                             {selected.status==='本発注' && (()=>{
                               const subtotal=(selected.items||[]).reduce((sum,item)=>{
                                 const amount=item.orderAmount==null||item.orderAmount===''?(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0):Number(item.orderAmount||0)
@@ -10457,7 +10590,9 @@ return savedEntries
                                 type:selected.orderMode==='material'?'材料':'施工',
                                 name:String(item.label||item.productCode||''),
                                 memo:String(item.memo||''),
-                                quantity:Number(item.orderQuantity||0),
+                                parts:Array.isArray(item.parts)?[0,1,2,3].map(i=>String(item.parts[i]||'')):[],
+        memo:String(item.memo||''),
+        quantity:Number(item.orderQuantity||0),
                                 unit:String(item.unit||''),
                                 rate:item.orderRate==null||item.orderRate===''?'':Number(item.orderRate||0),
                                 amount:item.orderAmount==null||item.orderAmount===''?(Number(item.orderQuantity)||0)*(Number(item.orderRate)||0):Number(item.orderAmount||0)
@@ -11544,7 +11679,8 @@ return savedEntries
                                   additionalWorkIndex: row.additionalWorkIndex,
                                   parts: [0, 1, 2, 3].map(index => String(parts[index] || '')),
                                   productCode: String(row.productCode || ''),
-                                  memo: String(row.memo || ''),
+                                  parts: Array.isArray(row.parts) ? [0,1,2,3].map(i => String(row.parts[i] || '')) : [],
+                        memo: String(row.memo || ''),
                                   quantity: String(row.quantity ?? ''),
                                   unit: String(row.unit || ''),
                                   rate: String(row.rate ?? ''),
@@ -11561,7 +11697,7 @@ return savedEntries
                                 parts: [0,1,2,3].map(index => String(parts[index] || '')),
                                 productCode: String(edit.productCode ?? row.productCode ?? ''),
                                 memo: String(edit.memo ?? row.memo ?? ''),
-                                quantity: String(edit.quantity ?? row.quantity ?? ''),
+                                quantity: edit.quantity != null ? String(edit.quantity) : (Number.isFinite(Number(row.quantity)) ? String(Math.round((Number(row.quantity) + Number.EPSILON) * 100) / 100) : ''),
                                 unit: String(edit.unit ?? row.unit ?? ''),
                                 rate: String(edit.rate ?? row.rate ?? ''),
                                 amount: edit.amountMode === 'manual' ? String(edit.amount ?? '') : '',
@@ -11577,7 +11713,7 @@ return savedEntries
                             <input className="orderSelectCheckbox" type="checkbox"
                               checked={selectedOrderKeys.includes(orderKeyForRow(row,index))}
                               onClick={event => event.stopPropagation()}
-                              onChange={event => { event.stopPropagation(); const key=orderKeyForRow(row,index); setSelectedOrderKeys(previous => event.target.checked ? [...new Set([...previous.filter(value => !finishContractorKeys.includes(value)),key])] : previous.filter(value => value !== key)) }}
+                              onChange={event => { event.stopPropagation(); const key=orderKeyForRow(row,index); setSelectedOrderKeys(previous => event.target.checked ? [...new Set([...previous,key])] : previous.filter(value => value !== key)) }}
                               aria-label={(row.label || '見積項目') + 'を発注対象に選択'}
                             />
                             <strong>{row.label}{row.memo && <small className="estimateMemo">{row.memo}</small>}</strong>
