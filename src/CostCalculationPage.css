@@ -155,3 +155,12 @@
 
 /* M-CROSS_COST_BIZUDP_FILE_V73_SAFE */
 @font-face{font-family:'MCrossBIZUDP';src:url('/fonts/BIZUDPGothic-Regular.ttf') format('truetype');font-style:normal;font-weight:100 900;font-display:swap}.cc-page,.cc-page *,.cc-page input,.cc-page button,.cc-page select,.cc-page textarea{font-family:'MCrossBIZUDP',sans-serif!important}@media print{.cc-page,.cc-page *,.cc-page input,.cc-page button,.cc-page select,.cc-page textarea{font-family:'MCrossBIZUDP',sans-serif!important}}
+
+/* M-CROSS_COST_QTY_RATE_WIDTH_V79_SAFE */
+@media screen{.cc-page .cc-head,.cc-page .cc-row{grid-template-columns:minmax(155px,1.25fr) minmax(125px,.95fr) 82px 66px 105px 102px 125px 58px!important;min-width:918px!important}.cc-page .cc-row>div:nth-child(3)>input,.cc-page .cc-row>div:nth-child(5)>input{padding:0 7px!important;text-align:right!important;font-variant-numeric:tabular-nums!important}.cc-page .cc-row>div:nth-child(4)>input{text-align:center!important;padding:0 3px!important}}
+
+/* M-CROSS_COST_HIDE_NUMBER_SPINNER_V80_SAFE */
+.cc-page input[type=number]::-webkit-inner-spin-button,.cc-page input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none!important;margin:0!important}.cc-page input[type=number]{appearance:textfield!important;-moz-appearance:textfield!important}
+
+/* M-CROSS_COST_QTY_RATE_FIT_V82_SAFE */
+@media screen{.cc-page .cc-head,.cc-page .cc-row{grid-template-columns:minmax(150px,1.2fr) minmax(120px,.95fr) 86px 68px 116px 102px 125px 58px!important;min-width:925px!important}.cc-page .cc-row>div:nth-child(3)>input,.cc-page .cc-row>div:nth-child(5)>input{width:100%!important;min-width:0!important;padding:0 4px!important;text-align:right!important;font-variant-numeric:tabular-nums!important}.cc-page .cc-row>div:nth-child(4)>input{width:100%!important;min-width:0!important;padding:0 2px!important;text-align:center!important}}

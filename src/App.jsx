@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import EriTako from './EriTako.jsx' // M-CROSS_ERI_TAKO_V1_SAFE
+import VoiceGuide from './VoiceGuide.jsx' // M-CROSS_VOICE_GUIDE_FADE_V1_SAFE
 import CostCalculationPage from './CostCalculationPage.jsx'
 import properties from './m-cross-properties.json'
 import OneDriveSyncPanel from './OneDriveSyncPanel'
@@ -4693,6 +4695,7 @@ export default function App() {
   const [globalPropertySearch, setGlobalPropertySearch] = useState('')
   const [globalPropertyVoiceListening, setGlobalPropertyVoiceListening] = useState(false)
   const [globalPropertyVoiceStatus, setGlobalPropertyVoiceStatus] = useState('')
+  const [voiceGuideTrigger,setVoiceGuideTrigger]=useState(0)
   function startGlobalPropertyVoiceSearch() {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
     setShowGlobalPropertySearch(true)
@@ -4701,7 +4704,7 @@ export default function App() {
       const recognition = new Recognition()
       recognition.lang = 'ja-JP'; recognition.continuous = false; recognition.interimResults = false; recognition.maxAlternatives = 1
       setGlobalPropertyVoiceListening(true); setGlobalPropertyVoiceStatus('🎤 聞き取り中…')
-      recognition.onresult = event => { const text=String(event.results?.[0]?.[0]?.transcript||'').trim(); setGlobalPropertySearch(text); setGlobalPropertyVoiceStatus(text?'検索：'+text:'音声を認識できませんでした') }
+      recognition.onresult = event => { const text=String(event.results?.[0]?.[0]?.transcript||'').trim(); setGlobalPropertySearch(text); setGlobalPropertyVoiceStatus(text?'検索：'+text:'音声を認識できませんでした'); if(text)setVoiceGuideTrigger(value=>value+1) }
       recognition.onerror = event => setGlobalPropertyVoiceStatus('音声検索エラー: '+(event.error||'認識できませんでした'))
       recognition.onend = () => setGlobalPropertyVoiceListening(false)
       recognition.start()
@@ -8618,7 +8621,7 @@ return savedEntries
     ['retro', 'RETRO'],
     ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
   ]
-  if(showCostCalculation)return <CostCalculationPage onBack={()=>setShowCostCalculation(false)}/>
+  /* M-CROSS_COST_CONTEXT_PROPS_V2_SAFE */ if(showCostCalculation)return <CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"}/>
 
   return (
     <>
@@ -10312,7 +10315,7 @@ return savedEntries
                 <section className="globalPropertySearchPanel" role="dialog" aria-modal="true" aria-label="全物件検索" onClick={event => event.stopPropagation()}>
                   <div className="globalPropertySearchHeader"><div><strong>🎤 全物件検索</strong><small>管理会社を問わず検索</small></div><button type="button" onClick={() => setShowGlobalPropertySearch(false)}>×</button></div>
                   <div className="globalPropertySearchInputRow"><input autoFocus value={globalPropertySearch} onChange={event=>setGlobalPropertySearch(event.target.value)} placeholder="シュシュ大曲／大曲／イノベ"/><button type="button" disabled={globalPropertyVoiceListening} onClick={startGlobalPropertyVoiceSearch}>🎤</button></div>
-                  {globalPropertyVoiceStatus && <small className="globalPropertyVoiceStatus">{globalPropertyVoiceStatus}</small>}
+                  {globalPropertyVoiceStatus && <small className="globalPropertyVoiceStatus">{globalPropertyVoiceStatus}</small>}<VoiceGuide trigger={voiceGuideTrigger}/>
                   <div className="globalPropertySearchResults">{(()=>{const forms=searchForms(globalPropertySearch);const results=forms.length?mergedPropertyMaster.properties.filter(item=>matchesProperty(item,forms)||searchForms(item.address).some(v=>forms.some(q=>v.includes(q)||q.includes(v)))).slice(0,50):[];if(!globalPropertySearch.trim())return <p className="empty">物件名を話すか入力してください</p>;if(!results.length)return <p className="empty">一致する物件がありません</p>;return results.map((item,index)=><button className="globalPropertySearchItem" type="button" key={item.id||[item.company,item.name,index].join('|')} onClick={()=>{setCompany(item.company||'');setSelectedProperty(item);setPropertySearch(item.name||'');setSaveStatus('');setShowGlobalPropertySearch(false)}}><strong>{item.name}</strong><small>{item.company||'管理会社未設定'}</small><span>{item.address||'住所未登録'}</span></button>)})()}</div>
                 </section>
               </div>}
@@ -10618,7 +10621,7 @@ return savedEntries
             <p className={`saveState ${isDirty ? 'dirty' : 'saved'}`} role="status" aria-live="polite">
               {isDirty ? '未保存' : '保存済み'}
             </p>
-            {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}
+            {saveStatus && <p className="saveStatus" role="status">{saveStatus}</p>}<EriTako trigger={saveStatus}/>
 
             {!showRoomManagement && !showEstimate && (
               <div className="measurementTypes" aria-label="採寸機能">
@@ -10717,7 +10720,7 @@ return savedEntries
               return (
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
-                  <section className="orderSelectionPanel" aria-label="発注項目の選択">
+                  {/* M-CROSS_COST_BUTTON_IN_PROJECT_V75_SAFE */}<button type="button" className="primary" style={{width:"100%",minHeight:"52px",marginBottom:"12px",fontWeight:900}} onClick={()=>setShowCostCalculation(true)}>💰 この物件の原価計算</button><section className="orderSelectionPanel" aria-label="発注項目の選択">
                     <strong>📦 発注する項目を選択</strong>
                     <div className="orderSelectionQuickButtons">
                       <button type="button" className="orderQuickPrimary" onClick={() => setSelectedOrderKeys(finishContractorKeys)}>クロス・CF・巾木を一括選択</button>
