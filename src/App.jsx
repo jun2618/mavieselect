@@ -4779,8 +4779,8 @@ export default function App() {
 
       const issuedAt=new Date(order.issuedAt||order.finalizedAt||order.createdAt||Date.now())
       ws.cell('I2').value(issuedAt).style('numberFormat','yyyy年m月d日')
-      ws.cell('A5').value(order.contractorName||'')
-      ws.cell('A6').value([order.contractorPostalCode,order.contractorAddress,order.contractorContact,order.contractorPhone].filter(Boolean).join('\n')).style('wrapText',true)
+      ws.cell('A5').value(order.contractorName?order.contractorName+'　御中':'')
+      ws.cell('A6').value([order.contractorPostalCode,order.contractorAddress,order.contractorPhone].filter(Boolean).join('\n')).style('wrapText',true)
       ws.cell('B12').value(order.propertyName||'')
       ws.cell('E12').value(String(order.unit||''))
       ws.cell('B13').value(order.address||'')
