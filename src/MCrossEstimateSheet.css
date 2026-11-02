@@ -50,3 +50,18 @@
   .mcrossEstimatePaper{padding-left:10px!important;padding-right:10px!important;}
 }
 @media print{.mcrossEstimateWorkspace{width:auto!important;max-width:none!important;margin:0!important;padding:0!important}.mcrossEstimateNavigation,.mcrossEstimatePaper{transform:none!important}}
+
+/* M-CROSS_PAD6_MATCH_PARENT_ROUND_V2_SAFE */
+@media screen and (min-width:701px) and (max-width:1024px){
+ .mcrossEstimateWorkspace{width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;box-sizing:border-box!important;overflow-x:hidden!important;}
+ .mcrossEstimateNavigation,.mcrossEstimatePaper{width:100%!important;max-width:100%!important;margin-left:0!important;margin-right:0!important;transform:none!important;box-sizing:border-box!important;}
+ .mcrossEstimateNavigation{grid-template-columns:repeat(4,minmax(0,1fr))!important;padding:0!important;}
+ .mcrossEstimateNavigation button{min-width:0!important;font-size:12px!important;padding:7px 3px!important;white-space:normal!important;}
+ .mcrossEstimatePaper{padding:10px!important;overflow:hidden!important;}
+ .mcrossEstimateTable.editable{width:100%!important;min-width:0!important;overflow:hidden!important;}
+ .mcrossEstimateTable.editable .mcrossEstimateRow{grid-template-columns:34px 40px minmax(0,2fr) minmax(0,.78fr) 56px 44px 74px 82px 34px!important;width:100%!important;min-width:0!important;}
+ .mcrossEstimateTable.editable .mcrossEstimateRow span,.mcrossEstimateTable.editable .mcrossEstimateRow input{min-width:0!important;font-size:11.5px!important;padding-left:2px!important;padding-right:2px!important;}
+ .mcrossEstimateMeta{grid-template-columns:minmax(0,1.2fr) minmax(190px,.8fr)!important;gap:8px!important;}
+ .mcrossEstimateMeta>*{min-width:0!important;}
+}
+@media print{.mcrossEstimateWorkspace,.mcrossEstimateNavigation,.mcrossEstimatePaper{transform:none!important;}}
