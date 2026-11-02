@@ -641,6 +641,7 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
 
   // 1. クロスを全部屋分、指定した部屋順で先に並べます。
   /* M-CROSS_CROSS_COMPANY_RULES_ESTIMATE_V7_SAFE */
+  /* M-CROSS_CROSS_ESTIMATE_WORDING_V1_SAFE */
   orderedRooms.forEach(roomName => {
     const definitions = [
       {
@@ -663,19 +664,21 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
     definitions.forEach(definition => {
       const groups = new Map()
       definition.records.forEach(record => {
-        const finish = definition.kind === 'wall' && record.crossFinish === 'color' ? 'color' : 'normal'
-        const surface = finish === 'color' ? String(record.surfaceName || '').trim() : ''
+        const finish = definition.kind === 'wall' ? (record.crossFinish === 'color' ? 'color' : record.crossFinish === 'partial' ? 'partial' : 'normal') : 'normal'
+        const surface = (finish === 'color' || finish === 'partial') ? String(record.surfaceName || '').trim() : ''
         const recordMemo = String(record.memo || '').trim()
-        const key = [finish, surface, recordMemo].join('||')
+        const burden = String(record.burden || 'unspecified')
+        const key = [finish, surface, recordMemo, burden].join('||')
         if (!groups.has(key)) groups.set(key, [])
         groups.get(key).push(record)
       })
 
       groups.forEach(groupRecords => {
         const first = groupRecords[0] || {}
-        const finish = definition.kind === 'wall' && first.crossFinish === 'color' ? 'color' : 'normal'
-        const surface = finish === 'color' ? String(first.surfaceName || '').trim() : ''
+        const finish = definition.kind === 'wall' ? (first.crossFinish === 'color' ? 'color' : first.crossFinish === 'partial' ? 'partial' : 'normal') : 'normal'
+        const surface = (finish === 'color' || finish === 'partial') ? String(first.surfaceName || '').trim() : ''
         const inputMemo = String(first.memo || '').trim()
+        const burden = String(first.burden || 'unspecified')
         const quantity = groupRecords.reduce((sum, record) => sum + getRecordQuantity(record), 0) * factor
         if (quantity <= 0) return
         const amount = groupRecords.reduce((sum, record) => sum + definition.amountForRecord(record), 0)
@@ -685,12 +688,12 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
         if (definition.kind === 'wall') {
           parts = finish === 'color'
             ? [roomName, surface || '壁', 'カラークロス施工']
-            : [roomName, '壁', 'クロス部分張替']
+            : finish === 'partial' ? [roomName, surface || '壁', 'クロス部分張替'] : [roomName, '壁', 'クロス張替']
         } else if (definition.kind === 'storage') {
           parts = [roomName, '収納', 'クロス貼替']
           outputMemo = ['天井壁', inputMemo].filter(Boolean).join('・')
         } else {
-          parts = [roomName, '天井', 'クロス貼替']
+          parts = [roomName, '天井', 'クロス張替']
         }
 
         crossRows.push({
@@ -698,6 +701,7 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
           parts,
           memo: outputMemo,
           category: 'cross',
+          burden,
           quantity,
           unit: '㎡',
           rate: quantity > 0 ? amount / quantity : 0,
@@ -1110,7 +1114,7 @@ async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, add
     const cv=v=>{if(v===''||v==null)return '';const n=Number(v);return Number.isFinite(n)?n:v}
     out.forEach((row,i)=>{
       const r=23+i,raw=Array.isArray(row.parts)?row.parts.map(v=>String(v||'').trim()):[]
-      const q=[0,1,2,3].map(j=>raw[j]||'')
+      const q=[0,1,2,3].map(j=>raw[j]||'');/* M-CROSS_EXCEL_PRODUCT_CODE_COLUMN_V1_SAFE */const excelMemo=String(row.memo||'').trim();ws.cell('B'+r).value(String(row.productCode||'').trim()).style({wrapText:false,shrinkToFit:true,verticalAlignment:'center',horizontalAlignment:'left'})
       /* M-CROSS_LEGACY_RAW_LABEL_OUTPUT_V1_SAFE */
       if(row.legacyRawLabel){
         const rg=ws.range('C'+r+':G'+r);if(!rg.merged())rg.merged(true)
@@ -1119,11 +1123,12 @@ async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, add
         ws.cell('C'+r).value(q[0])
         ws.cell('D'+r).value(q[1])
         ws.cell('E'+r).value(q[2])
-        ws.cell('F'+r).value(q[3])
-        ws.cell('G'+r).value('')
+        /* M-CROSS_EXCEL_SPEC_FG_MERGE_V2_SAFE */
+        try{const fg=ws.range('F'+r+':G'+r);if(fg.merged())fg.merged(false);fg.merged(true)}catch{}
+        ws.cell('F'+r).value([q[3],excelMemo].filter(Boolean).join('　')).style({wrapText:false,shrinkToFit:true,verticalAlignment:'center',horizontalAlignment:'left'})
       }else{
         const rg=ws.range('C'+r+':G'+r);if(!rg.merged())rg.merged(true)
-        ws.cell('C'+r).value(raw.filter(Boolean).join(' '))
+        ws.cell('C'+r).value([raw.filter(Boolean).join(' '),excelMemo].filter(Boolean).join('　'))
       }
       for(const c of ['C','D','E','F','G'])ws.cell(c+r).style({wrapText:false,shrinkToFit:true,verticalAlignment:'center',horizontalAlignment:'left'})
       try{ws.row(r).height(13.15)}catch{}
@@ -2200,6 +2205,7 @@ const styles = `
   /* M-CROSS_MATERIAL_ORDER_TOP_ADDED_ONLY_V46_SAFE */
   .materialOrderAddedOnlyLabel{padding:3px 7px;border-radius:999px;background:#dff7e9;color:#226443;font-size:11px;font-style:normal;font-weight:900;letter-spacing:0}
   .theme-dark .materialOrderAddedOnlyLabel,.theme-cyber .materialOrderAddedOnlyLabel,.theme-luxury .materialOrderAddedOnlyLabel,.theme-retro .materialOrderAddedOnlyLabel,.theme-galaxy .materialOrderAddedOnlyLabel{background:#16452f;color:#baffd4}
+  .crossFinishButtons{grid-template-columns:repeat(3,minmax(0,1fr))!important}.crossSurfaceQuick{display:flex;flex-wrap:wrap;gap:7px}.crossSurfaceQuick button{min-height:39px;padding:6px 9px;border:1px solid #d8c9df;border-radius:999px;background:#fff;color:#65596a;font:inherit;font-size:13px;font-weight:800}.crossSurfaceQuick button.active{color:#fff;background:#6e91e8}.crossBurdenPanel{display:grid;gap:8px;padding:11px;border:1px solid #dbcfea;border-radius:12px;background:#faf7ff}.crossBurdenPanel>span{font-weight:900}.crossBurdenPanel>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.crossBurdenPanel button.active.unspecified{background:#767676}.crossBurdenPanel button{min-height:47px;border:1px solid #d8c9df;border-radius:11px;background:#fff;color:#65596a;font:inherit;font-weight:900}.crossBurdenPanel button.active{color:#fff}.crossBurdenPanel button.active.landlord{background:#3579d0}.crossBurdenPanel button.active.tenant{background:#df7a28}.crossBurdenPanel button.active.split{background:#7656bd}.crossEstimatePreview{display:grid;gap:5px;padding:12px;border:2px solid rgba(110,145,232,.35);border-radius:12px;background:rgba(110,145,232,.1)}.crossEstimatePreview strong{font-size:17px;line-height:1.5}.crossEstimatePreview span{color:#756a78;font-size:13px;font-weight:900}@media(max-width:520px){.crossFinishButtons,.crossBurdenPanel>div{grid-template-columns:1fr}.crossFinishButtons button,.crossBurdenPanel button{min-height:50px}.crossSurfaceQuick button{flex:1 1 calc(50% - 7px)}}
   .crossFinishPanel{display:grid;gap:10px;margin:0 0 18px;padding:14px;border:1px solid #ead8cb;border-radius:14px;background:#fffaf5}.crossFinishPanel>span,.crossFinishPanel label>span{color:#817183;font-size:15px;font-weight:800}.crossFinishButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.crossFinishButtons button{min-height:48px;border:1px solid #d8c9df;border-radius:12px;background:#fff;color:#65596a;font:inherit;font-weight:800}.crossFinishButtons button.active{color:#fff;border-color:#6e91e8;background:#6e91e8}.crossFinishPanel label{margin:0}
   .requestContentButton { background:linear-gradient(180deg,#ffbf66,#ee9638); box-shadow:0 5px 0 #bd6d25; }
   .requestContentBackdrop { position:fixed; z-index:1900; inset:0; display:grid; place-items:start center; padding:24px 14px 14px; background:rgba(15,12,20,.72); backdrop-filter:none; -webkit-backdrop-filter:none; overflow:auto; }
@@ -6158,6 +6164,8 @@ export default function App() {
   /* M-CROSS_CROSS_FINISH_STEP1_V4_SAFE */
   const [crossFinish, setCrossFinish] = useState('normal')
   const [surfaceName, setSurfaceName] = useState('')
+  /* M-CROSS_CROSS_BURDEN_DATA_V1_SAFE */
+  /* M-CROSS_CROSS_BURDEN_UNSPECIFIED_V1_SAFE */ const [crossBurden, setCrossBurden] = useState('unspecified')
   const [activeInput, setActiveInput] = useState('')
   const heightInputRef = useRef(null)
   const countInputRef = useRef(null)
@@ -8567,8 +8575,8 @@ return savedEntries
     const numericHeight = Number(height.replace(/[。．]/g, '.'))
     const numericCount = Number(count)
     if (!Number.isFinite(numericHeight) || numericHeight <= 0 || !Number.isFinite(numericCount) || numericCount <= 0) return
-    if (measurementType === '壁' && crossFinish === 'color' && !surfaceName.trim()) {
-      window.alert('カラークロスの施工面を入力してください。')
+    if (measurementType === '壁' && (crossFinish === 'color' || crossFinish === 'partial') && !surfaceName.trim()) {
+      window.alert(crossFinish === 'color' ? 'カラークロスの施工面を入力してください。' : '部分張替の貼替場所・面数を入力してください。')
       return
     }
 
@@ -8580,7 +8588,8 @@ return savedEntries
       count: numericCount,
       quantity: numericHeight * numericCount,
       crossFinish: measurementType === '壁' ? crossFinish : 'normal',
-      surfaceName: measurementType === '壁' && crossFinish === 'color' ? surfaceName.trim() : '',
+      surfaceName: measurementType === '壁' && (crossFinish === 'color' || crossFinish === 'partial') ? surfaceName.trim() : '',
+      burden: crossBurden,
       memo: memo.trim(),
     }])
     markRoomUnconfirmed(room)
@@ -8630,7 +8639,7 @@ return savedEntries
     ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
   ]
   /* M-CROSS_COST_ESTIMATE_AMOUNT_V1_SAFE */
-  if(showCostCalculation){const factor=Math.max(0,Number(caseCrossFactor)||Number(pricingSettings.crossFactor)||0);const rawRows=buildEstimateRows(records,cfRecords,softRecords,floorTrimRecords,rooms,factor,pricingSettings);const allRows=openedEstimateRows??applyEstimateEdits(rawRows,estimateEdits);const costEstimateRows=allRows.filter(row=>!estimateEdits[row.exclusionKey||estimateEditKey(row)]?.excluded);const costAdditionalWorks=additionalWorks.filter((item,index)=>!estimateEdits['additionalWork:'+(item.id||index)]?.excluded);const costEstimateAmount=costEstimateRows.reduce((sum,row)=>sum+(Number(row.amount)||0),0)+costAdditionalWorks.reduce((sum,item)=>sum+(Number(item.amount)||(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0);return <CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"} estimateAmount={costEstimateAmount}/>}
+  if(showCostCalculation){const factor=Math.max(0,Number(caseCrossFactor)||Number(pricingSettings.crossFactor)||0);const rawRows=buildEstimateRows(records,cfRecords,softRecords,floorTrimRecords,rooms,factor,pricingSettings);const allRows=openedEstimateRows??applyEstimateEdits(rawRows,estimateEdits);const costEstimateRows=allRows.filter(row=>!estimateEdits[row.exclusionKey||estimateEditKey(row)]?.excluded);const costAdditionalWorks=additionalWorks.filter((item,index)=>!estimateEdits['additionalWork:'+(item.id||index)]?.excluded);const costEstimateAmount=costEstimateRows.reduce((sum,row)=>sum+(Number(row.amount)||0),0)+costAdditionalWorks.reduce((sum,item)=>sum+(Number(item.amount)||(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0);return <CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"} estimateAmount={Math.round(costEstimateAmount)}/>}
 
   return (
     <>
@@ -12375,12 +12384,22 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
 
                         {measurementType === '壁' && (
                           <section className="crossFinishPanel" aria-label="クロス種別">
-                            <span>クロス種別</span>
+                            <span>① クロス種別を選ぶ</span>
                             <div className="crossFinishButtons">
                               <button type="button" className={crossFinish === 'normal' ? 'active' : ''} onClick={() => { setCrossFinish('normal'); setSurfaceName(''); markUnsaved() }}>通常クロス</button>
-                              <button type="button" className={crossFinish === 'color' ? 'active' : ''} onClick={() => { setCrossFinish('color'); markUnsaved() }}>カラークロス</button>
+                              <button type="button" className={crossFinish === 'partial' ? 'active' : ''} onClick={() => { setCrossFinish('partial'); setSurfaceName(''); markUnsaved() }}>部分張替</button>
+                              <button type="button" className={crossFinish === 'color' ? 'active' : ''} onClick={() => { setCrossFinish('color'); setSurfaceName(''); markUnsaved() }}>カラークロス</button>
                             </div>
-                            {crossFinish === 'color' && <label><span>施工面</span><input value={surfaceName} onChange={event => { setSurfaceName(event.target.value); markUnsaved() }} placeholder="例：バルコニー、正面" /></label>}
+                            {(crossFinish === 'partial' || crossFinish === 'color') && <>
+                              <label><span>② {crossFinish === 'partial' ? '貼替場所・面数' : '施工面'}</span><input value={surfaceName} onChange={event => { setSurfaceName(event.target.value); markUnsaved() }} placeholder={crossFinish === 'partial' ? '例：窓面、窓向かって左面、壁2面' : '例：バルコニー面、正面'} /></label>
+                              <div className="crossSurfaceQuick">{['窓面','窓向かって右面','窓向かって左面','入口面','正面','右面','左面','壁1面','壁2面','壁3面'].map(value => <button type="button" key={value} className={surfaceName === value ? 'active' : ''} onClick={() => { setSurfaceName(value); markUnsaved() }}>{value}</button>)}</div>
+                            </>}
+                            <div className="crossBurdenPanel"><span>③ 誰の負担？</span><div><button type="button" className={crossBurden === 'unspecified' ? 'active unspecified' : ''} onClick={() => { setCrossBurden('unspecified'); markUnsaved() }}>⚪ 指定なし</button>
+                              <button type="button" className={crossBurden === 'landlord' ? 'active landlord' : ''} onClick={() => { setCrossBurden('landlord'); markUnsaved() }}>🔵 貸主</button>
+                              <button type="button" className={crossBurden === 'tenant' ? 'active tenant' : ''} onClick={() => { setCrossBurden('tenant'); markUnsaved() }}>🟠 借主</button>
+                              <button type="button" className={crossBurden === 'split' ? 'active split' : ''} onClick={() => { setCrossBurden('split'); markUnsaved() }}>🟣 按分</button>
+                            </div></div>
+                            <div className="crossEstimatePreview"><small>📄 見積書ではこう表示</small><strong>{crossFinish === 'color' ? [room, surfaceName || '施工面未入力', 'カラークロス施工'].join('　') : crossFinish === 'partial' ? [room, surfaceName || '貼替場所未入力', 'クロス部分張替'].join('　') : [room, '壁', 'クロス張替'].join('　')}</strong><span>負担：{crossBurden === 'tenant' ? '借主' : crossBurden === 'split' ? '按分' : crossBurden === 'landlord' ? '貸主' : '指定なし'}</span></div>
                           </section>
                         )}
                         <label>
@@ -12409,10 +12428,11 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                           <div className="record" key={item.id}>
                             <div>
                               {/* M-CROSS_CROSS_FINISH_REGISTRATION_V6_MINIMAL_SAFE */}
-                              <strong>{item.type}{item.type === '壁' ? (item.crossFinish === 'color' ? '・カラークロス' : '・通常クロス') : ''}</strong>
+                              <strong>{item.type}{item.type === '壁' ? (item.crossFinish === 'color' ? '・カラークロス' : item.crossFinish === 'partial' ? '・部分張替' : '・通常クロス') : ''}</strong>
 
                               <small>{Number(item.height).toFixed(2)}m × {item.count}本</small>
-                              {item.type === '壁' && item.crossFinish === 'color' && item.surfaceName && <small>施工面：{item.surfaceName}</small>}
+                              {item.type === '壁' && (item.crossFinish === 'color' || item.crossFinish === 'partial') && item.surfaceName && <small>{item.crossFinish === 'partial' ? '貼替場所' : '施工面'}：{item.surfaceName}</small>}
+                              {item.type === '壁' && <small>負担：{item.burden === 'tenant' ? '借主' : item.burden === 'split' ? '按分' : '貸主'}</small>}
                               {item.memo && <small>メモ：{item.memo}</small>}
                             </div>
                             <b>{formatQuantity(getRecordQuantity(item))}m</b>
