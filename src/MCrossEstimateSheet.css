@@ -34,3 +34,19 @@
   .mcrossEstimatePaper,.mcrossEstimateNavigation{width:100%!important;max-width:920px!important;margin-left:auto!important;margin-right:auto!important;transform:translateX(-4px);box-sizing:border-box!important;}
 }
 @media print{.mcrossEstimatePaper,.mcrossEstimateNavigation{transform:none!important;}}
+
+/* M-CROSS_XIAOMI_PAD6_FULLCENTER_V1_SAFE */
+@media screen and (min-width:701px) and (max-width:1024px){
+  .mcrossEstimateWorkspace{
+    width:100vw!important;max-width:100vw!important;
+    margin-left:calc(50% - 50vw)!important;margin-right:calc(50% - 50vw)!important;
+    padding:0 8px!important;box-sizing:border-box!important;overflow-x:hidden!important;
+  }
+  .mcrossEstimateNavigation,.mcrossEstimatePaper{
+    width:100%!important;max-width:none!important;
+    margin-left:auto!important;margin-right:auto!important;
+    transform:none!important;box-sizing:border-box!important;
+  }
+  .mcrossEstimatePaper{padding-left:10px!important;padding-right:10px!important;}
+}
+@media print{.mcrossEstimateWorkspace{width:auto!important;max-width:none!important;margin:0!important;padding:0!important}.mcrossEstimateNavigation,.mcrossEstimatePaper{transform:none!important}}
