@@ -4,3 +4,4 @@
 
 /* M-CROSS_ERI_TAKO_SIDE_PEEK_ALL_V5_SAFE */
 .eriTakoPop{position:fixed!important;left:auto!important;right:-130px!important;top:42%!important;bottom:auto!important;width:125px!important;height:125px!important;z-index:100000!important;pointer-events:none!important;opacity:0!important;transform:translateY(-50%) rotate(6deg) scale(.92)!important;transition:right .45s cubic-bezier(.2,.85,.25,1.15),opacity .35s ease,transform .45s ease!important}.eriTakoPop.show{right:8px!important;bottom:auto!important;opacity:1!important;transform:translateY(-50%) rotate(-3deg) scale(1)!important}@media(max-width:620px){.eriTakoPop{right:-115px!important;width:110px!important;height:110px!important}.eriTakoPop.show{right:5px!important}}@media print{.eriTakoPop{display:none!important}}
+@media screen and (min-width:701px) and (max-width:1024px) and (orientation:portrait){.eriTakoPop{top:24%!important}.eriTakoPop.show{top:24%!important}}
