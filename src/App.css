@@ -782,3 +782,6 @@ textarea:disabled {
 
 /* M-CROSS_HIDE_WORK_ORDER_BUTTON_V1_SAFE */
 button.primary[data-work-order-hidden]{display:none!important}
+
+/* M-CROSS_TABLET_FULLSCREEN_V1_SAFE */
+@media screen and (max-width:1024px){html,body,#root{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}.app{width:100%!important;max-width:none!important;padding-left:4px!important;padding-right:4px!important}.header,.main{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important}.main{padding-left:0!important;padding-right:0!important}.card{max-width:none!important}}
