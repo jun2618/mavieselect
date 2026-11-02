@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from 'react'
 import './MCrossEstimateSheet.css'
+/* M-CROSS_ESTIMATE_M_DECIMAL1_ONLY_V1_SAFE */
 /* M-CROSS_ESTIMATE_UNIT_QUANTITY_FACTOR_V1_SAFE */
 import WorkInstructionModal from './WorkInstructionModal.jsx'
 /* M-CROSS_WORK_INSTRUCTION_V4_SAFE */
@@ -10,7 +11,7 @@ const newRow=()=>({id:'estimate-'+Date.now()+'-'+Math.random().toString(36).slic
 let mcrossWorkSlide={active:false,selecting:true,touched:new Set()}
 export default function MCrossEstimateSheet({company='',propertyName='',unit='',address='',workName='',rows:sourceRows=[],propertyAccess={},onGoMeasurement,onGoOrder,onGoCost,onExportEstimate}){
  const storageKey=['mcross_editable_estimate_v1',company,propertyName,unit,workName].map(v=>encodeURIComponent(String(v||''))).join(':')
- const[rows,setRows]=useState(()=>{try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');return Array.isArray(saved?.rows)?saved.rows.map(row=>({...row,quantity:row.quantity===''?'':Math.round((Number(row.quantity)||0)*100)/100,rate:row.rate===''?'':Math.round(Number(row.rate)||0)})):[]}catch{return []}})
+ const[rows,setRows]=useState(()=>{try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');return Array.isArray(saved?.rows)?saved.rows.map(row=>({...row,quantity:row.quantity===''?'':(String(row.unit||'').trim()==='m'?Math.round((Number(row.quantity)||0)*10)/10:Math.round((Number(row.quantity)||0)*100)/100),rate:row.rate===''?'':Math.round(Number(row.rate)||0)})):[]}catch{return []}})
  /* M-CROSS_WORK_COPY_V2_SAFE */
  /* M-CROSS_WORK_CHECKBOX_LEFT_V1_SAFE */
  const[selectedWorkIds,setSelectedWorkIds]=useState([])
@@ -29,7 +30,7 @@ export default function MCrossEstimateSheet({company='',propertyName='',unit='',
  const total=useMemo(()=>rows.reduce((sum,row)=>sum+(Number(row.quantity)||0)*(Number(row.rate)||0),0),[rows])
  const edit=(id,key,value)=>setRows(previous=>previous.map(row=>row.id===id?{...row,value}:row))
  const remove=id=>setRows(previous=>previous.filter(row=>row.id!==id))
- const importMeasurement=()=>{const incoming=(Array.isArray(sourceRows)?sourceRows:[]).map((row,index)=>({id:'source-'+String(row.exclusionKey||row.id||index),sourceKey:String(row.exclusionKey||row.id||index),name:String((Array.isArray(row.parts)&&row.parts.filter(Boolean).length?row.parts.filter(Boolean).join(' '):row.label||'')).replace(/クロス部分張替/g,'クロス張替').replace(/[　 ]+/g,' ').trim(),spec:String(row.productCode||''),quantity:Math.round((Number(row.quantity)||0)*100)/100,unit:String(row.unit||''),rate:row.rate===''||row.rate==null?'':Math.round(Number(row.rate)||0)}));setRows(previous=>{const keys=new Set(previous.map(row=>row.sourceKey).filter(Boolean));return [...previous,...incoming.filter(row=>!keys.has(row.sourceKey))]})}
+ const importMeasurement=()=>{const incoming=(Array.isArray(sourceRows)?sourceRows:[]).map((row,index)=>({id:'source-'+String(row.exclusionKey||row.id||index),sourceKey:String(row.exclusionKey||row.id||index),name:String((Array.isArray(row.parts)&&row.parts.filter(Boolean).length?row.parts.filter(Boolean).join(' '):row.label||'')).replace(/クロス部分張替/g,'クロス張替').replace(/[　 ]+/g,' ').trim(),spec:String(row.productCode||''),quantity:(String(row.unit||'').trim()==='m'?Math.round((Number(row.quantity)||0)*10)/10:Math.round((Number(row.quantity)||0)*100)/100),unit:String(row.unit||''),rate:row.rate===''||row.rate==null?'':Math.round(Number(row.rate)||0)}));setRows(previous=>{const keys=new Set(previous.map(row=>row.sourceKey).filter(Boolean));return [...previous,...incoming.filter(row=>!keys.has(row.sourceKey))]})}
  return <section className='mcrossEstimateWorkspace'>
   <nav className='mcrossEstimateNavigation'><button type='button' onClick={onGoMeasurement}>📐 工事内容・採寸</button><button type='button' onClick={onGoOrder}>📦 施工・材料発注</button><button type='button' onClick={onGoCost}>💰 原価計算</button><button type='button' onClick={onExportEstimate}>🖨 Excel書式で出力・印刷</button></nav>
   <section className='mcrossEstimatePaper' style={{'--paper':config.paperColor,'--accent':config.headerColor,'--grid':config.gridColor}}>
