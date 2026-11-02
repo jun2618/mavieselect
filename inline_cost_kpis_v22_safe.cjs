@@ -1,0 +1,18 @@
+const fs=require('fs'),cp=require('child_process'),path=require('path');
+const jsx=path.join(process.cwd(),'src','CostCalculationPage.jsx');
+const css=path.join(process.cwd(),'src','CostCalculationPage.css');
+const marker='M-CROSS_COST_INLINE_KPIS_V22_SAFE';
+if(!fs.existsSync(jsx)||!fs.existsSync(css)){console.error('ERROR: CostCalculationPage files not found');process.exit(1)}
+let j=fs.readFileSync(jsx,'utf8'),c=fs.readFileSync(css,'utf8');
+if(j.includes(marker)||c.includes(marker)){console.log('ALREADY APPLIED');process.exit(0)}
+const bj=jsx+'.before-inline-kpis-v22-'+Date.now()+'.bak',bc=css+'.before-inline-kpis-v22-'+Date.now()+'.bak';fs.copyFileSync(jsx,bj);fs.copyFileSync(css,bc);
+// Add cost/profit/margin to compact header, after estimate.
+const estimate=`<label className="headerEstimate"><span>見積金額</span><div><b>¥</b><input type="number" value={info.estimate===''||info.estimate==null?0:info.estimate} onFocus={e=>e.currentTarget.select()} onChange={e=>setInfo({...info,estimate:e.target.value})}/></div></label>`;
+const replacement=`${estimate}<label className="headerMetric cost"><span>原価合計</span><strong>${'${yen(totalCost)}'}</strong></label><label className="headerMetric profit"><span>粗利益</span><strong>${'${yen(profit)}'}</strong></label><label className="headerMetric margin"><span>粗利率</span><strong>${'${margin.toFixed(1)}%'}</strong></label>`;
+if(j.split(estimate).length-1!==1){console.error('ERROR: header estimate MATCH='+(j.split(estimate).length-1));process.exit(1)}
+j=j.replace(estimate,replacement);
+// Hide now-duplicate KPI card strip entirely.
+c+=`\n/* ${marker} */\n.costKpis{display:none!important}.costInfoMinimal{grid-template-columns:52px minmax(220px,1.55fr) 54px minmax(90px,.55fr) 52px minmax(125px,.65fr) 62px minmax(120px,.62fr) 64px minmax(115px,.6fr) 54px minmax(110px,.58fr) 50px minmax(82px,.42fr)!important;gap:3px 5px!important}.headerMetric{display:contents!important}.headerMetric>strong{display:flex;align-items:center;justify-content:flex-end;min-height:27px;padding:2px 7px;border:1px solid #e1e5ec;border-radius:9px;background:#fff;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}.headerMetric.cost>strong{color:#13815a}.headerMetric.profit>strong{color:#1460c5}.headerMetric.margin>strong{color:#994617}.costInfoMinimal .headerEstimate input{font-size:17px!important}.costInfoMinimal .headerEstimate b{font-size:16px!important}@media(max-width:820px){.costInfoMinimal{grid-template-columns:64px minmax(0,1fr)!important}.headerMetric>strong{min-height:32px;font-size:17px}.costKpis{display:none!important}}@media print{.costKpis{display:none!important}.costInfoMinimal{min-height:9mm!important;height:auto!important;grid-template-columns:11mm minmax(31mm,1.5fr) 11mm 17mm 11mm 23mm 13mm 21mm 13mm 21mm 11mm 20mm 10mm 15mm!important;gap:.2mm .5mm!important;padding:.4mm .6mm!important}.costInfoMinimal label>span,.costInfoMinimal input,.headerMetric>strong{height:4.2mm!important;min-height:4.2mm!important;padding:.1mm .4mm!important;border-radius:.5mm!important;font-size:5pt!important;line-height:4mm!important}.headerMetric>strong{justify-content:flex-end!important;font-size:5.8pt!important}.costInfoMinimal .headerEstimate b{font-size:5.5pt!important}.costInfoMinimal .headerEstimate input{font-size:5.8pt!important}}\n`;
+fs.writeFileSync(jsx,j,'utf8');fs.writeFileSync(css,c,'utf8');
+console.log('OK: KPI cards folded into header V22');console.log('BACKUP JSX:',bj);console.log('BACKUP CSS:',bc);
+const r=cp.spawnSync('npm',['run','build'],{shell:true,stdio:'inherit'});if(r.status!==0){fs.copyFileSync(bj,jsx);fs.copyFileSync(bc,css);console.error('ERROR: build failed; restored');process.exit(r.status||1)}console.log('OK: BUILD SUCCESS');

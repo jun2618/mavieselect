@@ -1,0 +1,79 @@
+:root{--ink:#14203c;--grid:#74849a}*{box-sizing:border-box}.cc-page{max-width:1180px;margin:auto;padding:8px;background:linear-gradient(#fff,#fff9fb);color:var(--ink);font-family:"BIZ UDPGothic","BIZ UDP Gothic","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif}.cc-title{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #4d84b8;padding:2px 6px}.cc-title h1{margin:0;font-size:28px;font-weight:800}.cc-title div{display:flex;gap:7px}.cc-title button,.cc-section-actions button{border:1px solid #b9c4d2;border-radius:12px;background:#fff;padding:6px 10px;color:#32415d;font:inherit;font-weight:800}.cc-title .print{border:2px solid #121923}.cc-info{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(170px,.7fr) minmax(200px,.8fr);gap:7px;margin:7px 0}.cc-info label{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:7px}.cc-info b{padding:7px 10px;border-radius:10px;background:#e9edf4}.cc-info span{display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:5px}.cc-info input{width:100%;height:34px;border:1px solid #d3d9e3;border-radius:11px;padding:4px 9px;font:inherit}.cc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0}.cc-kpis article{display:grid;grid-template-columns:54px 1fr;align-items:center;min-height:84px;padding:10px 13px;border:2px solid;border-radius:16px}.cc-kpis svg{width:44px;height:44px;fill:currentColor}.cc-kpis b{display:block;font-size:14px}.cc-kpis strong,.cc-kpis label{display:flex;align-items:baseline;font-size:30px;font-weight:800;line-height:1}.cc-kpis label input{width:100%;min-width:0;border:0;background:transparent;color:inherit;font:inherit}.cc-kpis small{font-size:11px}.cc-kpis .estimate{background:#fde8f0;border-color:#f5b8cf;color:#a8093b}.cc-kpis .cost{background:#e5f6f0;border-color:#b4dfd1;color:#007551}.cc-kpis .profit{background:#e5f1ff;border-color:#b7d4f6;color:#075ec9}.cc-kpis .margin{background:#fff0e4;border-color:#f1c7a2;color:#9b4700}.cc-section{margin:7px 0;border:1px solid #b8c2d0;border-radius:12px;overflow:hidden}.cc-section>header{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;min-height:42px}.cc-section.blue>header{background:#e6f2ff;color:#0754bc}.cc-section.pink>header{background:#fde7ef;color:#b30b48}.cc-section.mint>header{background:#e4f6ef;color:#00704e}.cc-section.purple>header{background:#f0e8ff;color:#5621ae}.cc-section.gray>header{background:#edf0f4;color:#3d4b63}.cc-section-title,.cc-section-actions{display:flex;align-items:center;gap:8px}.cc-section-title>span{display:grid;place-items:center;width:28px;height:28px}.cc-section-title svg{width:23px;height:23px;fill:currentColor}.cc-section-title b{font-size:16px}.cc-section-title small{font-size:10px;font-weight:700}.cc-section-actions em{font-style:normal;font-size:12px}.cc-section-actions strong{font-size:21px}.cc-grid{overflow:auto}.cc-head,.cc-row{display:grid;grid-template-columns:minmax(160px,1.35fr) minmax(135px,1fr) 70px 62px 88px 102px 125px 58px;min-width:900px}.cc-head>*,.cc-row>*{border-right:1px solid var(--grid);border-bottom:1px solid var(--grid)}.cc-head>*:first-child,.cc-row>*:first-child{border-left:1px solid var(--grid)}.cc-head>*{display:flex;align-items:center;justify-content:center;height:29px;border-top:1px solid var(--grid);background:#e9eef5;font-size:12px;font-weight:800}.cc-head>*:nth-child(3),.cc-head>*:nth-child(4){background:#edf4fd}.cc-head>*:nth-child(7){background:#fff0e1;color:#985321}.cc-head>*:nth-child(8){background:#fff1f5;color:#a34b6b}.cc-row>*{height:33px;padding:2px 5px;background:#fff}.cc-row>*:nth-child(3),.cc-row>*:nth-child(4){background:#f6faff}.cc-row .money{background:#f7f9fc}.cc-row .tax{background:#fff8ef;color:#a55b23}.cc-row .op{background:#fff8fa}.cc-row input{width:100%;height:28px;border:0;background:transparent;padding:2px 4px;font:inherit;font-size:13px}.cc-row input:focus{outline:2px solid #75a9ee;outline-offset:-2px}.cc-row .money,.cc-row .tax{display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:800}.cc-row .tax input{text-align:right;color:#a55b23}.cc-row .op{display:grid;place-items:center}.cc-row .op button{display:grid;place-items:center;width:23px;height:23px;border:1px solid #efb1c5;border-radius:50%;background:#fff4f8;color:#c94d78}@media(max-width:820px){.cc-info{grid-template-columns:1fr}.cc-kpis{grid-template-columns:repeat(2,1fr)}.cc-head,.cc-row{min-width:850px}}@media print{@page{size:A4 portrait;margin:3mm}html,body,#root{margin:0;padding:0}.cc-page{width:204mm;max-width:204mm;margin:0;padding:0;background:#fff}.cc-title{padding:.3mm .8mm}.cc-title h1{font-size:14pt}.cc-title button,.cc-section-actions button,.cc-row .op{display:none}.cc-info{grid-template-columns:1.6fr .55fr .7fr;gap:.7mm;margin:.6mm 0}.cc-info b,.cc-info input{height:4.5mm;padding:.2mm .7mm;font-size:5.6pt;border-radius:1mm}.cc-info span{grid-template-columns:1fr 16mm}.cc-kpis{gap:.8mm;margin:.5mm 0}.cc-kpis article{min-height:13mm;padding:.6mm .9mm;border-radius:1.7mm;grid-template-columns:7mm 1fr}.cc-kpis svg{width:5.5mm;height:5.5mm}.cc-kpis b{font-size:5.3pt}.cc-kpis strong,.cc-kpis label{font-size:11.5pt}.cc-kpis small{font-size:4.2pt}.cc-section{margin:.55mm 0;border-radius:.8mm;break-inside:avoid}.cc-section>header{min-height:4.8mm;padding:.2mm .7mm}.cc-section-title>span{width:3.8mm;height:3.8mm}.cc-section-title svg{width:2.9mm;height:2.9mm}.cc-section-title b{font-size:6.3pt}.cc-section-title small{font-size:4.1pt}.cc-section-actions em{font-size:4.3pt}.cc-section-actions strong{font-size:7pt}.cc-grid{overflow:visible}.cc-head,.cc-row{grid-template-columns:minmax(33mm,1.35fr) minmax(27mm,1fr) 11mm 10mm 16mm 18mm 23mm;min-width:0}.cc-head>*{height:4mm;font-size:5.3pt;border-width:.22mm}.cc-head>*:nth-child(8){display:none}.cc-row>*{height:4.55mm;padding:.1mm .35mm;border-width:.22mm}.cc-row>*:nth-child(8){display:none}.cc-row input{height:4mm;padding:0 .3mm;font-size:5.7pt}.cc-row .money,.cc-row .tax{font-size:6pt}}
+
+/* M-CROSS_COST_PALE_QTY_UNIT_V52_SAFE */
+/* Quantity/unit were still visually pale. Paint the glyph itself in solid black. */
+.cc-page .cc-section .cc-row > div:nth-child(3) input,
+.cc-page .cc-section .cc-row > div:nth-child(4) input{
+ color:transparent!important;
+ -webkit-text-fill-color:transparent!important;
+ text-shadow:0 0 0 #000!important;
+ caret-color:#000!important;
+ opacity:1!important;
+ filter:none!important;
+ font-weight:800!important;
+}
+.cc-page .cc-section .cc-row > div:nth-child(3) input::placeholder,
+.cc-page .cc-section .cc-row > div:nth-child(4) input::placeholder{
+ color:#777!important;
+ -webkit-text-fill-color:#777!important;
+ text-shadow:none!important;
+}
+@media print{
+ .cc-page .cc-section .cc-row > div:nth-child(3) input,
+ .cc-page .cc-section .cc-row > div:nth-child(4) input{color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important;opacity:1!important}
+}
+
+/* M-CROSS_COST_QTY_UNIT_VERTICAL_V53_SAFE */
+/* 数量・単位だけをセル中央へ。V52のtext-shadow描画は解除。 */
+.cc-page .cc-section .cc-grid .cc-row>div:nth-child(3),
+.cc-page .cc-section .cc-grid .cc-row>div:nth-child(4){
+  display:flex!important;
+  align-items:center!important;
+}
+.cc-page .cc-section .cc-grid .cc-row>div:nth-child(3)>input,
+.cc-page .cc-section .cc-grid .cc-row>div:nth-child(4)>input{
+  display:block!important;
+  height:28px!important;
+  min-height:28px!important;
+  margin:0!important;
+  padding:0 5px!important;
+  border:0!important;
+  color:#000!important;
+  -webkit-text-fill-color:#000!important;
+  text-shadow:none!important;
+  opacity:1!important;
+  font-weight:700!important;
+  line-height:28px!important;
+  vertical-align:middle!important;
+}
+@media print{
+ .cc-page .cc-section .cc-grid .cc-row>div:nth-child(3)>input,
+ .cc-page .cc-section .cc-grid .cc-row>div:nth-child(4)>input{
+   height:4mm!important;min-height:4mm!important;margin:0!important;padding:0 .3mm!important;
+   color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important;
+   line-height:4mm!important;vertical-align:middle!important;
+ }
+}
+
+/* M-CROSS_COST_TRASH_ICON_V54_SAFE */
+.cc-row .op .cc-trash{display:grid;place-items:center;width:24px;height:24px;margin:auto;padding:0;border:1px solid #ef9fba;border-radius:50%;background:#fff5f8;color:#d84d7e;cursor:pointer}.cc-row .op .cc-trash svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.cc-row .op .cc-trash:hover{background:#ffe7ef;border-color:#e66c98}.cc-row .op .cc-trash:focus-visible{outline:2px solid #df5c8b;outline-offset:2px}@media print{.cc-row .op{display:none!important}}
+
+/* M-CROSS_COST_KPI_COMPACT_V55_SAFE */
+/* KPI4枚だけ高さを短く。横幅・表・計算ロジックは変更しない。 */
+.cc-kpis article{min-height:68px!important;padding:6px 11px!important}
+.cc-kpis svg{width:36px!important;height:36px!important}
+.cc-kpis b{font-size:13px!important;line-height:1.05!important}
+.cc-kpis strong,.cc-kpis label{font-size:27px!important;line-height:1!important}
+.cc-kpis small{font-size:10px!important;line-height:1!important}
+@media print{.cc-kpis article{min-height:10.5mm!important;padding:.4mm .8mm!important}.cc-kpis svg{width:4.7mm!important;height:4.7mm!important}.cc-kpis b{font-size:4.9pt!important}.cc-kpis strong,.cc-kpis label{font-size:10pt!important}.cc-kpis small{font-size:3.8pt!important}}
+
+/* M-CROSS_COST_KPI_COMPACT_V56_SAFE */
+/* KPI cards: reduce vertical height only, preserve 4-column layout and large numbers. */
+.cc-kpis{gap:7px!important;margin:4px 0!important}
+.cc-kpis article{min-height:54px!important;height:54px!important;padding:3px 9px!important;border-radius:13px!important;grid-template-columns:40px 1fr!important;grid-template-rows:16px 27px 11px!important}
+.cc-kpis svg{width:31px!important;height:31px!important}
+.cc-kpis b{font-size:11px!important;line-height:1!important}
+.cc-kpis strong,.cc-kpis label{font-size:25px!important;line-height:1!important;margin:0!important}
+.cc-kpis small{font-size:8px!important;line-height:1!important}
+.cc-kpis label input{height:27px!important;min-height:0!important;padding:0!important;line-height:1!important}
+@media print{.cc-kpis{gap:.6mm!important;margin:.35mm 0!important}.cc-kpis article{min-height:8mm!important;height:8mm!important;padding:.25mm .6mm!important;border-radius:1mm!important;grid-template-columns:5mm 1fr!important;grid-template-rows:2.5mm 4mm 1.5mm!important}.cc-kpis svg{width:4mm!important;height:4mm!important}.cc-kpis b{font-size:4.3pt!important}.cc-kpis strong,.cc-kpis label{font-size:9pt!important}.cc-kpis label input{height:4mm!important}.cc-kpis small{font-size:3.3pt!important}}

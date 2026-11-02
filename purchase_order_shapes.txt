@@ -1,0 +1,10 @@
+M-Cross 発注書 Shape確認
+Sheet: 発注書
+Shapes: 6
+
+NAME=Rounded Rectangle 7	TYPE=1	L=711	T=2.2	W=125.2	H=30	TEXT=　  発注済スタンプ
+NAME=Picture 9	TYPE=13	L=1061.2	T=29.2	W=5.2	H=5.2	TEXT=
+NAME=Rounded Rectangle 2	TYPE=1	L=1155.8	T=280.5	W=107.2	H=30.8	TEXT=   数量再計算
+NAME=Picture 5	TYPE=13	L=411.8	T=91.5	W=37	H=35.5	TEXT=
+NAME=Rounded Rectangle 13	TYPE=1	L=711	T=35.2	W=125.2	H=30	TEXT=　 原価計算へ転記
+NAME=Rounded Rectangle 3	TYPE=1	L=711	T=69	W=125.2	H=30	TEXT=　 工程表へ書出し

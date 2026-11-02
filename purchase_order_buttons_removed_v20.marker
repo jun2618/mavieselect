@@ -1,0 +1,17 @@
+{
+  "appliedAt": "2026-10-31T14:57:15.647Z",
+  "deleted": [
+    "Rounded Rectangle 7",
+    "Rounded Rectangle 13",
+    "Rounded Rectangle 3",
+    "Rounded Rectangle 2"
+  ],
+  "kept": [
+    "Picture 5",
+    "Picture 9"
+  ],
+  "templates": [
+    "./public/mcross-purchase-order-template.xlsm",
+    "./public/templates/工事カードNew3.xlsm"
+  ]
+}

@@ -1,0 +1,161 @@
+﻿          </main>
+        ) : showSavedList && !started ? (
+          <main className="main">
+            <button className="back" type="button" onClick={() => setShowSavedList(false)}>← 物件情報へ戻る</button>
+            <p className="eyebrow">保存した採寸データ</p>
+            <h1>保存済み一覧</h1>
+
+            <section className="card">
+              <input ref={importFileInputRef} type="file" accept=".mcross,.json,.txt,application/json,text/plain" onChange={importMCrossData} style={{ display: 'none' }} />
+              <button className="secondaryButton" type="button" onClick={() => importFileInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
+                📥 M-Crossファイルを読み込む
+              </button>
+              <input ref={legacyWorkCardInputRef} type="file" accept=".xlsm,.xlsx,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importLegacyWorkCardExcel} style={{ display: 'none' }} />
+              <button className="secondaryButton" type="button" onClick={() => legacyWorkCardInputRef.current?.click()} style={{ marginTop: 0, marginBottom: 18 }}>
+                📥 旧工事カードExcelを取り込む
+              </button><button type="button" className="primary" onClick={()=>setShowCostCalculation(true)}>📊 原価計算</button>
+              <div className="savedToolbar">
+                <label>
+                  <span>🔎 かしこい検索</span>
+                  <input type="search" value={savedSearch} onChange={event => setSavedSearch(event.target.value)} placeholder="物件名・住所・号室・部屋・工事・メモを検索" />
+                </label>
+                <div className="savedToolbarGrid">
+                  <label>
+                    <span>管理会社</span>
+                    <select value={savedCompanyFilter} onChange={event => setSavedCompanyFilter(event.target.value)}>
+                      <option value="">すべて</option>
+                      {savedCompanyOptions.map(name => <option key={name} value={name}>{name}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>並び順</span>
+                    <select value={savedSortOrder} onChange={event => setSavedSortOrder(event.target.value)}>
+                      <option value="newest">最近更新した順</option>
+                      <option value="oldest">古い順</option>
+                      <option value="property">物件名順</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="savedListSummary">
+                  <span>保存済み {savedCount}件</span>
+                  <span>表示 {visibleSavedEntries.length}件</span>
+                </div>
+              </div>
+
+              
+
+              {/* M-CROSS_SIMPLIFY_FOLDER_DELETE_V2_SAFE */}
+
+
+              {/* M-CROSS_SAVED_EXPLORER_V6_MINIMAL_SAFE */}
+              {visibleSavedEntries.length > 0 && (() => {
+                const nodes = visibleSavedEntries.map(entry => {
+                  const date = new Date(entry.updatedAt || entry.createdAt || 0)
+                  const validDate = !Number.isNaN(date.getTime())
+                  return {
+                    entry,
+                    levels: [
+                      validDate ? date.getFullYear() + '年' : '日付不明',
+                      validDate ? (date.getMonth() + 1) + '月' : '月不明',
+                      entry.company || '管理会社未設定',
+                      entry.propertyName || '物件名なし',
+                    ],
+                  }
+                })
+                const depth = savedFolderPath.length
+                const matching = nodes.filter(node => savedFolderPath.every((value, index) => node.levels[index] === value))
+                const isPropertyFolder = depth >= 4
+                const folders = isPropertyFolder
+                  ? []
+                  : [...new Set(matching.map(node => node.levels[depth]))]
+                    .sort((a, b) => String(a).localeCompare(String(b), 'ja', { numeric: true }))
+
+                return (
+                  <div className="savedExplorer">
+                    <div className="savedExplorerCrumbs">
+                      <button type="button" onClick={() => setSavedFolderPath([])}>📂 保存済み</button>
+                      {savedFolderPath.map((part, index) => (
+                        <button type="button" key={index} onClick={() => setSavedFolderPath(savedFolderPath.slice(0, index + 1))}>› {part}</button>
+                      ))}
+                    </div>
+                    {savedFolderPath.length > 0 && (
+                      <button className="savedExplorerBack" type="button" onClick={() => setSavedFolderPath(path => path.slice(0, -1))}>← ひとつ上へ</button>
+                    )}
+                    {!isPropertyFolder ? (
+                      <div className="savedExplorerGrid">
+                        {folders.map(folder => {
+                          const count = matching.filter(node => node.levels[depth] === folder).length
+                          const icon = depth < 2 ? '📁' : depth === 2 ? '🗂️' : '🏢'
+                          return (
+                            <button className="savedExplorerFolder" type="button" key={folder} onClick={() => setSavedFolderPath(path => [...path, folder])}>
+                              <span className="savedExplorerIcon">{icon}</span>
+                              <strong>{folder}</strong>
+                              <small>{count}件</small>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="savedExplorerFiles">
+                        {matching.flatMap(({ entry }, index) => {
+                          const baseName = (entry.propertyName || '物件名なし') + (entry.unit ? entry.unit + '号室' : '') + (entry.workName ? entry.workName : '')
+                          let versions = []
+                          try {
+                            const entryWorkName = String(entry.workName || '').trim() || '原状回復工事'
+                            const key = 'mcross:estimate-versions:' + [entry.company || '', entry.propertyName || '', String(entry.unit || '').trim(), entryWorkName].join('|')
+                            const legacyKey = 'mcross:estimate-versions:' + [entry.company || '', entry.propertyName || '', String(entry.unit || '').trim()].join('|')
+                            const currentStored = localStorage.getItem(key)
+                            const legacyStored = entryWorkName === '原状回復工事' ? localStorage.getItem(legacyKey) : null
+                            const stored = JSON.parse(currentStored || legacyStored || '[]')
+                            versions = Array.isArray(stored) ? stored : []
+                          } catch {}
+                          const items = [
+                            <div className="savedExplorerFileRow" key={(entry.storageKey || index) + '-current-row'}>
+                              <button className="savedExplorerFile" type="button" onClick={() => {
+                                const currentVersion = versions.length
+                                  ? Math.max(...versions.map(item => Number(item.version) || 0)) + 1
+                                  : 1
+                                setOpenedEstimateRows(null)
+                                setOpenedEstimateVersion(currentVersion)
+                                openSavedEntry(entry)
+                              }} /* M-CROSS_CURRENT_REVISION_BUTTON_V6_SAFE */>
+                              <span>📄</span>
+                              <div><strong>{baseName}{versions.length ? estimateVersionMark(Math.max(...versions.map(item => Number(item.version) || 0)) + 1) : ''}</strong><small>{versions.length ? '現在編集中の見積' : '最初の見積'} ／ 更新 {formatSavedDate(entry.updatedAt)}</small></div>
+                            </button>
+                              <button className="actionButton actionDelete savedExplorerDeleteButton" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
+                            </div>,
+                          ]
+                          versions.sort((a,b) => Number(a.version)-Number(b.version)).forEach(version => {
+                            items.push(
+                              <div className="savedExplorerFileRow" key={(entry.storageKey || index) + '-estimate-row-' + version.version}>
+                              <button className="savedExplorerFile estimateVersionExplorerFile" type="button" onClick={() => openSavedEstimateVersion(entry, version)}>
+                                <span>📑</span>
+                                <div><strong>{baseName}{estimateVersionMark(version.version)}</strong><small>{Number(version.version) === 1 ? '最初の見積' : '修正版'} ／ ¥{Math.round((Array.isArray(version.rows) ? version.rows : []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0) + (Array.isArray(version.additionalWorks) ? version.additionalWorks : []).reduce((sum, item) => sum + (Number(item.amount) || (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)), 0)).toLocaleString('ja-JP')}</small></div>
+                              </button>
+                              <button className="actionButton actionDelete savedExplorerDeleteButton" type="button" onClick={() => {
+                                if (!window.confirm('この保存済み見積を削除しますか？')) return
+                                const next = estimateVersions.filter(item => item.id !== version.id)
+                                try { localStorage.setItem(estimateVersionStorageKey, JSON.stringify(next)) } catch {}
+                                setEstimateVersions(next)
+                              }}>削除</button>
+                            </div>
+                            )
+                          })
+                          return items
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {visibleSavedEntries.length === 0 ? (
+                <p className="empty">
+                  保存済みデータはありません
+                </p>
+              ) : (
+                <div className="savedList" style={{ display: 'none' }} aria-hidden="true">
+                  {visibleSavedEntries.map((entry, index) => (
+                    <article
+                      className="savedItem"
+                      key={entry.storageKey || `${entry.propertyName}-${entry.unit}-${index}`}

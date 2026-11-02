@@ -1,0 +1,187 @@
+M-Cross OneDrive/Graph readiness scan
+====================================
+
+FILE: src\App.jsx
+3: import OneDriveSyncPanel from './OneDriveSyncPanel'
+910: const templateResponse = await fetch(
+1033: const response = await fetch(new URL('/mcross-estimate-template.xlsx', window.location.origin), { cache:'no-store' })
+6468: const response = await withResidentAiTimeout(fetch('http://localhost:11434/api/chat', {
+6677: const response = await fetch('http://localhost:11434/api/chat', {
+6775: const templateResponse = await fetch(new URL('/mcross-estimate-template.xlsx', window.location.origin), { cache: 'no-store' })
+8193: .main .card > .oneDriveSyncPanel,
+8197: .main .card > .secondaryButton + .oneDriveSyncPanel,
+8198: .main .card > .oneDriveSyncPanel + .residentCasesEntryButton,
+8209: /* OneDrive自身の外側余白は親側で管理 */
+8210: .main .card > .oneDriveSyncPanel{margin-bottom:0!important}
+8214: .main .card > .oneDriveSyncPanel,
+9905: <OneDriveSyncPanel />
+
+FILE: src\OneDriveSyncPanel.before_pc_master_patch.jsx
+2: import { PublicClientApplication } from '@azure/msal-browser'
+4: const MARKER = 'M-CROSS_ONEDRIVE_SYNC_INTEGRATION_V1'
+7: const RESIDENT_SYNC_MARKER = 'M-CROSS_RESIDENT_ONEDRIVE_SYNC_V1'
+8: const graphScopes = ['User.Read', 'Files.ReadWrite.AppFolder']
+9: const backupFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-backup.json:/content'
+11: const msal = new PublicClientApplication({
+22: if (!initializePromise) initializePromise = msal.initialize()
+88: else if (!local && cloud) state = 'OneDriveのみ'
+93: else if (cloudTime > localTime) state = 'OneDriveが新しい'
+99: export default function OneDriveSyncPanel() {
+111: const existing = msal.getAllAccounts()[0] || null
+122: const activeAccount = msal.getActiveAccount() || msal.getAllAccounts()[0]
+124: msal.setActiveAccount(activeAccount)
+126: return (await msal.acquireTokenSilent({ scopes: graphScopes, account: activeAccount })).accessToken
+128: return (await msal.acquireTokenPopup({ scopes: graphScopes, account: activeAccount })).accessToken
+136: const result = await msal.loginPopup({ scopes: graphScopes })
+137: msal.setActiveAccount(result.account)
+149: const activeAccount = msal.getActiveAccount() || msal.getAllAccounts()[0]
+150: if (activeAccount) await msal.logoutPopup({ account: activeAccount, postLogoutRedirectUri: window.location.origin + '/' })
+164: const response = await fetch(backupFileUrl, { headers: { Authorization: 'Bearer ' + token } })
+166: if (!response.ok) throw new Error('OneDrive読込失敗 HTTP ' + response.status)
+174: setStatus('入居中案件をOneDriveと同期しています…')
+193: const response = await fetch(backupFileUrl, {
+210: async function backupToOneDrive() {
+214: if (!window.confirm(entries.length + '件をOneDriveへバックアップします。端末データは変更しません。続けますか？')) return
+215: setStatus('OneDriveへバックアップしています…')
+218: const response = await fetch(backupFileUrl, {
+233: async function compareWithOneDrive() {
+235: setStatus('端末とOneDriveを比較しています…')
+241: setStatus('比較完了: 端末 ' + readLocalEntries().length + '件 / OneDrive ' + cloud.entries.length + '件')
+248: const importCandidates = comparison.filter(item => item.state === 'OneDriveのみ' || item.state === 'OneDriveが新しい')
+258: compareWithOneDrive()
+266: <section className="oneDriveSyncPanel" data-marker={MARKER}>
+268: ☁ OneDrive同期 {expanded ? '▲' : '▼'}
+271: <div className="oneDriveSyncBody">
+272: <h2>☁ OneDrive同期</h2>
+273: <p className="oneDriveSyncNote">同期を使う人だけMicrosoftへサインインします。自動同期はしません。</p>
+274: <div className="oneDriveAccountRow">
+278: <div className="oneDriveCount">この端末の正式保存物件：<strong>{localEntries.length}件</strong></div>
+281: <button className="oneDriveAction" type="button" onClick={backupToOneDrive}>端末 → OneDriveへバックアップ</button>
+282: <button className="oneDriveAction" type="button" onClick={compareWithOneDrive}>端末とOneDriveを比較</button>
+283: <button className="oneDriveAction residentSyncAction" type="button" onClick={syncResidentCases}>入居中案件をPC・スマホで同期</button>
+286: {status && <div className="oneDriveStatus">{status}</div>}
+287: {cloudBackup && <small className="oneDriveMeta">OneDrive: {cloudBackup.entries.length}件 / 入居中案件 {Array.isArray(cloudBackup.residentCases) ? cloudBackup.residentCases.length : 0}件 / 保存日時 {cloudBackup.exportedAt || '未保存'}</small>}
+289: <div className="oneDriveCompareList">
+299: <div className="oneDriveImportBox">
+300: <h3>OneDriveから選択して取り込む</h3>
+307: <button className="oneDriveAction" type="button" onClick={importSelected}>選択した物件を取り込む</button>
+310: <small className="oneDriveWarning">「同じ」「端末が新しい」物件はOneDriveから上書きしません。</small>
+314: .oneDriveSyncPanel{margin-top:14px}.oneDriveSyncBody{display:grid;gap:12px;margin-top:12px;padding:15px;border:1px solid rgba(38,114,236,.38);border-radius:16px;background:rgba(38,114,236,.07)}.oneDriveSyncBody h2,.oneDriveSyncBody h3{margin:0}.oneDriveSyncNote,.oneDriveWarning{margin:0;opacity:.72;line-height:1.5}.oneDriveAccountRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}.oneDriveAccountRow small{display:block;margin-top:3px;overflow-wrap:anywhere}.oneDriveAccountRow button,.oneDriveAction{min-height:44px;border:0;border-radius:11px;background:#2672ec;color:#fff;font:inherit;font-weight:800;padding:8px 12px}.oneDriveCount,.oneDriveStatus,.oneDriveMeta{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.75)}.oneDriveCompareList{display:grid;gap:8px}.oneDriveCompareList article{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid rgba(38,114,236,.25);border-radius:10px;background:rgba(255,255,255,.75)}.oneDriveCompareList span{font-size:12px;font-weight:800}.oneDriveImportBox{display:grid;gap:8px;padding-top:10px;border-top:1px solid rgba(38,114,236,.25)}.oneDriveImportBox label{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid rgba(38,114,236,.25);border-radius:10px}.oneDriveImportBox input{width:20px;height:20px}.theme-dark .oneDriveSyncBody,.theme-cyber .oneDriveSyncBody,.theme-luxury .oneDriveSyncBody,.theme-retro .oneDriveSyncBody,.theme-galaxy .oneDriveSyncBody{background:rgba(5,12,24,.85)}.theme-dark .oneDriveCount,.theme-dark .oneDriveStatus,.theme-dark .oneDriveMeta,.theme-dark .oneDriveCompareList article,.theme-cyber .oneDriveCount,.theme-cyber .oneDriveStatus,.theme-cyber .oneDriveMeta,.theme-cyber .oneDriveCompareList article,.theme-luxury .oneDriveCount,.theme-luxury .oneDriveStatus,.theme-retro .oneDriveCount,.theme-retro .oneDriveStatus,.theme-galaxy .oneDriveCount,.theme-galaxy .oneDriveStatus{background:rgba(5,12,24,.72)}@media(max-width:520px){.oneDriveAccountRow{grid-template-columns:1fr}.oneDriveAccountRow button{width:100%}}
+
+FILE: src\OneDriveSyncPanel.before_resident_sync_fix.jsx
+2: import { PublicClientApplication } from '@azure/msal-browser'
+4: const MARKER = 'M-CROSS_ONEDRIVE_SYNC_INTEGRATION_V1'
+7: const RESIDENT_SYNC_MARKER = 'M-CROSS_RESIDENT_ONEDRIVE_SYNC_V1'
+8: const graphScopes = ['User.Read', 'Files.ReadWrite.AppFolder']
+9: const backupFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-backup.json:/content'
+11: const msal = new PublicClientApplication({
+22: if (!initializePromise) initializePromise = msal.initialize()
+88: else if (!local && cloud) state = 'OneDriveのみ'
+93: else if (cloudTime > localTime) state = 'OneDriveが新しい'
+99: export default function OneDriveSyncPanel() {
+111: const existing = msal.getAllAccounts()[0] || null
+122: const activeAccount = msal.getActiveAccount() || msal.getAllAccounts()[0]
+124: msal.setActiveAccount(activeAccount)
+126: return (await msal.acquireTokenSilent({ scopes: graphScopes, account: activeAccount })).accessToken
+128: return (await msal.acquireTokenPopup({ scopes: graphScopes, account: activeAccount })).accessToken
+136: const result = await msal.loginPopup({ scopes: graphScopes })
+137: msal.setActiveAccount(result.account)
+149: const activeAccount = msal.getActiveAccount() || msal.getAllAccounts()[0]
+150: if (activeAccount) await msal.logoutPopup({ account: activeAccount, postLogoutRedirectUri: window.location.origin + '/' })
+164: const response = await fetch(backupFileUrl, { headers: { Authorization: 'Bearer ' + token } })
+166: if (!response.ok) throw new Error('OneDrive読込失敗 HTTP ' + response.status)
+174: setStatus('入居中案件をOneDriveと同期しています…')
+193: const response = await fetch(backupFileUrl, {
+210: async function backupToOneDrive() {
+214: if (!window.confirm(entries.length + '件をOneDriveへバックアップします。端末データは変更しません。続けますか？')) return
+215: setStatus('OneDriveへバックアップしています…')
+218: const response = await fetch(backupFileUrl, {
+233: async function compareWithOneDrive() {
+235: setStatus('端末とOneDriveを比較しています…')
+241: setStatus('比較完了: 端末 ' + readLocalEntries().length + '件 / OneDrive ' + cloud.entries.length + '件')
+248: const importCandidates = comparison.filter(item => item.state === 'OneDriveのみ' || item.state === 'OneDriveが新しい')
+258: compareWithOneDrive()
+266: <section className="oneDriveSyncPanel" data-marker={MARKER}>
+268: ☁ OneDrive同期 {expanded ? '▲' : '▼'}
+271: <div className="oneDriveSyncBody">
+272: <h2>☁ OneDrive同期</h2>
+273: <p className="oneDriveSyncNote">同期を使う人だけMicrosoftへサインインします。自動同期はしません。</p>
+274: <div className="oneDriveAccountRow">
+278: <div className="oneDriveCount">この端末の正式保存物件：<strong>{localEntries.length}件</strong></div>
+281: <button className="oneDriveAction" type="button" onClick={backupToOneDrive}>端末 → OneDriveへバックアップ</button>
+282: <button className="oneDriveAction" type="button" onClick={compareWithOneDrive}>端末とOneDriveを比較</button>
+283: <button className="oneDriveAction residentSyncAction" type="button" onClick={syncResidentCases}>入居中案件をPC・スマホで同期</button>
+286: {status && <div className="oneDriveStatus">{status}</div>}
+287: {cloudBackup && <small className="oneDriveMeta">OneDrive: {cloudBackup.entries.length}件 / 入居中案件 {Array.isArray(cloudBackup.residentCases) ? cloudBackup.residentCases.length : 0}件 / 保存日時 {cloudBackup.exportedAt || '未保存'}</small>}
+289: <div className="oneDriveCompareList">
+299: <div className="oneDriveImportBox">
+300: <h3>OneDriveから選択して取り込む</h3>
+307: <button className="oneDriveAction" type="button" onClick={importSelected}>選択した物件を取り込む</button>
+310: <small className="oneDriveWarning">「同じ」「端末が新しい」物件はOneDriveから上書きしません。</small>
+314: .oneDriveSyncPanel{margin-top:14px}.oneDriveSyncBody{display:grid;gap:12px;margin-top:12px;padding:15px;border:1px solid rgba(38,114,236,.38);border-radius:16px;background:rgba(38,114,236,.07)}.oneDriveSyncBody h2,.oneDriveSyncBody h3{margin:0}.oneDriveSyncNote,.oneDriveWarning{margin:0;opacity:.72;line-height:1.5}.oneDriveAccountRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}.oneDriveAccountRow small{display:block;margin-top:3px;overflow-wrap:anywhere}.oneDriveAccountRow button,.oneDriveAction{min-height:44px;border:0;border-radius:11px;background:#2672ec;color:#fff;font:inherit;font-weight:800;padding:8px 12px}.oneDriveCount,.oneDriveStatus,.oneDriveMeta{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.75)}.oneDriveCompareList{display:grid;gap:8px}.oneDriveCompareList article{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid rgba(38,114,236,.25);border-radius:10px;background:rgba(255,255,255,.75)}.oneDriveCompareList span{font-size:12px;font-weight:800}.oneDriveImportBox{display:grid;gap:8px;padding-top:10px;border-top:1px solid rgba(38,114,236,.25)}.oneDriveImportBox label{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid rgba(38,114,236,.25);border-radius:10px}.oneDriveImportBox input{width:20px;height:20px}.theme-dark .oneDriveSyncBody,.theme-cyber .oneDriveSyncBody,.theme-luxury .oneDriveSyncBody,.theme-retro .oneDriveSyncBody,.theme-galaxy .oneDriveSyncBody{background:rgba(5,12,24,.85)}.theme-dark .oneDriveCount,.theme-dark .oneDriveStatus,.theme-dark .oneDriveMeta,.theme-dark .oneDriveCompareList article,.theme-cyber .oneDriveCount,.theme-cyber .oneDriveStatus,.theme-cyber .oneDriveMeta,.theme-cyber .oneDriveCompareList article,.theme-luxury .oneDriveCount,.theme-luxury .oneDriveStatus,.theme-retro .oneDriveCount,.theme-retro .oneDriveStatus,.theme-galaxy .oneDriveCount,.theme-galaxy .oneDriveStatus{background:rgba(5,12,24,.72)}@media(max-width:520px){.oneDriveAccountRow{grid-template-columns:1fr}.oneDriveAccountRow button{width:100%}}
+
+FILE: src\OneDriveSyncPanel.jsx
+2: import { PublicClientApplication } from '@azure/msal-browser'
+4: const MARKER = 'M-CROSS_ONEDRIVE_SYNC_INTEGRATION_V1'
+7: const RESIDENT_SYNC_MARKER = 'M-CROSS_RESIDENT_ONEDRIVE_SYNC_V1'
+12: const graphScopes = ['User.Read', 'Files.ReadWrite.AppFolder']
+13: const backupFileUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot:/m-cross-backup.json:/content'
+15: const msal = new PublicClientApplication({
+26: if (!initializePromise) initializePromise = msal.initialize()
+92: else if (!local && cloud) state = 'OneDriveのみ'
+97: else if (cloudTime > localTime) state = 'OneDriveが新しい'
+103: export default function OneDriveSyncPanel() {
+119: const existing = msal.getAllAccounts()[0] || null
+130: const activeAccount = msal.getActiveAccount() || msal.getAllAccounts()[0]
+132: msal.setActiveAccount(activeAccount)
+134: return (await msal.acquireTokenSilent({ scopes: graphScopes, account: activeAccount })).accessToken
+136: return (await msal.acquireTokenPopup({ scopes: graphScopes, account: activeAccount })).accessToken
+151: setResidentAutoStatus('入居中案件をOneDriveへ自動保存中…')
+167: const response = await fetch(backupFileUrl, {
+175: setResidentAutoStatus('☁ 入居中案件 ' + localCases.length + '件 OneDrive保存済み')
+178: setResidentAutoStatus('⚠ OneDrive自動保存失敗: ' + (error?.message || String(error)))
+216: const result = await msal.loginPopup({ scopes: graphScopes })
+217: msal.setActiveAccount(result.account)
+229: const activeAccount = msal.getActiveAccount() || msal.getAllAccounts()[0]
+230: if (activeAccount) await msal.logoutPopup({ account: activeAccount, postLogoutRedirectUri: window.location.origin + '/' })
+244: const response = await fetch(backupFileUrl, { headers: { Authorization: 'Bearer ' + token } })
+246: if (!response.ok) throw new Error('OneDrive読込失敗 HTTP ' + response.status)
+253: async function uploadResidentCasesToOneDrive() {
+257: '【PC専用】このPCの入居中案件 ' + localCases.length + '件を正本としてOneDriveへ保存します。\n' +
+265: setStatus('PCの入居中案件をOneDriveへ保存しています…')
+281: const response = await fetch(backupFileUrl, {
+292: setStatus('PC → OneDrive 保存成功: 入居中案件 ' + localCases.length + '件。以後、このPCでは自動保存します。')
+299: async function downloadResidentCasesFromOneDrive() {
+301: setStatus('OneDriveの入居中案件を確認しています…')
+306: setStatus('OneDriveに入居中案件データがまだありません。先にPCから保存してください。')
+312: 'OneDriveの入居中案件 ' + cloudCases.length + '件をこの端末へ取得します。\n' +
+320: setStatus('OneDrive → この端末 取得成功: 入居中案件 ' + cloudCases.length + '件。画面を更新します。')
+329: async function backupToOneDrive() {
+333: if (!window.confirm(entries.length + '件をOneDriveへバックアップします。入居中案件のクラウドデータは保持します。続けますか？')) return
+334: setStatus('OneDriveへバックアップしています…')
+350: const response = await fetch(backupFileUrl, {
+365: async function compareWithOneDrive() {
+367: setStatus('端末とOneDriveを比較しています…')
+373: setStatus('比較完了: 端末 ' + readLocalEntries().length + '件 / OneDrive ' + cloud.entries.length + '件')
+380: const importCandidates = comparison.filter(item => item.state === 'OneDriveのみ' || item.state === 'OneDriveが新しい')
+390: compareWithOneDrive()
+398: <section className="oneDriveSyncPanel" data-marker={MARKER}>
+400: ☁ OneDrive同期 {expanded ? '▲' : '▼'}
+403: <div className="oneDriveSyncBody">
+404: <h2>☁ OneDrive同期</h2>
+405: <p className="oneDriveSyncNote">同期を使う人だけMicrosoftへサインインします。自動同期はしません。</p>
+406: <div className="oneDriveAccountRow">
+410: <div className="oneDriveCount">この端末の正式保存物件：<strong>{localEntries.length}件</strong></div>
+413: <button className="oneDriveAction" type="button" onClick={backupToOneDrive}>端末 → OneDriveへバックアップ</button>
+414: <button className="oneDriveAction" type="button" onClick={compareWithOneDrive}>端末とOneDriveを比較</button>
+415: <button className="oneDriveAction residentSyncAction" type="button" onClick={uploadResidentCasesToOneDrive}>PC専用：入居中案件をOneDriveへ保存</button>
+416: <button className="oneDriveAction residentSyncAction" type="button" onClick={downloadResidentCasesFromOneDrive}>スマホ・確認端末：入居中案件をOneDriveから取得</button>
+419: {residentAutoStatus && <div className="oneDriveStatus" data-auto-save-marker={AUTO_SAVE_MARKER}>{residentAutoStatus}</div>}
+420: {status && <div className="oneDriveStatus">{status}</div>}
+421: {cloudBackup && <small className="oneDriveMeta">OneDrive: {cloudBackup.entries.length}件 / 入居中案件 {Array.isArray(cloudBackup.residentCases) ? cloudBackup.residentCases.length : 0}件 / 保存日時 {cloudBackup.exportedAt || '未保存'}</small>}
+423: <div className="oneDriveCompareList">
+433: <div className="oneDriveImportBox">
+434: <h3>OneDriveから選択して取り込む</h3>
+441: <button className="oneDriveAction" type="button" onClick={importSelected}>選択した物件を取り込む</button>
+444: <small className="oneDriveWarning">「同じ」「端末が新しい」物件はOneDriveから上書きしません。</small>
+448: .oneDriveSyncPanel{margin-top:14px}.oneDriveSyncBody{display:grid;gap:12px;margin-top:12px;padding:15px;border:1px solid rgba(38,114,236,.38);border-radius:16px;background:rgba(38,114,236,.07)}.oneDriveSyncBody h2,.oneDriveSyncBody h3{margin:0}.oneDriveSyncNote,.oneDriveWarning{margin:0;opacity:.72;line-height:1.5}.oneDriveAccountRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}.oneDriveAccountRow small{display:block;margin-top:3px;overflow-wrap:anywhere}.oneDriveAccountRow button,.oneDriveAction{min-height:44px;border:0;border-radius:11px;background:#2672ec;color:#fff;font:inherit;font-weight:800;padding:8px 12px}.oneDriveCount,.oneDriveStatus,.oneDriveMeta{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.75)}.oneDriveCompareList{display:grid;gap:8px}.oneDriveCompareList article{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid rgba(38,114,236,.25);border-radius:10px;background:rgba(255,255,255,.75)}.oneDriveCompareList span{font-size:12px;font-weight:800}.oneDriveImportBox{display:grid;gap:8px;padding-top:10px;border-top:1px solid rgba(38,114,236,.25)}.oneDriveImportBox label{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid rgba(38,114,236,.25);border-radius:10px}.oneDriveImportBox input{width:20px;height:20px}.theme-dark .oneDriveSyncBody,.theme-cyber .oneDriveSyncBody,.theme-luxury .oneDriveSyncBody,.theme-retro .oneDriveSyncBody,.theme-galaxy .oneDriveSyncBody{background:rgba(5,12,24,.85)}.theme-dark .oneDriveCount,.theme-dark .oneDriveStatus,.theme-dark .oneDriveMeta,.theme-dark .oneDriveCompareList article,.theme-cyber .oneDriveCount,.theme-cyber .oneDriveStatus,.theme-cyber .oneDriveMeta,.theme-cyber .oneDriveCompareList article,.theme-luxury .oneDriveCount,.theme-luxury .oneDriveStatus,.theme-retro .oneDriveCount,.theme-retro .oneDriveStatus,.theme-galaxy .oneDriveCount,.theme-galaxy .oneDriveStatus{background:rgba(5,12,24,.72)}@media(max-width:520px){.oneDriveAccountRow{grid-template-columns:1fr}.oneDriveAccountRow button{width:100%}}

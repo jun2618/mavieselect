@@ -1,0 +1,24 @@
+import {useEffect,useMemo,useState} from 'react'
+import './MCrossEstimateSheet.css'
+import {estimateSheetConfig as config} from './estimateSheetConfig.js'
+const yen=v=>'¥'+Math.round(Number(v)||0).toLocaleString('ja-JP')
+const newRow=()=>({id:'estimate-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:'',spec:'',quantity:1,unit:'式',rate:''})
+export default function MCrossEstimateSheet({company='',propertyName='',unit='',address='',workName='',rows:sourceRows=[],onGoMeasurement,onGoOrder,onGoCost}){
+ const storageKey=['mcross_editable_estimate_v1',company,propertyName,unit,workName].map(v=>encodeURIComponent(String(v||''))).join(':')
+ const[rows,setRows]=useState(()=>{try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');return Array.isArray(saved?.rows)?saved.rows:[]}catch{return []}})
+ useEffect(()=>{try{localStorage.setItem(storageKey,JSON.stringify({company,propertyName,unit,address,workName,rows,updatedAt:new Date().toISOString()}))}catch{}},[storageKey,company,propertyName,unit,address,workName,rows])
+ const total=useMemo(()=>rows.reduce((sum,row)=>sum+(Number(row.quantity)||0)*(Number(row.rate)||0),0),[rows])
+ const edit=(id,key,value)=>setRows(previous=>previous.map(row=>row.id===id?{...row,[key]:value}:row))
+ const remove=id=>setRows(previous=>previous.filter(row=>row.id!==id))
+ const importMeasurement=()=>{const incoming=(Array.isArray(sourceRows)?sourceRows:[]).map((row,index)=>({id:'source-'+String(row.exclusionKey||row.id||index),sourceKey:String(row.exclusionKey||row.id||index),name:String(row.label||(Array.isArray(row.parts)?row.parts.filter(Boolean).join(' '):'')),spec:String(row.productCode||row.memo||''),quantity:Number(row.quantity)||0,unit:String(row.unit||''),rate:row.rate===''||row.rate==null?'':Number(row.rate)||0}));setRows(previous=>{const keys=new Set(previous.map(row=>row.sourceKey).filter(Boolean));return [...previous,...incoming.filter(row=>!keys.has(row.sourceKey))]})}
+ return <section className='mcrossEstimateWorkspace'>
+  <nav className='mcrossEstimateNavigation'><button type='button' onClick={onGoMeasurement}>📐 工事内容・採寸</button><button type='button' onClick={onGoOrder}>📦 施工・材料発注</button><button type='button' onClick={onGoCost}>💰 原価計算</button><button type='button' onClick={()=>window.print()}>🖨 印刷・PDF</button></nav>
+  <section className='mcrossEstimatePaper' style={{'--paper':config.paperColor,'--accent':config.headerColor,'--grid':config.gridColor}}>
+   <header className='mcrossEstimateHead'><div className='mcrossEstimateBrand'><strong>M-Cross</strong><small>MavieSelect</small></div><h2>御 見 積 書</h2>{config.showMascot&&<img src='/Designer.png' alt=''/></header>
+   <section className='mcrossEstimateMeta'><div><strong>{company||'管理会社'} 御中</strong><dl><div><dt>物件名</dt><dd>{propertyName}</dd></div><div><dt>号室</dt><dd>{unit?unit+'号室':''}</dd></div><div><dt>住所</dt><dd>{address}</dd></div><div><dt>工事名</dt><dd>{workName}</dd></div></dl></div><aside><b>株式会社 MavieSelect</b><span>〒060-0007</span><span>札幌市中央区北7条西22丁目1-12-201</span><span>TEL 011-699-6492　FAX 011-699-6493</span></aside></section>
+   <div className='mcrossEstimateToolbar'><button type='button' onClick={importMeasurement}>📐 採寸・工事内容から取り込む</button><button type='button' onClick={()=>setRows(previous=>[...previous,newRow()])}>＋ 空の行を追加</button></div>
+   <div className='mcrossEstimateTable editable'><div className='mcrossEstimateRow head'><span>No.</span><span>工事項目</span><span>仕様・品番</span><span>数量</span><span>単位</span><span>単価</span><span>金額</span><span>操作</span></div>{rows.map((row,index)=><div className='mcrossEstimateRow' key={row.id}><span>{index+1}</span><span><input value={row.name} onChange={e=>edit(row.id,'name',e.target.value)} placeholder='例：居間 クロス張替'/></span><span><input value={row.spec} onChange={e=>edit(row.id,'spec',e.target.value)} placeholder='品番・仕様'/></span><span><input type='number' min='0' step='0.01' value={row.quantity} onChange={e=>edit(row.id,'quantity',e.target.value)}/></span><span><input value={row.unit} onChange={e=>edit(row.id,'unit',e.target.value)}/></span><span><input type='number' min='0' step='1' value={row.rate} onChange={e=>edit(row.id,'rate',e.target.value)} placeholder='0'/></span><span>{yen((Number(row.quantity)||0)*(Number(row.rate)||0))}</span><span><button type='button' className='mcrossEstimateDelete' onClick={()=>remove(row.id)}>×</button></span></div>)}</div>
+   <footer><div className='mcrossEstimateNotes'><b>備考</b><textarea placeholder='必要な場合に入力'/></div><div className='mcrossEstimateTotal'><span>合計金額（税抜）</span><strong>{yen(total)}</strong></div></footer>
+  </section>
+ </section>
+}

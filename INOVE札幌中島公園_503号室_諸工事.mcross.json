@@ -1,0 +1,183 @@
+{
+  "schema": "m-cross-legacy-import:v1",
+  "importMode": "single-preview",
+  "source": {
+    "fileName": "INOVE札幌中島公園 503号室諸工事.xlsm",
+    "sheet": "工事カード / 見積書",
+    "importedAt": "2026-11-01T03:43:57.715Z"
+  },
+  "entry": {
+    "company": "株式会社第一住建",
+    "propertyName": "INOVE札幌中島公園",
+    "propertyId": "",
+    "address": "札幌市中央区南8条西1丁目13-18",
+    "unit": "503",
+    "workName": "諸工事",
+    "propertyAccess": {
+      "autoLock": "0832E",
+      "joiner": "",
+      "keyBox": "",
+      "myLock": "",
+      "entranceOpen": ""
+    },
+    "rooms": [
+      "浴室",
+      "トイレ"
+    ],
+    "customRooms": [
+      "浴室",
+      "トイレ"
+    ],
+    "records": [],
+    "cfRecords": [],
+    "cfMaterialGroups": [],
+    "softRecords": [],
+    "floorTrimRecords": [],
+    "additionalWorks": [
+      {
+        "id": "legacy-work-001",
+        "room": "浴室",
+        "work": "2室用換気扇交換",
+        "spec": "三菱電機 VD-10ZFC14",
+        "estimateParts": [
+          "浴室",
+          "2室用換気扇交換",
+          "三菱電機 VD-10ZFC14",
+          ""
+        ],
+        "productCode": "VD-10ZFC14",
+        "quantity": 1,
+        "unit": "台",
+        "unitPrice": 11500,
+        "amount": 11500,
+        "memo": "異音あり。確認したところモーター軸の摩耗が原因と思われ、回転数も上がっていません。換気不足により浴室内の結露が解消されていない状態です。",
+        "sourceSheet": "見積書",
+        "sourceRow": 23
+      },
+      {
+        "id": "legacy-work-002",
+        "room": "浴室",
+        "work": "換気扇交換施工費",
+        "spec": "処分費含む",
+        "estimateParts": [
+          "浴室",
+          "換気扇交換施工費",
+          "処分費含む",
+          ""
+        ],
+        "productCode": "",
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 12000,
+        "amount": 12000,
+        "memo": "カバー中央のネジが錆びて外せないため、内部は未確認。",
+        "sourceSheet": "見積書",
+        "sourceRow": 24
+      },
+      {
+        "id": "legacy-work-003",
+        "room": "浴室",
+        "work": "換気扇交換に伴う天井開口",
+        "spec": "",
+        "estimateParts": [
+          "浴室",
+          "換気扇交換に伴う天井開口",
+          "",
+          ""
+        ],
+        "productCode": "",
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 8000,
+        "amount": 8000,
+        "memo": "東芝製2室換気扇、型番不明、天井開口約205mm角。",
+        "sourceSheet": "見積書",
+        "sourceRow": 25
+      },
+      {
+        "id": "legacy-work-004",
+        "room": "トイレ",
+        "work": "換気口脱落修理",
+        "spec": "",
+        "estimateParts": [
+          "トイレ",
+          "換気口脱落修理",
+          "",
+          ""
+        ],
+        "productCode": "",
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 4000,
+        "amount": 4000,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 26
+      },
+      {
+        "id": "legacy-work-005",
+        "room": "浴室",
+        "work": "コーキング打ち",
+        "spec": "",
+        "estimateParts": [
+          "浴室",
+          "コーキング打ち",
+          "",
+          ""
+        ],
+        "productCode": "",
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 8000,
+        "amount": 8000,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 28
+      },
+      {
+        "id": "legacy-work-006",
+        "room": "浴室",
+        "work": "壁腐食部 パネル貼り",
+        "spec": "",
+        "estimateParts": [
+          "浴室",
+          "壁腐食部 パネル貼り",
+          "",
+          ""
+        ],
+        "productCode": "",
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 18000,
+        "amount": 18000,
+        "memo": "・トイレ換気口",
+        "sourceSheet": "見積書",
+        "sourceRow": 29
+      }
+    ],
+    "draftMemo": "",
+    "siteMemo": "",
+    "requestContent": "",
+    "roomConfirmations": {},
+    "estimateEdits": {},
+    "estimateVersions": [],
+    "pageIndex": 0,
+    "cfPageIndex": 0,
+    "softPageIndex": 0,
+    "activePage": "additional",
+    "measurementType": "天井",
+    "createdAt": "2026-10-27T15:00:00.000Z",
+    "updatedAt": "2026-10-27T15:00:00.000Z",
+    "archived": false
+  },
+  "totals": {
+    "subtotal": 61500,
+    "tax": 6150,
+    "total": 67650
+  },
+  "validation": {
+    "expectedTotal": 67650,
+    "totalMatches": true,
+    "itemCount": 6
+  }
+}

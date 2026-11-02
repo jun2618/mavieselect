@@ -1,0 +1,47 @@
+import React, {useEffect, useMemo, useState} from 'react'
+import './CostCalculationPage.css'
+
+const yen=n=>'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP')
+const qty=n=>Number.isFinite(Number(n))?Number(n):0
+const TYPES=[
+  {key:'internal',title:'① 自社作業',sub:'自社スタッフの作業',icon:'●',tone:'blue',headers:['作業内容','作業者']},
+  {key:'service',title:'② 施工業者・職人',sub:'外注工事の発注',icon:'◆',tone:'pink',headers:['工種','業者名']},
+  {key:'material',title:'③ 材料発注',sub:'問屋・登録業者からの購入',icon:'■',tone:'green',headers:['商品名','発注先']},
+  {key:'retail',title:'④ 店頭・ネット購入',sub:'ホームセンター・Amazon等',icon:'◆',tone:'purple',headers:['商品名','購入先']},
+  {key:'expense',title:'⑤ 現場経費',sub:'ゴミ処理・駐車場・その他',icon:'▣',tone:'gray',headers:['項目','内容']}
+]
+
+/* M-CROSS_COST_CUTE_V2_SAFE */
+const CostIcon=({type})=>{const common={viewBox:'0 0 48 48','aria-hidden':true,focusable:'false'};if(type==='internal')return <svg {...common}><circle cx="24" cy="15" r="8"/><path d="M9 40c1-11 6-16 15-16s14 5 15 16z"/></svg>;if(type==='service')return <svg {...common}><path d="M29 7a11 11 0 0 0-9 15L8 34a4 4 0 0 0 6 6l12-12a11 11 0 0 0 15-9l-8 5-7-7z"/></svg>;if(type==='material')return <svg {...common}><path d="M8 15 24 7l16 8-16 8zM8 15v19l16 8V23zm32 0v19l-16 8V23z"/></svg>;if(type==='retail')return <svg {...common}><path d="M10 16h28l-3 25H13z"/><path d="M17 18c0-8 14-8 14 0" fill="none" stroke="currentColor" strokeWidth="4"/></svg>;return <svg {...common}><rect x="8" y="8" width="32" height="32" rx="9"/><path d="M19 35V13h8a8 8 0 0 1 0 16h-8m0-8h8" fill="none" stroke="#fff" strokeWidth="4"/></svg>}
+
+const blankRow=()=>({id:'cost-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:'',party:'',quantity:1,unit:'式',rate:'',memo:'',orderRef:'',date:'',taxIncluded:''})
+
+export default function CostCalculationPage({onBack}){
+  const [info,setInfo]=useState({propertyName:'',unit:'',address:'',company:'',workName:'',staff:'町田',period:'',estimate:0,memo:''})
+  const [rows,setRows]=useState(()=>Object.fromEntries(TYPES.map(t=>[t.key,[]])))
+  useEffect(()=>{try{const v=JSON.parse(localStorage.getItem('mcross_cost_calculation_v1')||'null');if(v?.info)setInfo(v.info);if(v?.rows)setRows(v.rows)}catch{}},[])
+  useEffect(()=>{try{localStorage.setItem('mcross_cost_calculation_v1',JSON.stringify({info,rows}))}catch{}},[info,rows])
+  const subtotal=key=>(rows[key]||[]).reduce((s,r)=>s+(key==='retail'&&r.taxIncluded!==''?Math.floor(qty(r.taxIncluded)/1.1):qty(r.quantity)*qty(r.rate)),0)
+  const costs=useMemo(()=>Object.fromEntries(TYPES.map(t=>[t.key,subtotal(t.key)])),[rows])
+  const totalCost=Object.values(costs).reduce((a,b)=>a+b,0), profit=qty(info.estimate)-totalCost, margin=qty(info.estimate)?profit/qty(info.estimate)*100:0
+  const update=(key,id,field,value)=>setRows(p=>({...p,[key]:(p[key]||[]).map(r=>r.id===id?{...r,[field]:value}:r)}))
+  const add=key=>setRows(p=>({...p,[key]:[...(p[key]||[]),blankRow()]}))
+  const remove=(key,id)=>setRows(p=>({...p,[key]:(p[key]||[]).filter(r=>r.id!==id)}))
+  const importOrders=()=>{try{const all=JSON.parse(localStorage.getItem('mcross_purchase_orders_v1')||'[]');const matched=(Array.isArray(all)?all:[]).filter(o=>(!info.propertyName||o.propertyName===info.propertyName)&&(!info.unit||String(o.unit)===String(info.unit)));const next={service:[],material:[]};matched.forEach(o=>(o.items||[]).forEach((x,i)=>next[o.orderMode==='material'?'material':'service'].push({id:'import-'+o.id+'-'+i,name:x.label||x.productCode||'',party:o.contractorName||'',quantity:x.orderQuantity??x.quantity??1,unit:x.unit||'式',rate:x.orderRate??x.rate??'',memo:x.memo||'',orderRef:o.status||'発注書'})));setRows(p=>({...p,service:next.service,material:next.material}));alert('施工・材料発注書から原価を取り込みました。')}catch{alert('発注書を読み込めませんでした。')}}
+  return <div className="costPage">
+    <header className="costHero"><div className="costBrand"><img src="/pwa-192x192.png"/><div><small>MavieSelect</small><strong>M-Cross</strong></div></div><h1>原価計算書</h1><div className="costHeroActions"><button onClick={onBack}>← 戻る</button><button onClick={()=>window.print()}>▣ 印刷 / PDF出力</button></div></header>
+    <section className="costInfoCard">{[['物件名','propertyName'],['管理会社','company'],['号室','unit'],['工事内容','workName'],['住所','address'],['担当','staff'],['工期','period']].map(([l,k])=><label className={k==='address'?'wide':''} key={k}><span>{l}</span><input value={info[k]} onChange={e=>setInfo({...info,[k]:e.target.value})}/></label>)}</section>
+    <section className="costKpis">
+      <article className="estimate"><span>▤ 見積金額（税抜）</span><input type="number" value={info.estimate||''} onChange={e=>setInfo({...info,estimate:e.target.value})}/><small>税込 {yen(qty(info.estimate)*1.1)}</small></article>
+      <article className="cost"><span>● 原価合計（税抜）</span><strong>{yen(totalCost)}</strong></article>
+      <article className="profit"><span>▥ 粗利益（税抜）</span><strong>{yen(profit)}</strong></article>
+      <article className="margin"><span>◕ 粗利率</span><strong>{margin.toFixed(1)}%</strong></article>
+    </section>
+    {TYPES.map(t=><section className={'costSection '+t.tone} key={t.key}>
+      <header><div className="costSectionTitle"><span className="costSectionIcon"><CostIcon type={t.key}/></span><span className="costNumberBadge">{t.title.match(/[①②③④⑤]/)?.[0]}</span><strong>{t.title.replace(/^[①②③④⑤]\s*/, '')}</strong><small>（{t.sub}）</small></div><div className="sectionTotal"><span>小計</span><strong>{yen(costs[t.key])}</strong><button onClick={()=>add(t.key)}>＋ 行を追加</button>{(t.key==='service'||t.key==='material')&&<button onClick={importOrders}>＋ 発注書から取り込む</button>}</div></header>
+      <div className="costTable"><div className="costHead"><span>No.</span><span>{t.headers[0]}</span><span>{t.headers[1]}</span><span>数量</span><span>単位</span><span>単価</span><span>金額</span><span>メモ</span><span>操作</span></div>
+      {(rows[t.key]||[]).length===0?<p className="costEmpty">まだ明細がありません。「行を追加」から入力できます。</p>:(rows[t.key]||[]).map((r,i)=>{const amount=t.key==='retail'&&r.taxIncluded!==''?Math.floor(qty(r.taxIncluded)/1.1):qty(r.quantity)*qty(r.rate);return <div className="costRow" key={r.id}><span>{i+1}</span><input value={r.name} onChange={e=>update(t.key,r.id,'name',e.target.value)}/><input value={r.party} onChange={e=>update(t.key,r.id,'party',e.target.value)}/><input type="number" value={r.quantity} onChange={e=>update(t.key,r.id,'quantity',e.target.value)}/><input value={r.unit} onChange={e=>update(t.key,r.id,'unit',e.target.value)}/><input type="number" value={r.rate} onChange={e=>update(t.key,r.id,'rate',e.target.value)}/><strong>{yen(amount)}</strong><input value={r.memo} onChange={e=>update(t.key,r.id,'memo',e.target.value)}/><button onClick={()=>remove(t.key,r.id)}>▣</button>{t.key==='retail'&&<label className="taxIncluded"><span>税込</span><input type="number" value={r.taxIncluded} onChange={e=>update(t.key,r.id,'taxIncluded',e.target.value)}/></label>}</div>})}</div>
+    </section>)}
+    <footer className="costBottom"><section><h3>✎ メモ・備考</h3><textarea value={info.memo} onChange={e=>setInfo({...info,memo:e.target.value})} placeholder="現場で発生した追加費用・特記事項などを入力できます。"/></section><section><h3>Σ 原価計算サマリー（税抜）</h3>{TYPES.map(t=><div key={t.key}><span>{t.title.replace(/^.{3}/,'')}</span><b>{yen(costs[t.key])}</b></div>)}<div className="grand"><span>原価合計</span><b>{yen(totalCost)}</b></div></section><section><h3>▣ 粗利計算（税抜）</h3><div><span>見積金額</span><b>{yen(info.estimate)}</b></div><div><span>原価合計</span><b>{yen(totalCost)}</b></div><div className="profitLine"><span>粗利益</span><b>{yen(profit)}</b></div><div className="marginLine"><span>粗利率</span><b>{margin.toFixed(1)}%</b></div></section></footer>
+  </div>
+}

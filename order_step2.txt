@@ -1,0 +1,151 @@
+﻿                        <div style={{
+                          marginTop:'16px',
+                          padding:'12px',
+                          borderRadius:'10px',
+                          background:'rgba(100,100,100,.08)',
+                          color:'#666',
+                          fontSize:'13px'
+                        }}>
+                          現在は材料明細の作成・編集確認段階です。発注先選択と材料発注書の保存は次のSTEPで追加します。
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {orderDraft && (
+                    <section className={"orderDraftPanel " + ((orderDraft.orderMode||'service')==='service'?'serviceOrderPanel':'')} aria-label="発注書作成 STEP2">
+                      {/* M-CROSS_SERVICE_ORDER_STEP1_UI_SAFE */}
+                      {/* M-CROSS_ORDER_STEP2_GROUP_RATES_V2_SAFE */}
+                      <div className="orderDraftHeader">
+                        <div><small>ORDER STEP 2</small><h3>{(orderDraft.orderMode||'service')==='service'?'施工発注書作成':'発注先・発注掛率'}</h3></div>
+                        <button type="button" onClick={() => setOrderDraft(null)}>× 閉じる</button>
+                      </div>
+                      <section className="contractorPickerField">
+                        <span>発注先</span>
+                        <button type="button" className="contractorSelectButton" onClick={() => setShowContractorPicker(true)}>
+                          {orderDraft.contractor || '🔎 協力業者を選択'}
+                        </button>
+                        {orderDraft.contractor && <button type="button" className="contractorClearButton" onClick={() => setOrderDraft(previous => ({...previous,contractor:'',contractorId:''}))}>選択解除</button>}
+                      </section>
+                      {(orderDraft.orderMode||'service')==='service' && orderDraft.contractorId && (
+                        <section className="servicePriceBookToolbar">
+                          <button type="button" onClick={()=>setShowServicePriceBook(previous=>!previous)}>
+                            {showServicePriceBook?'施工単価表を閉じる':'施工単価表を見る'}
+                          </button>
+                        </section>
+                      )}
+                      {(() => {
+                        const applyGroupFactor=(category,value)=>setOrderDraft(previous=>({...previous,items:previous.items.map(item=>item.category===category?{...item,factor:value,orderQuantity:Math.round(item.sourceQuantity*value*10)/10}:item)}))
+                        const crossItems=orderDraft.items.filter(item=>item.category==='cross')
+                        const cfItems=orderDraft.items.filter(item=>item.category==='cf')
+                        const crossFactor=crossItems[0]?.factor ?? 1
+                        const cfFactor=cfItems[0]?.factor ?? 1
+                        return <>
+                          {crossItems.length>0&&<div className="orderGroupRate"><div><strong>クロス</strong><small>{crossItems.length}項目を一括変更</small></div><div className="orderFactorButtons">{[1,0.9,0.85].map(value=><button type="button" key={value} className={crossFactor===value?'active':''} onClick={()=>applyGroupFactor('cross',value)}>×{value.toFixed(2)}</button>)}</div></div>}
+                          {cfItems.length>0&&<div className="orderGroupRate"><div><strong>CF</strong><small>{cfItems.length}項目を一括変更</small></div><div className="orderFactorButtons">{[1,0.9,0.85].map(value=><button type="button" key={value} className={cfFactor===value?'active':''} onClick={()=>applyGroupFactor('cf',value)}>×{value.toFixed(2)}</button>)}</div></div>}
+                        </>
+                      })()}
+                      <div className="materialOrderModeBlock">{/* M-CROSS_CONTRACTOR_ORDER_MODE_V2_SAFE */}
+                      {/* M-CROSS_MATERIAL_ORDER_DUPLICATE_PANEL_V35_SAFE */}
+                      {/* M-CROSS_SEPARATE_SERVICE_MATERIAL_V4_SAFE */}
+                      {(orderDraft.orderMode==='material'||orderDraft.orderMode==='both')&&<section className="materialOrderToolbar">
+                        <div><strong>材料発注</strong><small>見積明細とは別に、品番・数量・単位・単価を自由入力します。</small></div>
+                        <div className="materialOrderToolbarButtons">
+                          <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[{id:'material-'+Date.now(),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>空の発注書にする</button>
+                          <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[...previous.items,{id:'material-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>＋ 空行追加</button>
+                        </div>
+                      </section>}
+                      {/* M-CROSS_MATERIAL_ORDER_REFERENCE_V5_SAFE */}
+                      {(orderDraft.orderMode||'service')!=='service' && (<><section className="materialOrderReferenceBoard">
+                        <details open><summary>クロス品番・参考数量</summary>
+                          <div className="materialReferenceList">{crossProductReferences.map((item,index)=><div key={(item.code||'none')+'-'+index}><strong>{item.code||'品番未入力'}</strong><span>{formatQuantity(item.quantity)}m</span><small>{item.label}</small></div>)}</div>
+                        </details>
+                        <details><summary>CF裁断データ（合算しない）</summary>
+                          <div className="materialReferenceList">{cfCutReferences.map(item=><div key={item.id}><strong>{item.room||'部屋未設定'}</strong><span>{formatQuantity(item.length)}m</span><small>{item.memo||'裁断1本'}</small></div>)}</div>
+                        </details>
+                        <details><summary>巾木 必要枚数</summary><div className="materialReferenceList"><div><strong>必要枚数</strong><span>{formatQuantity(softReferenceQuantity)}枚</span><small>ケース・バラの組み合わせは発注書で自由入力</small></div></div></details>
+                      </section></>)}
+                      <div className="orderExcelWorkspace">
+                        <section className="orderExcelSheet">
+                          <div className="orderExcelSheetTitle"><strong>発 注 書</strong><span>{orderDraft.contractor||'発注先未選択'}</span></div>
+                          <div className="orderExcelHeader"><span>{(orderDraft.orderMode||'service')==='service'?'施工内容':'商品名'}</span><span>数量</span><span>単位</span><span>{(orderDraft.orderMode||'service')==='service'?'施工単価':'単価'}</span><span>金額</span></div>
+                          <div className="orderDraftItems">
+                        {orderDraft.items.map((item,itemIndex)=><article className="orderDraftItem" key={item.id+'-'+itemIndex}>
+                          {item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,i)=>i===itemIndex?{...current,label:event.target.value}:current)}))} placeholder="品番・商品名"/><button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:previous.items.filter((_,i)=>i!==itemIndex)}))}>×</button></div>:<strong>{item.label}</strong>}{item.memo&&<small>{item.memo}</small>}
+                          <div className="orderQuantityCompare"><span>見積 {formatQuantity(item.sourceQuantity)}{item.unit}</span><b>→ 発注 {formatQuantity(item.orderQuantity)}{item.unit}</b></div>
+                          <label className="orderRateField"><span>発注単価</span><input type="number" inputMode="numeric" min="0" step="1" value={item.orderRate ?? ''} onChange={event=>{const value=event.target.value;setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,orderRate:value===''?'':Math.max(0,Number(value)||0)}:current)}))}} placeholder="未設定"/><b>円</b></label>
+                          <div className="orderLineAmount"><span>発注金額</span><strong>{item.orderRate===''||item.orderRate==null?'未設定':formatYen((Number(item.orderQuantity)||0)*(Number(item.orderRate)||0))}</strong></div>
+                          {!['cross','cf'].includes(item.category)&&<label className="orderQuantityField"><span>発注数量</span><input type="number" inputMode="decimal" min="0" step="0.1" value={item.orderQuantity} onChange={event=>{const value=Math.max(0,Number(event.target.value)||0);setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,orderQuantity:value}:current)}))}}/>{item.category==='material'?<input className="materialUnitInput" value={item.unit} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,unit:event.target.value}:current)}))} placeholder="単位"/>:<b>{item.unit}</b>}</label>}
+                        </article>)}
+                      </div></section>
+                        {(orderDraft.orderMode==='material'||orderDraft.orderMode==='both')&&<aside className="materialReferencePane">
+                          <details open><summary>今回の見積・品番</summary><div className="materialReferenceRows">{orderCandidateRows.filter(row=>row.category==='cross').map((row,index)=><div key={'cross-ref-'+index}><strong>{(Array.isArray(row.parts)&&row.parts[0])||'品番未入力'}</strong><span>{formatQuantity(row.quantity)}m</span><small>{row.label}</small></div>)}</div></details>
+                          <details><summary>CF採寸データ</summary><div className="cfReferenceRows">{cfRecords.map((row,index)=><div key={row.id||index}><strong>{row.room}</strong><span>{Number(row.length||0).toFixed(2)}m × {row.count}本</span><small>{row.memo||''}</small></div>)}</div></details>
+                        </aside>}
+                        {(orderDraft.orderMode||'service')!=='service' && (<aside className="contractorPriceBookPane">
+                          <div className="priceBookPaneHeader"><div><strong>業者単価表</strong><small>{orderDraft.contractor||'発注先を選択してください'}</small></div><input value={contractorPriceSearch} onChange={event=>setContractorPriceSearch(event.target.value)} placeholder="🔎 品名を検索"/></div>
+                          <div className="priceBookViewHead"><span>品名</span><span>単位</span><span>単価/掛率</span><span>備考</span></div>
+                          <div className="priceBookViewRows">{(((contractors.find(contractor=>contractor.id===orderDraft.contractorId))?.priceBook)||[]).filter(row=>[row.name,row.unit,row.note].join(' ').toLocaleLowerCase('ja').includes(contractorPriceSearch.trim().toLocaleLowerCase('ja'))).map((row,index)=><button type="button" className="priceBookViewRow" key={row.id||index} onClick={()=>{
+                            if(row.priceType!=='fixed')return
+                            setOrderDraft(previous=>{
+                              let applied=false
+                              const items=previous.items.map(item=>{if(applied||item.category!=='material'||String(item.label||'').trim())return item;applied=true;return {...item,label:row.name||'',unit:row.unit||item.unit,orderRate:row.price===''?'':Number(row.price||0)}})
+                              return {...previous,items:applied?items:[...items,{id:'material-'+Date.now(),label:row.name||'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:row.unit||'',orderRate:row.price===''?'':Number(row.price||0),rate:0,amount:0}]}
+                            })
+                          }}><strong>{row.name}</strong><span>{row.unit}</span><b>{row.priceType==='rate'?'掛率 '+formatQuantity(row.rate)+'%':row.priceType==='unset'?'未定':formatYen(row.price)}</b><small>{row.note}</small></button>)}</div>
+                          {!(contractors.find(contractor=>contractor.id===orderDraft.contractorId))&&<p className="empty">発注先を選ぶと単価表を表示します</p>}
+                          {(contractors.find(contractor=>contractor.id===orderDraft.contractorId))&&!((contractors.find(contractor=>contractor.id===orderDraft.contractorId))?.priceBook||[]).length&&<p className="empty">この業者の単価表は未登録です</p>}
+                        </aside>)}
+                      </div>
+                      </div>
+
+                      {(orderDraft.orderMode||'service')==='service' && showServicePriceBook && orderDraft.contractorId && (()=>{
+                        const supplier=contractors.find(item=>item.id===orderDraft.contractorId)
+                        if(!supplier)return null
+                        const priceBook=Array.isArray(supplier.priceBook)?supplier.priceBook:[]
+                        return <section className="serviceInlinePriceBook">
+                          <div className="serviceInlinePriceBookHeader">
+                            <div><strong>{supplier.name} 施工単価表</strong><small>確認用。発注書の施工単価には自動反映しません。</small></div>
+                            <button type="button" onClick={()=>setShowServicePriceAdd(previous=>!previous)}>＋ 項目追加</button>
+                          </div>
+                          {showServicePriceAdd&&<div className="servicePriceAddRow">
+                            <label><span>施工項目</span><input lang="ja" inputMode="text" autoCapitalize="off" value={servicePriceAddForm.name} onChange={e=>setServicePriceAddForm(p=>({...p,name:e.target.value}))}/></label>
+                            <label><span>単位</span><input value={servicePriceAddForm.unit} onChange={e=>setServicePriceAddForm(p=>({...p,unit:e.target.value}))}/></label>
+                            <label><span>単価</span><input type="number" min="0" step="1" value={servicePriceAddForm.price} onChange={e=>setServicePriceAddForm(p=>({...p,price:e.target.value}))}/></label>
+                            <button type="button" className="primary" onClick={()=>{
+                              const name=String(servicePriceAddForm.name||'').trim();if(!name){window.alert('施工項目を入力してください。');return}
+                              const row={id:'service-price-'+Date.now(),name,unit:String(servicePriceAddForm.unit||'').trim(),priceType:'fixed',price:servicePriceAddForm.price===''?'':Math.max(0,Number(servicePriceAddForm.price)||0),rate:'',note:'',referenceOnly:false}
+                              saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:[...(Array.isArray(current.priceBook)?current.priceBook:[]),row],updatedAt:new Date().toISOString()}:current))
+                              setServicePriceAddForm({name:'',unit:'m²',price:''});setShowServicePriceAdd(false)
+                            }}>追加して保存</button>
+                          </div>}
+                          <div className="servicePriceRows">
+                            {priceBook.length===0?<p className="empty">施工単価表は未登録です。</p>:priceBook.map((row,index)=><div className="servicePriceRow" key={row.id||index}>
+                              <strong>{row.name||''}</strong>
+                              <span>{row.unit||''}</span>
+                              {row.priceType==='rate'?<span>掛率 {formatQuantity(Number(row.rate||0))}%</span>:<label><input type="number" min="0" step="1" value={row.price??''} onChange={event=>{
+                                const value=event.target.value
+                                const nextPriceBook=priceBook.map((current,rowIndex)=>rowIndex===index?{...current,priceType:'fixed',price:value===''?'':Math.max(0,Number(value)||0),rate:''}:current)
+                                saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                              }}/><b>円</b></label>}
+                              <button type="button" className="danger" onClick={()=>{
+                                if(!window.confirm(String(row.name||'')+'を施工単価表から削除しますか？'))return
+                                const nextPriceBook=priceBook.filter((_,rowIndex)=>rowIndex!==index)
+                                saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                              }}>削除</button>
+                            </div>)}
+                          </div>
+                        </section>
+                      })()}
+                      <div className="orderDraftFooter"><span>{orderDraft.items.length}項目</span><button className="primary" type="button" onClick={saveCurrentPurchaseOrder}>📦 発注書を下書き保存</button></div><small className="purchaseOrderSaveNote">保存後は採寸・見積とは独立した発注書データとして保持します。</small>
+                    </section>
+                  )}
+                  {showContractorPicker && (
+                    <div className="contractorPickerBackdrop" role="dialog" aria-modal="true" aria-label="協力業者マスター">
+                      <section className="contractorPickerPanel">
+                        <div className="contractorPickerHeader"><div><small>CONTRACTOR MASTER</small><h3>協力業者を選択</h3></div><button type="button" onClick={() => {setShowContractorPicker(false);setShowContractorForm(false)}}>× 閉じる</button></div>
+                        <input className="contractorSearchInput" value={contractorSearch} onChange={event => setContractorSearch(event.target.value)} placeholder="業者名・業種・担当者を検索" />
+                        <div className="contractorPickerActions"><button className="primary" type="button" onClick={() => { setEditingContractorId(''); setContractorForm({name:'',trade:'内装',contact:'',phone:'',memo:'',postalCode:'',address:'',rates:{cross:'',cf:'',soft:'',floorTrim:'',wallBase:'',floorBase:''},priceBook:[],orderMode:'service'}); setShowContractorForm(true) }}>＋ 新規業者</button><button type="button" onClick={() => setContractorSearch('')}>検索クリア</button></div>
+                        {showContractorForm && <form className={"contractorForm trade-price-form " + (contractorForm.trade==='内装'?'trade-interior':'trade-custom')} onSubmit={event => {
+                          /* M-CROSS_CONTRACTOR_TRADE_PRICEBOOK_STEP1_V2_SAFE */
+                          event.preventDefault(); const name=contractorForm.name.trim(); if(!name)return;

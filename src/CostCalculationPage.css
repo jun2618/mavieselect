@@ -164,3 +164,7 @@
 
 /* M-CROSS_COST_QTY_RATE_FIT_V82_SAFE */
 @media screen{.cc-page .cc-head,.cc-page .cc-row{grid-template-columns:minmax(150px,1.2fr) minmax(120px,.95fr) 86px 68px 116px 102px 125px 58px!important;min-width:925px!important}.cc-page .cc-row>div:nth-child(3)>input,.cc-page .cc-row>div:nth-child(5)>input{width:100%!important;min-width:0!important;padding:0 4px!important;text-align:right!important;font-variant-numeric:tabular-nums!important}.cc-page .cc-row>div:nth-child(4)>input{width:100%!important;min-width:0!important;padding:0 2px!important;text-align:center!important}}
+
+/* M-CROSS_COST_REMOVE_TRANSPARENT_TEXT_V86_SAFE */
+.cc-page .cc-section .cc-row>div:nth-child(3) input,.cc-page .cc-section .cc-row>div:nth-child(4) input{color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important;opacity:1!important}
+@media print{.cc-page,.cc-page *{visibility:visible!important}.cc-page input{color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important;opacity:1!important}.cc-title button,.cc-section-actions button,.cc-row .op{display:none!important}}

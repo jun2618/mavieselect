@@ -1,0 +1,96 @@
+﻿                                            <div style={{display:'flex',gap:'5px',flexWrap:'wrap'}}>
+                                              {row.priceType==='fixed' && row.price!=='' && row.price!=null && (
+                                                <button
+                                                type="button"
+                                                className={'materialPriceBookAddToOrder'+(materialOrderItems.some(item=>String(item.productCode||'').trim()===String(row.name||'').trim())?' added':'')}
+                                                disabled={materialOrderItems.some(item=>String(item.productCode||'').trim()===String(row.name||'').trim())}
+                                                onClick={()=>{
+                                                  const code=String(row.name||'').trim()
+                                                  if(materialOrderItems.some(item=>String(item.productCode||'').trim()===code))return
+                                                  setMaterialOrderItems(previous=>[...(Array.isArray(previous)?previous:[]),{
+                                                    id:'material-order-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+                                                    materialType:'other',productCode:code,description:String(row.note||''),
+                                                    unitPrice:Math.max(0,Number(row.price)||0),quantity:1,unit:String(row.unit||'')
+                                                  }])
+                                                  setSaveStatus('単価表から発注書へ追加しました')
+                                                  setMaterialAddNotice(code+' を追加しました')
+                                                  window.setTimeout(()=>setMaterialAddNotice(''),2200)
+                                                }}
+                                              >{materialOrderItems.some(item=>String(item.productCode||'').trim()===String(row.name||'').trim())?'✓ 追加済み':'＋ 発注書へ追加'}</button>
+                                              )}
+                                              <button
+                                                type="button"
+                                                className="danger"
+                                                onClick={()=>{
+                                                  if(!window.confirm(String(row.name||'')+'を単価表から削除しますか？'))return
+                                                  const nextPriceBook=priceBook.filter((_,rowIndex)=>rowIndex!==index)
+                                                  saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                                                }}
+                                              >削除</button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                          </div>
+
+<strong style={{fontSize:'18px'}}>
+                              材料明細
+                            </strong>
+
+                            <div style={{
+                              marginTop:'4px',
+                              color:'#666',
+                              fontSize:'13px'
+                            }}>
+                              クロスは同じ品番を1行に合算します。品番未入力のクロスも数量を1行にまとめます。
+                            </div>
+                          </div>
+
+                          {/* M-CROSS_MATERIAL_PRICEBOOK_TO_ORDER_AND_BLANK_V38_SAFE */}
+                          
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const id =
+                                'material-free-' +
+                                Date.now() +
+                                '-' +
+                                Math.random().toString(36).slice(2, 7)
+
+                              setMaterialOrderItems(previous => [
+                                ...previous,
+                                {
+                                  id,
+                                  materialType:'other',
+                                  productCode:'',
+                                  description:'',
+                                  quantity:1,
+                                  unit:''
+                                }
+                              ])
+                            }}
+                          >
+                            ＋ 材料行を追加
+                          </button>
+                        </div>
+
+                        <div style={{
+                          display:'grid',
+                          gap:'10px'
+                        }}>
+                          {materialOrderItems.map((item, itemIndex) => (
+                            <article className="materialOrderMobileCard"
+                              key={item.id}
+                              style={{
+                                border:'1px solid rgba(120,120,120,.28)',
+                                borderRadius:'12px',
+                                padding:'14px',
+                                background:'rgba(255,255,255,.56)'
+                              }}
+                            >
+                              <div style={{
+                                display:'flex',

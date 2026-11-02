@@ -1,0 +1,91 @@
+﻿                                    <div style={{margin:'10px 0'}}>
+                                      <button type="button" onClick={()=>setShowMaterialPriceAdd(previous=>!previous)}>＋ 項目追加</button>
+                                    </div>
+
+                                    {showMaterialPriceAdd && (
+                                      <div style={{padding:'10px',marginBottom:'12px',border:'1px solid rgba(120,120,120,.25)',borderRadius:'8px'}}>
+                                        <div style={{display:'grid',gridTemplateColumns:'minmax(170px,2fr) 80px 110px 120px minmax(120px,1fr)',gap:'8px'}}>
+                                          <label><span>品名</span><input lang="ja" inputMode="text" autoCapitalize="off" value={materialPriceAddForm.name} onChange={e=>setMaterialPriceAddForm(p=>({...p,name:e.target.value}))}/></label>
+                                          <label><span>単位</span><input value={materialPriceAddForm.unit} onChange={e=>setMaterialPriceAddForm(p=>({...p,unit:e.target.value}))}/></label>
+                                          <label><span>種類</span><select value={materialPriceAddForm.priceType} onChange={e=>setMaterialPriceAddForm(p=>({...p,priceType:e.target.value,value:''}))}><option value="fixed">固定単価</option><option value="rate">掛率</option></select></label>
+                                          <label><span>{materialPriceAddForm.priceType==='rate'?'掛率 %':'単価 円'}</span><input type="number" min="0" step={materialPriceAddForm.priceType==='rate'?'0.1':'1'} value={materialPriceAddForm.value} onChange={e=>setMaterialPriceAddForm(p=>({...p,value:e.target.value}))}/></label>
+                                          <label><span>備考</span><input lang="ja" inputMode="text" autoCapitalize="off" value={materialPriceAddForm.note} onChange={e=>setMaterialPriceAddForm(p=>({...p,note:e.target.value}))}/></label>
+                                        </div>
+                                        <div style={{display:'flex',gap:'8px',marginTop:'8px'}}>
+                                          <button type="button" className="primary" onClick={()=>{
+                                            const name=String(materialPriceAddForm.name||'').trim();if(!name){window.alert('品名を入力してください。');return}
+                                            const numeric=materialPriceAddForm.value===''?'':Math.max(0,Number(materialPriceAddForm.value)||0)
+                                            const row={id:'manual-price-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),name,unit:String(materialPriceAddForm.unit||'').trim(),priceType:materialPriceAddForm.priceType==='rate'?'rate':'fixed',price:materialPriceAddForm.priceType==='rate'?'':numeric,rate:materialPriceAddForm.priceType==='rate'?numeric:'',note:String(materialPriceAddForm.note||'').trim(),referenceOnly:false}
+                                            const nextPriceBook=[...priceBook,row]
+                                            saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                                            setMaterialPriceAddForm({name:'',unit:'',priceType:'fixed',value:'',note:''});setShowMaterialPriceAdd(false)
+                                          }}>追加して保存</button>
+                                          <button type="button" onClick={()=>{setShowMaterialPriceAdd(false);setMaterialPriceAddForm({name:'',unit:'',priceType:'fixed',value:'',note:''})}}>取消</button>
+                                        </div>
+                                      </div>
+                                    )}
+
+
+                                    {priceBook.length === 0 ? (
+                                      <p className="empty">
+                                        単価表は未登録です。
+                                      </p>
+                                    ) : (
+                                      <div style={{
+                                        display:'grid',
+                                        gap:'6px'
+                                      }}>
+                                        {/* M-CROSS_PRICEBOOK_V41_INLINE_EDIT_SAFE */}
+                                        {priceBook.map((row, index) => (
+                                          <div className="materialPriceBookRow"
+                                            key={row.id || index}
+                                            style={{
+                                              display:'grid',
+                                              gridTemplateColumns:'minmax(180px,2fr) 70px minmax(125px,.9fr) minmax(110px,1fr) auto',
+                                              gap:'8px',
+                                              padding:'8px',
+                                              alignItems:'center',
+                                              border:'1px solid rgba(120,120,120,.2)',
+                                              borderRadius:'8px'
+                                            }}
+                                          >
+                                            <strong>{row.name || ''}</strong>
+                                            <span>{row.unit || ''}</span>
+
+                                            {row.priceType === 'rate' ? (
+                                              <label style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                                                <input
+                                                  type="number"
+                                                  min="0"
+                                                  step="0.1"
+                                                  value={row.rate ?? ''}
+                                                  onChange={event=>{
+                                                    const value=event.target.value
+                                                    const nextPriceBook=priceBook.map((current,rowIndex)=>rowIndex===index?{...current,priceType:'rate',rate:value===''?'':Math.max(0,Number(value)||0),price:''}:current)
+                                                    saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                                                  }}
+                                                  style={{width:'82px'}}
+                                                />
+                                                <b>%</b>
+                                              </label>
+                                            ) : (
+                                              <label style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                                                <input
+                                                  type="number"
+                                                  min="0"
+                                                  step="1"
+                                                  value={row.price ?? ''}
+                                                  onChange={event=>{
+                                                    const value=event.target.value
+                                                    const nextPriceBook=priceBook.map((current,rowIndex)=>rowIndex===index?{...current,priceType:'fixed',price:value===''?'':Math.max(0,Number(value)||0),rate:''}:current)
+                                                    saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
+                                                  }}
+                                                  style={{width:'92px'}}
+                                                />
+                                                <b>円</b>
+                                              </label>
+                                            )}
+
+                                            <small>{row.note || ''}</small>
+
+                                            <div style={{display:'flex',gap:'5px',flexWrap:'wrap'}}>

@@ -1,0 +1,17 @@
+const fs=require('fs'),cp=require('child_process'),path=require('path');
+const jsx=path.join(process.cwd(),'src','CostCalculationPage.jsx');
+const css=path.join(process.cwd(),'src','CostCalculationPage.css');
+const marker='M-CROSS_COST_PLAIN_NO_CELL_V35_SAFE';
+if(!fs.existsSync(jsx)||!fs.existsSync(css)){console.error('ERROR: cost page files not found');process.exit(1)}
+let j=fs.readFileSync(jsx,'utf8'),c=fs.readFileSync(css,'utf8');
+if(j.includes(marker)||c.includes(marker)){console.log('ALREADY APPLIED');process.exit(0)}
+const bj=jsx+'.before-plain-no-v35-'+Date.now()+'.bak',bc=css+'.before-plain-no-v35-'+Date.now()+'.bak';fs.copyFileSync(jsx,bj);fs.copyFileSync(css,bc);
+const old='<span className="costRowNumber">{i+1}</span>';
+const neu=`<div className="costPlainNoCell">{i+1}</div>{/* ${marker} */}`;
+const n=j.split(old).length-1;if(n!==1){console.error('ERROR: costRowNumber MATCH='+n+'; no changes');process.exit(1)}
+j=j.replace(old,neu);
+// Completely isolate new cell from historical span:first-child rules.
+c+=`\n/* ${marker} */\n.costRow>.costPlainNoCell{display:block!important;position:static!important;transform:none!important;float:none!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;margin:0!important;padding:0 3px!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;color:#263552!important;font-weight:700!important;text-align:center!important;overflow:hidden!important;white-space:nowrap!important;line-height:31px!important;height:31px!important;min-height:31px!important;border-left:1px solid #8f9caf!important;border-right:1px solid #8f9caf!important;border-bottom:1px solid #a9b3c1!important}@media(min-width:821px){.costRow>.costPlainNoCell{height:31px!important;min-height:31px!important;line-height:31px!important;font-size:12px!important}}@media(max-width:820px){.costRow>.costPlainNoCell{grid-column:1!important;grid-row:auto!important;height:44px!important;min-height:44px!important;line-height:44px!important;font-size:15px!important;padding:0!important}}@media print{.costRow>.costPlainNoCell{display:block!important;position:static!important;transform:none!important;width:100%!important;min-width:0!important;margin:0!important;padding:0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;color:#111!important;font-weight:600!important;text-align:center!important;overflow:hidden!important;white-space:nowrap!important;height:5.75mm!important;min-height:5.75mm!important;line-height:5.75mm!important;font-size:6.7pt!important;border-left:.27mm solid #69788d!important;border-right:.27mm solid #69788d!important;border-bottom:.24mm solid #7b899b!important}.costPage.printCompact .costRow>.costPlainNoCell{height:3.75mm!important;min-height:3.75mm!important;line-height:3.75mm!important;font-size:4.8pt!important}.costPage.printDense .costRow>.costPlainNoCell{height:3.35mm!important;min-height:3.35mm!important;line-height:3.35mm!important;font-size:4.3pt!important}}\n`;
+fs.writeFileSync(jsx,j,'utf8');fs.writeFileSync(css,c,'utf8');
+console.log('OK: No. cell replaced with plain div V35');console.log('BACKUP JSX:',bj);console.log('BACKUP CSS:',bc);
+const r=cp.spawnSync('npm',['run','build'],{shell:true,stdio:'inherit'});if(r.status!==0){fs.copyFileSync(bj,jsx);fs.copyFileSync(bc,css);console.error('ERROR: build failed; restored');process.exit(r.status||1)}console.log('OK: BUILD SUCCESS');

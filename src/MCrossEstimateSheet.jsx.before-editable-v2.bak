@@ -1,0 +1,15 @@
+import './MCrossEstimateSheet.css'
+import { estimateSheetConfig as config } from './estimateSheetConfig.js'
+const yen=v=>'¥'+Math.round(Number(v)||0).toLocaleString('ja-JP')
+const qty=v=>Number.isFinite(Number(v))?String(Math.round((Number(v)+Number.EPSILON)*100)/100):''
+export default function MCrossEstimateSheet({company='',propertyName='',unit='',address='',workName='',rows=[],totalAmount=0}){
+ const actual=Array.isArray(rows)?rows:[]
+ const shown=[...actual,...Array.from({length:Math.max(0,config.normalRows-actual.length)},()=>null)]
+ const mode=actual.length>config.denseAfterRows?' dense':actual.length>config.compactAfterRows?' compact':''
+ return <section className={'mcrossEstimatePaper'+mode} style={{'--paper':config.paperColor,'--accent':config.headerColor,'--grid':config.gridColor}}>
+ <header className='mcrossEstimateHead'><div className='mcrossEstimateBrand'><strong>M-Cross</strong><small>MavieSelect</small></div><h2>御 見 積 書</h2>{config.showMascot&&<img src='/Designer.png' alt=''/>}</header>
+ <section className='mcrossEstimateMeta'><div><strong>{company||'管理会社'} 御中</strong><dl><div><dt>物件名</dt><dd>{propertyName}</dd></div><div><dt>号室</dt><dd>{unit?unit+'号室':''}</dd></div><div><dt>住所</dt><dd>{address}</dd></div><div><dt>工事名</dt><dd>{workName}</dd></div></dl></div><aside><b>株式会社 MavieSelect</b><span>〒060-0007</span><span>札幌市中央区北7条西22丁目1-12-201</span><span>TEL 011-699-6492　FAX 011-699-6493</span></aside></section>
+ <div className='mcrossEstimateTable'><div className='mcrossEstimateRow head'><span>No.</span><span>工事項目</span><span>仕様・品番</span><span>数量</span><span>単位</span><span>単価</span><span>金額</span></div>{shown.map((row,i)=><div className='mcrossEstimateRow' key={row?.exclusionKey||row?.id||i}><span>{i+1}</span><span>{row?.label||(Array.isArray(row?.parts)?row.parts.filter(Boolean).join(' '):'')}</span><span>{row?.productCode||row?.memo||''}</span><span>{row?qty(row.quantity):''}</span><span>{row?.unit||''}</span><span>{row?yen(row.rate):''}</span><span>{row?yen(row.amount):''}</span></div>)}</div>
+ <footer><div className='mcrossEstimateNotes'><b>備考</b></div><div className='mcrossEstimateTotal'><span>合計金額（税抜）</span><strong>{yen(totalAmount)}</strong></div></footer>
+ </section>
+}

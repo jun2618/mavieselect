@@ -1,0 +1,17 @@
+const fs=require('fs'),cp=require('child_process'),path=require('path');
+const jsx=path.join(process.cwd(),'src','CostCalculationPage.jsx');
+const css=path.join(process.cwd(),'src','CostCalculationPage.css');
+const marker='M-CROSS_COST_ESTIMATE_INLINE_V27_SAFE';
+if(!fs.existsSync(jsx)||!fs.existsSync(css)){console.error('ERROR: cost page files not found');process.exit(1)}
+let j=fs.readFileSync(jsx,'utf8'),c=fs.readFileSync(css,'utf8');
+if(j.includes(marker)||c.includes(marker)){console.log('ALREADY APPLIED');process.exit(0)}
+const bj=jsx+'.before-estimate-inline-v27-'+Date.now()+'.bak',bc=css+'.before-estimate-inline-v27-'+Date.now()+'.bak';fs.copyFileSync(jsx,bj);fs.copyFileSync(css,bc);
+const old='<div className="estimateAmountEditor"><span className="estimateYen">¥</span><input type="number" value={info.estimate===\'\'||info.estimate==null?0:info.estimate} onFocus={e=>e.currentTarget.select()} onChange={e=>setInfo({...info,estimate:e.target.value})}/></div>';
+const neu=`{/* ${marker} */}<div className="estimateAmountEditor"><span className="estimateYen">¥</span><input aria-label="見積金額" type="number" value={info.estimate===''||info.estimate==null?0:info.estimate} onFocus={e=>e.currentTarget.select()} onChange={e=>setInfo({...info,estimate:e.target.value})}/></div>`;
+const n=j.split(old).length-1;
+if(n!==1){console.error('ERROR: estimate editor MATCH='+n+'; no changes');process.exit(1)}
+j=j.replace(old,neu);
+c+=`\n/* ${marker} */\n/* 見積金額の ¥ と数値を原価合計と同じ1行・同じベースラインに固定 */\n.costKpis .estimate .estimateAmountEditor{display:flex!important;align-items:baseline!important;justify-content:flex-start!important;gap:1px!important;width:100%!important;min-width:0!important;height:auto!important;line-height:1!important}.costKpis .estimate .estimateYen{display:inline-block!important;position:static!important;flex:0 0 auto!important;margin:0!important;padding:0!important;font-size:26px!important;font-weight:800!important;line-height:1!important;color:#bd2c5a!important}.costKpis .estimate .estimateAmountEditor input[type="number"]{display:inline-block!important;position:static!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;font-size:26px!important;font-weight:800!important;line-height:1!important;color:#bd2c5a!important;text-align:left!important;appearance:textfield!important;-moz-appearance:textfield!important}.costKpis .estimate .estimateAmountEditor input::-webkit-outer-spin-button,.costKpis .estimate .estimateAmountEditor input::-webkit-inner-spin-button{-webkit-appearance:none!important;margin:0!important}@media(max-width:820px){.costKpis .estimate .estimateYen,.costKpis .estimate .estimateAmountEditor input[type="number"]{font-size:22px!important}}@media print{.costKpis .estimate .estimateAmountEditor{align-items:baseline!important}.costKpis .estimate .estimateYen,.costKpis .estimate .estimateAmountEditor input[type="number"]{font-size:10.8pt!important;line-height:1!important;color:#000!important}}\n`;
+fs.writeFileSync(jsx,j,'utf8');fs.writeFileSync(css,c,'utf8');
+console.log('OK: estimate amount aligned inline V27');console.log('BACKUP JSX:',bj);console.log('BACKUP CSS:',bc);
+const r=cp.spawnSync('npm',['run','build'],{shell:true,stdio:'inherit'});if(r.status!==0){fs.copyFileSync(bj,jsx);fs.copyFileSync(bc,css);console.error('ERROR: build failed; restored');process.exit(r.status||1)}console.log('OK: BUILD SUCCESS');

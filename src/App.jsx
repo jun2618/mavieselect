@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import EriTako from './EriTako.jsx' // M-CROSS_ERI_TAKO_V1_SAFE
 import VoiceGuide from './VoiceGuide.jsx' // M-CROSS_VOICE_GUIDE_FADE_V1_SAFE
+import MCrossEstimateSheet from './MCrossEstimateSheet.jsx' // M-CROSS_CUTE_ESTIMATE_SHEET_V1_SAFE
 import CostCalculationPage from './CostCalculationPage.jsx'
 import properties from './m-cross-properties.json'
 import OneDriveSyncPanel from './OneDriveSyncPanel'
@@ -1040,7 +1041,7 @@ async function downloadEstimateExcel(entry, rows, format, additionalWorks = [], 
 }
 
 /* M-CROSS_COMBINED_ESTIMATE_MEASUREMENT_EXPORT_V2_STRUCTURAL_SAFE */
-async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, additionalWorks = []) {
+async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, additionalWorks = [], estimateOnly = false) { /* M-CROSS_ESTIMATE_ONLY_EXPORT_V6_SAFE */
   try {
     const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
     const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
@@ -1190,6 +1191,7 @@ async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, add
     addSheet('ソフト巾木',['部屋','メモ','枚数'],(entry.softRecords||[]).map(r=>[r.room||'',r.memo||'',Number(formatQuantity(getSoftBaseboardQuantity(r)))]))
     addSheet('床見切り',['部屋1','部屋2','カラー','数量'],(entry.floorTrimRecords||[]).map(r=>[r.roomA||'',r.roomB||'',r.color||'',Number(r.quantity||0)]))
     addSheet('その他工事',['部屋','工事内容','メモ','数量','単位','単価','金額'],(entry.additionalWorks||[]).map(r=>[r.room||'',r.work||'',r.memo||'',Number(r.quantity||0),r.unit||'',Number(r.unitPrice||0),Number(r.amount||(Number(r.quantity)||0)*(Number(r.unitPrice)||0))]))
+    if(estimateOnly){workbook.sheets().slice().forEach(sh=>{if(sh.name()!=='見積書')workbook.deleteSheet(sh.name())})}
     const output=await workbook.outputAsync(),blob=output instanceof Blob?output:new Blob([output],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),link=document.createElement('a'),safe=[entry.propertyName||'物件',entry.unit?entry.unit+'号室':''].filter(Boolean).join('_').replace(/[\/:*?"<>|]/g,'_');link.href=url;link.download=safe+'_見積採寸.xlsx';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url)
   } catch(error){console.error(error);window.alert(error instanceof Error?error.message:'見積・採寸Excelを出力できませんでした。')}
 }
@@ -2335,6 +2337,8 @@ const styles = `
   .savedUnit { color:#d27f6d; font-size:16px; font-weight:800; }
   .savedMeta { color:#958896; font-size:14px; }
   .savedActions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:5px; }
+  /* M-CROSS_CASE_EXPLORER_VOICE_V1_SAFE */
+  .savedExplorerVoiceRow{display:grid;grid-template-columns:minmax(0,1fr) 56px;gap:9px;align-items:center}.savedExplorerVoiceButton{min-height:54px;border:2px solid #efbfd0;border-radius:15px;background:linear-gradient(180deg,#fff,#fff0f6);color:#c6537f;font-size:22px;font-weight:900;box-shadow:0 4px 0 #efd1dc;cursor:pointer}.savedExplorerVoiceButton:disabled{opacity:.58}.savedExplorerVoiceStatus{display:block;margin-top:7px;color:#a86481;font-weight:800}.savedExplorerFolders{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}.savedExplorerFolder{position:relative;display:grid;gap:5px;align-content:center;min-height:112px;padding:24px 15px 14px;border:0;border-radius:9px 17px 17px 17px;color:#594d59;text-align:left;font:inherit;cursor:pointer;box-shadow:0 8px 18px rgba(102,74,96,.14)}.savedExplorerFolderLevel0{background:linear-gradient(145deg,#ffdbe8,#f4b9d0)}.savedExplorerFolderLevel1{background:linear-gradient(145deg,#dff4ff,#acdcef)}.savedExplorerFolderLevel2{background:linear-gradient(145deg,#eee2ff,#ceb8ed)}.savedExplorerFolderLevel3{background:linear-gradient(145deg,#ddf7e9,#aee2c9)}.savedExplorerFolder .savedExplorerIcon{font-size:31px}.savedExplorerFolder strong{font-size:17px;overflow-wrap:anywhere}.savedExplorerFolder small{opacity:.75;font-weight:800}@media(max-width:520px){.savedExplorerFolders{grid-template-columns:1fr 1fr;gap:11px}.savedExplorerFolder{min-height:102px;padding:20px 12px 12px}.savedExplorerVoiceRow{grid-template-columns:minmax(0,1fr) 54px}}
   .savedToolbar { display:grid; gap:12px; margin:16px 0 20px; padding:14px; border:1px solid #f0e3dc; border-radius:16px; background:#fffaf6; }
   .savedToolbar label { margin:0; }
   .savedToolbarGrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
@@ -4752,6 +4756,10 @@ export default function App() {
   /* M-CROSS_FORCE_FOLDER_VIEW_V3_STRUCTURAL_SAFE */
   const savedViewMode = 'explorer'
   const [savedFolderPath, setSavedFolderPath] = useState([])
+  /* M-CROSS_CASE_EXPLORER_VOICE_V1_SAFE */
+  const [savedVoiceListening,setSavedVoiceListening]=useState(false)
+  const [savedVoiceStatus,setSavedVoiceStatus]=useState("")
+  function startSavedVoiceSearch(){const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Recognition){setSavedVoiceStatus("このブラウザーでは音声検索を利用できません");return}try{const recognition=new Recognition();recognition.lang="ja-JP";recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;setSavedVoiceListening(true);setSavedVoiceStatus("🎤 聞き取り中…");recognition.onresult=event=>{const text=String(event.results?.[0]?.[0]?.transcript||"").trim();setSavedSearch(text);setSavedFolderPath([]);setSavedVoiceStatus(text?"検索："+text:"音声を認識できませんでした")};recognition.onerror=event=>setSavedVoiceStatus("音声検索エラー: "+(event.error||"認識できませんでした"));recognition.onend=()=>setSavedVoiceListening(false);recognition.start()}catch(error){console.error(error);setSavedVoiceListening(false);setSavedVoiceStatus("音声検索を開始できませんでした")}}
   const [showArchived, setShowArchived] = useState(false)
   const [selectedSavedKeys, setSelectedSavedKeys] = useState([])
   const [expandedSavedKeys, setExpandedSavedKeys] = useState([])
@@ -7971,9 +7979,8 @@ return savedEntries
     setSoftRecords(Array.isArray(entry.softRecords) ? entry.softRecords : [])
     setFloorTrimRecords(Array.isArray(entry.floorTrimRecords) ? entry.floorTrimRecords : [])
     setAdditionalWorks(Array.isArray(entry.additionalWorks) ? entry.additionalWorks : [])
-    setProjectRooms(Array.isArray(entry.rooms)
-      ? entry.rooms
-      : [...defaultRooms, ...(Array.isArray(entry.customRooms) ? entry.customRooms : [])])
+    /* M-CROSS_LOAD_SAVED_ROOMS_MERGE_V1_SAFE */
+    setProjectRooms([...new Set([...defaultRooms,...(Array.isArray(entry.rooms)?entry.rooms:[]),...(Array.isArray(entry.customRooms)?entry.customRooms:[])].map(v=>String(v||'').trim()).filter(Boolean))])
     setRoomConfirmations(
       entry.roomConfirmations && typeof entry.roomConfirmations === 'object'
         ? entry.roomConfirmations
@@ -8622,7 +8629,8 @@ return savedEntries
     ['retro', 'RETRO'],
     ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
   ]
-  /* M-CROSS_COST_CONTEXT_PROPS_V2_SAFE */ if(showCostCalculation)return <CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"}/>
+  /* M-CROSS_COST_ESTIMATE_AMOUNT_V1_SAFE */
+  if(showCostCalculation){const factor=Math.max(0,Number(caseCrossFactor)||Number(pricingSettings.crossFactor)||0);const rawRows=buildEstimateRows(records,cfRecords,softRecords,floorTrimRecords,rooms,factor,pricingSettings);const allRows=openedEstimateRows??applyEstimateEdits(rawRows,estimateEdits);const costEstimateRows=allRows.filter(row=>!estimateEdits[row.exclusionKey||estimateEditKey(row)]?.excluded);const costAdditionalWorks=additionalWorks.filter((item,index)=>!estimateEdits['additionalWork:'+(item.id||index)]?.excluded);const costEstimateAmount=costEstimateRows.reduce((sum,row)=>sum+(Number(row.amount)||0),0)+costAdditionalWorks.reduce((sum,item)=>sum+(Number(item.amount)||(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0);return <CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"} estimateAmount={costEstimateAmount}/>}
 
   return (
     <>
@@ -9565,7 +9573,7 @@ return savedEntries
               <div className="savedToolbar">
                 <label>
                   <span>🔎 かしこい検索</span>
-                  <input type="search" value={savedSearch} onChange={event => setSavedSearch(event.target.value)} placeholder="物件名・住所・号室・部屋・工事・メモを検索" />
+                  <div className="savedExplorerVoiceRow"><input type="search" value={savedSearch} onChange={event => {setSavedSearch(event.target.value);if(event.target.value)setSavedFolderPath([])}} placeholder="物件名・号室・管理会社・工事名を検索" /><button className="savedExplorerVoiceButton" type="button" disabled={savedVoiceListening} onClick={startSavedVoiceSearch} aria-label="案件を音声検索">{savedVoiceListening?"🎤…":"🎤"}</button></div>{savedVoiceStatus&&<small className="savedExplorerVoiceStatus">{savedVoiceStatus}</small>}
                 </label>
                 <div className="savedToolbarGrid">
                   <label>
@@ -9635,7 +9643,7 @@ return savedEntries
                           const count = matching.filter(node => node.levels[depth] === folder).length
                           const icon = depth < 2 ? '📁' : depth === 2 ? '🗂️' : '🏢'
                           return (
-                            <button className="savedExplorerFolder" type="button" key={folder} onClick={() => setSavedFolderPath(path => [...path, folder])}>
+                            <button className={"savedExplorerFolder savedExplorerFolderLevel"+depth} type="button" key={folder} onClick={() => setSavedFolderPath(path => [...path, folder])}>
                               <span className="savedExplorerIcon">{icon}</span>
                               <strong>{folder}</strong>
                               <small>{count}件</small>
@@ -10671,14 +10679,9 @@ return savedEntries
               /* M-CROSS_MATERIAL_ORDER_REFERENCE_V5_SAFE */
               const crossProductReferences=(()=>{
                 const grouped=new Map()
-                estimateRows.filter(row=>row.category==='cross').forEach(row=>{
-                  const parts=Array.isArray(row.parts)?row.parts:[]
-                  const edit=estimateEdits[row.exclusionKey || estimateEditKey(row)]
-                  const code=String((edit && typeof edit==='object' ? edit.productCode : '') || row.productCode || '').trim()
-                  const key=code||'__NO_CODE__:'+String(row.label||parts.join(' '))
-                  if(!grouped.has(key))grouped.set(key,{code,label:row.label||parts.filter(Boolean).join(' '),quantity:0,rows:[]})
-                  const item=grouped.get(key);item.quantity+=Number(row.quantity||0);item.rows.push(row)
-                })
+                const addCrossReference=(row,codeValue='')=>{const parts=Array.isArray(row.parts)?row.parts:[];const code=String(codeValue||row.productCode||'').trim();const key=code||'__NO_CODE__';if(!grouped.has(key))grouped.set(key,{code,label:code||'品番未入力',quantity:0,rows:[]});const item=grouped.get(key);item.quantity+=Number(row.quantity||0);item.rows.push(row)}
+                estimateRows.filter(row=>row.category==='cross').forEach(row=>{const edit=estimateEdits[row.exclusionKey || estimateEditKey(row)];addCrossReference(row,(edit && typeof edit==='object' ? edit.productCode : '') || row.productCode || '')})
+                visibleAdditionalWorks.filter(item=>item.legacyTradeType==='cross'||item.category==='cross').forEach(item=>{addCrossReference({...item,parts:Array.isArray(item.estimateParts)?item.estimateParts:[item.room||'',item.work||'']},item.productCode||'')})
                 return [...grouped.values()]
               })()
               const cfCutReferences=(cfRecords||[]).flatMap(record=>{
@@ -10721,6 +10724,7 @@ return savedEntries
               return (
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
+                  <MCrossEstimateSheet company={company||""} propertyName={selectedProperty?.name||""} unit={unit||""} address={selectedProperty?.address||""} workName={workName||"原状回復工事"} rows={orderCandidateRows} onGoMeasurement={()=>setShowEstimate(false)} onGoOrder={()=>document.querySelector(".orderSelectionPanel")?.scrollIntoView({behavior:"smooth",block:"start"})} onGoCost={()=>setShowCostCalculation(true)} onExportEstimate={()=>{const factor=Math.max(0,Number(caseCrossFactor)||Number(pricingSettings.crossFactor)||0);const rawRows=buildEstimateRows(records,cfRecords,softRecords,floorTrimRecords,rooms,factor,pricingSettings);const allRows=applyEstimateEdits(rawRows,estimateEdits);const rowsForCombined=allRows.filter(row=>!estimateEdits[row.exclusionKey||estimateEditKey(row)]?.excluded);const worksForCombined=additionalWorks;downloadCombinedEstimateMeasurementExcel({company,propertyName:selectedProperty?.name||"",address:selectedProperty?.address||"",unit,records,cfRecords,cfMaterialGroups,softRecords,floorTrimRecords,additionalWorks,legacyEstimateNotes},rowsForCombined,estimateCopyFormat,worksForCombined,true) /* M-CROSS_ESTIMATE_PAGE_ONLY_V6_SAFE */}}/>
                   {/* M-CROSS_COST_BUTTON_IN_PROJECT_V75_SAFE */}<button type="button" className="primary" style={{width:"100%",minHeight:"52px",marginBottom:"12px",fontWeight:900}} onClick={()=>setShowCostCalculation(true)}>💰 この物件の原価計算</button><section className="orderSelectionPanel" aria-label="発注項目の選択">
                     <strong>📦 発注する項目を選択</strong>
                     <div className="orderSelectionQuickButtons">
@@ -10730,7 +10734,7 @@ return savedEntries
                       <button type="button" onClick={() => setSelectedOrderKeys([])}>クリア</button>
                     </div>
                     {/* M-CROSS_PURCHASE_ORDER_CURRENT_COUNT_V33_SAFE */}
-                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => setShowPurchaseOrderExplorer(true)}>📁 保存済み発注書 <span>{purchaseOrders.filter(order=>{
+                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => { setShowPurchaseOrderExplorer(true); window.setTimeout(() => window.scrollTo({top:0,left:0,behavior:"smooth"}),80) }}>📁 保存済み発注書 <span>{purchaseOrders.filter(order=>{
                       const currentCompany=String(company||'').trim()
                       const currentProperty=String(selectedProperty?.name||'').trim()
                       const currentUnit=String(unit||'').trim().replace(/号室$/,'')

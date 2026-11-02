@@ -1,0 +1,113 @@
+﻿  .serviceOrderPanel .materialOrderReferenceBoard{display:none!important}
+  .serviceOrderPanel .orderExcelSheetTitle strong{letter-spacing:.12em}
+  .serviceOrderPanel .orderExcelSheetTitle strong::after{content:' 施工';font-size:12px;letter-spacing:0;margin-left:6px;color:#65727c}
+  @media(max-width:620px){
+    .serviceOrderPanel{width:calc(100vw - 12px)!important;max-width:calc(100vw - 12px)!important;position:relative!important;left:50%!important;transform:translateX(-50%)!important;margin:6px 0!important;padding:10px!important;overflow-x:hidden!important}
+    .serviceOrderPanel .orderExcelWorkspace{display:block!important;width:100%!important;overflow:visible!important}
+    .serviceOrderPanel .orderExcelSheet{width:100%!important;min-width:0!important;overflow:visible!important}
+    .serviceOrderPanel .orderExcelHeader{display:none!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItems{display:grid!important;gap:10px!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;min-width:0!important;width:100%!important;gap:8px!important;padding:10px!important;border:1px solid #aeb4b8!important;border-radius:12px!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem>strong{grid-column:1/-1!important;grid-row:auto!important;padding:4px 0!important;border:0!important;font-size:16px!important;white-space:normal!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem>small{grid-column:1/-1!important;grid-row:auto!important;padding:0!important}
+    .serviceOrderPanel .orderExcelSheet .orderQuantityCompare,.serviceOrderPanel .orderExcelSheet .orderSourceQuantity{grid-column:1!important;grid-row:auto!important;display:grid!important;justify-items:start!important;padding:8px!important;border:0!important;border-radius:9px!important;background:rgba(110,145,232,.08)!important}
+    .serviceOrderPanel .orderExcelSheet .orderRateField{grid-column:2!important;grid-row:auto!important;display:grid!important;grid-template-columns:1fr auto!important;gap:6px!important;padding:8px!important;margin:0!important;border-radius:9px!important;background:rgba(216,77,131,.06)!important}
+    .serviceOrderPanel .orderExcelSheet .orderRateField>span{grid-column:1/-1!important}
+    .serviceOrderPanel .orderExcelSheet .orderRateField input{width:100%!important;min-width:0!important;min-height:42px!important;font-size:16px!important}
+    .serviceOrderPanel .orderExcelSheet .orderLineAmount{grid-column:1/-1!important;grid-row:auto!important;display:flex!important;justify-content:space-between!important;padding:9px!important;border-top:1px solid rgba(110,145,232,.25)!important}
+    .serviceOrderPanel .orderExcelSheet .orderDraftItem:has(.orderQuantityCompare)::after{display:none!important}
+    .serviceOrderPanel .contractorPriceBookPane{width:100%!important;min-width:0!important;max-height:none!important;margin-top:12px!important;position:static!important;overflow:visible!important}
+    .serviceOrderPanel .priceBookViewHead{display:none!important}
+    .serviceOrderPanel .priceBookViewRow{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;min-width:0!important;padding:8px!important;gap:5px!important;border:1px solid #c4c8cb!important;border-radius:8px!important;margin-bottom:6px!important}
+    .serviceOrderPanel .priceBookViewRow>*{padding:0!important;border:0!important}
+    .serviceOrderPanel .priceBookViewRow small{grid-column:1/-1!important}
+  }
+  /* M-CROSS_SERVICE_PRICEBOOK_STEP2_V3_SAFE */
+  .servicePriceBookToolbar{display:flex;justify-content:flex-end;margin:-4px 0 2px}.servicePriceBookToolbar button{min-height:42px;padding:8px 12px;border:1px solid #6e91e8;border-radius:10px;background:#fff;color:#5b6270;font:inherit;font-weight:800}
+  .serviceInlinePriceBook{display:grid;gap:10px;padding:12px;border:1px solid #86919a;border-radius:12px;background:#f7f9fa;color:#20252a}.serviceInlinePriceBookHeader{display:flex;align-items:center;justify-content:space-between;gap:10px}.serviceInlinePriceBookHeader>div{display:grid}.serviceInlinePriceBookHeader small{color:#67717a}.serviceInlinePriceBookHeader button{min-height:40px}.servicePriceAddRow{display:grid;grid-template-columns:minmax(180px,1fr) 90px 120px auto;gap:8px;align-items:end}.servicePriceAddRow label{margin:0}.servicePriceRows{display:grid;gap:7px}.servicePriceRow{display:grid;grid-template-columns:minmax(180px,1fr) 70px minmax(120px,.7fr) auto;align-items:center;gap:8px;padding:9px;border:1px solid #c4c8cb;border-radius:9px;background:#fff}.servicePriceRow label{display:flex;align-items:center;gap:4px;margin:0}.servicePriceRow input{width:92px;min-width:0}.servicePriceRow .danger{min-height:36px;padding:6px 9px}
+  @media(max-width:620px){.servicePriceBookToolbar{justify-content:stretch}.servicePriceBookToolbar button{width:100%}.serviceInlinePriceBookHeader{align-items:stretch;flex-direction:column}.serviceInlinePriceBookHeader button{width:100%}.servicePriceAddRow{grid-template-columns:1fr 1fr}.servicePriceAddRow label:first-child{grid-column:1/-1}.servicePriceAddRow button{grid-column:1/-1}.servicePriceRow{grid-template-columns:minmax(0,1fr) auto;gap:6px}.servicePriceRow>strong{grid-column:1/-1}.servicePriceRow label{justify-content:flex-end}.servicePriceRow .danger{width:auto}.serviceInlinePriceBook{padding:9px}}
+  .theme-dark .serviceInlinePriceBook,.theme-cyber .serviceInlinePriceBook,.theme-luxury .serviceInlinePriceBook,.theme-retro .serviceInlinePriceBook,.theme-galaxy .serviceInlinePriceBook{background:rgba(5,12,24,.88);color:#f3ffff}.theme-dark .servicePriceRow,.theme-cyber .servicePriceRow,.theme-luxury .servicePriceRow,.theme-retro .servicePriceRow,.theme-galaxy .servicePriceRow{background:rgba(5,12,24,.75);color:#f3ffff}
+  /* M-CROSS_SERVICE_ORDER_OVERLAP_STEP3_SAFE */
+  /* 施工発注PC: 見積数量・発注数量・施工単価・金額の重なりを解消 */
+  .serviceOrderPanel .orderExcelWorkspace{
+    display:block;
+    width:100%;
+    overflow:visible;
+  }
+  .serviceOrderPanel .orderExcelSheet{
+    width:100%;
+    min-width:0;
+    overflow:visible;
+  }
+  .serviceOrderPanel .orderExcelHeader{
+    grid-template-columns:minmax(260px,1fr) 140px 150px 145px;
+  }
+  .serviceOrderPanel .orderExcelHeader span:nth-child(3){display:none}
+  .serviceOrderPanel .orderExcelSheet .orderDraftItem{
+    grid-template-columns:minmax(260px,1fr) 140px 150px 145px!important;
+    min-width:0!important;
+    min-height:96px;
+    align-items:stretch;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderDraftItem>strong{
+    grid-column:1!important;
+    grid-row:1!important;
+    padding:12px!important;
+    border-right:1px solid #aeb4b8!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderDraftItem>small{
+    grid-column:1!important;
+    grid-row:2!important;
+    padding:0 12px 10px!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityCompare{
+    grid-column:2!important;
+    grid-row:1!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    align-content:center!important;
+    justify-items:center!important;
+    gap:4px!important;
+    padding:10px!important;
+    border-left:0!important;
+    border-right:1px solid #aeb4b8!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityCompare span,
+  .serviceOrderPanel .orderExcelSheet .orderQuantityCompare b{
+    display:block!important;
+    width:100%!important;
+    text-align:center!important;
+    white-space:normal!important;
+    line-height:1.35!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityField{
+    grid-column:2!important;
+    grid-row:2!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:5px!important;
+    padding:6px 10px 10px!important;
+    border-left:0!important;
+    border-right:1px solid #aeb4b8!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityField span{
+    grid-column:1/-1!important;
+    text-align:center!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderQuantityField input{
+    width:100%!important;
+    min-width:0!important;
+    min-height:40px!important;
+    text-align:right!important;
+  }
+  .serviceOrderPanel .orderExcelSheet .orderRateField{
+    grid-column:3!important;
+    grid-row:1 / span 2!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-content:center!important;
+    align-items:center!important;
+    gap:6px!important;
+    padding:10px!important;
+    border-left:0!important;

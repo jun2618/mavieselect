@@ -1,0 +1,161 @@
+﻿                  {/* M-CROSS_MATERIAL_ORDER_SCREEN_V1_SAFE */}
+                  {purchaseOrderBranch==='material'&&materialOrderItems.length===1&&!materialOrderItems[0]?.productCode&&<div className="blankMaterialOrderGuide">見積にない材料を自由に入力して発注できます。</div>}
+                  {/* M-CROSS_ORDER_IME_INPUT_V1_SAFE */}
+                  {purchaseOrderBranch === 'material' && (
+                    <section className="orderDraftPanel materialMobilePanel" aria-label="材料発注">
+                      {/* M-CROSS_MATERIAL_MOBILE_LAYOUT_V42_SAFE */}
+                      {/* M-CROSS_MATERIAL_MOBILE_CYBER_CSS_V2_SAFE */}
+                      <div className="orderDraftHeader">
+                        <div>
+                          <small>MATERIAL ORDER</small>
+                          <h3>材料発注書作成</h3>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setPurchaseOrderBranch('select')}
+                        >
+                          ← 種類選択へ戻る
+                        </button>
+                      </div>
+
+                      <div style={{padding:'18px'}}>
+                        <div style={{
+                          display:'flex',
+                          justifyContent:'space-between',
+                          alignItems:'center',
+                          gap:'12px',
+                          flexWrap:'wrap',
+                          marginBottom:'14px'
+                        }}>
+                          <div>
+                            
+                          {/* M-CROSS_MATERIAL_PRICEBOOK_V3B_SAFE */}
+                          <div style={{
+                            marginBottom:'14px',
+                            padding:'12px',
+                            border:'1px solid rgba(120,120,120,.25)',
+                            borderRadius:'10px'
+                          }}>
+                            <div style={{
+                              display:'flex',
+                              justifyContent:'space-between',
+                              alignItems:'center',
+                              gap:'10px',
+                              flexWrap:'wrap'
+                            }}>
+                              <div>
+                                <small>材料発注先</small>
+                                <div style={{
+                                  fontWeight:700,
+                                  marginTop:'3px'
+                                }}>
+                                  {
+                                    contractors.find(
+                                      item =>
+                                        item.id === materialSupplierId
+                                    )?.name || '未選択'
+                                  }
+                                </div>
+                              </div>
+
+                              <div style={{
+                                display:'flex',
+                                gap:'8px',
+                                flexWrap:'wrap'
+                              }}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setShowMaterialSupplierPicker(true)
+                                  }
+                                >
+                                  発注先を選択
+                                </button>
+
+                                <button
+                                  type="button"
+                                  disabled={!materialSupplierId}
+                                  onClick={() =>
+                                    setShowMaterialPriceBook(
+                                      previous => !previous
+                                    )
+                                  }
+                                >
+                                  単価表
+                                </button>
+                              </div>
+                            </div>
+
+                            {showMaterialSupplierPicker && (
+                              <div style={{
+                                marginTop:'12px',
+                                display:'grid',
+                                gap:'6px'
+                              }}>
+                                {contractors
+                                  .filter(item => !item.hidden)
+                                  .map(item => (
+                                    <button
+                                      type="button"
+                                      key={item.id}
+                                      style={{
+                                        textAlign:'left',
+                                        padding:'10px'
+                                      }}
+                                      onClick={() => {
+                                        setMaterialSupplierId(item.id)
+                                        setShowMaterialSupplierPicker(false)
+                                        setShowMaterialPriceBook(true)
+                                      }}
+                                    >
+                                      <strong>{item.name}</strong>
+                                      <small style={{
+                                        display:'block',
+                                        marginTop:'2px'
+                                      }}>
+                                        {item.trade || ''}
+                                      </small>
+                                    </button>
+                                  ))}
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setShowMaterialSupplierPicker(false)
+                                  }
+                                >
+                                  閉じる
+                                </button>
+                              </div>
+                            )}
+
+                            {/* M-CROSS_MATERIAL_ORDER_LIKE_SERVICE_V45_SAFE */}
+                        <section className="materialOrderTopPreview" aria-label="材料発注書プレビュー">
+                          <header>
+                            <div><strong>発　注　書</strong><small>材料</small><em className="materialOrderAddedOnlyLabel">追加した商品のみ</em></div>
+                            <span>{materialSupplierId?(contractors.find(item=>item.id===materialSupplierId)?.name||'発注先未設定'):'発注先未設定'}</span>
+                          </header>
+                          {materialAddedOrderItems.length===0?
+                            <p className="empty">単価表の「発注書へ追加」または「空の発注書を作成」から商品を追加してください。</p>
+                            :<div className="materialOrderTopRows">
+                              {materialAddedOrderItems.map((item,index)=><article key={(item.id||'top-item')+'-'+index} className="materialOrderTopRow">
+                                <div><strong>{item.productCode||'商品名未入力'}</strong><small>{item.description||''}</small></div>
+                                <span>{formatQuantity(Number(item.quantity)||0)}{item.unit||''}</span>
+                                <span>{item.unitPrice===''||item.unitPrice==null?'単価未設定':formatYen(Number(item.unitPrice)||0)}</span>
+                                <b>{item.unitPrice===''||item.unitPrice==null?'未設定':formatYen((Number(item.quantity)||0)*(Number(item.unitPrice)||0))}</b>
+                              </article>)}
+                            </div>
+                          }
+                          <footer>
+                            <span>{materialAddedOrderItems.length}件</span>
+                            <strong>{formatYen((materialAddedOrderItems||[]).reduce((sum,item)=>sum+((item.unitPrice===''||item.unitPrice==null)?0:(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0))}</strong>
+                            <button type="button" onClick={()=>document.querySelector('.materialOrderMobileHeading')?.scrollIntoView({behavior:'smooth',block:'start'})}>数量・単価を編集</button>
+                          </footer>
+                          {materialAddNotice&&<div className="materialOrderTopNotice">✓ {materialAddNotice}</div>}
+                        </section>
+                        {showMaterialPriceBook &&
+                              materialSupplierId && (() => {
+
+                                const supplier =
+                                  contractors.find(

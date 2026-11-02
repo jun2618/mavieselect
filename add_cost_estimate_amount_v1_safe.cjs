@@ -1,0 +1,22 @@
+const fs=require('fs');
+const app='./src/App.jsx';
+const cost='./src/CostCalculationPage.jsx';
+let a=fs.readFileSync(app,'utf8'),c=fs.readFileSync(cost,'utf8');
+const marker='M-CROSS_COST_ESTIMATE_AMOUNT_V1_SAFE';
+if(a.includes(marker)&&c.includes(marker)){console.log('ALREADY APPLIED');process.exit(0)}
+const appOld='  /* M-CROSS_COST_CONTEXT_PROPS_V2_SAFE */ if(showCostCalculation)return <CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"}/>';
+if(!a.includes(appOld))throw new Error('App.jsx CostCalculationPage位置なし');
+const appNew=`  /* ${marker} */\n  if(showCostCalculation){const factor=Math.max(0,Number(caseCrossFactor)||Number(pricingSettings.crossFactor)||0);const rawRows=buildEstimateRows(records,cfRecords,softRecords,floorTrimRecords,rooms,factor,pricingSettings);const allRows=openedEstimateRows??applyEstimateEdits(rawRows,estimateEdits);const costEstimateRows=allRows.filter(row=>!estimateEdits[row.exclusionKey||estimateEditKey(row)]?.excluded);const costAdditionalWorks=additionalWorks.filter((item,index)=>!estimateEdits['additionalWork:'+(item.id||index)]?.excluded);const costEstimateAmount=costEstimateRows.reduce((sum,row)=>sum+(Number(row.amount)||0),0)+costAdditionalWorks.reduce((sum,item)=>sum+(Number(item.amount)||(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0);return <CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"} estimateAmount={costEstimateAmount}/>}`;
+a=a.replace(appOld,appNew);
+const sigOld='export default function CostCalculationPage({onBack,company="",propertyId="",propertyName="",unit="",workName=""}){';
+if(!c.includes(sigOld))throw new Error('CostCalculationPage引数位置なし');
+const sigNew=`export default function CostCalculationPage({onBack,company="",propertyId="",propertyName="",unit="",workName="",estimateAmount=0}){/* ${marker} */`;
+c=c.replace(sigOld,sigNew);
+const infoOld='const[info,setInfo]=useState(()=>({propertyName:propertyName||"",unit:unit||"",workName:workName||"",staff:"町田",period:"",estimate:0,...(initialCostData?.info||{}),propertyName:propertyName||initialCostData?.info?.propertyName||"",unit:unit||initialCostData?.info?.unit||"",workName:workName||initialCostData?.info?.workName||""}))';
+if(!c.includes(infoOld))throw new Error('CostCalculationPage info初期値位置なし');
+const infoNew='const[info,setInfo]=useState(()=>{const saved=initialCostData?.info||{};const savedEstimate=Number(saved.estimate)||0;return {propertyName:propertyName||"",unit:unit||"",workName:workName||"",staff:"町田",period:"",estimate:savedEstimate>0?savedEstimate:(Number(estimateAmount)||0),...saved,estimate:savedEstimate>0?savedEstimate:(Number(estimateAmount)||0),propertyName:propertyName||saved.propertyName||"",unit:unit||saved.unit||"",workName:workName||saved.workName||""}})';
+c=c.replace(infoOld,infoNew);
+fs.copyFileSync(app,'./src/App.before_cost_estimate_amount_v1.jsx');
+fs.copyFileSync(cost,'./src/CostCalculationPage.before_estimate_amount_v1.jsx');
+fs.writeFileSync(app,a,'utf8');fs.writeFileSync(cost,c,'utf8');
+console.log('OK: 見積金額を原価計算へ反映しました（取込ファイルの見積明細も対象）');

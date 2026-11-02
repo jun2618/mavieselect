@@ -1,0 +1,326 @@
+{
+  "schema": "m-cross-legacy-import:v3",
+  "importMode": "single-preview",
+  "source": {
+    "fileName": "INOVE札幌中島公園 503号室諸工事.xlsm",
+    "sheet": "工事カード / 見積書",
+    "importedAt": "2026-11-01T06:10:55.850Z"
+  },
+  "entry": {
+    "company": "株式会社第一住建",
+    "propertyName": "INOVE札幌中島公園",
+    "propertyId": "",
+    "address": "札幌市中央区南8条西1丁目13-18",
+    "unit": "503",
+    "workName": "諸工事",
+    "propertyAccess": {
+      "autoLock": "0832E",
+      "keyBox": "",
+      "joiner": "",
+      "myLock": "",
+      "entranceOpen": ""
+    },
+    "rooms": [
+      "浴室",
+      "その他",
+      "トイレ",
+      "キッチン"
+    ],
+    "customRooms": [
+      "浴室",
+      "その他",
+      "トイレ",
+      "キッチン"
+    ],
+    "records": [],
+    "cfRecords": [],
+    "cfMaterialGroups": [],
+    "softRecords": [],
+    "floorTrimRecords": [],
+    "additionalWorks": [
+      {
+        "id": "legacy-estimate-row-23",
+        "room": "浴室",
+        "work": "2室用換気扇交換 三菱電機 VD-10ZFC14",
+        "spec": "",
+        "estimateParts": [
+          "浴室",
+          "",
+          "2室用換気扇交換 三菱電機 VD-10ZFC14",
+          ""
+        ],
+        "quantity": 1,
+        "unit": "台",
+        "unitPrice": 11500,
+        "amount": 11500,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 23,
+        "legacyRawLabel": "浴室2室用換気扇交換　三菱電機　VD-10ZFC14"
+      },
+      {
+        "id": "legacy-estimate-row-24",
+        "room": "その他",
+        "work": "換気扇交換施工費 処分費含む",
+        "spec": "",
+        "estimateParts": [
+          "その他",
+          "",
+          "換気扇交換施工費 処分費含む",
+          ""
+        ],
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 12000,
+        "amount": 12000,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 24,
+        "legacyRawLabel": "換気扇交換施工費　処分費含む"
+      },
+      {
+        "id": "legacy-estimate-row-25",
+        "room": "浴室",
+        "work": "換気扇交換に伴う天井開口",
+        "spec": "",
+        "estimateParts": [
+          "浴室",
+          "",
+          "換気扇交換に伴う天井開口",
+          ""
+        ],
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 8000,
+        "amount": 8000,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 25,
+        "legacyRawLabel": "浴室換気扇交換に伴う天井開口"
+      },
+      {
+        "id": "legacy-estimate-row-26",
+        "room": "トイレ",
+        "work": "換気口脱落修理",
+        "spec": "",
+        "estimateParts": [
+          "トイレ",
+          "",
+          "換気口脱落修理",
+          ""
+        ],
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 4000,
+        "amount": 4000,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 26,
+        "legacyRawLabel": "トイレ換気口脱落修理"
+      },
+      {
+        "id": "legacy-estimate-row-28",
+        "room": "浴室",
+        "work": "コーキング打ち",
+        "spec": "",
+        "estimateParts": [
+          "浴室",
+          "",
+          "コーキング打ち",
+          ""
+        ],
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 8000,
+        "amount": 8000,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 28,
+        "legacyRawLabel": "浴室コーキング打ち"
+      },
+      {
+        "id": "legacy-estimate-row-29",
+        "room": "浴室",
+        "work": "壁腐食部 パネル貼り",
+        "spec": "",
+        "estimateParts": [
+          "浴室",
+          "",
+          "壁腐食部 パネル貼り",
+          ""
+        ],
+        "quantity": 1,
+        "unit": "式",
+        "unitPrice": 18000,
+        "amount": 18000,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 29,
+        "legacyRawLabel": "浴室壁腐食部　パネル貼り"
+      },
+      {
+        "id": "legacy-estimate-row-31",
+        "room": "キッチン",
+        "work": "引き出し 涙目取り付け （建具傷つき防止のため）",
+        "spec": "",
+        "estimateParts": [
+          "キッチン",
+          "",
+          "引き出し 涙目取り付け （建具傷つき防止のため）",
+          ""
+        ],
+        "quantity": "",
+        "unit": "",
+        "unitPrice": "",
+        "amount": 0,
+        "memo": "",
+        "sourceSheet": "見積書",
+        "sourceRow": 31,
+        "legacyRawLabel": "キッチン引き出し　涙目取り付け　（建具傷つき防止のため）"
+      }
+    ],
+    "legacyEstimateNotes": [
+      {
+        "row": 22,
+        "cell": "M22",
+        "text": "・浴室換気扇"
+      },
+      {
+        "row": 23,
+        "cell": "M23",
+        "text": "異音あり。確認したところモーター軸の摩耗が原因と思われ、回転数も上がっていません。換気不足により浴室内の結露が解消されていない状態です。"
+      },
+      {
+        "row": 24,
+        "cell": "M24",
+        "text": "カバー中央のネジが錆びて外せないため、内部は未確認。"
+      },
+      {
+        "row": 25,
+        "cell": "M25",
+        "text": "東芝製2室換気扇、型番不明、天井開口約205mm角。"
+      },
+      {
+        "row": 29,
+        "cell": "M29",
+        "text": "・トイレ換気口"
+      },
+      {
+        "row": 30,
+        "cell": "M30",
+        "text": "2室換気扇のトイレ側換気口が天井から外れ、配管でぶら下がっている状態。天井の一部加工で復旧可能と思われます。"
+      },
+      {
+        "row": 32,
+        "cell": "M32",
+        "text": "・浴室壁の腐食"
+      },
+      {
+        "row": 33,
+        "cell": "M33",
+        "text": "壁下部周囲に錆・膨れ・塗膜の割れあり。過去に塗装されていますが、錆の進行は止まっていない状態です。穴は現状確認できませんが、漏水等につながる前に対策が必要です。"
+      },
+      {
+        "row": 34,
+        "cell": "M34",
+        "text": "浴室は松下電工（ナショナル）製。"
+      },
+      {
+        "row": 36,
+        "cell": "M36",
+        "text": "・ガス台引き出し"
+      },
+      {
+        "row": 37,
+        "cell": "M37",
+        "text": "引き出しが居間ドア枠に接触し、枠の塗装が一部剥がれています。流し台右側に余裕がなく移動できないため、別途対策が必要です。"
+      },
+      {
+        "row": 39,
+        "cell": "M39",
+        "text": "・レンジフード"
+      },
+      {
+        "row": 40,
+        "cell": "M40",
+        "text": "起動時に多少回転が遅いものの、異音はなく現状は正常に作動しています。"
+      },
+      {
+        "row": 42,
+        "cell": "M42",
+        "text": "・居間／トイレドア下部"
+      },
+      {
+        "row": 43,
+        "cell": "M43",
+        "text": "下部両面にトタンによる補修跡あり。現状、水気のある場所ではないため、入居者には錆の可能性は低い旨を説明済み。"
+      },
+      {
+        "row": 45,
+        "cell": "M45",
+        "text": "入居者は浴室壁・ドア枠等の錆や塗装剥がれについて、退去時の費用負担を特に心配されています。"
+      },
+      {
+        "row": 49,
+        "cell": "M49",
+        "text": "浴室換気扇交換　2部屋用"
+      },
+      {
+        "row": 50,
+        "cell": "M50",
+        "text": "浴室換気扇交換に伴う天井開口"
+      },
+      {
+        "row": 51,
+        "cell": "M51",
+        "text": "※　既存品のサイズが廃盤のため一回り大きいサイズになります。"
+      },
+      {
+        "row": 52,
+        "cell": "M52",
+        "text": "田口さん前回"
+      },
+      {
+        "row": 53,
+        "cell": "M53",
+        "text": "浴室換気扇交換　2部屋用　　材工"
+      },
+      {
+        "row": 54,
+        "cell": "M54",
+        "text": "浴室換気扇交換に伴う天井開口"
+      },
+      {
+        "row": 55,
+        "cell": "M55",
+        "text": "※　既存品のサイズが廃盤のため一回り大きいサイズになります。"
+      }
+    ],
+    "draftMemo": "",
+    "siteMemo": "",
+    "requestContent": "",
+    "roomConfirmations": {},
+    "estimateEdits": {},
+    "estimateVersions": [],
+    "pageIndex": 0,
+    "cfPageIndex": 0,
+    "softPageIndex": 0,
+    "activePage": "additional",
+    "measurementType": "天井",
+    "createdAt": "2026-11-01T06:10:55.850Z",
+    "updatedAt": "2026-11-01T06:10:55.850Z",
+    "archived": false,
+    "importSource": "旧工事カード"
+  },
+  "totals": {
+    "subtotal": 61500,
+    "tax": 6150,
+    "total": 67650
+  },
+  "validation": {
+    "expectedTotal": 67650,
+    "totalMatches": true,
+    "itemCount": 7,
+    "noteCount": 23
+  }
+}

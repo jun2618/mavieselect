@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "template": "工事カードNew3 40.xlsm",
+  "sheetName": "発注書",
+  "sourcePurchaseOrderId": "purchase-material-1793450690085-ggrgm",
+  "orderMode": "material",
+  "status": "本発注準備",
+  "createdAt": "2026-10-31T13:05:05.698Z",
+  "contractor": {
+    "id": "default-ogura-cross",
+    "name": "株式会社 小倉クロス",
+    "trade": "材料",
+    "postalCode": "",
+    "address": "",
+    "contact": "",
+    "phone": ""
+  },
+  "property": {
+    "company": "株式会社アセットプランニング",
+    "id": "",
+    "name": "サイレンス旭ヶ丘",
+    "unit": "201",
+    "address": "札幌市中央区南11条西17丁目2-8",
+    "workName": "原状回復工事"
+  },
+  "rows": [
+    {
+      "no": 1,
+      "item": "LB-9882",
+      "specification": "",
+      "quantity": 100,
+      "unit": "m",
+      "unitPrice": 280,
+      "amount": 28000
+    },
+    {
+      "no": 2,
+      "item": "SP2556",
+      "specification": "",
+      "quantity": 2,
+      "unit": "m",
+      "unitPrice": 285,
+      "amount": 570
+    },
+    {
+      "no": 3,
+      "item": "SP-2555",
+      "specification": "",
+      "quantity": 40,
+      "unit": "m",
+      "unitPrice": 285,
+      "amount": 11400
+    },
+    {
+      "no": 4,
+      "item": "HM-10558",
+      "specification": "居間",
+      "quantity": 7,
+      "unit": "m",
+      "unitPrice": 1780,
+      "amount": 12460
+    },
+    {
+      "no": 5,
+      "item": "HM-10558",
+      "specification": "居間",
+      "quantity": 7,
+      "unit": "m",
+      "unitPrice": 1780,
+      "amount": 12460
+    },
+    {
+      "no": 6,
+      "item": "HM-10558",
+      "specification": "ホール",
+      "quantity": 5,
+      "unit": "m",
+      "unitPrice": 1780,
+      "amount": 8900
+    },
+    {
+      "no": 7,
+      "item": "HM-10558",
+      "specification": "ホール",
+      "quantity": 5,
+      "unit": "m",
+      "unitPrice": 1780,
+      "amount": 8900
+    },
+    {
+      "no": 8,
+      "item": "HM-10558",
+      "specification": "脱衣所",
+      "quantity": 2.5,
+      "unit": "m",
+      "unitPrice": 1780,
+      "amount": 4450
+    },
+    {
+      "no": 9,
+      "item": "HM-10558",
+      "specification": "脱衣所",
+      "quantity": 2,
+      "unit": "m",
+      "unitPrice": 1780,
+      "amount": 3560
+    },
+    {
+      "no": 10,
+      "item": "HM-10558",
+      "specification": "脱衣所",
+      "quantity": 2,
+      "unit": "m",
+      "unitPrice": 1780,
+      "amount": 3560
+    },
+    {
+      "no": 11,
+      "item": "W-97 60mm",
+      "specification": "ソフト巾木",
+      "quantity": 2,
+      "unit": "ケース",
+      "unitPrice": 3500,
+      "amount": 7000
+    }
+  ],
+  "subtotal": 101260,
+  "tax": 0,
+  "total": 101260
+}

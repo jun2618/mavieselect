@@ -1,0 +1,24 @@
+const fs=require("fs");
+const p="./src/App.jsx";
+let s=fs.readFileSync(p,"utf8");
+const marker="M-CROSS_CASE_EXPLORER_VOICE_V1_SAFE";
+if(s.includes(marker)){console.log("ALREADY APPLIED");process.exit(0)}
+fs.copyFileSync(p,"./src/App.before_case_explorer_voice_v1.jsx");
+const stateOld="  const [savedFolderPath, setSavedFolderPath] = useState([])";
+const stateNew=stateOld+"\n  /* "+marker+" */\n  const [savedVoiceListening,setSavedVoiceListening]=useState(false)\n  const [savedVoiceStatus,setSavedVoiceStatus]=useState(\"\")\n  function startSavedVoiceSearch(){const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Recognition){setSavedVoiceStatus(\"このブラウザーでは音声検索を利用できません\");return}try{const recognition=new Recognition();recognition.lang=\"ja-JP\";recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;setSavedVoiceListening(true);setSavedVoiceStatus(\"🎤 聞き取り中…\");recognition.onresult=event=>{const text=String(event.results?.[0]?.[0]?.transcript||\"\").trim();setSavedSearch(text);setSavedFolderPath([]);setSavedVoiceStatus(text?\"検索：\"+text:\"音声を認識できませんでした\")};recognition.onerror=event=>setSavedVoiceStatus(\"音声検索エラー: \"+(event.error||\"認識できませんでした\"));recognition.onend=()=>setSavedVoiceListening(false);recognition.start()}catch(error){console.error(error);setSavedVoiceListening(false);setSavedVoiceStatus(\"音声検索を開始できませんでした\")}}";
+if(!s.includes(stateOld))throw new Error("savedFolderPath位置なし");
+s=s.replace(stateOld,stateNew);
+const searchOld=`                  <input type="search" value={savedSearch} onChange={event => setSavedSearch(event.target.value)} placeholder="物件名・住所・号室・部屋・工事・メモを検索" />`;
+const searchNew=`                  <div className="savedExplorerVoiceRow"><input type="search" value={savedSearch} onChange={event => {setSavedSearch(event.target.value);if(event.target.value)setSavedFolderPath([])}} placeholder="物件名・号室・管理会社・工事名を検索" /><button className="savedExplorerVoiceButton" type="button" disabled={savedVoiceListening} onClick={startSavedVoiceSearch} aria-label="案件を音声検索">{savedVoiceListening?"🎤…":"🎤"}</button></div>{savedVoiceStatus&&<small className="savedExplorerVoiceStatus">{savedVoiceStatus}</small>}`;
+if(!s.includes(searchOld))throw new Error("保存済み検索欄位置なし");
+s=s.replace(searchOld,searchNew);
+const folderOld=`<button className="savedExplorerFolder" type="button" key={folder} onClick={() => setSavedFolderPath(path => [...path, folder])}>`;
+const folderNew=`<button className={"savedExplorerFolder savedExplorerFolderLevel"+depth} type="button" key={folder} onClick={() => setSavedFolderPath(path => [...path, folder])}>`;
+if(!s.includes(folderOld))throw new Error("フォルダーボタン位置なし");
+s=s.replace(folderOld,folderNew);
+const cssAnchor="  .savedToolbar { display:grid;";
+const css="  /* "+marker+" */\n  .savedExplorerVoiceRow{display:grid;grid-template-columns:minmax(0,1fr) 56px;gap:9px;align-items:center}.savedExplorerVoiceButton{min-height:54px;border:2px solid #efbfd0;border-radius:15px;background:linear-gradient(180deg,#fff,#fff0f6);color:#c6537f;font-size:22px;font-weight:900;box-shadow:0 4px 0 #efd1dc;cursor:pointer}.savedExplorerVoiceButton:disabled{opacity:.58}.savedExplorerVoiceStatus{display:block;margin-top:7px;color:#a86481;font-weight:800}.savedExplorerFolders{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}.savedExplorerFolder{position:relative;display:grid;gap:5px;align-content:center;min-height:112px;padding:24px 15px 14px;border:0;border-radius:9px 17px 17px 17px;color:#594d59;text-align:left;font:inherit;cursor:pointer;box-shadow:0 8px 18px rgba(102,74,96,.14)}.savedExplorerFolderLevel0{background:linear-gradient(145deg,#ffdbe8,#f4b9d0)}.savedExplorerFolderLevel1{background:linear-gradient(145deg,#dff4ff,#acdcef)}.savedExplorerFolderLevel2{background:linear-gradient(145deg,#eee2ff,#ceb8ed)}.savedExplorerFolderLevel3{background:linear-gradient(145deg,#ddf7e9,#aee2c9)}.savedExplorerFolder .savedExplorerIcon{font-size:31px}.savedExplorerFolder strong{font-size:17px;overflow-wrap:anywhere}.savedExplorerFolder small{opacity:.75;font-weight:800}@media(max-width:520px){.savedExplorerFolders{grid-template-columns:1fr 1fr;gap:11px}.savedExplorerFolder{min-height:102px;padding:20px 12px 12px}.savedExplorerVoiceRow{grid-template-columns:minmax(0,1fr) 54px}}\n";
+if(!s.includes(cssAnchor))throw new Error("CSS挿入位置なし");
+s=s.replace(cssAnchor,css+cssAnchor);
+fs.writeFileSync(p,s,"utf8");
+console.log("OK: 案件エクスプローラーの音声検索とパステルフォルダーを追加しました");

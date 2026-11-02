@@ -1,0 +1,151 @@
+﻿      console.error(error)
+      setStatus('サインイン失敗: ' + (error?.errorCode || error?.message || String(error)))
+    }
+  }
+
+  async function signOut() {
+    try {
+      await initializeAuth()
+      const activeAccount = msal.getActiveAccount() || msal.getAllAccounts()[0]
+      if (activeAccount) await msal.logoutPopup({ account: activeAccount, postLogoutRedirectUri: window.location.origin + '/' })
+      setAccount(null)
+      setCloudBackup(null)
+      setComparison([])
+      setSelectedKeys([])
+      setStatus('サインアウトしました')
+    } catch (error) {
+      console.error(error)
+      setStatus('サインアウト失敗: ' + (error?.message || String(error)))
+    }
+  }
+
+  async function fetchCloudBackup() {
+    const token = await getToken()
+    const response = await fetch(backupFileUrl, { headers: { Authorization: 'Bearer ' + token } })
+    if (response.status === 404) return { fileType: 'm-cross-backup', version: 1, entries: [], exportedAt: '' }
+    if (!response.ok) throw new Error('OneDrive読込失敗 HTTP ' + response.status)
+    const data = await response.json()
+    if (data?.fileType !== 'm-cross-backup' || !Array.isArray(data.entries)) throw new Error('M-Crossバックアップ形式ではありません')
+    return data
+  }
+
+  /* M-CROSS_RESIDENT_PC_MASTER_SYNC_V2 */
+  async function uploadResidentCasesToOneDrive() {
+    try {
+      const localCases = readResidentCases()
+      const answer = window.prompt(
+        '【PC専用】このPCの入居中案件 ' + localCases.length + '件を正本としてOneDriveへ保存します。\n' +
+        'スマホでは実行しないでください。続ける場合は PC と入力してください。'
+      )
+      if (String(answer || '').trim().toUpperCase() !== 'PC') {
+        setStatus('入居中案件の送信をキャンセルしました')
+        return
+      }
+
+      setStatus('PCの入居中案件をOneDriveへ保存しています…')
+      const token = await getToken()
+      const cloud = await fetchCloudBackup()
+      const payload = {
+        ...cloud,
+        fileType: 'm-cross-backup',
+        version: Math.max(Number(cloud.version) || 1, 2),
+        exportedAt: new Date().toISOString(),
+        entries: Array.isArray(cloud.entries) ? cloud.entries : [],
+        entryCount: Array.isArray(cloud.entries) ? cloud.entries.length : 0,
+        residentCases: localCases,
+        residentCaseCount: localCases.length,
+        residentSyncMarker: RESIDENT_SYNC_MARKER,
+        residentMaster: 'pc',
+      }
+
+      const response = await fetch(backupFileUrl, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(payload, null, 2),
+      })
+      if (!response.ok) throw new Error('入居中案件の保存失敗 HTTP ' + response.status)
+
+      localStorage.setItem(residentPcMasterKey, 'true')
+      localStorage.removeItem(residentAutoSaveDirtyKey)
+      setCloudBackup(payload)
+      setResidentAutoStatus('☁ PC自動保存：有効')
+      setStatus('PC → OneDrive 保存成功: 入居中案件 ' + localCases.length + '件。以後、このPCでは自動保存します。')
+    } catch (error) {
+      console.error(error)
+      setStatus('入居中案件の保存失敗: ' + (error?.message || String(error)))
+    }
+  }
+
+  async function downloadResidentCasesFromOneDrive() {
+    try {
+      setStatus('OneDriveの入居中案件を確認しています…')
+      const cloud = await fetchCloudBackup()
+      const cloudCases = Array.isArray(cloud.residentCases) ? cloud.residentCases : []
+
+      if (!Array.isArray(cloud.residentCases)) {
+        setStatus('OneDriveに入居中案件データがまだありません。先にPCから保存してください。')
+        return
+      }
+
+      const localCases = readResidentCases()
+      if (!window.confirm(
+        'OneDriveの入居中案件 ' + cloudCases.length + '件をこの端末へ取得します。\n' +
+        'この端末にある入居中案件 ' + localCases.length + '件は置き換えられます。続けますか？'
+      )) return
+
+      localStorage.setItem(residentPcMasterKey, 'false')
+      localStorage.setItem(residentCasesStorageKey, JSON.stringify(cloudCases))
+      setResidentAutoStatus('📱 この端末は受信専用です')
+      setCloudBackup(cloud)
+      setStatus('OneDrive → この端末 取得成功: 入居中案件 ' + cloudCases.length + '件。画面を更新します。')
+      window.setTimeout(() => window.location.reload(), 500)
+    } catch (error) {
+      console.error(error)
+      setStatus('入居中案件の取得失敗: ' + (error?.message || String(error)))
+    }
+  }
+
+
+  /* M-CROSS_REMOVE_ONEDRIVE_PURCHASE_TEMPLATE_BUTTON_V21_SAFE */
+  async function backupToOneDrive() {
+    try {
+      const entries = readLocalEntries()
+      if (!entries.length) { setStatus('バックアップ対象の保存物件がありません'); return }
+      if (!window.confirm(entries.length + '件をOneDriveへバックアップします。入居中案件のクラウドデータは保持します。続けますか？')) return
+      setStatus('OneDriveへバックアップしています…')
+      const token = await getToken()
+      const cloud = await fetchCloudBackup()
+      const cloudResidentCases = Array.isArray(cloud.residentCases) ? cloud.residentCases : []
+      const payload = {
+        ...cloud,
+        fileType: 'm-cross-backup',
+        version: Math.max(Number(cloud.version) || 1, 2),
+        exportedAt: new Date().toISOString(),
+        entryCount: entries.length,
+        entries,
+        residentCases: cloudResidentCases,
+        residentCaseCount: cloudResidentCases.length,
+        ...(cloud.residentSyncMarker ? { residentSyncMarker: cloud.residentSyncMarker } : {}),
+        ...(cloud.residentMaster ? { residentMaster: cloud.residentMaster } : {}),
+      }
+      const response = await fetch(backupFileUrl, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(payload, null, 2),
+      })
+      if (!response.ok) throw new Error('バックアップ失敗 HTTP ' + response.status)
+      setCloudBackup(payload)
+      setComparison(compareEntries(entries, payload.entries))
+      setStatus('バックアップ成功: ' + entries.length + '件。入居中案件 ' + cloudResidentCases.length + '件は保持しました。')
+    } catch (error) {
+      console.error(error)
+      setStatus('バックアップ失敗: ' + (error?.message || String(error)))
+    }
+  }
+
+  async function compareWithOneDrive() {
+    try {
+      setStatus('端末とOneDriveを比較しています…')
+      const cloud = await fetchCloudBackup()
+      const result = compareEntries(readLocalEntries(), cloud.entries)
+      setCloudBackup(cloud)

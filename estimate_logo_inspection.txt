@@ -1,0 +1,611 @@
+M-Cross estimate logo inspection
+
+================================
+
+--- 900-929 ---
+900:       return
+901:     }
+902:     if (outputRows.length > 32) {
+903:       window.alert('見積明細は32行まで出力できます。現在 ' + outputRows.length + '行あります。')
+904:       return
+905:     }
+906: 
+907:     const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
+908:     const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
+909:     if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+910: 
+911:     const templateResponse = await fetch(
+912:       new URL('/mcross-estimate-template.xlsx', window.location.origin),
+913:       { cache: 'no-store' },
+914:     )
+915:     if (!templateResponse.ok) {
+916:       throw new Error('見積書テンプレートを読み込めません HTTP ' + templateResponse.status)
+917:     }
+918: 
+919:     const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
+920:     const ws = workbook.sheet('見積書')
+921:     if (!ws) throw new Error('「見積書」シートが見つかりません')
+922: 
+923:     // 元テンプレートの書式、ロゴ、罫線、列幅、行高、印刷設定は維持する。
+924:     ws.cell('B5').value(entry?.company ? entry.company + '　御中' : '')
+925:     ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy年m月d日')
+926:     ws.cell('D13').value(entry?.propertyName || '')
+927:     ws.cell('F13').value(entry?.unit || '')
+928:     ws.cell('G13').value(entry?.unit ? '号室' : '')
+929:     ws.cell('D14').value(entry?.address || '')
+
+--- 911-940 ---
+911:     const templateResponse = await fetch(
+912:       new URL('/mcross-estimate-template.xlsx', window.location.origin),
+913:       { cache: 'no-store' },
+914:     )
+915:     if (!templateResponse.ok) {
+916:       throw new Error('見積書テンプレートを読み込めません HTTP ' + templateResponse.status)
+917:     }
+918: 
+919:     const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
+920:     const ws = workbook.sheet('見積書')
+921:     if (!ws) throw new Error('「見積書」シートが見つかりません')
+922: 
+923:     // 元テンプレートの書式、ロゴ、罫線、列幅、行高、印刷設定は維持する。
+924:     ws.cell('B5').value(entry?.company ? entry.company + '　御中' : '')
+925:     ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy年m月d日')
+926:     ws.cell('D13').value(entry?.propertyName || '')
+927:     ws.cell('F13').value(entry?.unit || '')
+928:     ws.cell('G13').value(entry?.unit ? '号室' : '')
+929:     ws.cell('D14').value(entry?.address || '')
+930: 
+931:     /* M-CROSS_MERGE_ESTIMATE_NAME_CELLS_V2_SAFE */
+932:     // 名称欄はテンプレート見出しと同じ横幅を使うため C:F を1セルとして結合する。
+933:     for (let rowNumber = 23; rowNumber <= 54; rowNumber += 1) {
+934:       /* M-CROSS_ESTIMATE_NAME_C_TO_G_V3_SAFE */
+935:       const nameRange = ws.range('C' + rowNumber + ':G' + rowNumber)
+936:       if (!nameRange.merged()) nameRange.merged(true)
+937:       /* M-CROSS_TEMPLATE_SPLIT_MERGED_V1 */
+938:       for (const column of ['C', 'D', 'E', 'F', 'H', 'I', 'J', 'K']) {
+939:         ws.cell(column + rowNumber).value('')
+940:       }
+
+--- 1022-1051 ---
+1022:   } catch (error) {
+1023:     console.error(error)
+1024:     window.alert(error instanceof Error ? error.message : '見積書を出力できませんでした。')
+1025:   }
+1026: }
+1027: 
+1028: /* M-CROSS_COMBINED_ESTIMATE_MEASUREMENT_EXPORT_V2_STRUCTURAL_SAFE */
+1029: async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, additionalWorks = []) {
+1030:   try {
+1031:     const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
+1032:     const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
+1033:     if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+1034:     const response = await fetch(new URL('/mcross-estimate-template.xlsx', window.location.origin), { cache:'no-store' })
+1035:     if (!response.ok) throw new Error('見積書テンプレートを読み込めません HTTP ' + response.status)
+1036:     const workbook = await XlsxPopulate.fromDataAsync(await response.arrayBuffer())
+1037:     const ws = workbook.sheet('見積書')
+1038:     if (!ws) throw new Error('「見積書」シートが見つかりません')
+1039:     const convertedRows=applyCrossCfPackageRulesV3(Array.isArray(rows)?rows:[])
+1040:     const additionalRows=(Array.isArray(additionalWorks)?additionalWorks:[]).map(item=>({parts:Array.isArray(item.estimateParts)&&item.estimateParts.length?[0,1,2,3].map(i=>String(item.estimateParts[i]||'')):[item.room||'','',item.work||'',''],memo:item.memo||'',quantity:Number(item.quantity||0),unit:item.unit||'式',rate:item.unitPrice===''||item.unitPrice==null?'':Number(item.unitPrice||0),amount:item.unitPrice===''||item.unitPrice==null?'':Number(item.amount||(Number(item.quantity)||0)*(Number(item.unitPrice)||0))}))
+1041:     const out=[...convertedRows,...additionalRows]
+1042:     if(!out.length)throw new Error('出力できる見積項目がありません。')
+1043:     if(out.length>32)throw new Error('見積明細は32行まで出力できます。現在 '+out.length+'行あります。')
+1044:     ws.cell('B5').value(entry.company?entry.company+'　御中':''); ws.cell('J5').value(new Date()).style('numberFormat','yyyy年m月d日'); ws.cell('D13').value(entry.propertyName||''); ws.cell('F13').value(entry.unit||''); ws.cell('G13').value(entry.unit?'号室':''); ws.cell('D14').value(entry.address||'')
+1045:     for(let r=23;r<=54;r++){try{const rg=ws.range('C'+r+':G'+r);if(rg.merged())rg.merged(false)}catch{};for(const c of ['C','D','E','F','G','H','I','J','K'])ws.cell(c+r).value('')}
+1046:     const cv=v=>{if(v===''||v==null)return '';const n=Number(v);return Number.isFinite(n)?n:v}
+1047:     out.forEach((row,i)=>{const r=23+i,raw=Array.isArray(row.parts)?row.parts.map(v=>String(v||'').trim()):[],memo=String(row.memo||'').trim();if(format==='split'){const q=[0,1,2,3].map(j=>raw[j]||'');ws.cell('C'+r).value(q[0]);ws.cell('D'+r).value(q[1]);ws.cell('E'+r).value(q[2]);ws.cell('F'+r).value([q[3],memo].filter(Boolean).join(' '));ws.cell('G'+r).value('')}else{const rg=ws.range('C'+r+':G'+r);if(!rg.merged())rg.merged(true);ws.cell('C'+r).value([...raw.filter(Boolean),memo].filter(Boolean).join(' '))}ws.cell('H'+r).value(cv(row.quantity));ws.cell('I'+r).value(row.unit||'');ws.cell('J'+r).value(cv(row.rate));ws.cell('K'+r).value(cv(row.amount))})
+1048:     const subtotal=out.reduce((sum,row)=>sum+(row.amount===''||row.amount==null?0:(Number(row.amount)||0)),0),tax=Math.floor(subtotal*.1),total=subtotal+tax;ws.cell('K55').value(subtotal);ws.cell('K56').value(tax);ws.cell('K57').value(total);ws.cell('E19').value(total)
+1049:     /* M-CROSS_COLOR_CODED_MEASUREMENT_SHEETS_V1_SAFE */
+1050:     /* M-CROSS_COMBINED_COLORS_V3_EXACT_SAFE */
+1051:     /* M-CROSS_ROOM_PART_COLOR_V1_SAFE */
+
+--- 1624-1653 ---
+1624:   return {
+1625:     companies: activeCompanies,
+1626:     properties: allProperties,
+1627:   }
+1628: }
+1629: 
+1630: const styles = `
+1631:   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&family=DotGothic16&display=swap');
+1632:   .app { min-height:100vh; padding-bottom:max(36px,env(safe-area-inset-bottom)); color:#514751; background:radial-gradient(circle at 8% 10%,rgba(255,211,180,.45),transparent 24%),radial-gradient(circle at 95% 30%,rgba(202,224,255,.55),transparent 27%),#fff9f1; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:16px; }
+1633:   .app * { box-sizing:border-box; }
+1634:   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
+1635:   .brandGroup { display:flex; align-items:center; justify-content:flex-start; gap:10px; line-height:1; min-width:0; }
+1636:   .brandLogo { width:62px; height:62px; object-fit:contain; flex:0 0 auto; filter:drop-shadow(0 5px 10px rgba(148,76,196,.18)); transition:filter .2s ease,transform .2s ease; }
+1637:   .theme-dark .brandLogo { filter:drop-shadow(0 0 8px rgba(240,160,141,.35)); }
+1638:   .theme-pop .brandLogo { filter:drop-shadow(0 5px 9px rgba(231,93,145,.22)); }
+1639:   .theme-cyber .brandLogo { filter:drop-shadow(0 0 7px rgba(0,234,255,.8)) drop-shadow(0 0 11px rgba(255,37,216,.45)); }
+1640:   @media (max-width:520px) { .brandLogo { width:54px; height:54px; } }
+1641:   .mavieBrand { margin:0 0 2px 2px; color:#d98278; font-family:"Dancing Script","Segoe Script",cursive; font-size:21px; font-weight:700; letter-spacing:.035em; line-height:1.15; }
+1642:   .brand { color:#f08b78; font-family:"Zen Maru Gothic",sans-serif; font-size:32px; font-weight:900; letter-spacing:.04em; text-shadow:0 3px 0 #ffe3d4; }
+1643:   .settingsButton { width:46px; height:46px; border:1px solid #efd8ca; border-radius:14px; color:#d27f6d; background:#fffaf5; font:inherit; font-size:22px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1644:   .main { width:min(100% - 32px,620px); margin:28px auto 0; }
+1645:   .settingsMain.managementPropertyOpen { padding-bottom:calc(100vh - 48px); }
+1646:   .eyebrow { margin:0 0 10px; color:#e58a75; font-size:14px; font-weight:800; letter-spacing:.1em; }
+1647:   .main h1,.card h2 { color:#514751; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-weight:800; letter-spacing:.04em; }
+1648:   .main h1 { margin:0 0 12px; font-size:clamp(32px,8vw,42px); }
+1649:   .subtitle,.propertyLine { color:#8e8190; font-size:16px; line-height:1.8; }
+1650:   .propertyLine { margin:18px 0 8px; color:#d27f6d; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:21px; font-weight:800; letter-spacing:.035em; line-height:1.55; text-align:left; text-shadow:0 2px 0 rgba(255,227,212,.7); }
+1651:   .measurementBackButton { display:inline-flex; align-items:center; justify-content:center; min-height:46px; margin:0 0 4px; padding:9px 16px; border:1px solid #efc7b4; border-radius:14px; color:#c96e69; background:linear-gradient(180deg,#fff,#fff3e9); box-shadow:0 4px 0 #ead8cb; font:inherit; font-size:15px; font-weight:800; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1652:   .card { margin-top:20px; padding:clamp(20px,5vw,30px); border:1px solid rgba(230,202,184,.85); border-radius:24px; background:rgba(255,255,255,.82); box-shadow:0 12px 0 #ead8cb,0 18px 36px rgba(111,82,88,.12); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+1653:   .masterCompanyForm,.masterPropertySection,.masterPropertyForm { scroll-margin-top:24px; }
+
+--- 1625-1654 ---
+1625:     companies: activeCompanies,
+1626:     properties: allProperties,
+1627:   }
+1628: }
+1629: 
+1630: const styles = `
+1631:   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&family=DotGothic16&display=swap');
+1632:   .app { min-height:100vh; padding-bottom:max(36px,env(safe-area-inset-bottom)); color:#514751; background:radial-gradient(circle at 8% 10%,rgba(255,211,180,.45),transparent 24%),radial-gradient(circle at 95% 30%,rgba(202,224,255,.55),transparent 27%),#fff9f1; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:16px; }
+1633:   .app * { box-sizing:border-box; }
+1634:   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
+1635:   .brandGroup { display:flex; align-items:center; justify-content:flex-start; gap:10px; line-height:1; min-width:0; }
+1636:   .brandLogo { width:62px; height:62px; object-fit:contain; flex:0 0 auto; filter:drop-shadow(0 5px 10px rgba(148,76,196,.18)); transition:filter .2s ease,transform .2s ease; }
+1637:   .theme-dark .brandLogo { filter:drop-shadow(0 0 8px rgba(240,160,141,.35)); }
+1638:   .theme-pop .brandLogo { filter:drop-shadow(0 5px 9px rgba(231,93,145,.22)); }
+1639:   .theme-cyber .brandLogo { filter:drop-shadow(0 0 7px rgba(0,234,255,.8)) drop-shadow(0 0 11px rgba(255,37,216,.45)); }
+1640:   @media (max-width:520px) { .brandLogo { width:54px; height:54px; } }
+1641:   .mavieBrand { margin:0 0 2px 2px; color:#d98278; font-family:"Dancing Script","Segoe Script",cursive; font-size:21px; font-weight:700; letter-spacing:.035em; line-height:1.15; }
+1642:   .brand { color:#f08b78; font-family:"Zen Maru Gothic",sans-serif; font-size:32px; font-weight:900; letter-spacing:.04em; text-shadow:0 3px 0 #ffe3d4; }
+1643:   .settingsButton { width:46px; height:46px; border:1px solid #efd8ca; border-radius:14px; color:#d27f6d; background:#fffaf5; font:inherit; font-size:22px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1644:   .main { width:min(100% - 32px,620px); margin:28px auto 0; }
+1645:   .settingsMain.managementPropertyOpen { padding-bottom:calc(100vh - 48px); }
+1646:   .eyebrow { margin:0 0 10px; color:#e58a75; font-size:14px; font-weight:800; letter-spacing:.1em; }
+1647:   .main h1,.card h2 { color:#514751; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-weight:800; letter-spacing:.04em; }
+1648:   .main h1 { margin:0 0 12px; font-size:clamp(32px,8vw,42px); }
+1649:   .subtitle,.propertyLine { color:#8e8190; font-size:16px; line-height:1.8; }
+1650:   .propertyLine { margin:18px 0 8px; color:#d27f6d; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:21px; font-weight:800; letter-spacing:.035em; line-height:1.55; text-align:left; text-shadow:0 2px 0 rgba(255,227,212,.7); }
+1651:   .measurementBackButton { display:inline-flex; align-items:center; justify-content:center; min-height:46px; margin:0 0 4px; padding:9px 16px; border:1px solid #efc7b4; border-radius:14px; color:#c96e69; background:linear-gradient(180deg,#fff,#fff3e9); box-shadow:0 4px 0 #ead8cb; font:inherit; font-size:15px; font-weight:800; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1652:   .card { margin-top:20px; padding:clamp(20px,5vw,30px); border:1px solid rgba(230,202,184,.85); border-radius:24px; background:rgba(255,255,255,.82); box-shadow:0 12px 0 #ead8cb,0 18px 36px rgba(111,82,88,.12); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+1653:   .masterCompanyForm,.masterPropertySection,.masterPropertyForm { scroll-margin-top:24px; }
+1654:   .card h2 { margin:0 0 22px; text-align:center; font-size:26px; }
+
+--- 1626-1655 ---
+1626:     properties: allProperties,
+1627:   }
+1628: }
+1629: 
+1630: const styles = `
+1631:   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&family=DotGothic16&display=swap');
+1632:   .app { min-height:100vh; padding-bottom:max(36px,env(safe-area-inset-bottom)); color:#514751; background:radial-gradient(circle at 8% 10%,rgba(255,211,180,.45),transparent 24%),radial-gradient(circle at 95% 30%,rgba(202,224,255,.55),transparent 27%),#fff9f1; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:16px; }
+1633:   .app * { box-sizing:border-box; }
+1634:   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
+1635:   .brandGroup { display:flex; align-items:center; justify-content:flex-start; gap:10px; line-height:1; min-width:0; }
+1636:   .brandLogo { width:62px; height:62px; object-fit:contain; flex:0 0 auto; filter:drop-shadow(0 5px 10px rgba(148,76,196,.18)); transition:filter .2s ease,transform .2s ease; }
+1637:   .theme-dark .brandLogo { filter:drop-shadow(0 0 8px rgba(240,160,141,.35)); }
+1638:   .theme-pop .brandLogo { filter:drop-shadow(0 5px 9px rgba(231,93,145,.22)); }
+1639:   .theme-cyber .brandLogo { filter:drop-shadow(0 0 7px rgba(0,234,255,.8)) drop-shadow(0 0 11px rgba(255,37,216,.45)); }
+1640:   @media (max-width:520px) { .brandLogo { width:54px; height:54px; } }
+1641:   .mavieBrand { margin:0 0 2px 2px; color:#d98278; font-family:"Dancing Script","Segoe Script",cursive; font-size:21px; font-weight:700; letter-spacing:.035em; line-height:1.15; }
+1642:   .brand { color:#f08b78; font-family:"Zen Maru Gothic",sans-serif; font-size:32px; font-weight:900; letter-spacing:.04em; text-shadow:0 3px 0 #ffe3d4; }
+1643:   .settingsButton { width:46px; height:46px; border:1px solid #efd8ca; border-radius:14px; color:#d27f6d; background:#fffaf5; font:inherit; font-size:22px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1644:   .main { width:min(100% - 32px,620px); margin:28px auto 0; }
+1645:   .settingsMain.managementPropertyOpen { padding-bottom:calc(100vh - 48px); }
+1646:   .eyebrow { margin:0 0 10px; color:#e58a75; font-size:14px; font-weight:800; letter-spacing:.1em; }
+1647:   .main h1,.card h2 { color:#514751; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-weight:800; letter-spacing:.04em; }
+1648:   .main h1 { margin:0 0 12px; font-size:clamp(32px,8vw,42px); }
+1649:   .subtitle,.propertyLine { color:#8e8190; font-size:16px; line-height:1.8; }
+1650:   .propertyLine { margin:18px 0 8px; color:#d27f6d; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:21px; font-weight:800; letter-spacing:.035em; line-height:1.55; text-align:left; text-shadow:0 2px 0 rgba(255,227,212,.7); }
+1651:   .measurementBackButton { display:inline-flex; align-items:center; justify-content:center; min-height:46px; margin:0 0 4px; padding:9px 16px; border:1px solid #efc7b4; border-radius:14px; color:#c96e69; background:linear-gradient(180deg,#fff,#fff3e9); box-shadow:0 4px 0 #ead8cb; font:inherit; font-size:15px; font-weight:800; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1652:   .card { margin-top:20px; padding:clamp(20px,5vw,30px); border:1px solid rgba(230,202,184,.85); border-radius:24px; background:rgba(255,255,255,.82); box-shadow:0 12px 0 #ead8cb,0 18px 36px rgba(111,82,88,.12); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+1653:   .masterCompanyForm,.masterPropertySection,.masterPropertyForm { scroll-margin-top:24px; }
+1654:   .card h2 { margin:0 0 22px; text-align:center; font-size:26px; }
+1655:   .card label { display:grid; gap:10px; min-width:0; margin:0 0 18px; }
+
+--- 1627-1656 ---
+1627:   }
+1628: }
+1629: 
+1630: const styles = `
+1631:   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&family=DotGothic16&display=swap');
+1632:   .app { min-height:100vh; padding-bottom:max(36px,env(safe-area-inset-bottom)); color:#514751; background:radial-gradient(circle at 8% 10%,rgba(255,211,180,.45),transparent 24%),radial-gradient(circle at 95% 30%,rgba(202,224,255,.55),transparent 27%),#fff9f1; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:16px; }
+1633:   .app * { box-sizing:border-box; }
+1634:   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
+1635:   .brandGroup { display:flex; align-items:center; justify-content:flex-start; gap:10px; line-height:1; min-width:0; }
+1636:   .brandLogo { width:62px; height:62px; object-fit:contain; flex:0 0 auto; filter:drop-shadow(0 5px 10px rgba(148,76,196,.18)); transition:filter .2s ease,transform .2s ease; }
+1637:   .theme-dark .brandLogo { filter:drop-shadow(0 0 8px rgba(240,160,141,.35)); }
+1638:   .theme-pop .brandLogo { filter:drop-shadow(0 5px 9px rgba(231,93,145,.22)); }
+1639:   .theme-cyber .brandLogo { filter:drop-shadow(0 0 7px rgba(0,234,255,.8)) drop-shadow(0 0 11px rgba(255,37,216,.45)); }
+1640:   @media (max-width:520px) { .brandLogo { width:54px; height:54px; } }
+1641:   .mavieBrand { margin:0 0 2px 2px; color:#d98278; font-family:"Dancing Script","Segoe Script",cursive; font-size:21px; font-weight:700; letter-spacing:.035em; line-height:1.15; }
+1642:   .brand { color:#f08b78; font-family:"Zen Maru Gothic",sans-serif; font-size:32px; font-weight:900; letter-spacing:.04em; text-shadow:0 3px 0 #ffe3d4; }
+1643:   .settingsButton { width:46px; height:46px; border:1px solid #efd8ca; border-radius:14px; color:#d27f6d; background:#fffaf5; font:inherit; font-size:22px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1644:   .main { width:min(100% - 32px,620px); margin:28px auto 0; }
+1645:   .settingsMain.managementPropertyOpen { padding-bottom:calc(100vh - 48px); }
+1646:   .eyebrow { margin:0 0 10px; color:#e58a75; font-size:14px; font-weight:800; letter-spacing:.1em; }
+1647:   .main h1,.card h2 { color:#514751; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-weight:800; letter-spacing:.04em; }
+1648:   .main h1 { margin:0 0 12px; font-size:clamp(32px,8vw,42px); }
+1649:   .subtitle,.propertyLine { color:#8e8190; font-size:16px; line-height:1.8; }
+1650:   .propertyLine { margin:18px 0 8px; color:#d27f6d; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:21px; font-weight:800; letter-spacing:.035em; line-height:1.55; text-align:left; text-shadow:0 2px 0 rgba(255,227,212,.7); }
+1651:   .measurementBackButton { display:inline-flex; align-items:center; justify-content:center; min-height:46px; margin:0 0 4px; padding:9px 16px; border:1px solid #efc7b4; border-radius:14px; color:#c96e69; background:linear-gradient(180deg,#fff,#fff3e9); box-shadow:0 4px 0 #ead8cb; font:inherit; font-size:15px; font-weight:800; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1652:   .card { margin-top:20px; padding:clamp(20px,5vw,30px); border:1px solid rgba(230,202,184,.85); border-radius:24px; background:rgba(255,255,255,.82); box-shadow:0 12px 0 #ead8cb,0 18px 36px rgba(111,82,88,.12); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+1653:   .masterCompanyForm,.masterPropertySection,.masterPropertyForm { scroll-margin-top:24px; }
+1654:   .card h2 { margin:0 0 22px; text-align:center; font-size:26px; }
+1655:   .card label { display:grid; gap:10px; min-width:0; margin:0 0 18px; }
+1656:   .card label>span { color:#817183; font-size:15px; font-weight:800; }
+
+--- 1628-1657 ---
+1628: }
+1629: 
+1630: const styles = `
+1631:   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Dancing+Script:wght@600;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Noto+Serif+JP:wght@400;600;700;900&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;500;600;700;800;900&family=DotGothic16&display=swap');
+1632:   .app { min-height:100vh; padding-bottom:max(36px,env(safe-area-inset-bottom)); color:#514751; background:radial-gradient(circle at 8% 10%,rgba(255,211,180,.45),transparent 24%),radial-gradient(circle at 95% 30%,rgba(202,224,255,.55),transparent 27%),#fff9f1; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:16px; }
+1633:   .app * { box-sizing:border-box; }
+1634:   .header { width:min(100% - 32px,760px); min-height:82px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; border-bottom:2px dashed #eed9c6; }
+1635:   .brandGroup { display:flex; align-items:center; justify-content:flex-start; gap:10px; line-height:1; min-width:0; }
+1636:   .brandLogo { width:62px; height:62px; object-fit:contain; flex:0 0 auto; filter:drop-shadow(0 5px 10px rgba(148,76,196,.18)); transition:filter .2s ease,transform .2s ease; }
+1637:   .theme-dark .brandLogo { filter:drop-shadow(0 0 8px rgba(240,160,141,.35)); }
+1638:   .theme-pop .brandLogo { filter:drop-shadow(0 5px 9px rgba(231,93,145,.22)); }
+1639:   .theme-cyber .brandLogo { filter:drop-shadow(0 0 7px rgba(0,234,255,.8)) drop-shadow(0 0 11px rgba(255,37,216,.45)); }
+1640:   @media (max-width:520px) { .brandLogo { width:54px; height:54px; } }
+1641:   .mavieBrand { margin:0 0 2px 2px; color:#d98278; font-family:"Dancing Script","Segoe Script",cursive; font-size:21px; font-weight:700; letter-spacing:.035em; line-height:1.15; }
+1642:   .brand { color:#f08b78; font-family:"Zen Maru Gothic",sans-serif; font-size:32px; font-weight:900; letter-spacing:.04em; text-shadow:0 3px 0 #ffe3d4; }
+1643:   .settingsButton { width:46px; height:46px; border:1px solid #efd8ca; border-radius:14px; color:#d27f6d; background:#fffaf5; font:inherit; font-size:22px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1644:   .main { width:min(100% - 32px,620px); margin:28px auto 0; }
+1645:   .settingsMain.managementPropertyOpen { padding-bottom:calc(100vh - 48px); }
+1646:   .eyebrow { margin:0 0 10px; color:#e58a75; font-size:14px; font-weight:800; letter-spacing:.1em; }
+1647:   .main h1,.card h2 { color:#514751; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-weight:800; letter-spacing:.04em; }
+1648:   .main h1 { margin:0 0 12px; font-size:clamp(32px,8vw,42px); }
+1649:   .subtitle,.propertyLine { color:#8e8190; font-size:16px; line-height:1.8; }
+1650:   .propertyLine { margin:18px 0 8px; color:#d27f6d; font-family:"Zen Maru Gothic","Yu Gothic",Meiryo,sans-serif; font-size:21px; font-weight:800; letter-spacing:.035em; line-height:1.55; text-align:left; text-shadow:0 2px 0 rgba(255,227,212,.7); }
+1651:   .measurementBackButton { display:inline-flex; align-items:center; justify-content:center; min-height:46px; margin:0 0 4px; padding:9px 16px; border:1px solid #efc7b4; border-radius:14px; color:#c96e69; background:linear-gradient(180deg,#fff,#fff3e9); box-shadow:0 4px 0 #ead8cb; font:inherit; font-size:15px; font-weight:800; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+1652:   .card { margin-top:20px; padding:clamp(20px,5vw,30px); border:1px solid rgba(230,202,184,.85); border-radius:24px; background:rgba(255,255,255,.82); box-shadow:0 12px 0 #ead8cb,0 18px 36px rgba(111,82,88,.12); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+1653:   .masterCompanyForm,.masterPropertySection,.masterPropertyForm { scroll-margin-top:24px; }
+1654:   .card h2 { margin:0 0 22px; text-align:center; font-size:26px; }
+1655:   .card label { display:grid; gap:10px; min-width:0; margin:0 0 18px; }
+1656:   .card label>span { color:#817183; font-size:15px; font-weight:800; }
+1657:   .card input,.card select { width:100%; min-height:54px; padding:0 15px; border:2px solid #efe4dc; border-radius:14px; outline:none; color:#514751; background:#fffdfa; font:inherit; }
+
+--- 2302-2331 ---
+2302:   .theme-dark .globalListEditor,.theme-dark .globalListItem,.theme-dark .savedToolbar,.theme-dark .settingsMenuButton,.theme-dark .savedMoreButton,.theme-dark .estimateRoom,.theme-dark .additionalWorkForm { color:#f7f3f6; border-color:#675c65; background:#302c31; }
+2303:   .theme-dark .globalListEditor h3,.theme-dark .globalListItem>span,.theme-dark .estimateRoom h3,.theme-dark .additionalWorkItem strong { color:#fff; }
+2304:   .theme-dark .settingsMenuButton,.theme-dark .savedMoreButton { color:#f4edf3; }
+2305:   .theme-dark .settingsMenuButton span:last-child { color:#ffb3c8; }
+2306:   .theme-dark .quickMemoButton,.theme-dark .floorTrimColorButton,.theme-dark .roomConfirmButton { color:#f2eaf0; border-color:#70646d; background:#3b353b; }
+2307:   .theme-dark .estimateTotal,.theme-dark .estimateNote { color:#f0e7ed; border-color:#675c65; background:#342e33; }
+2308:   .theme-dark .estimateMemo { color:#ffc0d3; }
+2309:   .theme-dark .savedUnit { color:#ffb3a2; }
+2310:   .theme-dark input::placeholder { color:#aaa0a8; opacity:1; }
+2311: 
+2312:   /* Cyber theme: higher contrast + stronger neon */
+2313:   .theme-cyber { color:#edffff; background:linear-gradient(rgba(0,255,255,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(255,0,220,.055) 1px,transparent 1px),radial-gradient(circle at 12% 8%,rgba(0,246,255,.27),transparent 28%),radial-gradient(circle at 90% 25%,rgba(255,0,214,.24),transparent 30%),#02040a; background-size:25px 25px,25px 25px,auto,auto,auto; }
+2314:   .theme-cyber .brandLogo { filter:drop-shadow(0 0 6px #00f6ff) drop-shadow(0 0 16px #00f6ff) drop-shadow(0 0 20px #ff25d8); }
+2315:   .theme-cyber .header { border-color:#00f6ff; box-shadow:0 2px 0 rgba(255,37,216,.65); filter:drop-shadow(0 0 9px #00eaff); }
+2316:   .theme-cyber .brand { color:#d7ffff; text-shadow:1px 0 #ff25d8,-1px 0 #00f6ff,0 0 7px #00f6ff,0 0 18px rgba(0,246,255,.95); }
+2317:   .theme-cyber .mavieBrand { color:#ff8deb; text-shadow:0 0 6px #ff00d4,0 0 14px #ff00d4; }
+2318:   .theme-cyber .main h1,.theme-cyber .card h2,.theme-cyber .card h3,.theme-cyber .savedProperty,.theme-cyber .roomSummary h3,.theme-cyber .record,.theme-cyber .globalListItem>span,.theme-cyber .additionalWorkItem strong { color:#f4ffff; text-shadow:0 0 5px rgba(0,246,255,.65); }
+2319:   .theme-cyber .eyebrow,.theme-cyber .propertyLine,.theme-cyber .savedUnit { color:#6fffff; text-shadow:0 0 6px #00eaff,0 0 13px rgba(0,234,255,.75); }
+2320:   .theme-cyber .subtitle,.theme-cyber .savedMeta,.theme-cyber .savedCardDate,.theme-cyber .record small,.theme-cyber .card label>span,.theme-cyber .summaryLine,.theme-cyber .copyFormatPreview,.theme-cyber .estimateIntro,.theme-cyber .savedListSummary,.theme-cyber .roomCheckDetails,.theme-cyber .additionalWorkItem small { color:#c8f8ff; }
+2321:   .theme-cyber .card,.theme-cyber .savedItem,.theme-cyber .roomSummary,.theme-cyber .summary,.theme-cyber .customRoomForm,.theme-cyber .customRoomItem,.theme-cyber .estimateRoom,.theme-cyber .globalListEditor,.theme-cyber .globalListItem,.theme-cyber .savedToolbar,.theme-cyber .additionalWorkForm { border-color:#00eaff; background:linear-gradient(145deg,rgba(3,13,24,.98),rgba(21,3,26,.97)); box-shadow:0 0 0 1px rgba(255,0,214,.42),0 0 12px rgba(0,238,255,.5),0 0 28px rgba(255,0,214,.16),inset 0 0 24px rgba(0,238,255,.05); }
+2322:   .theme-cyber .card input,.theme-cyber .card select,.theme-cyber .propertyOption,.theme-cyber .settingsOption,.theme-cyber .estimateFactor input { color:#f3ffff; border-color:#00eaff; background:#020b13; box-shadow:inset 0 0 10px rgba(0,237,255,.13),0 0 8px rgba(0,237,255,.32); }
+2323:   .theme-cyber input::placeholder { color:#82b8c2; opacity:1; }
+2324:   .theme-cyber .settingsMenuButton,.theme-cyber .savedMoreButton { color:#dfffff; border:1px solid #00eaff; background:linear-gradient(135deg,#04121c,#130820); box-shadow:0 0 8px rgba(0,238,255,.5),inset 0 0 9px rgba(255,0,214,.08); text-shadow:0 0 5px rgba(0,238,255,.65); }
+2325:   .theme-cyber .settingsMenuButton span:last-child { color:#ff7be5; text-shadow:0 0 7px #ff25d8; }
+2326:   .theme-cyber .primary,.theme-cyber .add,.theme-cyber .saveButton,.theme-cyber .secondaryButton { color:#fff; border-color:#00f6ff; background:linear-gradient(135deg,#03212b,#101632 55%,#370b38); box-shadow:0 0 0 1px rgba(255,0,214,.5),0 0 10px #00dcea,0 0 22px rgba(255,0,214,.25),0 5px 0 #00151c; text-shadow:0 0 5px #00eaff; }
+2327:   .theme-cyber .room,.theme-cyber .measurementType,.theme-cyber .keypadButton { color:#d9ffff; border-color:#00dfee; background:linear-gradient(180deg,#061722,#060812); box-shadow:0 3px 0 #00151c,0 0 9px rgba(0,230,247,.46),inset 0 0 7px rgba(0,230,247,.08); text-shadow:0 0 4px rgba(0,238,255,.7); }
+2328:   .theme-cyber .room.active,.theme-cyber .measurementType.active,.theme-cyber .settingsOption.active { color:#fff; border-color:#ff38d9; background:linear-gradient(135deg,#062a35,#43103e); box-shadow:0 0 8px #ff25d8,0 0 18px rgba(255,52,214,.65),inset 0 0 12px rgba(0,238,255,.18); text-shadow:0 0 7px #ff80e6; }
+2329:   .theme-cyber .numberKeypad,.theme-cyber .address { border-color:#00cfe1; background:#020a11; box-shadow:inset 0 0 20px rgba(0,238,255,.12),0 0 10px rgba(0,238,255,.25); }
+2330:   .theme-cyber .keypadButton.utility,.theme-cyber .quickMemoButton,.theme-cyber .floorTrimColorButton,.theme-cyber .roomConfirmButton { color:#ffb6f2; border-color:#ff3bd7; background:#1c071d; box-shadow:0 0 8px rgba(255,42,203,.42); text-shadow:0 0 5px rgba(255,42,203,.85); }
+2331:   .theme-cyber .summaryLine strong,.theme-cyber .record b,.theme-cyber .estimateTotal strong { color:#86ffff; text-shadow:0 0 6px #00efff,0 0 14px rgba(0,238,255,.8); }
+
+--- 2397-2426 ---
+2397:   .completeCard small { letter-spacing:.2em; } .completeCard h2 { margin:8px 0 20px; font-size:28px; } .completeCard>div { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #cee9ef; } .completeCard p { font-weight:800; }
+2398:   .splashScreen { position:fixed; z-index:2000; inset:0; display:grid; place-content:center; gap:14px; color:#fff; background:#111; text-align:center; animation:splashOut 1.5s ease forwards; }
+2399:   .splashScreen strong { font-size:42px; letter-spacing:.18em; } .splashScreen span { font-size:12px; letter-spacing:.14em; }
+2400:   .splash-cyber { color:#8fffff; background:#02040a; text-shadow:0 0 9px #00eaff,0 0 22px #ff25d8; }
+2401:   .splash-luxury { color:#efd47f; background:#080808; font-family:"Cinzel",serif; }
+2402:   .splash-sakura { color:#c65380; background:#fff1f6; font-family:"Zen Kurenaido",sans-serif; }
+2403:   .splash-ice { color:#2589bf; background:#effbff; }
+2404:   .splash-forest { color:#3e744d; background:#eef2e7; font-family:"Noto Serif JP",serif; }
+2405:   .splash-galaxy { color:#d8c6ff; background:radial-gradient(circle,#33236d,#03020a); text-shadow:0 0 14px #7d5cff; }
+2406:   @keyframes splashOut { 0%,70% { opacity:1; } 100% { opacity:0; visibility:hidden; } }
+2407:   .galaxyUnlock { position:fixed; z-index:2100; inset:0; display:grid; place-content:center; gap:10px; color:#fff; background:radial-gradient(circle at center,#351c78,#05020d 65%); text-align:center; text-shadow:0 0 10px #8868ff; animation:splashOut 2.4s ease forwards; }
+2408:   .galaxyUnlock strong { font-size:30px; letter-spacing:.12em; } .galaxyUnlock span { font-size:52px; }
+2409:   .brandLogo { cursor:pointer; }
+2410:   .theme-galaxy { color:#eee8ff; background:radial-gradient(circle at 15% 12%,rgba(110,74,255,.35),transparent 25%),radial-gradient(circle at 87% 25%,rgba(255,64,218,.24),transparent 26%),linear-gradient(#05020d,#090822); font-family:"M PLUS Rounded 1c",sans-serif; }
+2411:   .theme-galaxy .brand,.theme-galaxy .main h1,.theme-galaxy .card h2,.theme-galaxy .card h3 { color:#d9ceff; text-shadow:0 0 8px #7d5cff; }
+2412:   .theme-galaxy .mavieBrand,.theme-galaxy .eyebrow,.theme-galaxy .propertyLine,.theme-galaxy .savedUnit { color:#ff9bed; text-shadow:0 0 7px #ff42d6; }
+2413:   .theme-galaxy .card,.theme-galaxy .savedItem,.theme-galaxy .roomSummary,.theme-galaxy .summary,.theme-galaxy .savedToolbar,.theme-galaxy .globalListEditor,.theme-galaxy .globalListItem { color:#f3efff; border-color:#765ce8; background:linear-gradient(145deg,rgba(11,8,35,.97),rgba(36,10,52,.94)); box-shadow:0 0 18px rgba(116,84,255,.38); }
+2414:   .theme-galaxy .card input,.theme-galaxy .card select,.theme-galaxy .settingsOption { color:#fff; border-color:#765ce8; background:#0c0925; }
+2415:   .theme-galaxy .subtitle,.theme-galaxy .savedMeta,.theme-galaxy .card label>span,.theme-galaxy .savedCardDate,.theme-galaxy .savedListSummary { color:#cdc4eb; }
+2416:   .theme-galaxy .primary,.theme-galaxy .add,.theme-galaxy .saveButton,.theme-galaxy .secondaryButton,.theme-galaxy .room.active,.theme-galaxy .measurementType.active,.theme-galaxy .settingsOption.active { color:#fff; background:linear-gradient(135deg,#7058ed,#e047bc); box-shadow:0 5px 0 #3a287f,0 0 12px rgba(216,67,193,.35); }
+2417:   .theme-galaxy .room,.theme-galaxy .measurementType,.theme-galaxy .keypadButton,.theme-galaxy .settingsMenuButton,.theme-galaxy .savedMoreButton { color:#ded7ff; border-color:#6955c9; background:#12102e; }
+2418:   /* RETRO SAFE: visual theme only. No event handlers or animation state. */
+2419:   .theme-retro {
+2420:     color:#f7fbff;
+2421:     background-color:#02040c;
+2422:     background-image:linear-gradient(180deg,rgba(1,3,12,.05),rgba(1,3,12,.28)),url('/retro-ny-bg.png');
+2423:     background-size:cover;
+2424:     background-position:center top;
+2425:     background-repeat:no-repeat;
+2426:     background-attachment:fixed;
+
+--- 2419-2448 ---
+2419:   .theme-retro {
+2420:     color:#f7fbff;
+2421:     background-color:#02040c;
+2422:     background-image:linear-gradient(180deg,rgba(1,3,12,.05),rgba(1,3,12,.28)),url('/retro-ny-bg.png');
+2423:     background-size:cover;
+2424:     background-position:center top;
+2425:     background-repeat:no-repeat;
+2426:     background-attachment:fixed;
+2427:     font-family:"DotGothic16","MS Gothic",monospace;
+2428:     image-rendering:pixelated;
+2429:   }
+2430:   .theme-retro .header { border-bottom:4px solid #00efff; box-shadow:0 4px 0 #ff2bd1; }
+2431:   .theme-retro .brandLogo { image-rendering:pixelated; filter:drop-shadow(3px 0 #ff2bd1) drop-shadow(-3px 0 #00efff); }
+2432:   .theme-retro .brand,.theme-retro .main h1,.theme-retro .card h2,.theme-retro .card h3 { color:#fff; font-family:"DotGothic16",monospace; text-shadow:3px 0 #00dffa,-3px 0 #ff27cc; }
+2433:   .theme-retro .mavieBrand { color:#ff67df; font-family:"DotGothic16",monospace; text-shadow:2px 2px #45104e; }
+2434:   .theme-retro .eyebrow,.theme-retro .propertyLine,.theme-retro .savedUnit { color:#36f6ff; text-shadow:2px 2px #064554; }
+2435:   .theme-retro .subtitle,.theme-retro .savedMeta,.theme-retro .record small,.theme-retro .card label>span,.theme-retro .summaryLine,.theme-retro .copyFormatPreview,.theme-retro .estimateIntro,.theme-retro .savedCardDate,.theme-retro .savedListSummary { color:#c8ddec; }
+2436:   .theme-retro .card,.theme-retro .savedItem,.theme-retro .roomSummary,.theme-retro .summary,.theme-retro .estimateRoom,.theme-retro .globalListEditor,.theme-retro .globalListItem,.theme-retro .savedToolbar,.theme-retro .additionalWorkForm,.theme-retro .todayStats { color:#f7fbff; border:3px solid #00eaff; border-radius:0; background:rgba(2,7,17,.87); box-shadow:4px 4px 0 #ff2bc9,-3px -3px 0 #19315d; backdrop-filter:blur(2px); }
+2437:   .theme-retro .card input,.theme-retro .card select,.theme-retro .propertyOption,.theme-retro .settingsOption,.theme-retro .estimateFactor input { color:#fff; border:2px solid #00eaff; border-radius:0; background:#030817; box-shadow:3px 3px 0 #14254b; font-family:"DotGothic16",monospace; }
+2438:   .theme-retro .primary,.theme-retro .add,.theme-retro .saveButton,.theme-retro .secondaryButton,.theme-retro .measurementCheckButton { color:#07101b; border:3px solid #00eaff; border-radius:0; background:#fff11c; box-shadow:5px 5px 0 #7b6600; font-family:"DotGothic16",monospace; text-shadow:none; }
+2439:   .theme-retro .secondaryButton,.theme-retro .saveButton { color:#f5ffff; background:#051125; box-shadow:5px 5px 0 #072f45; }
+2440:   .theme-retro .room,.theme-retro .measurementType,.theme-retro .keypadButton,.theme-retro .settingsMenuButton,.theme-retro .savedMoreButton,.theme-retro .quickMemoButton,.theme-retro .floorTrimColorButton,.theme-retro .roomConfirmButton { color:#fff; border:2px solid #00eaff; border-radius:0; background:#061020; box-shadow:4px 4px 0 #102048; font-family:"DotGothic16",monospace; text-shadow:2px 2px #07101f; }
+2441:   .theme-retro .room.active,.theme-retro .measurementType.active,.theme-retro .settingsOption.active { color:#fff; border-color:#ff32d2; background:#531044; box-shadow:4px 4px 0 #00eaff; }
+2442:   .theme-retro .keypadButton.utility { color:#ff70df; border-color:#ff32d2; }
+2443:   .theme-retro .add.crossRegister { color:#00160b; border-color:#5cff8d; background:#37f36f; box-shadow:5px 5px 0 #09712e; }
+2444:   .theme-retro .numberKeypad,.theme-retro .address { border:3px solid #00eaff; border-radius:0; background:rgba(2,7,20,.92); box-shadow:inset 0 0 0 2px #122047; }
+2445:   .theme-retro .record { color:#fff; border-color:#1b6f86; }
+2446:   .theme-retro .record b,.theme-retro .summaryLine strong,.theme-retro .estimateTotal strong { color:#fff11c; text-shadow:2px 2px #6d5800; }
+2447:   .theme-retro .settingsButton,.theme-retro .measurementBackButton,.theme-retro .back { color:#45f8ff; border-color:#00eaff; border-radius:0; background:#041020; box-shadow:3px 3px 0 #ff2bc9; font-family:"DotGothic16",monospace; }
+2448:   .theme-retro .propertyOption { position:relative; min-height:64px; padding-left:60px; }
+
+--- 4470-4499 ---
+4470:   const propertyListRef = useRef(null)
+4471:   const propertyFormRef = useRef(null)
+4472:   const [masterStatus, setMasterStatus] = useState(propertyMasterState.error)
+4473:   const [fontSize, setFontSize] = useState(() => readPreference(fontSizeKey, 'medium'))
+4474:   const [theme, setTheme] = useState(() => readPreference(themeKey, 'beige'))
+4475:   const [playSettings, setPlaySettings] = useState(loadPlaySettings)
+4476:   const [todayStats, setTodayStats] = useState(loadTodayStats)
+4477:   const [effectBurst, setEffectBurst] = useState(null)
+4478:   const [showComplete, setShowComplete] = useState(false)
+4479:   const [showSplash, setShowSplash] = useState(() => loadPlaySettings().splash)
+4480:   const [galaxyUnlocked, setGalaxyUnlocked] = useState(() => readPreference(galaxyUnlockedKey, 'false') === 'true')
+4481:   const [showGalaxyUnlock, setShowGalaxyUnlock] = useState(false)
+4482:   const logoTapRef = useRef({ count: 0, last: 0 })
+4483:   const completedStateRef = useRef(false)
+4484:   const [pricingSettings, setPricingSettings] = useState(loadPricingSettings)
+4485: 
+4486:   const [company, setCompany] = useState('')
+4487:   const [propertySearch, setPropertySearch] = useState('')
+4488:   const [selectedProperty, setSelectedProperty] = useState(null)
+4489:   /* M-CROSS_PROPERTY_LIST_PICKER_V2 */
+4490:   const [showPropertyListPicker, setShowPropertyListPicker] = useState(false)
+4491:   const [propertyListSearch, setPropertyListSearch] = useState('')
+4492:   const [unit, setUnit] = useState('')
+4493:   /* M-CROSS_WORK_NAME_V7_EXACT */
+4494:   const [workName, setWorkName] = useState('原状回復工事')
+4495:   const [siteMemo, setSiteMemo] = useState('')
+4496:   /* M-CROSS_REQUEST_CONTENT_OVERLAY_V2_SAFE */
+4497:   const [requestContent, setRequestContent] = useState('')
+4498:   const [showRequestContent, setShowRequestContent] = useState(false)
+4499:   const [showSimilarSites, setShowSimilarSites] = useState(false)
+
+--- 6365-6394 ---
+6365:       oscillator.start(); oscillator.stop(context.currentTime + 0.14)
+6366:       oscillator.onended = () => context.close()
+6367:     } catch { /* 音が使えない端末では無音 */ }
+6368:   }
+6369:   function triggerRegisteredEffect() {
+6370:     updateTodayStats(previous => ({ ...previous, registrations: previous.registrations + 1 }))
+6371:     playRegistrationSound()
+6372:     if (!playSettings.effects) return
+6373:     const symbols = { beige: '✨', dark: '✦', pop: '🎉', cyber: '⚡', luxury: '✦', sakura: '🌸', ice: '❄', forest: '🍃', galaxy: '★' }
+6374:     setEffectBurst({ id: Date.now(), symbol: symbols[theme] || '✨', theme })
+6375:     window.setTimeout(() => setEffectBurst(null), 700)
+6376:   }
+6377:   function handleLogoTap() {
+6378:     const now = Date.now()
+6379:     const nextCount = now - logoTapRef.current.last > 1400 ? 1 : logoTapRef.current.count + 1
+6380:     logoTapRef.current = { count: nextCount, last: now }
+6381:     if (nextCount < 5 || galaxyUnlocked) return
+6382:     setGalaxyUnlocked(true)
+6383:     setShowGalaxyUnlock(true)
+6384:     try { localStorage.setItem(galaxyUnlockedKey, 'true') } catch { /* 任意解除 */ }
+6385:     window.setTimeout(() => setShowGalaxyUnlock(false), 2400)
+6386:   }
+6387:   function markUnsaved() {
+6388:     setIsDirty(true)
+6389:     setSaveStatus('')
+6390:   }
+6391: 
+6392:   function updatePricingSetting(field, value, crossType = '') {
+6393:     const numericValue = Math.max(0, Number(value) || 0)
+6394:     setPricingSettings(previous => {
+
+--- 6367-6396 ---
+6367:     } catch { /* 音が使えない端末では無音 */ }
+6368:   }
+6369:   function triggerRegisteredEffect() {
+6370:     updateTodayStats(previous => ({ ...previous, registrations: previous.registrations + 1 }))
+6371:     playRegistrationSound()
+6372:     if (!playSettings.effects) return
+6373:     const symbols = { beige: '✨', dark: '✦', pop: '🎉', cyber: '⚡', luxury: '✦', sakura: '🌸', ice: '❄', forest: '🍃', galaxy: '★' }
+6374:     setEffectBurst({ id: Date.now(), symbol: symbols[theme] || '✨', theme })
+6375:     window.setTimeout(() => setEffectBurst(null), 700)
+6376:   }
+6377:   function handleLogoTap() {
+6378:     const now = Date.now()
+6379:     const nextCount = now - logoTapRef.current.last > 1400 ? 1 : logoTapRef.current.count + 1
+6380:     logoTapRef.current = { count: nextCount, last: now }
+6381:     if (nextCount < 5 || galaxyUnlocked) return
+6382:     setGalaxyUnlocked(true)
+6383:     setShowGalaxyUnlock(true)
+6384:     try { localStorage.setItem(galaxyUnlockedKey, 'true') } catch { /* 任意解除 */ }
+6385:     window.setTimeout(() => setShowGalaxyUnlock(false), 2400)
+6386:   }
+6387:   function markUnsaved() {
+6388:     setIsDirty(true)
+6389:     setSaveStatus('')
+6390:   }
+6391: 
+6392:   function updatePricingSetting(field, value, crossType = '') {
+6393:     const numericValue = Math.max(0, Number(value) || 0)
+6394:     setPricingSettings(previous => {
+6395:       const next = crossType
+6396:         ? { ...previous, crossRates: { ...previous.crossRates, [crossType]: numericValue } }
+
+--- 6368-6397 ---
+6368:   }
+6369:   function triggerRegisteredEffect() {
+6370:     updateTodayStats(previous => ({ ...previous, registrations: previous.registrations + 1 }))
+6371:     playRegistrationSound()
+6372:     if (!playSettings.effects) return
+6373:     const symbols = { beige: '✨', dark: '✦', pop: '🎉', cyber: '⚡', luxury: '✦', sakura: '🌸', ice: '❄', forest: '🍃', galaxy: '★' }
+6374:     setEffectBurst({ id: Date.now(), symbol: symbols[theme] || '✨', theme })
+6375:     window.setTimeout(() => setEffectBurst(null), 700)
+6376:   }
+6377:   function handleLogoTap() {
+6378:     const now = Date.now()
+6379:     const nextCount = now - logoTapRef.current.last > 1400 ? 1 : logoTapRef.current.count + 1
+6380:     logoTapRef.current = { count: nextCount, last: now }
+6381:     if (nextCount < 5 || galaxyUnlocked) return
+6382:     setGalaxyUnlocked(true)
+6383:     setShowGalaxyUnlock(true)
+6384:     try { localStorage.setItem(galaxyUnlockedKey, 'true') } catch { /* 任意解除 */ }
+6385:     window.setTimeout(() => setShowGalaxyUnlock(false), 2400)
+6386:   }
+6387:   function markUnsaved() {
+6388:     setIsDirty(true)
+6389:     setSaveStatus('')
+6390:   }
+6391: 
+6392:   function updatePricingSetting(field, value, crossType = '') {
+6393:     const numericValue = Math.max(0, Number(value) || 0)
+6394:     setPricingSettings(previous => {
+6395:       const next = crossType
+6396:         ? { ...previous, crossRates: { ...previous.crossRates, [crossType]: numericValue } }
+6397:         : { ...previous, [field]: numericValue }
+
+--- 6861-6890 ---
+6861:       return
+6862:     }
+6863: 
+6864:     try {
+6865:       // ExcelJSは元テンプレートの画像・描画情報を壊すため使用しません。
+6866:       // xlsx-populateでユーザーのテンプレートを保ったままセル値だけ差し替えます。
+6867:       /* M-CROSS_STEP20_12_BUFFER_FIX */
+6868:       /* M-CROSS_STEP20_13_XLSX_POPULATE_BROWSER_BUILD */
+6869:       // Node.js版ではなく、fs・crypto・processを要求しない公式ブラウザビルドを使います。
+6870:       const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
+6871:       const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
+6872:       if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+6873:       const templateResponse = await fetch(new URL('/mcross-estimate-template.xlsx', window.location.origin), { cache: 'no-store' })
+6874:       if (!templateResponse.ok) throw new Error('見積書テンプレートを読み込めません HTTP ' + templateResponse.status)
+6875: 
+6876:       const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
+6877:       const ws = workbook.sheet('見積書')
+6878:       if (!ws) throw new Error('「見積書」シートが見つかりません')
+6879: 
+6880:       // ユーザーのテンプレート、MSロゴ、会社情報、罫線、行高、列幅は一切作り直しません。
+6881:       // 無記載項目は空白にします。
+6882:       ws.cell('B5').value(workOrder.company ? workOrder.company + '　御中' : '')
+6883:       ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy年m月d日')
+6884:       ws.cell('D13').value(workOrder.propertyName || '')
+6885:       ws.cell('F13').value(workOrder.unit || '')
+6886:       ws.cell('G13').value(workOrder.unit ? '号室' : '')
+6887:       ws.cell('D14').value(workOrder.address || '')
+6888: 
+6889:       for (let rowNumber = 23; rowNumber <= 54; rowNumber += 1) {
+6890:         ws.cell('C' + rowNumber).value('')
+
+--- 6868-6897 ---
+6868:       /* M-CROSS_STEP20_13_XLSX_POPULATE_BROWSER_BUILD */
+6869:       // Node.js版ではなく、fs・crypto・processを要求しない公式ブラウザビルドを使います。
+6870:       const populateModule = await import('xlsx-populate/browser/xlsx-populate.min.js')
+6871:       const XlsxPopulate = populateModule.default || globalThis.XlsxPopulate || populateModule
+6872:       if (!XlsxPopulate?.fromDataAsync) throw new Error('xlsx-populateブラウザ版を初期化できません')
+6873:       const templateResponse = await fetch(new URL('/mcross-estimate-template.xlsx', window.location.origin), { cache: 'no-store' })
+6874:       if (!templateResponse.ok) throw new Error('見積書テンプレートを読み込めません HTTP ' + templateResponse.status)
+6875: 
+6876:       const workbook = await XlsxPopulate.fromDataAsync(await templateResponse.arrayBuffer())
+6877:       const ws = workbook.sheet('見積書')
+6878:       if (!ws) throw new Error('「見積書」シートが見つかりません')
+6879: 
+6880:       // ユーザーのテンプレート、MSロゴ、会社情報、罫線、行高、列幅は一切作り直しません。
+6881:       // 無記載項目は空白にします。
+6882:       ws.cell('B5').value(workOrder.company ? workOrder.company + '　御中' : '')
+6883:       ws.cell('J5').value(new Date()).style('numberFormat', 'yyyy年m月d日')
+6884:       ws.cell('D13').value(workOrder.propertyName || '')
+6885:       ws.cell('F13').value(workOrder.unit || '')
+6886:       ws.cell('G13').value(workOrder.unit ? '号室' : '')
+6887:       ws.cell('D14').value(workOrder.address || '')
+6888: 
+6889:       for (let rowNumber = 23; rowNumber <= 54; rowNumber += 1) {
+6890:         ws.cell('C' + rowNumber).value('')
+6891:         ws.cell('F' + rowNumber).value('')
+6892:         ws.cell('H' + rowNumber).value('')
+6893:         ws.cell('I' + rowNumber).value('')
+6894:         ws.cell('J' + rowNumber).value('')
+6895:         ws.cell('K' + rowNumber).value('')
+6896:       }
+6897: 
+
+--- 8483-8512 ---
+8483: /* M-CROSS_STEP19_1_RESIDENT_TO_WORKORDER_STYLE */
+8484: .residentWorkOrderTransfer{display:grid;gap:8px;margin-top:10px;padding-top:14px;border-top:1px solid rgba(90,130,190,.25)}.residentWorkOrderTransfer .primary,.residentWorkOrderTransfer .secondaryButton{width:100%;margin:0;min-height:48px}
+8485: 
+8486: /* M-CROSS_STEP19_2_RESTORATION_TO_WORKORDER_STYLE */
+8487: .restorationWorkOrderAction{display:grid;gap:8px;margin:12px 0 16px}.restorationWorkOrderAction .primary,.restorationWorkOrderAction .secondaryButton{width:100%;margin:0;min-height:48px}
+8488: 
+8489: /* M-CROSS_STEP19_3_WORKORDER_DETAIL_STYLE */
+8490: .workOrderCard{cursor:pointer}.workOrderCard:focus-visible{outline:3px solid #7fa6ef;outline-offset:2px}.workOrderDetailPage{position:fixed;inset:0;z-index:9999;overflow:auto;background:#eef1f6;padding:22px}.workOrderDetail{width:min(1180px,calc(100vw - 44px));margin:0 auto;display:grid;gap:16px;padding:24px!important}.workOrderDetailTop{display:flex;align-items:center;gap:18px}.workOrderDetailTop h1,.workOrderDetailTop p{margin:0}.workOrderSection{display:grid;gap:12px;padding:16px;border:1px solid rgba(100,120,150,.18);border-radius:14px;background:rgba(255,255,255,.5)}.workOrderSection h2{margin:0}.workOrderFormGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.workOrderFormGrid label{display:grid;gap:5px}.workOrderFormGrid label>span{font-size:12px;font-weight:850;color:#687386}.workOrderFormGrid input,.workOrderFormGrid select,.workOrderFormGrid textarea{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid rgba(100,120,150,.28);border-radius:10px;background:#fff;color:inherit;font:inherit}.workOrderFormGrid .wide{grid-column:1/-1}.workOrderMoneyGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.workOrderMoneyGrid>div{display:grid;gap:3px;padding:12px;border-radius:12px;background:rgba(90,130,200,.07);text-align:center}.workOrderMoneyGrid span{font-size:11px;font-weight:800;color:#687386}.workOrderMoneyGrid strong{font-size:20px}@media(max-width:700px){.workOrderDetailPage{padding:8px}.workOrderDetail{width:calc(100vw - 16px);padding:14px!important}.workOrderDetailTop{align-items:flex-start;flex-direction:column}.workOrderFormGrid{grid-template-columns:1fr}.workOrderFormGrid .wide{grid-column:auto}.workOrderMoneyGrid{grid-template-columns:repeat(2,1fr)}}
+8491: 
+8492: /* M-CROSS_STEP19_2_ESTIMATE_TRANSFER_FIX_STYLE */
+8493: .workOrderEstimateItems{display:grid;gap:7px}.workOrderEstimateItem{display:grid;grid-template-columns:minmax(0,1fr) 110px 120px 130px;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(100,120,150,.18);border-radius:10px;background:rgba(255,255,255,.62)}.workOrderEstimateItem>div{display:grid;gap:2px}.workOrderEstimateItem small{color:#737b87}.workOrderEstimateItem>span,.workOrderEstimateItem>strong{text-align:right}@media(max-width:700px){.workOrderEstimateItem{grid-template-columns:1fr 1fr}.workOrderEstimateItem>div{grid-column:1/-1}.workOrderEstimateItem>span,.workOrderEstimateItem>strong{text-align:left}}
+8494: 
+8495: /* M-CROSS_STEP20_2_LOGO_PRINT_DETAIL_HEIGHT_STYLE */
+8496: .workOrderDetailPage{min-height:100vh!important;box-sizing:border-box!important;padding-bottom:28px!important}
+8497: .workOrderDetailPage>.workOrderDetail{min-height:calc(100vh - 44px)!important;box-sizing:border-box!important;padding-bottom:32px!important}
+8498: @media(min-width:980px){.workOrderDetailPage>.workOrderDetail{width:min(1180px,calc(100vw - 64px))!important;max-width:1180px!important}}
+8499: @media(max-width:700px){.workOrderDetailPage{padding-bottom:10px!important}.workOrderDetailPage>.workOrderDetail{min-height:calc(100vh - 16px)!important;padding-bottom:20px!important}}
+8500: 
+8501: /* M-CROSS_STEP20_3_FIXED_TEMPLATE */
+8502: .workOrderDetailPage{padding-top:12px!important;padding-bottom:0!important;background:#eef1f6!important}
+8503: .workOrderDetailPage>.workOrderDetail{min-height:calc(100vh - 12px)!important;margin-bottom:0!important;border-bottom-left-radius:0!important;border-bottom-right-radius:0!important}
+8504: @media(max-width:700px){.workOrderDetailPage{padding-top:6px!important}.workOrderDetailPage>.workOrderDetail{min-height:calc(100vh - 6px)!important}}
+8505: 
+8506: /* M-CROSS_STEP20_4_CLEAN_WORKBOOK */
+8507: /* M-CROSS_STEP20_14_TEMPLATE_NO_BUTTONS */
+8508: /* M-CROSS_CROSS_CF_ENTER_KEY_V2 */
+8509: .keypadEnterRow {
+8510:   grid-column: 1 / -1;
+8511:   display: grid;
+8512:   grid-template-columns: 1fr 1fr;
+
+--- 8726-8755 ---
+8726: }
+8727: `}</style>
+8728:       
+8729:       
+8730:       
+8731:       
+8732:       <div
+8733:         className={`app${theme === 'dark' ? ' theme-dark' : theme === 'pop' ? ' theme-pop' : theme === 'cyber' ? ' theme-cyber' : theme === 'luxury' ? ' theme-luxury' : theme === 'sakura' ? ' theme-sakura' : theme === 'ice' ? ' theme-ice' : theme === 'forest' ? ' theme-forest' : theme === 'galaxy' ? ' theme-galaxy' : theme === 'retro' ? ' theme-retro' : ''}`}
+8734:         style={{ zoom: fontScales[fontSize] || 1 }}
+8735:       >
+8736:         <header className="header">
+8737:           <div className="brandGroup">
+8738:             <img className="brandLogo" src="/m-cross-logo.png" alt="M-Cross" onClick={handleLogoTap} />
+8739:             <div>
+8740:               <div className="mavieBrand">MavieSelect</div>
+8741:               <div className="brand">M-Cross</div>
+8742:             </div>
+8743:           </div>
+8744:           <button className="settingsButton" type="button" aria-label="設定" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙️</button>
+8745:         </header>
+8746: 
+8747:         {settingsOpen ? (
+8748:           <main className={`main settingsMain${masterPropertyCompanyId ? ' managementPropertyOpen' : ''}`}>
+8749:             <button className="back" type="button" onClick={() => {
+8750:               if (settingsPage === 'home') setSettingsOpen(false)
+8751:               else { setSettingsPage('home'); setMasterPropertyCompanyId(''); setShowPropertyForm(false) }
+8752:             }}>{settingsPage === 'home' ? '← 戻る' : '← 設定へ戻る'}</button>
+8753:             <p className="eyebrow">M-Cross設定</p>
+8754:             <h1>{settingsPage === 'home' ? '設定' : settingsPage === 'additional' ? '追加作業設定' : settingsPage === 'memos' ? 'メモ設定' : settingsPage === 'rooms' ? '初期部屋設定' : settingsPage === 'pricing' ? '単価・概算設定' : '管理会社・物件管理'}</h1>
+8755:             <section className="card">

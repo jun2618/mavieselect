@@ -1,0 +1,14 @@
+const fs=require('fs'),cp=require('child_process'),path=require('path');
+const css=path.join(process.cwd(),'src','CostCalculationPage.css');
+const marker='M-CROSS_COST_PRINT_HORIZONTAL_V16_SAFE';
+if(!fs.existsSync(css)){console.error('ERROR: CostCalculationPage.css not found');process.exit(1)}
+let s=fs.readFileSync(css,'utf8');
+if(s.includes(marker)){console.log('ALREADY APPLIED');process.exit(0)}
+const backup=css+'.before-print-horizontal-v16-'+Date.now()+'.bak';
+fs.copyFileSync(css,backup);
+s+=`\n/* ${marker} */\n/* 印刷ではスマホ用2列化を絶対に継承しない。横に置けるものは横1列で縦寸法を節約。 */\n@media print{\n  .costPage{zoom:.72!important;width:138.89%!important;max-width:none!important}\n  .costHero{display:grid!important;grid-template-columns:1fr auto 1fr!important}\n  .costInfoCompact{display:grid!important;grid-template-columns:15mm minmax(0,1.35fr) 18mm minmax(0,1fr)!important}\n  .costKpis{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:column!important;width:100%!important;height:11mm!important}\n  .costKpis article{grid-column:auto!important;grid-row:1!important;width:auto!important;min-width:0!important;height:11mm!important;min-height:11mm!important;grid-template-columns:6mm minmax(0,1fr)!important}\n  .costKpis article>span,.costKpis article>strong,.costKpis article>input,.costKpis article>small,.costKpis .estimate .estimateAmountEditor{grid-column:2!important}\n  .kpiArt{grid-column:1!important;grid-row:1/4!important;width:5mm!important;height:5mm!important}.kpiArt svg{width:3.8mm!important;height:3.8mm!important}\n  .costKpis article>span{font-size:3.9pt!important}.costKpis article>strong,.costKpis article>input,.estimateYen,.costKpis .estimate .estimateAmountEditor input[type="number"]{font-size:8.2pt!important}.costKpis article>small{font-size:3.3pt!important}\n  .costSectionTitle{display:flex!important;flex-wrap:nowrap!important}.costSectionTitle small{width:auto!important;padding-left:0!important;margin-top:0!important}\n  .sectionTotal{display:flex!important;grid-template-columns:none!important;white-space:nowrap!important}.sectionTotal button{display:none!important}\n  .costRow{display:grid!important;margin:0!important;border-radius:0!important;box-shadow:none!important}\n  .taxIncludedCell{grid-column:auto!important;min-height:0!important}.taxIncludedCell:before{display:none!important}\n  .costBottom{display:grid!important;grid-template-columns:1.1fr .95fr .8fr!important}\n}\n`;
+fs.writeFileSync(css,s,'utf8');
+console.log('OK: print horizontal layout V16 applied');console.log('BACKUP:',backup);
+const r=cp.spawnSync('npm',['run','build'],{shell:true,stdio:'inherit'});
+if(r.status!==0){fs.copyFileSync(backup,css);console.error('ERROR: build failed; CSS restored');process.exit(r.status||1)}
+console.log('OK: BUILD SUCCESS');

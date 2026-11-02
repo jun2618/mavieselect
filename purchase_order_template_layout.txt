@@ -1,0 +1,76 @@
+M-Cross Purchase Order Template Layout
+Sheet: 発注書
+
+MERGE	I2:J2	 
+MERGE	A3:J3	　発　注　書
+MERGE	A5:E5	 
+MERGE	A6:D7	 
+MERGE	G7:J7	株式会社MavieSelect
+MERGE	A8:D8	
+MERGE	G8:J8	　　　　　〒060-0007
+MERGE	B9:D9	 
+MERGE	G9:J9	札幌市中央区北7条西22丁目1-12-201
+MERGE	B12:D12	
+MERGE	G12:J13	担当 町田
+MERGE	B13:F13	 
+MERGE	H14:I14	オートロック
+MERGE	B15:E16	
+MERGE	H15:I15	キーボックス
+MERGE	H16:I16	ドアジョイナー
+MERGE	H17:I17	マイロック
+MERGE	H18:I18	玄関開放
+MERGE	B21:F21	商品名
+MERGE	H49:I49	小計
+MERGE	H50:I50	消費税
+MERGE	H51:I51	合計
+
+ROW 1	M1=　発　注　書
+ROW 2	H2=日付     | I2=  | M2=　見　積　依　頼　書
+ROW 3	A3=　発　注　書 | L3=　
+ROW 4	M4=着工日 | N4=完了日
+ROW 5	A5=  | G5=　
+ROW 6	A6=  | G6=　
+ROW 7	G7=株式会社MavieSelect
+ROW 8	G8=　　　　　〒060-0007
+ROW 9	B9=  | G9=札幌市中央区北7条西22丁目1-12-201
+ROW 10	D10=　 | H10=TEL： | I10=011-699-6492
+ROW 11	A11=　 | H11=FAX： | I11=011-699-6493
+ROW 12	A12=物件名： | E12= [F:='https://mavieselect-my.sharepoint.com/personal/machida_mavieselect_onmicrosoft_com/Documents/デスクトップ/工事カード/工事カード（新）/[株式会社ハウスメイトマネジメント様用.xls]工事カード'!I6] | F12=号室 | G12=担当 町田
+ROW 13	A13=現場住所： | B13= 
+ROW 14	A14=　 | G14=　 | H14=オートロック | J14=#N/A [F:='https://mavieselect-my.sharepoint.com/personal/machida_mavieselect_onmicrosoft_com/Documents/デスクトップ/工事カード/工事カード（新）/[株式会社ハウスメイトマネジメント様用.xls]工事カード'!H10]
+ROW 15	H15=キーボックス | J15=#N/A [F:='https://mavieselect-my.sharepoint.com/personal/machida_mavieselect_onmicrosoft_com/Documents/デスクトップ/工事カード/工事カード（新）/[株式会社ハウスメイトマネジメント様用.xls]工事カード'!H11]
+ROW 16	H16=ドアジョイナー | J16=#N/A [F:='https://mavieselect-my.sharepoint.com/personal/machida_mavieselect_onmicrosoft_com/Documents/デスクトップ/工事カード/工事カード（新）/[株式会社ハウスメイトマネジメント様用.xls]工事カード'!H12] | K16= 
+ROW 17	H17=マイロック | J17= [F:='https://mavieselect-my.sharepoint.com/personal/machida_mavieselect_onmicrosoft_com/Documents/デスクトップ/工事カード/工事カード（新）/[株式会社ハウスメイトマネジメント様用.xls]工事カード'!H13]
+ROW 18	A18=合計金額 | D18= [F:=+J51] | H18=玄関開放 | J18= [F:='https://mavieselect-my.sharepoint.com/personal/machida_mavieselect_onmicrosoft_com/Documents/デスクトップ/工事カード/工事カード（新）/[株式会社ハウスメイトマネジメント様用.xls]工事カード'!H14]
+ROW 20	J20=単位：円 | L20=　
+ROW 21	A21=項目 | B21=商品名 | G21=数量 | H21=単位 | I21=単価 | J21=金額 | O21=0.9掛 | P21=0.85掛
+ROW 22	J22= [F:=SUM(G22*I22)]
+ROW 23	J23= [F:=SUM(G23*I23)]
+ROW 24	J24= [F:=SUM(G24*I24)]
+ROW 25	J25= [F:=SUM(G25*I25)]
+ROW 26	J26= [F:=SUM(G26*I26)]
+ROW 27	J27= [F:=SUM(G27*I27)]
+ROW 28	J28= [F:=SUM(G28*I28)]
+ROW 29	J29= [F:=SUM(G29*I29)]
+ROW 30	J30= [F:=SUM(G30*I30)]
+ROW 31	J31= [F:=SUM(G31*I31)]
+ROW 32	J32= [F:=SUM(G32*I32)]
+ROW 33	J33= [F:=SUM(G33*I33)]
+ROW 34	J34= [F:=SUM(G34*I34)]
+ROW 35	J35= [F:=SUM(G35*I35)]
+ROW 36	J36= [F:=SUM(G36*I36)]
+ROW 37	J37= [F:=SUM(G37*I37)]
+ROW 38	J38= [F:=SUM(G38*I38)]
+ROW 39	J39= [F:=SUM(G39*I39)]
+ROW 40	J40= [F:=SUM(G40*I40)]
+ROW 41	J41= [F:=SUM(G41*I41)]
+ROW 42	J42= [F:=SUM(G42*I42)]
+ROW 43	J43= [F:=SUM(G43*I43)]
+ROW 44	J44= [F:=SUM(G44*I44)]
+ROW 45	J45= [F:=SUM(G45*I45)]
+ROW 46	J46= [F:=SUM(G46*I46)]
+ROW 47	J47= [F:=SUM(G47*I47)]
+ROW 48	G48=　
+ROW 49	A49=備考　　 | H49=小計 | J49= [F:=SUM(J22:J48)]
+ROW 50	A50=　 | H50=消費税 | J50= [F:=SUM(J49*0.1)]
+ROW 51	H51=合計 | J51= [F:=SUM(J49:J50)]
