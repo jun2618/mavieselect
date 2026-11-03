@@ -1,4 +1,5 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import ExcelDocumentViewer from "./ExcelDocumentViewer.jsx";
+import { useEffect, useMemo, useRef, useState } from 'react'
 import EriTako from './EriTako.jsx' // M-CROSS_ERI_TAKO_V1_SAFE
 import VoiceGuide from './VoiceGuide.jsx' // M-CROSS_VOICE_GUIDE_FADE_V1_SAFE
 import MCrossEstimateSheet from './MCrossEstimateSheet.jsx' // M-CROSS_CUTE_ESTIMATE_SHEET_V1_SAFE
@@ -8092,6 +8093,22 @@ return savedEntries
     }
   }
 
+  /* M-CROSS_CASE_EXCEL_LINK_V1_SAFE */
+  function registerSavedEntryExcel(entry){
+    if(!entry?.storageKey)return
+    const current=String(entry.excelUrl||"").trim()
+    const url=window.prompt("共有OneDriveのExcelリンクを貼り付けてください。",current)
+    if(url===null)return
+    const value=String(url).trim()
+    if(value&&!/^https?:\/\//i.test(value)){window.alert("http または https で始まる共有リンクを貼り付けてください。");return}
+    try{
+      const next={...entry,excelUrl:value,updatedAt:new Date().toISOString()}
+      localStorage.setItem(entry.storageKey,JSON.stringify(next))
+      setSavedEntries(readSavedEntries())
+      window.alert(value?"Excelリンクを登録しました。OneDriveバックアップにも含まれます。":"Excelリンクを解除しました。")
+    }catch(error){console.error(error);window.alert("Excelリンクを保存できませんでした。")}
+  }
+
   function deleteSavedEntry(entry) {
     if (!entry.storageKey) return
     const label = `${entry.propertyName || '物件名なし'} ${entry.unit || ''}号室`
@@ -9702,7 +9719,7 @@ return savedEntries
                               <span>📄</span>
                               <div><strong>{baseName}{versions.length ? estimateVersionMark(Math.max(...versions.map(item => Number(item.version) || 0)) + 1) : ''}</strong><small>{versions.length ? '現在編集中の見積' : '最初の見積'} ／ 更新 {formatSavedDate(entry.updatedAt)}</small></div>
                             </button>
-                              <button className="actionButton actionDelete savedExplorerDeleteButton" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
+                              <button className="actionButton actionOverwrite savedExplorerExcelRegister" type="button" onClick={() => registerSavedEntryExcel(entry)}>{entry.excelUrl?"🔗 Excel変更":"🔗 Excel登録"}</button>{entry.excelUrl&&<button className="actionButton actionOverwrite savedExplorerExcelOpen" type="button" onClick={() => window.open(String(entry.excelUrl)," _blank","noopener,noreferrer")}>📗 Excelを開く</button>}<button className="actionButton actionDelete savedExplorerDeleteButton" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
                             </div>,
                           ]
                           versions.sort((a,b) => Number(a.version)-Number(b.version)).forEach(version => {
@@ -10571,6 +10588,7 @@ return savedEntries
               >
                 工事案件
               </button>
+              <ExcelDocumentViewer />
               <button className="secondaryButton" type="button" onClick={() => { setSettingsPage('home'); setSettingsOpen(true) }}>⚙ M-Cross設定</button>
             </section>
 
@@ -12697,6 +12715,7 @@ if (!globalThis.__mCrossThemeButtonSoundsV2Installed) {
 
 
 /* M-CROSS_AUTO_THEME_SOUNDS_APPLIED */
+
 
 
 
