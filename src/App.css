@@ -867,17 +867,12 @@ button.primary[data-work-order-hidden]{display:none!important}
 /* M-CROSS_ESTIMATE_VERSION_TAB_ONLY_V1_SAFE */.estimateTab-content .estimateVersionPanel,.estimateTab-order .estimateVersionPanel{display:none!important}.estimateTab-estimate .estimateVersionPanel{display:block!important}
 
 
+/* M-CROSS_PURCHASE_HEIGHT_FINAL_V1_SAFE */.purchaseOrderExplorerBackdrop{align-items:start!important;overflow:hidden!important}.purchaseOrderExplorer{height:calc(100dvh - 24px)!important;min-height:calc(100dvh - 24px)!important;max-height:calc(100dvh - 24px)!important;display:grid!important;grid-template-rows:auto minmax(0,1fr)!important;overflow:hidden!important}.purchaseOrderExplorerBody{height:100%!important;min-height:0!important;align-items:stretch!important;overflow:hidden!important}.purchaseOrderTree,.purchaseOrderPreview{height:100%!important;min-height:0!important;max-height:none!important;overflow-y:auto!important}@media(max-width:700px){.purchaseOrderExplorer{height:calc(100dvh - 8px)!important;min-height:calc(100dvh - 8px)!important;max-height:calc(100dvh - 8px)!important}}
+/* M-CROSS_PURCHASE_HEIGHT_BOTTOM_FINAL_V2_SAFE */ .purchaseOrderExplorerBackdrop{min-height:100vh!important;height:100vh!important;max-height:none!important;overflow:hidden!important}.purchaseOrderExplorer{min-height:calc(100vh - 24px)!important;height:calc(100vh - 24px)!important;max-height:none!important;display:grid!important;grid-template-rows:auto minmax(0,1fr)!important;overflow:hidden!important}.purchaseOrderExplorerBody{min-height:0!important;height:100%!important;overflow:hidden!important;align-items:stretch!important}.purchaseOrderTree,.purchaseOrderPreview{min-height:0!important;height:100%!important;max-height:none!important;overflow-y:auto!important}
+
 /* M-CROSS_HIDE_OLD_ESTIMATE_VERSION_PANEL_V1_SAFE */
 .estimateVersionPanel{display:none!important}
 
 /* M-CROSS_HIDE_ESTIMATE_VERSION_PANEL_FINAL_V1_SAFE */
 .estimateTab-estimate .estimateVersionPanel,.estimateTab-content .estimateVersionPanel,.estimateTab-order .estimateVersionPanel{display:none!important}
 
-
-/* M-CROSS_TABLET_SCROLL_FIX_V2_SAFE */
-@media (min-width:701px) and (max-width:1024px){.purchaseOrderExplorerBackdrop{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;left:0!important;right:0!important;transform:none!important;padding:10px!important;box-sizing:border-box!important;overflow:hidden!important;display:block!important}.purchaseOrderExplorer{width:100%!important;max-width:none!important;height:calc(100dvh - 20px)!important;min-height:0!important;max-height:calc(100dvh - 20px)!important;margin:0!important;padding:12px!important;box-sizing:border-box!important;overflow-y:auto!important;overflow-x:hidden!important;}.purchaseOrderExplorerBody{display:block!important;width:100%!important;height:auto!important;min-height:0!important;overflow:visible!important}.purchaseOrderTree{width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;margin-bottom:12px!important}.purchaseOrderPreview{width:100%!important;height:auto!important;min-height:420px!important;max-height:none!important;overflow:visible!important}.purchaseOrderPreviewHeader,.purchaseOrderPreviewItems,.purchaseOrderPreviewItems section{max-width:100%!important;box-sizing:border-box!important}}
-
-
-
-/* M-CROSS_SCROLL_CLEAN_FINAL_V1_SAFE */
-html,body{overscroll-behavior-y:none}
