@@ -60,7 +60,7 @@ export default defineConfig({
       },
 
       workbox: {
-        cleanupOutdatedCaches: true,
+        cleanupOutdatedCaches: false,
         navigateFallback: '/index.html',
       },
     }),
