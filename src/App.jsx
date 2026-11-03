@@ -6328,7 +6328,7 @@ export default function App() {
     }
   }, [])
   useEffect(() => {
-    if (!started) return
+    if (!started || !isDirty) return
     if (!company || !selectedProperty || !unit.trim()) return
 
     const draft = {
@@ -6358,15 +6358,6 @@ export default function App() {
       measurementType,
       caseCrossFactor,
       currentStorageKey,
-      showEstimate,
-      estimateViewTab,
-      orderDraft,
-      purchaseOrderBranch,
-      materialOrderItems,
-      materialSupplierId,
-      selectedOrderKeys,
-      pendingPurchaseOrderItems,
-      showCostCalculation,
       updatedAt: new Date().toISOString(),
     }
 
@@ -6399,15 +6390,6 @@ export default function App() {
     measurementType,
     caseCrossFactor,
     currentStorageKey,
-    showEstimate,
-    estimateViewTab,
-    orderDraft,
-    purchaseOrderBranch,
-    materialOrderItems,
-    materialSupplierId,
-    selectedOrderKeys,
-    pendingPurchaseOrderItems,
-    showCostCalculation,
   ])
   useEffect(() => {
     if (!activeInput) return
@@ -6443,7 +6425,7 @@ export default function App() {
   }, [managementScrollTarget, masterPropertyCompanyId, showPropertyForm, editingCompanyId])
 
   useEffect(() => {
-    if (!started) return undefined
+    if (!started || !isDirty) return undefined
 
     const warnBeforeUnload = event => {
       event.preventDefault()
@@ -8037,7 +8019,7 @@ return savedEntries
     setWorkName(entry.workName || '')
     setSiteMemo(entry.siteMemo || '')
     setLegacyEstimateNotes(Array.isArray(entry.legacyEstimateNotes) ? entry.legacyEstimateNotes : [])
-    setEstimateViewTab(draft.estimateViewTab || 'estimate')
+    setEstimateViewTab('estimate')
     setRequestContent(entry.requestContent || '')
     setRecords(Array.isArray(entry.records) ? entry.records : [])
     setCfRecords(Array.isArray(entry.cfRecords) ? entry.cfRecords : [])
@@ -8320,7 +8302,7 @@ return savedEntries
     setIsDirty(false)
     setShowMeasurementCheck(false)
     setShowRoomManagement(false)
-    setShowEstimate(Boolean(draft.showEstimate))
+    setShowEstimate(false)
     setReturnToMeasurementCheck(false)
     setStarted(true)
   }
@@ -8339,7 +8321,7 @@ return savedEntries
     setWorkName(draft.workName || '')
     setSiteMemo(draft.siteMemo || '')
     setLegacyEstimateNotes(Array.isArray(draft.legacyEstimateNotes) ? draft.legacyEstimateNotes : [])
-    setEstimateViewTab(draft.estimateViewTab || 'estimate')
+    setEstimateViewTab('estimate')
     setRequestContent(draft.requestContent || '')
     setRecords(Array.isArray(draft.records) ? draft.records : [])
     setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
@@ -8362,13 +8344,6 @@ return savedEntries
     setMeasurementType(draft.measurementType || '天井')
     setCaseCrossFactor(String(draft.caseCrossFactor ?? pricingSettings.crossFactor))
     setCurrentStorageKey(draft.currentStorageKey || '')
-    setOrderDraft(draft.orderDraft && typeof draft.orderDraft === 'object' ? draft.orderDraft : null)
-    setPurchaseOrderBranch(draft.purchaseOrderBranch || null)
-    setMaterialOrderItems(Array.isArray(draft.materialOrderItems) ? draft.materialOrderItems : [])
-    setMaterialSupplierId(draft.materialSupplierId || '')
-    setSelectedOrderKeys(Array.isArray(draft.selectedOrderKeys) ? draft.selectedOrderKeys : [])
-    setPendingPurchaseOrderItems(Array.isArray(draft.pendingPurchaseOrderItems) ? draft.pendingPurchaseOrderItems : [])
-    setShowCostCalculation(Boolean(draft.showCostCalculation))
     setHeight('')
     setCount('')
     setMemo(draft.draftMemo || '')
@@ -8377,7 +8352,7 @@ return savedEntries
     setShowSavedList(false)
     setShowMeasurementCheck(false)
     setShowRoomManagement(false)
-    setShowEstimate(Boolean(draft.showEstimate))
+    setShowEstimate(false)
     setReturnToMeasurementCheck(false)
     setShowDraftRecovery(false)
     setIsDirty(true)
