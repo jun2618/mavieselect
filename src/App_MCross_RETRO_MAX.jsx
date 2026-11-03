@@ -2054,7 +2054,7 @@ function FloorTrimSection({ rooms, records, setRecords, onChanged, onRegistered 
         <div className="floorTrimColorOptions">
           {['シルバー', 'アンバー'].map(value => <button key={value} type="button" className={`floorTrimColorButton${color === value ? ' active' : ''}`} onClick={() => setColor(value)}>{value}</button>)}
         </div>
-        <label><span>数量（本）</span><input type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
+        <label><span>数量（本）</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
         {roomA === roomB && <p className="saveStatus" role="alert">異なる部屋を選んでください</p>}
         <button className="add" type="submit">＋ 床見切りを登録</button>
       </form>
@@ -2148,9 +2148,9 @@ function FinalReviewPage({
           <label><span>部屋</span><select value={room} onChange={event => setRoom(event.target.value)}>{rooms.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
           <label><span>作業内容</span><input value={work} onChange={event => setWork(event.target.value)} placeholder="例：畳表替え、電球交換" /></label>
           <div className="additionalWorkGrid">
-            <label><span>数量</span><input type="number" min="0.1" step="0.1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
+            <label><span>数量</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0.1" step="0.1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
             <label><span>単位</span><select value={unit} onChange={event => setUnit(event.target.value)}>{['式','個','本','枚','台','箇所'].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-            <label><span>単価（円）</span><input type="number" min="0" step="1" value={unitPrice} onChange={event => setUnitPrice(event.target.value)} placeholder="0" /></label>
+            <label><span>単価（円）</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={unitPrice} onChange={event => setUnitPrice(event.target.value)} placeholder="0" /></label>
             <label><span>金額</span><input type="text" readOnly value={formatYen((Number(quantity) || 0) * (Number(unitPrice) || 0))} /></label>
             <label><span>メモ</span><input value={memo} onChange={event => setMemo(event.target.value)} placeholder="任意" /></label>
           </div>
@@ -3610,7 +3610,7 @@ export default function App() {
                   {measurementTypes.map(type => (
                     <label key={type}>
                       <span>クロス {type}（円／㎡）</span>
-                      <input
+                      <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal"
                         type="number"
                         min="0"
                         step="1"
@@ -3621,19 +3621,19 @@ export default function App() {
                   ))}
                   <label>
                     <span>CF（円／㎡・概算数量は実測m×1.8）</span>
-                    <input type="number" min="0" step="1" value={pricingSettings.cfRate} onChange={event => updatePricingSetting('cfRate', event.target.value)} />
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={pricingSettings.cfRate} onChange={event => updatePricingSetting('cfRate', event.target.value)} />
                   </label>
                   <label>
                     <span>ソフト巾木（円／枚）</span>
-                    <input type="number" min="0" step="1" value={pricingSettings.softRate} onChange={event => updatePricingSetting('softRate', event.target.value)} />
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={pricingSettings.softRate} onChange={event => updatePricingSetting('softRate', event.target.value)} />
                   </label>
                   <label>
                     <span>床見切り（円／本）</span>
-                    <input type="number" min="0" step="1" value={pricingSettings.floorTrimRate} onChange={event => updatePricingSetting('floorTrimRate', event.target.value)} />
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={pricingSettings.floorTrimRate} onChange={event => updatePricingSetting('floorTrimRate', event.target.value)} />
                   </label>
                   <label>
                     <span>クロス基本換算率</span>
-                    <input type="number" min="0" step="0.01" value={pricingSettings.crossFactor} onChange={event => updatePricingSetting('crossFactor', event.target.value)} />
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="0.01" value={pricingSettings.crossFactor} onChange={event => updatePricingSetting('crossFactor', event.target.value)} />
                   </label>
                 </div>
               </div>

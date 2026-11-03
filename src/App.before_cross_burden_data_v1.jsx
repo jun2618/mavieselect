@@ -3956,7 +3956,7 @@ function LengthMeasurementPage({
 
                   <label>
                     <span>注文長（m）</span>
-                    <input
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal"
                       type="number"
                       min="0"
                       step="0.1"
@@ -4031,7 +4031,7 @@ function LengthMeasurementPage({
 
                         <label>
                           <span>注文長（m）</span>
-                          <input
+                          <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal"
                             type="number"
                             min="0"
                             step="0.1"
@@ -4168,7 +4168,7 @@ function FloorTrimSection({ rooms, records, setRecords, onChanged, onRegistered 
         <div className="floorTrimColorOptions">
           {['シルバー', 'アンバー'].map(value => <button key={value} type="button" className={`floorTrimColorButton${color === value ? ' active' : ''}`} onClick={() => setColor(value)}>{value}</button>)}
         </div>
-        <label><span>数量（本）</span><input type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
+        <label><span>数量（本）</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
         {roomA === roomB && <p className="saveStatus" role="alert">異なる部屋を選んでください</p>}
         <button className="add" type="submit">＋ 床見切りを登録</button>
       </form>
@@ -4567,9 +4567,9 @@ function FinalReviewPage({
             </section>
           )}
           <div className="additionalWorkGrid">
-            <label><span>数量</span><input type="number" min="0.1" step="0.1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
+            <label><span>数量</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0.1" step="0.1" value={quantity} onChange={event => setQuantity(event.target.value)} /></label>
             <label><span>単位</span><select value={unit} onChange={event => setUnit(event.target.value)}>{['式','個','本','枚','台','箇所'].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-            <label><span>単価（円）</span><input type="number" min="0" step="1" value={unitPrice} onChange={event => setUnitPrice(event.target.value)} placeholder="0" /></label>
+            <label><span>単価（円）</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={unitPrice} onChange={event => setUnitPrice(event.target.value)} placeholder="0" /></label>
             <label><span>金額</span><input type="text" readOnly value={formatYen((Number(quantity) || 0) * (Number(unitPrice) || 0))} /></label>
             <label><span>メモ</span><input value={memo} onChange={event => setMemo(event.target.value)} placeholder="任意" /></label>
           </div>
@@ -9349,7 +9349,7 @@ return savedEntries
                   {measurementTypes.map(type => (
                     <label key={type}>
                       <span>クロス {type}（円／㎡）</span>
-                      <input
+                      <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal"
                         type="number"
                         min="0"
                         step="1"
@@ -9360,19 +9360,19 @@ return savedEntries
                   ))}
                   <label>
                     <span>CF（円／㎡・概算数量は実測m×1.8）</span>
-                    <input type="number" min="0" step="1" value={pricingSettings.cfRate} onChange={event => updatePricingSetting('cfRate', event.target.value)} />
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={pricingSettings.cfRate} onChange={event => updatePricingSetting('cfRate', event.target.value)} />
                   </label>
                   <label>
                     <span>ソフト巾木（円／枚）</span>
-                    <input type="number" min="0" step="1" value={pricingSettings.softRate} onChange={event => updatePricingSetting('softRate', event.target.value)} />
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={pricingSettings.softRate} onChange={event => updatePricingSetting('softRate', event.target.value)} />
                   </label>
                   <label>
                     <span>床見切り（円／本）</span>
-                    <input type="number" min="0" step="1" value={pricingSettings.floorTrimRate} onChange={event => updatePricingSetting('floorTrimRate', event.target.value)} />
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={pricingSettings.floorTrimRate} onChange={event => updatePricingSetting('floorTrimRate', event.target.value)} />
                   </label>
                   <label>
                     <span>クロス基本換算率</span>
-                    <input type="number" min="0" step="0.01" value={pricingSettings.crossFactor} onChange={event => updatePricingSetting('crossFactor', event.target.value)} />
+                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="0.01" value={pricingSettings.crossFactor} onChange={event => updatePricingSetting('crossFactor', event.target.value)} />
                   </label>
                 </div>
               </div>
@@ -9795,7 +9795,7 @@ return savedEntries
                         </div>
                       )}
                       <div className="workOrderFormGrid">
-                        <label><span>見積金額</span><input type="number" min="0" value={item.estimateAmount || 0} onChange={e => updateWorkOrder(item.id,{estimateAmount:Number(e.target.value)||0})}/></label>
+                        <label><span>見積金額</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" value={item.estimateAmount || 0} onChange={e => updateWorkOrder(item.id,{estimateAmount:Number(e.target.value)||0})}/></label>
                         <label><span>見積状態</span><select value={item.estimateStatus || '未作成'} onChange={e => updateWorkOrder(item.id,{estimateStatus:e.target.value})}><option>未作成</option><option>作成中</option><option>提出済</option><option>承認</option></select></label>
                       </div><button className="secondaryButton" type="button" onClick={() => exportWorkOrderEstimate(item)}>📊 見積書を出力</button></section>
 
@@ -9811,9 +9811,9 @@ return savedEntries
                       </div></section>
 
                       <section className="workOrderSection"><h2>原価・利益</h2><div className="workOrderFormGrid">
-                        <label><span>業者支払</span><input type="number" min="0" value={item.contractorCost || 0} onChange={e => updateWorkOrder(item.id,{contractorCost:Number(e.target.value)||0})}/></label>
-                        <label><span>資材費</span><input type="number" min="0" value={item.materialCost || 0} onChange={e => updateWorkOrder(item.id,{materialCost:Number(e.target.value)||0})}/></label>
-                        <label><span>その他経費</span><input type="number" min="0" value={item.otherCost || 0} onChange={e => updateWorkOrder(item.id,{otherCost:Number(e.target.value)||0})}/></label>
+                        <label><span>業者支払</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" value={item.contractorCost || 0} onChange={e => updateWorkOrder(item.id,{contractorCost:Number(e.target.value)||0})}/></label>
+                        <label><span>資材費</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" value={item.materialCost || 0} onChange={e => updateWorkOrder(item.id,{materialCost:Number(e.target.value)||0})}/></label>
+                        <label><span>その他経費</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" value={item.otherCost || 0} onChange={e => updateWorkOrder(item.id,{otherCost:Number(e.target.value)||0})}/></label>
                       </div><div className="workOrderMoneyGrid"><div><span>売上</span><strong>¥{item.estimateAmount.toLocaleString()}</strong></div><div><span>原価</span><strong>¥{item.costTotal.toLocaleString()}</strong></div><div><span>利益</span><strong>¥{item.profit.toLocaleString()}</strong></div><div><span>利益率</span><strong>{item.profitRate}%</strong></div></div></section>
 
                       <section className="workOrderSection"><h2>請求</h2><div className="workOrderFormGrid"><label><span>請求状態</span><select value={item.billingStatus || '未請求'} onChange={e => updateWorkOrder(item.id,{billingStatus:e.target.value})}><option>未請求</option><option>請求準備</option><option>請求済</option></select></label></div></section>
@@ -11317,7 +11317,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                                           <label><span>品名</span><input lang="ja" inputMode="text" autoCapitalize="off" value={materialPriceAddForm.name} onChange={e=>setMaterialPriceAddForm(p=>({...p,name:e.target.value}))}/></label>
                                           <label><span>単位</span><input value={materialPriceAddForm.unit} onChange={e=>setMaterialPriceAddForm(p=>({...p,unit:e.target.value}))}/></label>
                                           <label><span>種類</span><select value={materialPriceAddForm.priceType} onChange={e=>setMaterialPriceAddForm(p=>({...p,priceType:e.target.value,value:''}))}><option value="fixed">固定単価</option><option value="rate">掛率</option></select></label>
-                                          <label><span>{materialPriceAddForm.priceType==='rate'?'掛率 %':'単価 円'}</span><input type="number" min="0" step={materialPriceAddForm.priceType==='rate'?'0.1':'1'} value={materialPriceAddForm.value} onChange={e=>setMaterialPriceAddForm(p=>({...p,value:e.target.value}))}/></label>
+                                          <label><span>{materialPriceAddForm.priceType==='rate'?'掛率 %':'単価 円'}</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step={materialPriceAddForm.priceType==='rate'?'0.1':'1'} value={materialPriceAddForm.value} onChange={e=>setMaterialPriceAddForm(p=>({...p,value:e.target.value}))}/></label>
                                           <label><span>備考</span><input lang="ja" inputMode="text" autoCapitalize="off" value={materialPriceAddForm.note} onChange={e=>setMaterialPriceAddForm(p=>({...p,note:e.target.value}))}/></label>
                                         </div>
                                         <div style={{display:'flex',gap:'8px',marginTop:'8px'}}>
@@ -11363,7 +11363,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
 
                                             {row.priceType === 'rate' ? (
                                               <label style={{display:'flex',alignItems:'center',gap:'4px'}}>
-                                                <input
+                                                <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal"
                                                   type="number"
                                                   min="0"
                                                   step="0.1"
@@ -11379,7 +11379,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                                               </label>
                                             ) : (
                                               <label style={{display:'flex',alignItems:'center',gap:'4px'}}>
-                                                <input
+                                                <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal"
                                                   type="number"
                                                   min="0"
                                                   step="1"
@@ -11480,7 +11480,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                           {showBulkMaterialRates&&<section style={{display:'grid',gap:'12px',margin:'10px 0',padding:'14px',border:'2px solid rgba(47,125,87,.48)',borderRadius:'14px',background:'#f5fff9',color:'#243d31'}}>
                             <div style={{display:'grid',gap:'3px'}}><strong>工種別単価を一括設定</strong><small>入力した工種だけ反映します</small></div>
                             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:'10px'}}>
-                              {[['cross','クロス','円/m'],['cf','CF','円/m'],['soft','ソフト巾木','円/枚'],['floorTrim','床見切り','円/本']].map(([key,label,unit])=><label key={key} style={{margin:0}}><span>{label}</span><div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) auto',alignItems:'center',gap:'6px'}}><input type="number" min="0" step="1" inputMode="numeric" value={bulkMaterialRates[key]} onChange={event=>setBulkMaterialRates(previous=>({...previous,[key]:event.target.value}))} placeholder="未設定" style={{textAlign:'right'}}/><b style={{fontSize:'12px',whiteSpace:'nowrap'}}>{unit}</b></div></label>)}
+                              {[['cross','クロス','円/m'],['cf','CF','円/m'],['soft','ソフト巾木','円/枚'],['floorTrim','床見切り','円/本']].map(([key,label,unit])=><label key={key} style={{margin:0}}><span>{label}</span><div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) auto',alignItems:'center',gap:'6px'}}><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" inputMode="numeric" value={bulkMaterialRates[key]} onChange={event=>setBulkMaterialRates(previous=>({...previous,[key]:event.target.value}))} placeholder="未設定" style={{textAlign:'right'}}/><b style={{fontSize:'12px',whiteSpace:'nowrap'}}>{unit}</b></div></label>)}
                             </div>
                             <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:'8px'}}>
                               <button type="button" onClick={()=>{setShowBulkMaterialRates(false);setBulkMaterialRates({cross:'',cf:'',soft:'',floorTrim:''})}}>取消</button>
@@ -11784,9 +11784,9 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                         {orderDraft.items.map((item,itemIndex)=><article className="orderDraftItem" key={item.id+'-'+itemIndex}>
                           {item.category==='material'?<div className="materialProductCell"><input value={item.label} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,i)=>i===itemIndex?{...current,label:event.target.value}:current)}))} placeholder="品番・商品名"/><button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:previous.items.filter((_,i)=>i!==itemIndex)}))}>×</button></div>:<strong>{item.label}</strong>}{item.memo&&<small>{item.memo}</small>}
                           <div className="orderQuantityCompare"><span>見積 {formatQuantity(item.sourceQuantity)}{item.unit}</span><b>→ 発注 {formatQuantity(item.orderQuantity)}{item.unit}</b></div>
-                          <label className="orderRateField"><span>発注単価</span><input type="number" inputMode="numeric" min="0" step="1" value={item.orderRate ?? ''} onChange={event=>{const value=event.target.value;setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,orderRate:value===''?'':Math.max(0,Number(value)||0)}:current)}))}} placeholder="未設定"/><b>円</b></label>
+                          <label className="orderRateField"><span>発注単価</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" inputMode="numeric" min="0" step="1" value={item.orderRate ?? ''} onChange={event=>{const value=event.target.value;setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,orderRate:value===''?'':Math.max(0,Number(value)||0)}:current)}))}} placeholder="未設定"/><b>円</b></label>
                           <div className="orderLineAmount"><span>発注金額</span><strong>{item.orderRate===''||item.orderRate==null?'未設定':formatYen((Number(item.orderQuantity)||0)*(Number(item.orderRate)||0))}</strong></div>
-                          {!['cross','cf'].includes(item.category)&&<label className="orderQuantityField"><span>発注数量</span><input type="number" inputMode="decimal" min="0" step="0.1" value={item.orderQuantity} onChange={event=>{const value=Math.max(0,Number(event.target.value)||0);setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,orderQuantity:value}:current)}))}}/>{item.category==='material'?<input className="materialUnitInput" value={item.unit} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,unit:event.target.value}:current)}))} placeholder="単位"/>:<b>{item.unit}</b>}</label>}
+                          {!['cross','cf'].includes(item.category)&&<label className="orderQuantityField"><span>発注数量</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" inputMode="decimal" min="0" step="0.1" value={item.orderQuantity} onChange={event=>{const value=Math.max(0,Number(event.target.value)||0);setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,orderQuantity:value}:current)}))}}/>{item.category==='material'?<input className="materialUnitInput" value={item.unit} onChange={event=>setOrderDraft(previous=>({...previous,items:previous.items.map((current,index)=>index===itemIndex?{...current,unit:event.target.value}:current)}))} placeholder="単位"/>:<b>{item.unit}</b>}</label>}
                         </article>)}
                       </div></section>
                         {(orderDraft.orderMode==='material'||orderDraft.orderMode==='both')&&<aside className="materialReferencePane">
@@ -11822,7 +11822,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                           {showServicePriceAdd&&<div className="servicePriceAddRow">
                             <label><span>施工項目</span><input lang="ja" inputMode="text" autoCapitalize="off" value={servicePriceAddForm.name} onChange={e=>setServicePriceAddForm(p=>({...p,name:e.target.value}))}/></label>
                             <label><span>単位</span><input value={servicePriceAddForm.unit} onChange={e=>setServicePriceAddForm(p=>({...p,unit:e.target.value}))}/></label>
-                            <label><span>単価</span><input type="number" min="0" step="1" value={servicePriceAddForm.price} onChange={e=>setServicePriceAddForm(p=>({...p,price:e.target.value}))}/></label>
+                            <label><span>単価</span><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={servicePriceAddForm.price} onChange={e=>setServicePriceAddForm(p=>({...p,price:e.target.value}))}/></label>
                             <button type="button" className="primary" onClick={()=>{
                               const name=String(servicePriceAddForm.name||'').trim();if(!name){window.alert('施工項目を入力してください。');return}
                               const row={id:'service-price-'+Date.now(),name,unit:String(servicePriceAddForm.unit||'').trim(),priceType:'fixed',price:servicePriceAddForm.price===''?'':Math.max(0,Number(servicePriceAddForm.price)||0),rate:'',note:'',referenceOnly:false}
@@ -11834,7 +11834,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                             {priceBook.length===0?<p className="empty">施工単価表は未登録です。</p>:priceBook.map((row,index)=><div className="servicePriceRow" key={row.id||index}>
                               <strong>{row.name||''}</strong>
                               <span>{row.unit||''}</span>
-                              {row.priceType==='rate'?<span>掛率 {formatQuantity(Number(row.rate||0))}%</span>:<label><input type="number" min="0" step="1" value={row.price??''} onChange={event=>{
+                              {row.priceType==='rate'?<span>掛率 {formatQuantity(Number(row.rate||0))}%</span>:<label><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={row.price??''} onChange={event=>{
                                 const value=event.target.value
                                 const nextPriceBook=priceBook.map((current,rowIndex)=>rowIndex===index?{...current,priceType:'fixed',price:value===''?'':Math.max(0,Number(value)||0),rate:''}:current)
                                 saveContractors(contractors.map(current=>current.id===supplier.id?{...current,priceBook:nextPriceBook,updatedAt:new Date().toISOString()}:current))
@@ -11876,7 +11876,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                             <strong>基本単価</strong>
                             <small>空欄の項目は発注時に手入力できます。</small>
                             <div className="contractorRateGrid">
-                              {[['cross','クロス施工','㎡'],['cf','CF施工','㎡'],['soft','ソフト巾木','枚'],['floorTrim','床見切り','本'],['wallBase','壁下地処理','式'],['floorBase','床下地処理','式']].map(([key,label,unitName])=><label key={key}><span>{label}</span><div><input type="number" min="0" step="1" value={contractorForm.rates?.[key] ?? ''} onChange={event=>setContractorForm(previous=>({...previous,rates:{...(previous.rates||{}),[key]:event.target.value}}))} placeholder="未設定"/><b>円/{unitName}</b></div></label>)}
+                              {[['cross','クロス施工','㎡'],['cf','CF施工','㎡'],['soft','ソフト巾木','枚'],['floorTrim','床見切り','本'],['wallBase','壁下地処理','式'],['floorBase','床下地処理','式']].map(([key,label,unitName])=><label key={key}><span>{label}</span><div><input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={contractorForm.rates?.[key] ?? ''} onChange={event=>setContractorForm(previous=>({...previous,rates:{...(previous.rates||{}),[key]:event.target.value}}))} placeholder="未設定"/><b>円/{unitName}</b></div></label>)}
                             </div>
                           </section>
                           <label><span>郵便番号</span><input value={contractorForm.postalCode || ''} onChange={event => setContractorForm(previous => ({...previous,postalCode:event.target.value}))} placeholder="〒000-0000" /></label>
@@ -11896,7 +11896,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                                 <label key={key}>
                                   <span>{label}</span>
                                   <div className="contractorRateInput">
-                                    <input type="number" min="0" step="1" value={contractorForm.rates?.[key] ?? ''} onChange={event => setContractorForm(previous => ({...previous,rates:{...(previous.rates||{}),[key]:event.target.value}}))} placeholder="未設定" />
+                                    <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="1" value={contractorForm.rates?.[key] ?? ''} onChange={event => setContractorForm(previous => ({...previous,rates:{...(previous.rates||{}),[key]:event.target.value}}))} placeholder="未設定" />
                                     <b>円/{unitName}</b>
                                   </div>
                                 </label>
@@ -11913,7 +11913,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                                 <input value={row.name||''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,name:event.target.value}:current)}))} placeholder="品名"/>
                                 <input value={row.unit||''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,unit:event.target.value}:current)}))} placeholder="㎡・m・枚"/>
                                 <select value={row.priceType||'fixed'} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,priceType:event.target.value}:current)}))}><option value="fixed">固定単価</option><option value="rate">掛率</option><option value="unset">未定</option></select>
-                                <input type="number" min="0" step="0.1" value={(row.priceType==='rate'?row.rate:row.price)??''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,[current.priceType==='rate'?'rate':'price']:event.target.value}:current)}))} placeholder={row.priceType==='rate'?'％':'円'}/>
+                                <input onFocus={e=>{requestAnimationFrame(()=>e.currentTarget.select())}} inputMode="decimal" type="number" min="0" step="0.1" value={(row.priceType==='rate'?row.rate:row.price)??''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,[current.priceType==='rate'?'rate':'price']:event.target.value}:current)}))} placeholder={row.priceType==='rate'?'％':'円'}/>
                                 <input value={row.note||''} onChange={event=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).map((current,i)=>i===index?{...current,note:event.target.value}:current)}))} placeholder="備考"/>
                                 <button type="button" className="danger" onClick={()=>setContractorForm(previous=>({...previous,priceBook:(previous.priceBook||[]).filter((_,i)=>i!==index)}))}>×</button>
                               </div>)}
