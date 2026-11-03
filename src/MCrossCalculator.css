@@ -65,3 +65,6 @@
 
 /* M-CROSS_DISPLAY_BOTTOM_FINE_V8 */
 .mcrossDigitalDisplay{height:11.1%!important}
+
+/* M-CROSS_CALCULATOR_PHONE_FINAL_V2 */
+@media(max-width:480px){.mcrossIllustrationCalculator{width:min(380px,90vw)!important;max-height:none!important}.mcrossDigitalDisplay{font-size:38px!important}}
