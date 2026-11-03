@@ -71,3 +71,6 @@
 
 /* M-CROSS_MOBILE_ESTIMATE_HORIZONTAL_SCROLL_V1 */
 @media screen and (max-width:620px){.mcrossEstimatePaper{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}.mcrossEstimateTable{width:max-content!important;min-width:780px!important}.mcrossEstimateTable.editable .mcrossEstimateRow{width:100%!important}}
+
+/* M-CROSS_MOBILE_PORTRAIT_TABLE_SCROLL_V2 */
+@media screen and (max-width:620px) and (orientation:portrait){.mcrossEstimateWorkspace,.mcrossEstimatePaper{width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:hidden!important;box-sizing:border-box!important}.mcrossEstimateTable{width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}.mcrossEstimateTable.editable .mcrossEstimateRow{width:780px!important;min-width:780px!important}}
