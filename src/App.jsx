@@ -6358,6 +6358,8 @@ export default function App() {
       measurementType,
       caseCrossFactor,
       currentStorageKey,
+      showEstimate,
+      estimateViewTab,
       updatedAt: new Date().toISOString(),
     }
 
@@ -6390,6 +6392,8 @@ export default function App() {
     measurementType,
     caseCrossFactor,
     currentStorageKey,
+    showEstimate,
+    estimateViewTab,
   ])
   useEffect(() => {
     if (!activeInput) return
@@ -8302,7 +8306,7 @@ return savedEntries
     setIsDirty(false)
     setShowMeasurementCheck(false)
     setShowRoomManagement(false)
-    setShowEstimate(false)
+    setShowEstimate(Boolean(draft.showEstimate))
     setReturnToMeasurementCheck(false)
     setStarted(true)
   }
@@ -8321,7 +8325,7 @@ return savedEntries
     setWorkName(draft.workName || '')
     setSiteMemo(draft.siteMemo || '')
     setLegacyEstimateNotes(Array.isArray(draft.legacyEstimateNotes) ? draft.legacyEstimateNotes : [])
-    setEstimateViewTab('estimate')
+    setEstimateViewTab(draft.estimateViewTab || 'estimate')
     setRequestContent(draft.requestContent || '')
     setRecords(Array.isArray(draft.records) ? draft.records : [])
     setCfRecords(Array.isArray(draft.cfRecords) ? draft.cfRecords : [])
@@ -8352,7 +8356,7 @@ return savedEntries
     setShowSavedList(false)
     setShowMeasurementCheck(false)
     setShowRoomManagement(false)
-    setShowEstimate(false)
+    setShowEstimate(Boolean(draft.showEstimate))
     setReturnToMeasurementCheck(false)
     setShowDraftRecovery(false)
     setIsDirty(true)
