@@ -18,6 +18,7 @@ export default defineConfig({
     react(),
 
     VitePWA({
+      selfDestroying: true,
       registerType: 'prompt',
 
       includeAssets: [
