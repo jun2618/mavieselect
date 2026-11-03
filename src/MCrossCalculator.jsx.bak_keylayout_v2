@@ -1,0 +1,13 @@
+﻿import {useState} from 'react'
+
+export default function MCrossCalculator({open,onClose}){
+ const [display,setDisplay]=useState('0'); const [stored,setStored]=useState(null); const [operator,setOperator]=useState(null); const [fresh,setFresh]=useState(true);
+ if(!open)return null;
+ const calc=(a,b,o)=>o==='+'?a+b:o==='-'?a-b:o==='×'?a*b:o==='÷'?(b===0?0:a/b):b;
+ const num=n=>{setDisplay(v=>fresh?String(n):(v==='0'?String(n):v+String(n)));setFresh(false)};
+ const op=o=>{const n=Number(display);if(stored!==null&&operator&&!fresh){const r=calc(stored,n,operator);setStored(r);setDisplay(String(r))}else setStored(n);setOperator(o);setFresh(true)};
+ const eq=()=>{if(stored===null||!operator)return;setDisplay(String(calc(stored,Number(display),operator)));setStored(null);setOperator(null);setFresh(true)};
+ const ac=()=>{setDisplay('0');setStored(null);setOperator(null);setFresh(true)};
+ return <div className='mcrossCalculatorOverlay' onClick={onClose}><div className='mcrossCalculator' onClick={e=>e.stopPropagation()}><div><strong>電卓</strong><button type='button' onClick={onClose}>×</button></div><div className='mcrossCalculatorDisplay'>{display}</div><div className='mcrossCalculatorKeys'><button onClick={ac}>AC</button><button onClick={()=>op('÷')}>÷</button><button onClick={()=>op('×')}>×</button><button onClick={()=>op('-')}>−</button>{[7,8,9].map(n=><button key={n} onClick={()=>num(n)}>{n}</button>)}<button onClick={()=>op('+')}>＋</button><button onClick={()=>num(4)}>4</button><button onClick={()=>num(5)}>5</button><button onClick={()=>num(6)}>6</button><button onClick={eq}>=</button><button onClick={()=>num(1)}>1</button><button onClick={()=>num(2)}>2</button><button onClick={()=>num(3)}>3</button><button onClick={()=>num(0)}>0</button><button onClick={()=>{num(0);setTimeout(()=>num(0),0)}}>00</button><button onClick={()=>{if(fresh){setDisplay('0.');setFresh(false)}else if(!display.includes('.'))setDisplay(display+'.')}}>.</button><button onClick={eq}>=</button></div></div></div>
+}
+

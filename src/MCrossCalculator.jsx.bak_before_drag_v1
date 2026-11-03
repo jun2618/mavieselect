@@ -1,0 +1,17 @@
+﻿import {useState} from 'react'
+import './MCrossCalculator.css'
+export default function MCrossCalculator({open,onClose}){
+ const [display,setDisplay]=useState('0');const [stored,setStored]=useState(null);const [operator,setOperator]=useState(null);const [fresh,setFresh]=useState(true);
+ if(!open)return null;
+ const fit=v=>{const n=Number(v);if(!Number.isFinite(n))return 'ERROR';return String(Math.round(n*100000000)/100000000)};
+ const calc=(a,b,o)=>o==='+'?a+b:o==='-'?a-b:o==='×'?a*b:o==='÷'?(b===0?NaN:a/b):b;
+ const num=n=>{setDisplay(v=>fresh?String(n):(v==='0'?String(n):v+String(n)));setFresh(false)};
+ const dblzero=()=>{setDisplay(v=>fresh?'0':(v==='0'?'0':v+'00'));setFresh(false)};
+ const decimal=()=>{if(fresh){setDisplay('0.');setFresh(false)}else if(!display.includes('.'))setDisplay(display+'.')};
+ const back=()=>{if(fresh)return;setDisplay(v=>v.length<=1||v==='ERROR'?'0':v.slice(0,-1))};
+ const ac=()=>{setDisplay('0');setStored(null);setOperator(null);setFresh(true)};
+ const op=o=>{const n=Number(display);if(!Number.isFinite(n)){ac();return}if(stored!==null&&operator&&!fresh){const r=calc(stored,n,operator);setStored(r);setDisplay(fit(r))}else setStored(n);setOperator(o);setFresh(true)};
+ const eq=()=>{if(stored===null||!operator)return;const r=calc(stored,Number(display),operator);setDisplay(fit(r));setStored(null);setOperator(null);setFresh(true)};
+ const shown=display==='ERROR'?display:(display.includes('.')?display:Number(display).toLocaleString('ja-JP'));
+ return <div className='mcrossIllustrationOverlay' onClick={onClose}><div className='mcrossIllustrationCalculator' onClick={e=>e.stopPropagation()}><img className='mcrossIllustrationBase' src='/chihuahua-calculator.png' alt='チワワ電卓'/><button type='button' className='mcrossIllustrationClose' onClick={onClose} aria-label='電卓を閉じる'>×</button><div className='mcrossDigitalDisplay' aria-live='polite'>{shown}</div><div className='mcrossIllustrationKeys'><button className='k-ac' onClick={ac} aria-label='全消去'/><button className='k-back' onClick={back} aria-label='一文字戻る'/><button className='k-divide' onClick={()=>op('÷')} aria-label='割る'/><button className='k-multiply' onClick={()=>op('×')} aria-label='掛ける'/><button className='k-7' onClick={()=>num(7)} aria-label='7'/><button className='k-8' onClick={()=>num(8)} aria-label='8'/><button className='k-9' onClick={()=>num(9)} aria-label='9'/><button className='k-minus' onClick={()=>op('-')} aria-label='引く'/><button className='k-4' onClick={()=>num(4)} aria-label='4'/><button className='k-5' onClick={()=>num(5)} aria-label='5'/><button className='k-6' onClick={()=>num(6)} aria-label='6'/><button className='k-plus' onClick={()=>op('+')} aria-label='足す'/><button className='k-1' onClick={()=>num(1)} aria-label='1'/><button className='k-2' onClick={()=>num(2)} aria-label='2'/><button className='k-3' onClick={()=>num(3)} aria-label='3'/><button className='k-0' onClick={()=>num(0)} aria-label='0'/><button className='k-00' onClick={dblzero} aria-label='00'/><button className='k-dot' onClick={decimal} aria-label='小数点'/><button className='k-equals' onClick={eq} aria-label='計算する'/></div></div></div>
+}

@@ -1,0 +1,46 @@
+﻿.mcrossIllustrationOverlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(25,18,13,.62);padding:10px}.mcrossIllustrationCalculator{position:relative;width:min(638px,94vw);aspect-ratio:638/944;max-height:96vh}.mcrossIllustrationBase{display:block;width:100%;height:100%;object-fit:contain}.mcrossIllustrationClose{position:absolute;z-index:8;right:2.5%;top:1.8%;width:8%;aspect-ratio:1;border:2px solid #5c473b;border-radius:50%;background:#fffdf8;color:#3b2b24;font-size:clamp(18px,5vw,32px);line-height:1;box-shadow:0 3px 9px rgba(0,0,0,.25)}.mcrossDigitalDisplay{position:absolute;z-index:5;left:12.2%;top:22.2%;width:76.2%;height:10.7%;display:flex;align-items:center;justify-content:flex-end;box-sizing:border-box;padding:0 4%;overflow:hidden;border-radius:5%;background:#29302a;color:#ddf6df;font-family:'Courier New',monospace;font-size:clamp(32px,9vw,72px);font-weight:700;letter-spacing:.04em;text-shadow:0 0 5px rgba(205,255,216,.7)}.mcrossIllustrationKeys{position:absolute;z-index:6;inset:0}.mcrossIllustrationKeys button{position:absolute;padding:0;border:0;background:transparent;border-radius:20%;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}.mcrossIllustrationKeys button:active{background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 3px rgba(255,255,255,.55)}.k-ac,.k-7,.k-4,.k-1,.k-0{left:8.4%;width:21.6%}.k-back,.k-8,.k-5,.k-2,.k-00{left:31.3%;width:21.6%}.k-divide,.k-9,.k-6,.k-3,.k-dot{left:54.1%;width:21.6%}.k-multiply,.k-minus,.k-plus,.k-equals{left:76.8%;width:15.2%}.k-ac,.k-back,.k-divide,.k-multiply{top:35.2%;height:8.5%}.k-7,.k-8,.k-9,.k-minus{top:44.7%;height:8.6%}.k-4,.k-5,.k-6{top:54.2%;height:8.7%}.k-plus{top:54.1%;height:12.7%}.k-1,.k-2,.k-3{top:63.8%;height:8.7%}.k-0,.k-00,.k-dot{top:73.3%;height:8.7%}.k-equals{top:67.1%;height:18.9%;border-radius:28%}@media(max-width:480px){.mcrossIllustrationOverlay{padding:4px}.mcrossIllustrationCalculator{width:min(638px,98vw)}.mcrossIllustrationClose{right:1.5%;top:1%}}
+
+/* M-CROSS_DIVIDE_POSITION_FIX_V2 */
+.k-divide{left:53.2%!important;width:16.8%!important}
+
+/* M-CROSS_RIGHT_KEYS_POSITION_FIX_V1 */
+.k-multiply,.k-minus,.k-plus,.k-equals{left:74.8%!important}
+
+/* M-CROSS_THIRD_KEYS_POSITION_FIX_V1 */
+.k-9,.k-6,.k-3,.k-dot{left:52.5%!important}
+
+/* M-CROSS_CALCULATOR_CLEAR_BACKGROUND_V1 */
+.mcrossIllustrationOverlay{background:transparent!important;pointer-events:none}.mcrossIllustrationCalculator{pointer-events:auto}
+
+/* M-CROSS_CALCULATOR_DRAG_V1 */
+.mcrossCalculatorDragHandle{position:absolute;z-index:7;left:7%;top:2%;width:82%;height:18%;cursor:grab;touch-action:none}.mcrossCalculatorDragHandle:active{cursor:grabbing}.mcrossIllustrationCalculator{transition:none!important}
+
+/* M-CROSS_DISPLAY_POSITION_FIX_V1 */
+.mcrossDigitalDisplay{top:26%!important;height:10.7%!important}
+
+/* M-CROSS_DISPLAY_ROUND_V1 */
+.mcrossDigitalDisplay{border-radius:22px!important}
+
+/* M-CROSS_DISPLAY_SIZE_FIX_V2 */
+.mcrossDigitalDisplay{left:13.5%!important;width:73%!important;top:26.5%!important;height:9.5%!important;border-radius:20px!important}
+
+/* M-CROSS_DISPLAY_TOP_FINE_V3 */
+.mcrossDigitalDisplay{top:26.2%!important;height:9.8%!important}
+
+/* M-CROSS_DISPLAY_TOP_FINE_V4 */
+.mcrossDigitalDisplay{top:26%!important;height:10%!important}
+
+/* M-CROSS_DISPLAY_TOP_FINE_V5 */
+.mcrossDigitalDisplay{top:25.3%!important;height:10.7%!important}
+
+/* M-CROSS_RIGHT_COLUMN_ALIGN_V2 */
+.k-multiply,.k-minus,.k-plus,.k-equals{left:72.8%!important}.k-multiply{top:36.5%!important}.k-minus{top:45.8%!important}.k-plus{top:55.3%!important}.k-equals{top:68.1%!important}
+
+/* M-CROSS_THIRD_COLUMN_ALIGN_V2 */
+.k-divide,.k-9,.k-6,.k-3,.k-dot{left:50.5%!important;width:19%!important}
+
+/* M-CROSS_THIRD_COLUMN_VERTICAL_FINE_V3 */
+.k-divide{top:36.5%!important}.k-9{top:45.4%!important}.k-6{top:54.6%!important}.k-3{top:63.9%!important}.k-dot{top:73.3%!important}
+
+/* M-CROSS_LEFT_COLUMNS_VERTICAL_FINE_V1 */
+.k-ac,.k-back{top:36.5%!important}.k-7,.k-8{top:45.4%!important}.k-4,.k-5{top:54.6%!important}.k-1,.k-2{top:63.9%!important}.k-0,.k-00{top:73.3%!important}

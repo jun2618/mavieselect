@@ -60,3 +60,11 @@
 /* M-CROSS_ESTIMATE_TOOLBAR_EQUAL_V1_SAFE */
 .mcrossEstimateToolbar{grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:stretch!important}.mcrossEstimateToolbar button{width:100%!important;min-width:0!important;min-height:46px!important;height:100%!important;margin:0!important;padding:7px 10px!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;box-sizing:border-box!important}
 
+
+/* M-CROSS_CALCULATOR_V1 */
+.mcrossCalculatorOverlay{position:fixed;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}.mcrossCalculator{width:min(340px,92vw);background:#f7f2e8;border-radius:24px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35)}.mcrossCalculator>div:first-child{display:flex;justify-content:space-between;align-items:center;font-size:20px;margin-bottom:12px}.mcrossCalculator>div:first-child button{width:40px;height:40px;border-radius:50%;font-size:22px}.mcrossCalculatorDisplay{background:#252a26;color:#fff;border-radius:12px;padding:16px;text-align:right;font-size:34px;font-weight:700;min-height:44px;overflow:hidden}.mcrossCalculatorKeys{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.mcrossCalculatorKeys button{min-width:0;height:58px;border:0;border-radius:14px;background:#fff;font-size:22px;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.15);touch-action:manipulation}.mcrossCalculatorKeys button:active{transform:scale(.95);background:#e8e8e8}.mcrossCalculatorKeys button:nth-child(2),.mcrossCalculatorKeys button:nth-child(3),.mcrossCalculatorKeys button:nth-child(4),.mcrossCalculatorKeys button:nth-child(8){background:#f4b860}.mcrossCalculatorKeys button:last-child{background:#78b98b;color:#fff}
+
+
+.mcrossCalculatorDog{display:block;width:100%;max-height:180px;object-fit:cover;object-position:top;border-radius:16px;margin:0 0 12px}
+
+.mcrossCalculatorDogCrop{height:115px;overflow:hidden;border-radius:16px 16px 0 0;margin-bottom:-8px;position:relative}.mcrossCalculatorDogCrop img{width:100%;height:auto;display:block;transform:translateY(-18px)}

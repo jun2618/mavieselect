@@ -8306,7 +8306,7 @@ return savedEntries
     setIsDirty(false)
     setShowMeasurementCheck(false)
     setShowRoomManagement(false)
-    setShowEstimate(Boolean(draft.showEstimate))
+    setShowEstimate(false)
     setReturnToMeasurementCheck(false)
     setStarted(true)
   }
