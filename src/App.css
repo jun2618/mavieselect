@@ -896,3 +896,7 @@ button.primary[data-work-order-hidden]{display:none!important}
 /* M-CROSS_TABLET_SAVED_ORDER_SCROLL_FINAL_V1_SAFE */
 @media screen and (min-width:701px) and (max-width:1024px){.purchaseOrderExplorerBackdrop{height:100vh!important;max-height:100vh!important;overflow-x:hidden!important;overflow-y:auto!important;align-items:start!important}.purchaseOrderExplorer{height:auto!important;min-height:calc(100vh - 16px)!important;max-height:none!important;overflow:visible!important}.purchaseOrderExplorerBody{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}.purchaseOrderTree,.purchaseOrderPreview{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}}
 
+
+/* M-CROSS_TABLET_PURCHASE_PREVIEW_SCROLL_V2_SAFE */
+@media screen and (min-width:701px) and (max-width:1024px){.purchaseOrderExplorerBackdrop{overflow-y:auto!important}.purchaseOrderExplorer{height:auto!important;max-height:none!important;overflow:visible!important}.purchaseOrderExplorerBody{height:auto!important;max-height:none!important;overflow:visible!important}.purchaseOrderPreview{height:auto!important;min-height:600px!important;max-height:none!important;overflow-y:visible!important;touch-action:pan-y!important}.purchaseOrderPreviewItems{height:auto!important;max-height:none!important;overflow:visible!important}}
+
