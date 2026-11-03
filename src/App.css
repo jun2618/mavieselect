@@ -876,3 +876,5 @@ button.primary[data-work-order-hidden]{display:none!important}
 /* M-CROSS_HIDE_ESTIMATE_VERSION_PANEL_FINAL_V1_SAFE */
 .estimateTab-estimate .estimateVersionPanel,.estimateTab-content .estimateVersionPanel,.estimateTab-order .estimateVersionPanel{display:none!important}
 
+
+/* M-CROSS_SAVED_ORDER_SCROLL_ONLY_V1_SAFE */@media screen and (max-width:720px){.purchaseOrderExplorerBackdrop{overflow-x:hidden!important;overflow-y:auto!important}.purchaseOrderExplorer{height:auto!important;min-height:100vh!important;max-height:none!important;overflow:visible!important}.purchaseOrderExplorerBody{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}.purchaseOrderTree{height:auto!important;max-height:none!important;overflow:visible!important}.purchaseOrderPreview{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}}
