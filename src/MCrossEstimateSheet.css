@@ -68,3 +68,6 @@
 .mcrossCalculatorDog{display:block;width:100%;max-height:180px;object-fit:cover;object-position:top;border-radius:16px;margin:0 0 12px}
 
 .mcrossCalculatorDogCrop{height:115px;overflow:hidden;border-radius:16px 16px 0 0;margin-bottom:-8px;position:relative}.mcrossCalculatorDogCrop img{width:100%;height:auto;display:block;transform:translateY(-18px)}
+
+/* M-CROSS_MOBILE_ESTIMATE_HORIZONTAL_SCROLL_V1 */
+@media screen and (max-width:620px){.mcrossEstimatePaper{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}.mcrossEstimateTable{width:max-content!important;min-width:780px!important}.mcrossEstimateTable.editable .mcrossEstimateRow{width:100%!important}}
