@@ -3,7 +3,6 @@ import { saveExcelToOneDrive } from "./oneDriveExcelStorage.js";
 import { useEffect, useMemo, useRef, useState } from 'react'
 import EriTako from './EriTako.jsx' // M-CROSS_ERI_TAKO_V1_SAFE
 import VoiceGuide from './VoiceGuide.jsx' // M-CROSS_VOICE_GUIDE_FADE_V1_SAFE
-import MCrossCuteNumberPad from './MCrossCuteNumberPad.jsx' // M-CROSS_CUTE_PAD_V1_SAFE
 import MCrossEstimateSheet from './MCrossEstimateSheet.jsx' // M-CROSS_CUTE_ESTIMATE_SHEET_V1_SAFE
 import CostCalculationPage from './CostCalculationPage.jsx'
 import properties from './m-cross-properties.json'
@@ -8701,7 +8700,7 @@ return savedEntries
     ...(galaxyUnlocked ? [['galaxy', 'GALAXY']] : []),
   ]
   /* M-CROSS_COST_ESTIMATE_AMOUNT_V1_SAFE */
-  if(showCostCalculation){const factor=Math.max(0,Number(caseCrossFactor)||Number(pricingSettings.crossFactor)||0);const rawRows=buildEstimateRows(records,cfRecords,softRecords,floorTrimRecords,rooms,factor,pricingSettings);const allRows=openedEstimateRows??applyEstimateEdits(rawRows,estimateEdits);const costEstimateRows=allRows.filter(row=>!estimateEdits[row.exclusionKey||estimateEditKey(row)]?.excluded);const costAdditionalWorks=additionalWorks.filter((item,index)=>!estimateEdits['additionalWork:'+(item.id||index)]?.excluded);const costEstimateAmount=costEstimateRows.reduce((sum,row)=>sum+(Number(row.amount)||0),0)+costAdditionalWorks.reduce((sum,item)=>sum+(Number(item.amount)||(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0);return <><CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"} estimateAmount={Math.round(costEstimateAmount)}/><MCrossCuteNumberPad /></>}
+  if(showCostCalculation){const factor=Math.max(0,Number(caseCrossFactor)||Number(pricingSettings.crossFactor)||0);const rawRows=buildEstimateRows(records,cfRecords,softRecords,floorTrimRecords,rooms,factor,pricingSettings);const allRows=openedEstimateRows??applyEstimateEdits(rawRows,estimateEdits);const costEstimateRows=allRows.filter(row=>!estimateEdits[row.exclusionKey||estimateEditKey(row)]?.excluded);const costAdditionalWorks=additionalWorks.filter((item,index)=>!estimateEdits['additionalWork:'+(item.id||index)]?.excluded);const costEstimateAmount=costEstimateRows.reduce((sum,row)=>sum+(Number(row.amount)||0),0)+costAdditionalWorks.reduce((sum,item)=>sum+(Number(item.amount)||(Number(item.quantity)||0)*(Number(item.unitPrice)||0)),0);return <CostCalculationPage onBack={()=>setShowCostCalculation(false)} company={company||""} propertyId={selectedProperty?.id||""} propertyName={selectedProperty?.name||""} unit={unit||""} workName={workName||"原状回復工事"} estimateAmount={Math.round(costEstimateAmount)}/>}
 
   return (
     <>
@@ -12554,7 +12553,6 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
             </section>
           </div>
         )}
-        <MCrossCuteNumberPad />
         {showSplash && <div className={`splashScreen splash-${theme}`}><strong>M-CROSS</strong><span>{theme === 'cyber' ? 'FIELD MEASUREMENT SYSTEM / READY' : 'MavieSelect Field Measurement'}</span></div>}
         {showGalaxyUnlock && <div className="galaxyUnlock"><small>SECRET THEME</small><strong>GALAXY UNLOCKED</strong><span>★</span></div>}
         {showDraftRecovery && workingDraft && (
