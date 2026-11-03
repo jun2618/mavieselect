@@ -881,6 +881,4 @@ button.primary[data-work-order-hidden]{display:none!important}
 
 /* M-CROSS_PC_SAVED_ORDER_TALL_V1_SAFE */@media screen and (min-width:1025px){.purchaseOrderExplorer{height:calc(100vh - 145px)!important;min-height:620px!important;max-height:none!important}.purchaseOrderExplorerBody{height:calc(100% - 70px)!important;min-height:0!important}.purchaseOrderTree,.purchaseOrderPreview{height:100%!important;min-height:0!important;max-height:none!important;overflow-y:auto!important}}
 
-/* M-CROSS_PULL_REFRESH_ONLY_V2_SAFE */
-html,body{overscroll-behavior-y:none}
 
