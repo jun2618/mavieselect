@@ -56,11 +56,6 @@ export default function EstimateVersionPanel({
         )}
       </div>
 
-      <button className="estimateRevisionButton" type="button" onClick={onCreateRevision}>
-        📑 現在の見積を残して修正版{currentVersion + 1}を作る
-      </button>
-      <small className="estimateVersionHelp">現在の内容を保存してから、同じ内容を引き継いだ次の見積を編集できます。</small>
-
 
     </section>
   )

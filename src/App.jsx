@@ -673,7 +673,7 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
         const surface = (finish === 'color' || finish === 'partial') ? String(record.surfaceName || '').trim() : ''
         const recordMemo = String(record.memo || '').trim()
         const burden = String(record.burden || 'unspecified')
-        const key = [finish, surface, recordMemo, burden].join('||')
+        const productCode = String(record.productCode || '').trim(); const key = [finish, surface, recordMemo, burden, productCode].join('||')
         if (!groups.has(key)) groups.set(key, [])
         groups.get(key).push(record)
       })
@@ -684,6 +684,7 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
         const surface = (finish === 'color' || finish === 'partial') ? String(first.surfaceName || '').trim() : ''
         const inputMemo = String(first.memo || '').trim()
         const burden = String(first.burden || 'unspecified')
+        const productCode = String(first.productCode || '').trim()
         const rawQuantity = groupRecords.reduce((sum, record) => sum + getRecordQuantity(record), 0) * factor
         const quantity = Math.round(rawQuantity * 10) / 10
         if (quantity <= 0) return
@@ -710,6 +711,7 @@ function buildEstimateRows(records, cfRecords, softRecords, floorTrimRecords, ro
           memo: outputMemo,
           category: 'cross',
           burden,
+          productCode,
           quantity,
           unit: 'm',
           rate: quantity > 0 ? amount / quantity : 0,
@@ -3603,6 +3605,8 @@ function LengthMeasurementPage({
   const [length, setLength] = useState('')
   const [count, setCount] = useState('')
   const [memo, setMemo] = useState('')
+  /* M-CROSS_CROSS_PRODUCT_CODE_STEP1_SAFE */
+  const [crossProductCode, setCrossProductCode] = useState('')
   const [activeInput, setActiveInput] = useState('')
 
   /* M-CROSS_CF_MATERIAL_STEP4D3 */
@@ -4126,7 +4130,7 @@ function LengthMeasurementPage({
                   <div>
                     <strong>{countOnly ? 'ソフト巾木登録' : title}</strong>
                     <small>{countOnly ? `${formatQuantity(item.quantity)}枚` : `${Number(item.length).toFixed(2)}m × ${item.count}本`}</small>
-                    {item.memo && <small>メモ：{item.memo}</small>}
+                    {item.productCode && <small>品番：{item.productCode}</small>}{item.memo && <small>メモ：{item.memo}</small>}
                   </div>
                   <b>{formatQuantity(getQuantity(item))}{unit}</b>
                   <button type="button" onClick={() => {
@@ -4228,6 +4232,8 @@ function FinalReviewPage({
   const [voiceInputStatus, setVoiceInputStatus] = useState('')
   const [voiceListening, setVoiceListening] = useState(false)
   const [memo, setMemo] = useState('')
+  /* M-CROSS_CROSS_PRODUCT_CODE_STEP1_SAFE */
+  const [crossProductCode, setCrossProductCode] = useState('')
   const [editingAdditionalWorkId, setEditingAdditionalWorkId] = useState('')
 
   /* M-CROSS_ADDITIONAL_WORK_TAP_EDIT_V3 */
@@ -4814,7 +4820,11 @@ export default function App() {
   const [openedEstimateVersion, setOpenedEstimateVersion] = useState(null)
   /* M-CROSS_VERSION_DISPLAY_FROM_SNAPSHOT_V5_SAFE */
   const [openedEstimateRows, setOpenedEstimateRows] = useState(null)
-  /* M-CROSS_ESTIMATE_VERSIONS_BY_WORK_NAME_V1_SAFE */
+  /* M-CROSS_CURRENT_ESTIMATE_ROWS_V1_SAFE */
+  const [currentEstimateRows,setCurrentEstimateRows]=useState([])
+  /* M-CROSS_ESTIMATE_BASELINE_ROWS_V1_SAFE */
+  const [estimateBaselineRows,setEstimateBaselineRows]=useState([])
+/* M-CROSS_ESTIMATE_VERSIONS_BY_WORK_NAME_V1_SAFE */
   const estimateVersionStorageKey = 'mcross:estimate-versions:' + [company, selectedProperty?.name || '', String(unit || '').trim(), String(workName || '').trim() || '原状回復工事'].join('|')
   const legacyEstimateVersionStorageKey = 'mcross:estimate-versions:' + [company, selectedProperty?.name || '', String(unit || '').trim()].join('|')
   useEffect(() => {
@@ -4840,6 +4850,8 @@ export default function App() {
   const [selectedOrderKeys, setSelectedOrderKeys] = useState([])
   /* M-CROSS_ORDER_CREATION_STEP2_V1_SAFE */
   const [orderDraft, setOrderDraft] = useState(null)
+  /* M-CROSS_ORDER_UNSAVED_GUARD_V1_SAFE */
+  useEffect(()=>{if(!orderDraft)return;const warn=event=>{event.preventDefault();event.returnValue=''};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[orderDraft])
   /* M-CROSS_PURCHASE_ORDER_BRANCH_V1_SAFE */
   const [purchaseOrderBranch, setPurchaseOrderBranch] = useState(null)
   const [pendingPurchaseOrderItems, setPendingPurchaseOrderItems] = useState([])
@@ -6182,6 +6194,8 @@ export default function App() {
   const [height, setHeight] = useState('')
   const [count, setCount] = useState('')
   const [memo, setMemo] = useState('')
+  /* M-CROSS_CROSS_PRODUCT_CODE_STEP1_SAFE */
+  const [crossProductCode, setCrossProductCode] = useState('')
   /* M-CROSS_CROSS_FINISH_STEP1_V4_SAFE */
   const [crossFinish, setCrossFinish] = useState('normal')
   const [surfaceName, setSurfaceName] = useState('')
@@ -8627,6 +8641,7 @@ return savedEntries
       crossFinish: measurementType === '壁' ? crossFinish : 'normal',
       surfaceName: measurementType === '壁' && (crossFinish === 'color' || crossFinish === 'partial') ? surfaceName.trim() : '',
       burden: crossBurden,
+      productCode: crossProductCode.trim(),
       memo: memo.trim(),
     }])
     markRoomUnconfirmed(room)
@@ -10638,7 +10653,7 @@ return savedEntries
               
               <div className="saveActionWithFeedback">
                 <button className="saveButton" type="button" onClick={() => {
-                  const saved = saveCurrentData()
+                  if(orderDraft&&!window.confirm("⚠ 作成途中の発注書があります。`n`n「案件を保存」では発注書は下書き保存されません。`n案件だけ保存しますか？"))return; const saved = saveCurrentData()
                   if (saved) {
                     const now = new Date()
                     const time = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
@@ -10647,7 +10662,7 @@ return savedEntries
                   } else {
                     setSaveFeedback('保存できませんでした')
                   }
-                }}>保存する</button>
+                }}>💾 案件を保存</button>
                 {saveFeedback && <div className={`saveFeedbackMessage ${saveFeedback.startsWith('✓') ? 'success' : 'error'}`} role="status">{saveFeedback}</div>}
               </div>
               
@@ -10665,10 +10680,7 @@ return savedEntries
               }}>📊 見積・採寸を一括出力</button>              <button
                 className="secondaryButton"
                 type="button"
-                onClick={() => {
-                  setShowEstimate(previous => !previous)
-                  setShowRoomManagement(false)
-                }}
+                onClick={() => {if(orderDraft&&!window.confirm("⚠ 作成途中の発注書があります。\n\nこの発注書はまだ下書き保存されていません。\n保存せず工事内容登録へ戻りますか？"))return;if(orderDraft)setOrderDraft(null);setShowEstimate(previous => !previous);setShowRoomManagement(false)}}
               >
                 {showEstimate ? '← 工事内容登録へ戻る' : '💰 見積・発注書'}
               </button>
@@ -10768,10 +10780,10 @@ return savedEntries
 
 
               return (
-                <section className={"card estimatePageShell estimateTab-"+estimateViewTab}><nav className="estimatePageTabs"><button type="button" className={estimateViewTab==="estimate"?"active":""} onClick={()=>{setEstimateViewTab("estimate");window.scrollTo({top:0,behavior:"auto"})}}>📄 見積書</button><button type="button" className={estimateViewTab==="content"?"active":""} onClick={()=>{setEstimateViewTab("content");window.scrollTo({top:0,behavior:"auto"})}}>✏️ 見積内容</button><button type="button" className={estimateViewTab==="order"?"active":""} onClick={()=>{setEstimateViewTab("order");window.scrollTo({top:0,behavior:"auto"})}}>📦 発注</button></nav>
+                <section className={"card estimatePageShell estimateTab-"+estimateViewTab}><nav className="estimatePageTabs"><button type="button" className={estimateViewTab==="estimate"?"active":""} onClick={()=>{if(orderDraft&&!window.confirm("⚠ 発注書がまだ下書き保存されていません。`n`n保存せず見積書へ移動しますか？"))return;setOrderDraft(null);setEstimateViewTab("estimate");window.scrollTo({top:0,behavior:"auto"})}}>📄 見積書</button><button type="button" className={estimateViewTab==="content"?"active":""} onClick={()=>{if(orderDraft&&!window.confirm("⚠ 発注書がまだ下書き保存されていません。`n`n保存せず見積内容へ移動しますか？"))return;setOrderDraft(null);setEstimateViewTab("content");window.scrollTo({top:0,behavior:"auto"})}}>✏️ 見積内容</button><button type="button" className={estimateViewTab==="order"?"active":""} onClick={()=>{setEstimateViewTab("order");window.scrollTo({top:0,behavior:"auto"})}}>📦 発注</button></nav>
                   <h2>{selectedProperty?.name} {unit}号室{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
-                  <MCrossEstimateSheet company={company||""} propertyName={selectedProperty?.name||""} unit={unit||""} address={selectedProperty?.address||""} workName={workName||"原状回復工事"} rows={orderCandidateRows} propertyAccess={liveSelectedProperty ? {/* M-CROSS_WORK_COPY_ACCESS_FALLBACK_V1_SAFE */ autoLock:liveSelectedProperty.autoLock||selectedProperty?.autoLock||'',keyBox:liveSelectedProperty.keyBox||selectedProperty?.keyBox||'',joiner:liveSelectedProperty.joiner||selectedProperty?.joiner||'',myLock:liveSelectedProperty.myLock||selectedProperty?.myLock||'',entranceOpen:liveSelectedProperty.entranceOpen||selectedProperty?.entranceOpen||''} : {autoLock:selectedProperty?.autoLock||'',keyBox:selectedProperty?.keyBox||'',joiner:selectedProperty?.joiner||'',myLock:selectedProperty?.myLock||'',entranceOpen:selectedProperty?.entranceOpen||''}} onGoMeasurement={()=>setShowEstimate(false)} onGoOrder={()=>document.querySelector(".orderSelectionPanel")?.scrollIntoView({behavior:"smooth",block:"start"})} onCreateServiceOrder={picked=>{/* M-CROSS_GREEN_VERTICAL_SERVICE_ORDER_V2_SAFE */ const items=(Array.isArray(picked)?picked:[]).map((row,index)=>{const text=String(row.name||row.label||'');const category=String(row.category||(/CF貼/i.test(text)?'cf':/クロス/.test(text)?'cross':'service'));const sourceQuantity=Math.max(0,Number(row.quantity)||0);const factor=['cross','cf'].includes(category)?0.9:1;return {id:'selected-service-'+Date.now()+'-'+index,sourceKey:String(row.sourceKey||row.id||index),label:text,parts:Array.isArray(row.parts)?row.parts.map(v=>String(v||'')):[],memo:String(row.memo||''),productCode:String(row.spec||row.productCode||''),category,sourceQuantity,factor,orderQuantity:Math.round(sourceQuantity*factor*100)/100,unit:String(row.unit||''),rate:Number(row.rate||0),amount:sourceQuantity*Number(row.rate||0),orderRate:''}});setSelectedOrderKeys(items.map(item=>item.sourceKey));setOrderDraft({contractor:'',contractorId:'',orderMode:'service',items});setPendingPurchaseOrderItems([]);setPurchaseOrderBranch(null);window.setTimeout(()=>document.querySelector('.serviceOrderPanel')?.scrollIntoView({behavior:'smooth',block:'start'}),80)}} onOpenEstimateExcel={()=>{try{const key=currentStorageKey||getSaveKey(company,selectedProperty,unit,workName);const saved=JSON.parse(localStorage.getItem(key)||"null");const url=String(saved?.excelUrl||"").trim();if(url){window.open(url,"_blank","noopener,noreferrer");return}window.alert("この案件にはExcelがまだ保存されていません。`n先に「Excel書式で保存」を押してください。")}catch(e){console.error(e);window.alert("Excelを開けませんでした。")}}} onExportEstimate={(screenRows)=>{const rowsForCombined=Array.isArray(screenRows)?screenRows:[];downloadCombinedEstimateMeasurementExcel({company,propertyName:selectedProperty?.name||"",address:selectedProperty?.address||"",unit,workName:workName||"原状回復工事",storageKey:currentStorageKey||getSaveKey(company,selectedProperty,unit,workName),records,cfRecords,cfMaterialGroups,softRecords,floorTrimRecords,additionalWorks,legacyEstimateNotes},rowsForCombined,estimateCopyFormat,[],true) /* M-CROSS_SCREEN_ROWS_EXCEL_V1_SAFE */}}/>
-                  {/* M-CROSS_COST_BUTTON_IN_PROJECT_V75_SAFE */}<button type="button" className="primary" style={{width:"100%",minHeight:"52px",marginBottom:"12px",fontWeight:900}} onClick={()=>setShowCostCalculation(true)}>💰 この物件の原価計算</button><section className="orderSelectionPanel easyOrderPanel" aria-label="かんたん発注">
+                  <MCrossEstimateSheet company={company||""} propertyName={selectedProperty?.name||""} unit={unit||""} address={selectedProperty?.address||""} workName={workName||"原状回復工事"} rows={orderCandidateRows} propertyAccess={liveSelectedProperty ? {/* M-CROSS_WORK_COPY_ACCESS_FALLBACK_V1_SAFE */ autoLock:liveSelectedProperty.autoLock||selectedProperty?.autoLock||'',keyBox:liveSelectedProperty.keyBox||selectedProperty?.keyBox||'',joiner:liveSelectedProperty.joiner||selectedProperty?.joiner||'',myLock:liveSelectedProperty.myLock||selectedProperty?.myLock||'',entranceOpen:liveSelectedProperty.entranceOpen||selectedProperty?.entranceOpen||''} : {autoLock:selectedProperty?.autoLock||'',keyBox:selectedProperty?.keyBox||'',joiner:selectedProperty?.joiner||'',myLock:selectedProperty?.myLock||'',entranceOpen:selectedProperty?.entranceOpen||''}} onGoMeasurement={()=>setShowEstimate(false)} onGoOrder={()=>document.querySelector(".orderSelectionPanel")?.scrollIntoView({behavior:"smooth",block:"start"})} onRowsChange={setCurrentEstimateRows} onSourceRowsChange={setEstimateBaselineRows} onRefreshMeasurement={()=>{setEstimateEdits({});try{localStorage.removeItem(estimateEditStorageKey)}catch{};setOpenedEstimateRows(rawEstimateRows.map(row=>({...row})));setOpenedEstimateVersion(null);setIsDirty(true);setSaveStatus("最新の採寸・工事内容で見積を再作成しました");return orderCandidateRows.map(row=>({...row}))}} onCreateServiceOrder={picked=>{/* M-CROSS_GREEN_VERTICAL_SERVICE_ORDER_V2_SAFE */ const items=(Array.isArray(picked)?picked:[]).map((row,index)=>{const text=String(row.name||row.label||'');const category=String(row.category||(/CF貼/i.test(text)?'cf':/クロス/.test(text)?'cross':'service'));const sourceQuantity=Math.max(0,Number(row.quantity)||0);const factor=['cross','cf'].includes(category)?0.9:1;return {id:'selected-service-'+Date.now()+'-'+index,sourceKey:String(row.sourceKey||row.id||index),label:text,parts:Array.isArray(row.parts)?row.parts.map(v=>String(v||'')):[],memo:String(row.memo||''),productCode:String(row.spec||row.productCode||''),category,sourceQuantity,factor,orderQuantity:Math.round(sourceQuantity*factor*100)/100,unit:String(row.unit||''),rate:Number(row.rate||0),amount:sourceQuantity*Number(row.rate||0),orderRate:''}});setSelectedOrderKeys(items.map(item=>item.sourceKey));setOrderDraft({contractor:'',contractorId:'',orderMode:'service',items});setPendingPurchaseOrderItems([]);setPurchaseOrderBranch(null);setEstimateViewTab("order");window.setTimeout(()=>window.scrollTo({top:0,behavior:"auto"}),0)}} onOpenEstimateExcel={()=>{try{const key=currentStorageKey||getSaveKey(company,selectedProperty,unit,workName);const saved=JSON.parse(localStorage.getItem(key)||"null");const url=String(saved?.excelUrl||"").trim();if(url){window.open(url,"_blank","noopener,noreferrer");return}window.alert("この案件にはExcelがまだ保存されていません。`n先に「Excel書式で保存」を押してください。")}catch(e){console.error(e);window.alert("Excelを開けませんでした。")}}} onExportEstimate={(screenRows)=>{const rowsForCombined=Array.isArray(screenRows)?screenRows:[];downloadCombinedEstimateMeasurementExcel({company,propertyName:selectedProperty?.name||"",address:selectedProperty?.address||"",unit,workName:workName||"原状回復工事",storageKey:currentStorageKey||getSaveKey(company,selectedProperty,unit,workName),records,cfRecords,cfMaterialGroups,softRecords,floorTrimRecords,additionalWorks,legacyEstimateNotes},rowsForCombined,estimateCopyFormat,[],true) /* M-CROSS_SCREEN_ROWS_EXCEL_V1_SAFE */}}/>
+                  {/* M-CROSS_COST_BUTTON_IN_PROJECT_V75_SAFE */}<button type="button" className="primary" style={{width:"100%",minHeight:"52px",marginBottom:"12px",fontWeight:900}} onClick={()=>setShowCostCalculation(true)}>💰 この物件の原価計算</button><section className="orderSelectionPanel easyOrderPanel" aria-label="かんたん発注" style={orderDraft?{display:"none"}:undefined}>
                     {/* M-CROSS_EASY_ORDER_ENTRY_V3_SAFE */}<div className="easyOrderTitle"><small>SMART ORDER</small><strong>📦 かんたん発注</strong><span>内装工事はまとめて選択。必要な時だけ個別変更できます。</span></div>
                     <div className="orderSelectionQuickButtons">
                       <button type="button" className="orderQuickPrimary" onClick={() => setSelectedOrderKeys(finishContractorKeys)}>① 内装工事をまとめる</button>
@@ -10824,17 +10836,8 @@ return savedEntries
                       setShowMaterialSupplierPicker(false)
                       setShowMaterialPriceBook(false)
                       setCopiedMaterialRate('')
-                      setMaterialOrderItems([{
-                        id:'material-blank-'+Date.now(),
-                        materialType:'other',
-                        productCode:'',
-                        description:'',
-                        unitPrice:'',
-                        quantity:1,
-                        unit:''
-                      }])
-                      setPurchaseOrderBranch('material')
-                      setSaveStatus('空の材料発注書を作成しました')
+                      const now=Date.now();const crossItems=crossProductReferences.map((item,index)=>({id:"material-cross-"+now+"-"+index,materialType:"cross",productCode:String(item.code||"").trim(),description:[...new Set((item.rows||[]).map(row=>String(row.room||(Array.isArray(row.parts)?row.parts[0]:"")||"").trim()).filter(Boolean))].join("・"),quantity:normalizeMaterialQuantity(item.quantity),unit:"m",unitPrice:""}));const cfItems=cfCutReferences.map((item,index)=>({id:"material-cf-"+now+"-"+index,materialType:"cf",productCode:"",description:[item.room||"CF",item.memo||""].filter(Boolean).join(" "),quantity:normalizeMaterialQuantity(item.length),unit:"m",unitPrice:""}));const softItems=Number(softReferenceQuantity||0)>0?[{id:"material-soft-"+now,materialType:"soft",productCode:"",description:"ソフト巾木",quantity:normalizeMaterialQuantity(softReferenceQuantity),unit:"枚",unitPrice:""}]:[];setMaterialOrderItems([...crossItems,...cfItems,...softItems]);setPurchaseOrderBranch('material')
+                      setSaveStatus('採寸データから材料明細を作成しました')
                       window.setTimeout(()=>document.querySelector('.materialMobilePanel')?.scrollIntoView({behavior:'smooth',block:'start'}),60)
                     }}>📦 材料発注を開く</button>
                   </section>
@@ -11068,7 +11071,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                                 id: 'material-cross-' + now + '-' + index,
                                 materialType: 'cross',
                                 productCode: String(item.code || '').trim(),
-                                description: '',
+                                description: [...new Set((item.rows||[]).map(row=>String(row.room||(Array.isArray(row.parts)?row.parts[0]:'')||'').trim()).filter(Boolean))].join('・'),
                                 quantity: normalizeMaterialQuantity(item.quantity),
                                 unit: 'm'
                               }))
@@ -11087,7 +11090,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                                     id: 'material-cross-no-code-' + now,
                                     materialType: 'cross',
                                     productCode: '',
-                                    description: '',
+                                    description: [...new Set(crossProductReferences.filter(item=>!String(item.code||'').trim()).flatMap(item=>item.rows||[]).map(row=>String(row.room||(Array.isArray(row.parts)?row.parts[0]:'')||'').trim()).filter(Boolean))].join('・'),
                                     quantity: normalizeMaterialQuantity(noCodeCrossQuantity),
                                     unit: 'm'
                                   }]
@@ -11141,8 +11144,8 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                     <section className="orderDraftPanel materialMobilePanel" aria-label="材料発注">
                       {/* M-CROSS_SIMPLIFY_MATERIAL_ORDER_SCREEN_V1_SAFE */}
                       <div className="materialSimpleSteps" aria-label="材料発注の手順">
-                        <strong>材料発注は3ステップ</strong>
-                        <span>1. 発注先を選ぶ　2. 数量・単価を確認　3. 材料発注書を保存</span>
+                        <strong>📦 材料発注書</strong>
+                        <span>発注先を選び、注文する材料を確認して保存します。</span>
                       </div>
                       {/* M-CROSS_MATERIAL_MOBILE_LAYOUT_V42_SAFE */}
                       {/* M-CROSS_MATERIAL_MOBILE_CYBER_CSS_V2_SAFE */}
@@ -11777,7 +11780,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                       {/* M-CROSS_ORDER_STEP2_GROUP_RATES_V2_SAFE */}
                       <div className="orderDraftHeader">
                         <div><small>ORDER STEP 2</small><h3>{(orderDraft.orderMode||'service')==='service'?'施工発注書作成':'発注先・発注掛率'}</h3></div>
-                        <button type="button" onClick={() => setOrderDraft(null)}>× 閉じる</button>
+                        <button type="button" onClick={()=>{if(!window.confirm("⚠ この発注書はまだ下書き保存されていません。`n`n保存せず閉じますか？"))return;setOrderDraft(null)}}>× 閉じる</button>
                       </div>
                       {/* M-CROSS_SERVICE_ORDER_TEMPLATE_V6_SAFE */}
                       {(orderDraft.orderMode||'service')==='service'&&<>
@@ -11826,7 +11829,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                         <div><strong>材料発注</strong><small>見積明細とは別に、品番・数量・単位・単価を自由入力します。</small></div>
                         <div className="materialOrderToolbarButtons">
                           <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[{id:'material-'+Date.now(),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>空の発注書にする</button>
-                          <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[...previous.items,{id:'material-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>＋ 空行追加</button>
+                          <button type="button" onClick={()=>setOrderDraft(previous=>({...previous,items:[...previous.items,{id:'material-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),label:'',memo:'',category:'material',sourceQuantity:0,factor:1,orderQuantity:1,unit:'m',orderRate:'',rate:0,amount:0}]}))}>✏️ 注文品を手入力</button>
                         </div>
                       </section>}
                       {/* M-CROSS_MATERIAL_ORDER_REFERENCE_V5_SAFE */}
@@ -12468,7 +12471,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                           </section>
                         )}
                         <label>
-                          <span>メモ</span>
+                          <span>品番・商品名</span><input type="text" value={crossProductCode} onChange={event=>{setCrossProductCode(event.target.value);markUnsaved()}} placeholder="例：SP-9701" /></label><label><span>メモ</span>
                           <input
                             ref={memoInputRef}
                             className="memoInput"
@@ -12498,7 +12501,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                               <small>{Number(item.height).toFixed(2)}m × {item.count}本</small>
                               {item.type === '壁' && (item.crossFinish === 'color' || item.crossFinish === 'partial') && item.surfaceName && <small>{item.crossFinish === 'partial' ? '貼替場所' : '施工面'}：{item.surfaceName}</small>}
                               {item.type === '壁' && <small>負担：{item.burden === 'tenant' ? '借主' : item.burden === 'split' ? '按分' : '貸主'}</small>}
-                              {item.memo && <small>メモ：{item.memo}</small>}
+                              {item.productCode && <small>品番：{item.productCode}</small>}{item.memo && <small>メモ：{item.memo}</small>}
                             </div>
                             <b>{formatQuantity(getRecordQuantity(item))}m</b>
                             <button type="button" onClick={() => deleteCrossRecord(item.id)} aria-label={`${room}の${item.type}の登録を削除`}>×</button>
