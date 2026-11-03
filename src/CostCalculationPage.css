@@ -181,3 +181,7 @@
 /* M-CROSS_INTERNAL_STAFF_PLAIN_V1_SAFE */
 .cc-section.blue .cc-row select{appearance:none!important;-webkit-appearance:none!important;background:transparent!important;background-image:none!important;border:0!important;border-radius:0!important;pointer-events:none!important;color:#14203c!important;text-align:center!important;padding:0 2px!important;font-weight:700!important}.cc-section.blue .cc-row select::-ms-expand{display:none!important}
 
+
+/* M-CROSS_COST_STAFF_CLEAR_V1_SAFE */
+.ccInternalStaffPicker select{color:#14203c!important;-webkit-text-fill-color:#14203c!important;opacity:1!important;font-weight:800!important;background:#fff!important}.ccInternalStaffPicker select option{color:#14203c!important;background:#fff!important;font-weight:700!important}.ccInternalStaffPicker select:invalid{color:#14203c!important}
+

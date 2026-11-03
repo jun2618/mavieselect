@@ -56,3 +56,7 @@
 /* M-CROSS_MOBILE_ESTIMATE_SCROLL_V1_SAFE */
 @media screen and (max-width:620px){.mcrossEstimateWorkspace,.mcrossEstimatePaper{position:static!important;height:auto!important;min-height:0!important;max-height:none!important;overflow-y:visible!important}.mcrossEstimateWorkspace{display:block!important}.mcrossEstimatePaper{overflow-x:hidden!important}.mcrossEstimateNavigation{position:static!important}}
 
+
+/* M-CROSS_ESTIMATE_TOOLBAR_EQUAL_V1_SAFE */
+.mcrossEstimateToolbar{grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:stretch!important}.mcrossEstimateToolbar button{width:100%!important;min-width:0!important;min-height:46px!important;height:100%!important;margin:0!important;padding:7px 10px!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;box-sizing:border-box!important}
+
