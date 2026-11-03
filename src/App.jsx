@@ -3,6 +3,7 @@ import { saveExcelToOneDrive } from "./oneDriveExcelStorage.js";
 import { useEffect, useMemo, useRef, useState } from 'react'
 import EriTako from './EriTako.jsx' // M-CROSS_ERI_TAKO_V1_SAFE
 import VoiceGuide from './VoiceGuide.jsx' // M-CROSS_VOICE_GUIDE_FADE_V1_SAFE
+import MCrossCuteNumberPad from './MCrossCuteNumberPad.jsx' // M-CROSS_CUTE_PAD_V1_SAFE
 import MCrossEstimateSheet from './MCrossEstimateSheet.jsx' // M-CROSS_CUTE_ESTIMATE_SHEET_V1_SAFE
 import CostCalculationPage from './CostCalculationPage.jsx'
 import properties from './m-cross-properties.json'
@@ -12553,6 +12554,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
             </section>
           </div>
         )}
+        <MCrossCuteNumberPad />
         {showSplash && <div className={`splashScreen splash-${theme}`}><strong>M-CROSS</strong><span>{theme === 'cyber' ? 'FIELD MEASUREMENT SYSTEM / READY' : 'MavieSelect Field Measurement'}</span></div>}
         {showGalaxyUnlock && <div className="galaxyUnlock"><small>SECRET THEME</small><strong>GALAXY UNLOCKED</strong><span>★</span></div>}
         {showDraftRecovery && workingDraft && (
