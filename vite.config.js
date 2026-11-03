@@ -18,7 +18,7 @@ export default defineConfig({
     react(),
 
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
 
       includeAssets: [
         'pwa-192x192.png',
@@ -61,8 +61,6 @@ export default defineConfig({
 
       workbox: {
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
         navigateFallback: '/index.html',
       },
     }),
