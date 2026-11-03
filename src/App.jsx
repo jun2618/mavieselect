@@ -8070,7 +8070,7 @@ return savedEntries
   }
 
   function openSavedEntry(entry) {
-    requestNavigation(() => { loadSavedEntry(entry); setShowEstimate(true); setShowRoomManagement(false); window.setTimeout(() => window.scrollTo({ top:0, behavior:'auto' }),0) })
+    requestNavigation(() => { loadSavedEntry(entry); setShowEstimate(true); setShowRoomManagement(false); window.setTimeout(() => document.querySelector('.estimatePageShell')?.scrollIntoView({behavior:'auto',block:'start'}),80) })
   }
 
   function overwriteSavedEntry(entry) {
