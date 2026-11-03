@@ -8030,7 +8030,7 @@ return savedEntries
     setShowSavedList(false)
     setShowMeasurementCheck(false)
     setShowRoomManagement(false)
-    setShowEstimate(false)
+    setShowEstimate(true)
     setReturnToMeasurementCheck(false)
     setStarted(true)
   }
@@ -8056,7 +8056,7 @@ return savedEntries
   }
 
   function openSavedEntry(entry) {
-    requestNavigation(() => loadSavedEntry(entry))
+    requestNavigation(() => { loadSavedEntry(entry); setShowEstimate(true); setShowRoomManagement(false); window.setTimeout(() => window.scrollTo({ top:0, behavior:'auto' }),0) })
   }
 
   function overwriteSavedEntry(entry) {
