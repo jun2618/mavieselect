@@ -1,3 +1,4 @@
+import { saveExcelToOneDrive } from "./oneDriveExcelStorage.js";
 ﻿import ExcelDocumentViewer from "./ExcelDocumentViewer.jsx";
 import { useEffect, useMemo, useRef, useState } from 'react'
 import EriTako from './EriTako.jsx' // M-CROSS_ERI_TAKO_V1_SAFE
@@ -1117,7 +1118,7 @@ async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, add
         for(const c of ['A','B','C','D','E','F','G','H','I','J','K'])ws.cell(c+r).value('')
       }
     }
-    ws.cell('B5').value(entry.company?entry.company+'　御中':''); ws.cell('J5').value(new Date()).style('numberFormat','yyyy年m月d日'); ws.cell('D13').value(entry.propertyName||''); ws.cell('F13').value(entry.unit||''); ws.cell('G13').value(entry.unit?'号室':''); ws.cell('D14').value(entry.address||'')
+    ws.cell('B5').value(entry.company?entry.company+'　御中':''); ws.cell('B6').value(''); ws.cell('J5').value(new Date()).style('numberFormat','yyyy年m月d日'); ws.cell('D13').value(entry.propertyName||''); ws.cell('F13').value(entry.unit||''); ws.cell('G13').value(entry.unit?'号室':''); ws.cell('D14').value(entry.address||'')
     for(let r=23;r<=estimateLastRow;r++){try{const rg=ws.range('C'+r+':G'+r);if(rg.merged())rg.merged(false)}catch{};for(const c of ['C','D','E','F','G','H','I','J','K'])ws.cell(c+r).value('')}
     const cv=v=>{if(v===''||v==null)return '';const n=Number(v);return Number.isFinite(n)?n:v}
     out.forEach((row,i)=>{
@@ -1205,7 +1206,7 @@ async function downloadCombinedEstimateMeasurementExcel(entry, rows, format, add
     addSheet('床見切り',['部屋1','部屋2','カラー','数量'],(entry.floorTrimRecords||[]).map(r=>[r.roomA||'',r.roomB||'',r.color||'',Number(r.quantity||0)]))
     addSheet('その他工事',['部屋','工事内容','メモ','数量','単位','単価','金額'],(entry.additionalWorks||[]).map(r=>[r.room||'',r.work||'',r.memo||'',Number(r.quantity||0),r.unit||'',Number(r.unitPrice||0),Number(r.amount||(Number(r.quantity)||0)*(Number(r.unitPrice)||0))]))
     if(estimateOnly){workbook.sheets().slice().forEach(sh=>{if(sh.name()!=='見積書')workbook.deleteSheet(sh.name())})}
-    const output=await workbook.outputAsync(),blob=output instanceof Blob?output:new Blob([output],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),link=document.createElement('a'),safe=[entry.propertyName||'物件',entry.unit?entry.unit+'号室':''].filter(Boolean).join('_').replace(/[\/:*?"<>|]/g,'_');link.href=url;link.download=safe+'_見積採寸.xlsx';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url)
+    const output=await workbook.outputAsync(),blob=output instanceof Blob?output:new Blob([output],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),link=document.createElement('a'),safe=[entry.propertyName||'物件',entry.unit?entry.unit+'号室':''].filter(Boolean).join('_').replace(/[\/:*?"<>|]/g,'_');/* M-CROSS_ESTIMATE_ONEDRIVE_AUTO_SAVE_V1_SAFE */const fileName=safe+'_工事内容.xlsx';link.href=url;link.download=fileName;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);try{const now=new Date(),stamp=now.getFullYear()+String(now.getMonth()+1).padStart(2,"0")+String(now.getDate()).padStart(2,"0")+"_"+String(now.getHours()).padStart(2,"0")+String(now.getMinutes()).padStart(2,"0")+String(now.getSeconds()).padStart(2,"0"),cloudFileName=fileName.replace(/\.xlsx$/i,"_"+stamp+".xlsx");const saved=await saveExcelToOneDrive(blob,entry,cloudFileName);if(entry.storageKey&&saved?.webUrl){const current=JSON.parse(localStorage.getItem(entry.storageKey)||"{}");localStorage.setItem(entry.storageKey,JSON.stringify({...current,excelUrl:saved.webUrl,excelOneDriveItemId:saved.id||"",updatedAt:new Date().toISOString()}))}window.alert("Excelをダウンロードし、OneDriveにも保存しました。")}catch(cloudError){console.error(cloudError);window.alert("Excelはダウンロードしましたが、OneDrive保存に失敗しました。\n"+(cloudError?.message||String(cloudError)))}
   } catch(error){console.error(error);window.alert(error instanceof Error?error.message:'見積・採寸Excelを出力できませんでした。')}
 }
 
@@ -2325,7 +2326,7 @@ const styles = `
   .reviewTotal span { display:block; color:#8a7b8d; font-size:13px; font-weight:800; }
   .reviewTotal strong { display:block; margin-top:5px; color:#cf716f; font-size:23px; }
   .additionalWorkForm { margin-top:16px; padding:16px; border:1px dashed #efc7b4; border-radius:20px; background:#fffaf5; }
-  .additionalWorkGrid { display:grid; grid-template-columns:1fr 90px 90px; gap:10px; }
+  .additionalWorkGrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; } .additionalWorkGrid label:nth-child(4){grid-column:1 / span 2;} .additionalWorkGrid label:nth-child(5){grid-column:3;} .additionalWorkGrid label:nth-child(5) input{width:100%;}
   .commonWorkButtons { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 16px; }
   .additionalWorkItem { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:10px; align-items:center; padding:14px 0; border-bottom:1px solid #eee5ec; }
   .additionalWorkItem:last-child { border-bottom:0; }
@@ -4740,7 +4741,11 @@ export default function App() {
 
   const [unit, setUnit] = useState('')
   /* M-CROSS_WORK_NAME_V7_EXACT */
-  const [workName, setWorkName] = useState('原状回復工事')
+  const [workName, setWorkName] = useState('')
+  /* M-CROSS_WORK_NAME_MASTER_V1_SAFE */
+  const workNameMasterKey='mcross_work_name_master_v1'
+  const defaultWorkNames=['原状回復工事','内装工事','修繕工事','設備工事']
+  const [workNameMaster,setWorkNameMaster]=useState(()=>{try{const v=JSON.parse(localStorage.getItem(workNameMasterKey)||'null');return Array.isArray(v)&&v.length?v:defaultWorkNames}catch{return defaultWorkNames}})
   const [siteMemo, setSiteMemo] = useState('')
   /* M-CROSS_LEGACY_MEMO_TAB_FINAL_V1 */
   const [legacyEstimateNotes, setLegacyEstimateNotes] = useState([])
@@ -7992,7 +7997,7 @@ return savedEntries
     setPropertySearch(entry.propertyName || '')
     setSelectedProperty({ name: entry.propertyName || '', address: entry.address || '' })
     setUnit(entry.unit || '')
-    setWorkName(entry.workName || '原状回復工事')
+    setWorkName(entry.workName || '')
     setSiteMemo(entry.siteMemo || '')
     setLegacyEstimateNotes(Array.isArray(entry.legacyEstimateNotes) ? entry.legacyEstimateNotes : [])
     setEstimateViewTab('estimate')
@@ -8179,7 +8184,7 @@ return savedEntries
     setPropertySearch('')
     setSelectedProperty(null)
     setUnit('')
-    setWorkName('原状回復工事')
+    setWorkName('')
     setSiteMemo('')
     setRequestContent('')
     setCurrentStorageKey('')
@@ -8225,7 +8230,7 @@ return savedEntries
   }
 
   function startMeasurement() {
-    if (!String(workName || '').trim()) { window.alert('工事名を入力してください。'); return }
+    
     const storageKey = getSaveKey(company, selectedProperty, unit, workName)
     setCurrentStorageKey(storageKey)
 
@@ -8294,7 +8299,7 @@ return savedEntries
       address: draft.address || '',
     })
     setUnit(draft.unit || '')
-    setWorkName(draft.workName || '原状回復工事')
+    setWorkName(draft.workName || '')
     setSiteMemo(draft.siteMemo || '')
     setLegacyEstimateNotes(Array.isArray(draft.legacyEstimateNotes) ? draft.legacyEstimateNotes : [])
     setEstimateViewTab('estimate')
@@ -8710,7 +8715,7 @@ return savedEntries
 .estimateCheckPanel ul{margin:0;padding-left:20px}
 .estimateCheckPanel li{margin:5px 0;line-height:1.45}
 .estimateCheckPanel p{margin:0;line-height:1.5}
-.estimateCheckPanel small{opacity:.7;font-size:11px;line-height:1.45}
+.estimateCheckPanel small{opacity:.7;font-size:11px;line-height:1.45}@media(max-width:620px){.estimateCheckPanel{gap:3px!important;margin:5px 0!important;padding:6px 9px!important;border-radius:10px!important}.estimateCheckPanel.allClear p,.estimateCheckPanel.allClear>small{display:none!important}.estimateCheckPanel.allClear{min-height:0!important}.estimateCheckHeader strong{font-size:12px!important}.estimateCheckHeader span{font-size:10px!important}}
 .theme-dark .estimateCheckPanel,.theme-cyber .estimateCheckPanel,.theme-luxury .estimateCheckPanel,.theme-retro .estimateCheckPanel,.theme-galaxy .estimateCheckPanel{background:rgba(5,12,24,.76)}
 `}</style>
       <style>{`
@@ -9297,7 +9302,7 @@ return savedEntries
               else { setSettingsPage('home'); setMasterPropertyCompanyId(''); setShowPropertyForm(false) }
             }}>{settingsPage === 'home' ? '← 戻る' : '← 設定へ戻る'}</button>
             <p className="eyebrow">M-Cross設定</p>
-            <h1>{settingsPage === 'home' ? '設定' : settingsPage === 'additional' ? '追加作業設定' : settingsPage === 'memos' ? 'メモ設定' : settingsPage === 'rooms' ? '初期部屋設定' : settingsPage === 'pricing' ? '単価・概算設定' : '管理会社・物件管理'}</h1>
+            <h1>{settingsPage === 'home' ? '設定' : settingsPage === 'additional' ? '追加作業設定' : settingsPage === 'memos' ? 'メモ設定' : settingsPage === 'rooms' ? '初期部屋設定' : settingsPage === 'worknames' ? '工事名マスター' : settingsPage === 'pricing' ? '単価・概算設定' : '管理会社・物件管理'}</h1>
             <section className="card">
               {settingsPage === 'home' && (<>
               <h2>表示設定</h2>
@@ -9346,6 +9351,7 @@ return savedEntries
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('additional')}><span>🔧 よく使う追加作業</span><span>›</span></button>
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('memos')}><span>📝 よく使うメモ</span><span>›</span></button>
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('rooms')}><span>🏠 新規物件の初期部屋</span><span>›</span></button>
+                <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('worknames')}><span>🏷️ 工事名マスター</span><span>›</span></button>
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('pricing')}><span>💰 単価・概算設定</span><span>›</span></button>
                 <button className="settingsMenuButton" type="button" onClick={() => setSettingsPage('management')}><span>🏢 管理会社・物件管理</span><span>›</span></button>
               </div>
@@ -9379,6 +9385,9 @@ return savedEntries
                 setter={setConfiguredDefaultRooms}
                 fallback={defaultRooms}
               />
+              </>)}
+              {settingsPage === 'worknames' && (<>
+              <GlobalListEditor title="🏷️ 工事名マスター" description="案件・見積書・Excelで使用する工事名候補を編集します。" items={workNameMaster} storageKey={workNameMasterKey} setter={setWorkNameMaster} fallback={defaultWorkNames} />
               </>)}
               {settingsPage === 'pricing' && (<>
               <h2>単価・概算設定</h2>
@@ -9719,7 +9728,7 @@ return savedEntries
                               <span>📄</span>
                               <div><strong>{baseName}{versions.length ? estimateVersionMark(Math.max(...versions.map(item => Number(item.version) || 0)) + 1) : ''}</strong><small>{versions.length ? '現在編集中の見積' : '最初の見積'} ／ 更新 {formatSavedDate(entry.updatedAt)}</small></div>
                             </button>
-                              <button className="actionButton actionOverwrite savedExplorerExcelRegister" type="button" onClick={() => registerSavedEntryExcel(entry)}>{entry.excelUrl?"🔗 Excel変更":"🔗 Excel登録"}</button>{entry.excelUrl&&<button className="actionButton actionOverwrite savedExplorerExcelOpen" type="button" onClick={() => window.open(String(entry.excelUrl)," _blank","noopener,noreferrer")}>📗 Excelを開く</button>}<button className="actionButton actionDelete savedExplorerDeleteButton" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
+                              <button className="actionButton actionDelete savedExplorerDeleteButton" type="button" onClick={() => deleteSavedEntry(entry)}>削除</button>
                             </div>,
                           ]
                           versions.sort((a,b) => Number(a.version)-Number(b.version)).forEach(version => {
@@ -10457,19 +10466,14 @@ return savedEntries
               </label>
 
               <label className="workNameField">
-                <span>工事名 *</span>
+                <span>工事名</span>
                 <input
                   list="mcross-work-name-options"
                   value={workName}
                   onChange={event => { setWorkName(event.target.value); setSaveStatus('') }}
-                  placeholder="例：原状回復工事"
+                  placeholder="マスターから選択、または自由入力"
                 />
-                <datalist id="mcross-work-name-options">
-                  <option value="原状回復工事" />
-                  <option value="内装工事" />
-                  <option value="修繕工事" />
-                  <option value="設備工事" />
-                </datalist>
+                <datalist id="mcross-work-name-options">{workNameMaster.map(name=><option key={name} value={name} />)}</datalist>
                 <small>同じ物件・号室でも、工事名が違えば別案件として保存します。</small>
               </label>
 
@@ -10766,7 +10770,7 @@ return savedEntries
               return (
                 <section className="card">
                   <h2>{selectedProperty?.name} {unit}号室{openedEstimateVersion ? estimateVersionMark(openedEstimateVersion) : ''}</h2>
-                  <MCrossEstimateSheet company={company||""} propertyName={selectedProperty?.name||""} unit={unit||""} address={selectedProperty?.address||""} workName={workName||"原状回復工事"} rows={orderCandidateRows} propertyAccess={liveSelectedProperty ? {/* M-CROSS_WORK_COPY_ACCESS_FALLBACK_V1_SAFE */ autoLock:liveSelectedProperty.autoLock||selectedProperty?.autoLock||'',keyBox:liveSelectedProperty.keyBox||selectedProperty?.keyBox||'',joiner:liveSelectedProperty.joiner||selectedProperty?.joiner||'',myLock:liveSelectedProperty.myLock||selectedProperty?.myLock||'',entranceOpen:liveSelectedProperty.entranceOpen||selectedProperty?.entranceOpen||''} : {autoLock:selectedProperty?.autoLock||'',keyBox:selectedProperty?.keyBox||'',joiner:selectedProperty?.joiner||'',myLock:selectedProperty?.myLock||'',entranceOpen:selectedProperty?.entranceOpen||''}} onGoMeasurement={()=>setShowEstimate(false)} onGoOrder={()=>document.querySelector(".orderSelectionPanel")?.scrollIntoView({behavior:"smooth",block:"start"})} onCreateServiceOrder={picked=>{/* M-CROSS_GREEN_VERTICAL_SERVICE_ORDER_V2_SAFE */ const items=(Array.isArray(picked)?picked:[]).map((row,index)=>{const text=String(row.name||row.label||'');const category=String(row.category||(/CF貼/i.test(text)?'cf':/クロス/.test(text)?'cross':'service'));const sourceQuantity=Math.max(0,Number(row.quantity)||0);const factor=['cross','cf'].includes(category)?0.9:1;return {id:'selected-service-'+Date.now()+'-'+index,sourceKey:String(row.sourceKey||row.id||index),label:text,parts:Array.isArray(row.parts)?row.parts.map(v=>String(v||'')):[],memo:String(row.memo||''),productCode:String(row.spec||row.productCode||''),category,sourceQuantity,factor,orderQuantity:Math.round(sourceQuantity*factor*100)/100,unit:String(row.unit||''),rate:Number(row.rate||0),amount:sourceQuantity*Number(row.rate||0),orderRate:''}});setSelectedOrderKeys(items.map(item=>item.sourceKey));setOrderDraft({contractor:'',contractorId:'',orderMode:'service',items});setPendingPurchaseOrderItems([]);setPurchaseOrderBranch(null);window.setTimeout(()=>document.querySelector('.serviceOrderPanel')?.scrollIntoView({behavior:'smooth',block:'start'}),80)}} onExportEstimate={()=>{const factor=Math.max(0,Number(caseCrossFactor)||Number(pricingSettings.crossFactor)||0);const rawRows=buildEstimateRows(records,cfRecords,softRecords,floorTrimRecords,rooms,factor,pricingSettings);const allRows=applyEstimateEdits(rawRows,estimateEdits);const rowsForCombined=allRows.filter(row=>!estimateEdits[row.exclusionKey||estimateEditKey(row)]?.excluded);const worksForCombined=additionalWorks;downloadCombinedEstimateMeasurementExcel({company,propertyName:selectedProperty?.name||"",address:selectedProperty?.address||"",unit,records,cfRecords,cfMaterialGroups,softRecords,floorTrimRecords,additionalWorks,legacyEstimateNotes},rowsForCombined,estimateCopyFormat,worksForCombined,true) /* M-CROSS_ESTIMATE_PAGE_ONLY_V6_SAFE */}}/>
+                  <MCrossEstimateSheet company={company||""} propertyName={selectedProperty?.name||""} unit={unit||""} address={selectedProperty?.address||""} workName={workName||"原状回復工事"} rows={orderCandidateRows} propertyAccess={liveSelectedProperty ? {/* M-CROSS_WORK_COPY_ACCESS_FALLBACK_V1_SAFE */ autoLock:liveSelectedProperty.autoLock||selectedProperty?.autoLock||'',keyBox:liveSelectedProperty.keyBox||selectedProperty?.keyBox||'',joiner:liveSelectedProperty.joiner||selectedProperty?.joiner||'',myLock:liveSelectedProperty.myLock||selectedProperty?.myLock||'',entranceOpen:liveSelectedProperty.entranceOpen||selectedProperty?.entranceOpen||''} : {autoLock:selectedProperty?.autoLock||'',keyBox:selectedProperty?.keyBox||'',joiner:selectedProperty?.joiner||'',myLock:selectedProperty?.myLock||'',entranceOpen:selectedProperty?.entranceOpen||''}} onGoMeasurement={()=>setShowEstimate(false)} onGoOrder={()=>document.querySelector(".orderSelectionPanel")?.scrollIntoView({behavior:"smooth",block:"start"})} onCreateServiceOrder={picked=>{/* M-CROSS_GREEN_VERTICAL_SERVICE_ORDER_V2_SAFE */ const items=(Array.isArray(picked)?picked:[]).map((row,index)=>{const text=String(row.name||row.label||'');const category=String(row.category||(/CF貼/i.test(text)?'cf':/クロス/.test(text)?'cross':'service'));const sourceQuantity=Math.max(0,Number(row.quantity)||0);const factor=['cross','cf'].includes(category)?0.9:1;return {id:'selected-service-'+Date.now()+'-'+index,sourceKey:String(row.sourceKey||row.id||index),label:text,parts:Array.isArray(row.parts)?row.parts.map(v=>String(v||'')):[],memo:String(row.memo||''),productCode:String(row.spec||row.productCode||''),category,sourceQuantity,factor,orderQuantity:Math.round(sourceQuantity*factor*100)/100,unit:String(row.unit||''),rate:Number(row.rate||0),amount:sourceQuantity*Number(row.rate||0),orderRate:''}});setSelectedOrderKeys(items.map(item=>item.sourceKey));setOrderDraft({contractor:'',contractorId:'',orderMode:'service',items});setPendingPurchaseOrderItems([]);setPurchaseOrderBranch(null);window.setTimeout(()=>document.querySelector('.serviceOrderPanel')?.scrollIntoView({behavior:'smooth',block:'start'}),80)}} onOpenEstimateExcel={()=>{try{const key=currentStorageKey||getSaveKey(company,selectedProperty,unit,workName);const saved=JSON.parse(localStorage.getItem(key)||"null");const url=String(saved?.excelUrl||"").trim();if(url){window.open(url,"_blank","noopener,noreferrer");return}window.alert("この案件にはExcelがまだ保存されていません。`n先に「Excel書式で保存」を押してください。")}catch(e){console.error(e);window.alert("Excelを開けませんでした。")}}} onExportEstimate={(screenRows)=>{const rowsForCombined=Array.isArray(screenRows)?screenRows:[];downloadCombinedEstimateMeasurementExcel({company,propertyName:selectedProperty?.name||"",address:selectedProperty?.address||"",unit,workName:workName||"原状回復工事",storageKey:currentStorageKey||getSaveKey(company,selectedProperty,unit,workName),records,cfRecords,cfMaterialGroups,softRecords,floorTrimRecords,additionalWorks,legacyEstimateNotes},rowsForCombined,estimateCopyFormat,[],true) /* M-CROSS_SCREEN_ROWS_EXCEL_V1_SAFE */}}/>
                   {/* M-CROSS_COST_BUTTON_IN_PROJECT_V75_SAFE */}<button type="button" className="primary" style={{width:"100%",minHeight:"52px",marginBottom:"12px",fontWeight:900}} onClick={()=>setShowCostCalculation(true)}>💰 この物件の原価計算</button><section className="orderSelectionPanel easyOrderPanel" aria-label="かんたん発注">
                     {/* M-CROSS_EASY_ORDER_ENTRY_V3_SAFE */}<div className="easyOrderTitle"><small>SMART ORDER</small><strong>📦 かんたん発注</strong><span>内装工事はまとめて選択。必要な時だけ個別変更できます。</span></div>
                     <div className="orderSelectionQuickButtons">
@@ -11786,7 +11790,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
                           <div><span>物件名</span><strong>{selectedProperty?.name||''}</strong></div>
                           <div><span>号室</span><strong>{unit?String(unit).replace(/号室$/,'')+'号室':''}</strong></div>
                           <div><span>住所</span><strong>{selectedProperty?.address||''}</strong></div>
-                          <div><span>工事名</span><strong>{workName||'原状回復工事'}</strong></div>
+                          <div><span>工事名</span><strong>{workName||''}</strong></div>
                         </section>
                       </>}
                       <section className="contractorPickerField">
@@ -12715,6 +12719,8 @@ if (!globalThis.__mCrossThemeButtonSoundsV2Installed) {
 
 
 /* M-CROSS_AUTO_THEME_SOUNDS_APPLIED */
+
+
 
 
 

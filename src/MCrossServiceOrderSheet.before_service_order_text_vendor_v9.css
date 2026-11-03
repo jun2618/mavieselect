@@ -1,0 +1,80 @@
+@font-face{font-family:MCrossBIZUDP;src:url('/fonts/BIZUDPGothic-Regular.ttf') format('truetype');font-display:swap}
+.mcrossServiceSheet{--paper:#eff7e9;--cell:#fbfff8;--accent:#3f945c;--grid:#78947c;width:100%;margin:10px auto 18px;padding:16px;color:#263b2b;background:var(--paper);border:1px solid rgba(74,116,81,.35);box-shadow:0 8px 24px rgba(38,76,45,.12);box-sizing:border-box;font-family:MCrossBIZUDP,'BIZ UDPGothic','Yu Gothic',sans-serif}
+.mcrossServiceSheetHead{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:12px}.mcrossServiceSheetBrand{display:grid;color:#2f8a52;line-height:1}.mcrossServiceSheetBrand strong{font-size:30px}.mcrossServiceSheetBrand small{margin-top:5px;letter-spacing:.16em}.mcrossServiceSheetHead h2{margin:3px 0;text-align:center;font-size:28px;letter-spacing:.2em;color:#173e28}.mcrossServiceSheetCompany{display:grid;justify-items:center;text-align:center;font-size:11px}.mcrossServiceSheetCompany strong{font-size:16px;margin-bottom:4px}.mcrossServiceSheetMeta{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;margin:9px 0}.mcrossServiceSheetMeta>div{display:grid;grid-template-columns:72px 1fr;align-items:center;min-height:25px;border-bottom:1px solid rgba(120,148,124,.6)}.mcrossServiceSheetMeta .wide{grid-column:1/-1}.mcrossServiceSheetMeta span{font-weight:900}.mcrossServiceSheetTable{border-top:1px solid var(--grid);border-left:1px solid var(--grid)}.mcrossServiceSheetRow{display:grid;grid-template-columns:36px minmax(200px,1.8fr) minmax(100px,.8fr) 112px 48px 88px 102px 36px}.mcrossServiceSheetRow.head{background:#cfe4d2;font-weight:900}.mcrossServiceSheetRow>span{display:flex;align-items:center;min-width:0;min-height:29px;padding:2px 4px;border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);box-sizing:border-box;overflow:hidden;font-size:13px}.mcrossServiceSheetRow:not(.head)>span{background:rgba(255,255,255,.3)}.mcrossServiceSheetRow:not(.head)>span:nth-child(2),.mcrossServiceSheetRow:not(.head)>span:nth-child(3),.mcrossServiceSheetRow:not(.head)>span:nth-child(4),.mcrossServiceSheetRow:not(.head)>span:nth-child(6){margin:2px;border:1px solid #b5ccb8;border-radius:6px;background:var(--cell)}.mcrossServiceSheetRow.head span,.mcrossServiceSheetRow>span:first-child,.mcrossServiceSheetRow>span:nth-child(5),.mcrossServiceSheetRow>span:last-child{justify-content:center}.mcrossServiceSheetRow .work{white-space:nowrap;text-overflow:ellipsis}.mcrossServiceSheetRow .compare,.mcrossServiceSheetRow .amount{justify-content:flex-end;white-space:nowrap}.mcrossServiceSheetRow input{width:100%;min-width:0;border:0;background:transparent;text-align:right;font:inherit}.mcrossServiceSheetDelete{display:grid;place-items:center;width:21px;height:21px;padding:0;border:1px solid #d38da2;border-radius:50%;background:#fff7f8;color:#bd4d6d}.mcrossServiceSheetFoot{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-top:9px}.mcrossServiceSheetNotes{min-height:70px;padding:8px;border:1px solid var(--grid)}.mcrossServiceSheetNotes textarea{width:100%;min-height:44px;border:0;background:transparent;font:inherit}.mcrossServiceSheetTotals{border:1px solid var(--accent);background:rgba(255,255,255,.4)}.mcrossServiceSheetTotals>div{display:flex;justify-content:space-between;padding:7px 11px;border-bottom:1px solid #bfd5c2}.mcrossServiceSheetTotals .grand{border-bottom:0}.mcrossServiceSheetTotals .grand strong{font-size:24px;color:#257344}.mcrossServiceSheetActions{display:flex;justify-content:flex-end;margin-top:9px}.mcrossServiceSheetActions button{min-height:38px;padding:7px 16px;border:1px solid #2f8550;border-radius:10px;background:#2f8550;color:#fff;font-weight:900}
+@media(max-width:1024px){.mcrossServiceSheet{padding:11px}.mcrossServiceSheetRow{grid-template-columns:32px minmax(155px,1.7fr) minmax(82px,.75fr) 98px 42px 76px 88px 32px}.mcrossServiceSheetRow>span{font-size:11px;min-height:27px}.mcrossServiceSheetHead h2{font-size:23px}}
+@media(max-width:700px){.mcrossServiceSheet{overflow-x:auto}.mcrossServiceSheetTable,.mcrossServiceSheetFoot{min-width:720px}}
+
+/* M-CROSS_SERVICE_ORDER_A4_COMPACT_V3_SAFE */
+.mcrossServiceSheet{width:min(100%,920px)!important;max-width:920px!important;margin:10px auto 18px!important;padding:12px!important}
+.mcrossServiceSheetHead{gap:8px!important}.mcrossServiceSheetBrand strong{font-size:28px!important}.mcrossServiceSheetHead h2{font-size:25px!important}.mcrossServiceSheetCompany{font-size:10.5px!important}.mcrossServiceSheetCompany strong{font-size:15px!important;margin-bottom:2px!important}
+.mcrossServiceSheetMeta{gap:0 12px!important;margin:6px 0 8px!important}.mcrossServiceSheetMeta>div{min-height:22px!important;grid-template-columns:62px 1fr!important;font-size:12px!important}
+.mcrossServiceSheetRow{grid-template-columns:30px minmax(185px,1.9fr) minmax(90px,.8fr) 100px 42px 76px 90px 30px!important}.mcrossServiceSheetRow>span{min-height:25px!important;height:25px!important;padding:1px 3px!important;font-size:11.5px!important;line-height:1.1!important}.mcrossServiceSheetRow.head>span{min-height:24px!important;height:24px!important;font-size:11px!important}
+.mcrossServiceSheetRow:not(.head)>span:nth-child(2),.mcrossServiceSheetRow:not(.head)>span:nth-child(3),.mcrossServiceSheetRow:not(.head)>span:nth-child(4),.mcrossServiceSheetRow:not(.head)>span:nth-child(6){margin:1px!important;border-radius:4px!important}.mcrossServiceSheetRow input{height:21px!important;min-height:21px!important;padding:0 2px!important;font-size:11.5px!important}.mcrossServiceSheetDelete{width:18px!important;height:18px!important;font-size:12px!important}
+.mcrossServiceSheetFoot{gap:8px!important;margin-top:7px!important}.mcrossServiceSheetNotes{min-height:58px!important;padding:6px!important}.mcrossServiceSheetNotes textarea{min-height:34px!important}.mcrossServiceSheetTotals>div{padding:5px 9px!important}.mcrossServiceSheetTotals .grand strong{font-size:21px!important}.mcrossServiceSheetActions{margin-top:6px!important}.mcrossServiceSheetActions button{min-height:34px!important;padding:5px 14px!important}
+@media(max-width:1024px){.mcrossServiceSheet{width:calc(100% - 16px)!important;max-width:920px!important;padding:9px!important}.mcrossServiceSheetRow{grid-template-columns:28px minmax(145px,1.8fr) minmax(76px,.75fr) 90px 38px 68px 82px 28px!important}.mcrossServiceSheetRow>span{font-size:10.5px!important;min-height:24px!important;height:24px!important}}
+@media(max-width:700px){.mcrossServiceSheet{width:calc(100% - 10px)!important;padding:7px!important}.mcrossServiceSheetHead{grid-template-columns:1fr 1fr!important}.mcrossServiceSheetCompany{grid-column:1/-1!important}.mcrossServiceSheetMeta{grid-template-columns:1fr!important}.mcrossServiceSheetTable{min-width:0!important;width:100%!important}.mcrossServiceSheetRow{grid-template-columns:26px minmax(125px,1.75fr) minmax(65px,.72fr) 78px 34px 58px 72px 26px!important}.mcrossServiceSheetRow>span{font-size:9.5px!important;padding:1px!important}.mcrossServiceSheetFoot{min-width:0!important;width:100%!important;grid-template-columns:1fr!important}}
+
+/* M-CROSS_SERVICE_ORDER_REFINED_V4_SAFE */
+body{background:#f4f3ec!important}
+.mcrossServiceSheet{--paper:#dfeedd!important;--cell:#f8fcf5!important;--accent:#2f8550!important;--grid:#6d8d73!important;width:min(100%,980px)!important;max-width:980px!important;margin:12px auto 22px!important;padding:14px!important;background:var(--paper)!important;border:1px solid #8aaa90!important;box-shadow:0 10px 28px rgba(40,72,47,.16)!important}
+.mcrossServiceSheetHead{gap:10px!important}.mcrossServiceSheetBrand strong{font-size:30px!important}.mcrossServiceSheetHead h2{font-size:27px!important}.mcrossServiceSheetCompany{font-size:11px!important}.mcrossServiceSheetMeta{margin:7px 0 9px!important}.mcrossServiceSheetMeta>div{min-height:23px!important;font-size:11px!important}
+.mcrossServiceSheetRow{grid-template-columns:32px minmax(195px,1.9fr) minmax(94px,.8fr) 104px 44px 80px 96px 32px!important}.mcrossServiceSheetRow>span{min-height:26px!important;height:26px!important;padding:1px 3px!important;font-size:11px!important}.mcrossServiceSheetRow.head>span{height:25px!important;min-height:25px!important;font-size:10px!important}.mcrossServiceSheetRow:not(.head)>span:nth-child(2),.mcrossServiceSheetRow:not(.head)>span:nth-child(3),.mcrossServiceSheetRow:not(.head)>span:nth-child(4),.mcrossServiceSheetRow:not(.head)>span:nth-child(6){margin:1px!important;border-radius:5px!important;background:var(--cell)!important}.mcrossServiceSheetRow input{height:22px!important;min-height:22px!important;font-size:11px!important}.mcrossServiceSheetDelete{width:19px!important;height:19px!important}.mcrossServiceSheetFoot{margin-top:7px!important}.mcrossServiceSheetNotes{min-height:58px!important}.mcrossServiceSheetTotals>div{padding:5px 9px!important}.mcrossServiceSheetTotals .grand strong{font-size:22px!important}.mcrossServiceSheetActions{margin-top:7px!important}.mcrossServiceSheetActions button{min-height:36px!important}
+@media(max-width:1024px){.mcrossServiceSheet{width:calc(100% - 22px)!important;max-width:980px!important;padding:11px!important}.mcrossServiceSheetRow{grid-template-columns:30px minmax(160px,1.8fr) minmax(80px,.72fr) 94px 40px 72px 86px 30px!important}.mcrossServiceSheetRow>span{font-size:10px!important;height:25px!important;min-height:25px!important}}
+
+/* M-CROSS_SERVICE_ORDER_REFINED_V5_SAFE */
+/* The modular sheet is the only visible document header. Hide the legacy outer header/meta. */
+.serviceOrderPanel>.orderDraftHeader{display:none!important}
+.serviceOrderPanel>.mcrossServiceOrderIdentity,.serviceOrderPanel>.mcrossServiceOrderProperty{display:none!important}
+
+/* Slightly larger A4-like sheet while keeping the dense estimate-sheet rhythm. */
+.mcrossServiceSheet{width:min(96%,1060px)!important;max-width:1060px!important;margin:16px auto 24px!important;padding:15px 16px!important;background:#d8ead5!important;border:1px solid #78997f!important;box-shadow:0 12px 30px rgba(39,71,46,.18)!important}
+.mcrossServiceSheetHead{gap:10px!important;margin-bottom:4px!important}
+.mcrossServiceSheetBrand strong{font-size:32px!important}
+.mcrossServiceSheetHead h2{font-size:29px!important}
+.mcrossServiceSheetCompany{font-size:11px!important}
+.mcrossServiceSheetMeta{margin:6px 0 9px!important}
+.mcrossServiceSheetMeta>div{min-height:23px!important;font-size:11px!important}
+
+/* Keep text readable, remove empty vertical padding. */
+.mcrossServiceSheetRow{grid-template-columns:34px minmax(220px,1.95fr) minmax(105px,.82fr) 112px 46px 84px 100px 34px!important}
+.mcrossServiceSheetRow>span{height:26px!important;min-height:26px!important;padding:1px 3px!important;font-size:11px!important;line-height:1.05!important}
+.mcrossServiceSheetRow.head>span{height:25px!important;min-height:25px!important;font-size:10.5px!important}
+.mcrossServiceSheetRow:not(.head)>span:nth-child(2),.mcrossServiceSheetRow:not(.head)>span:nth-child(3),.mcrossServiceSheetRow:not(.head)>span:nth-child(4),.mcrossServiceSheetRow:not(.head)>span:nth-child(6){margin:1px!important;border-radius:5px!important;background:#f8fcf5!important}
+.mcrossServiceSheetRow input{height:22px!important;min-height:22px!important;font-size:11px!important;padding:0 2px!important}
+.mcrossServiceSheetDelete{width:19px!important;height:19px!important}
+.mcrossServiceSheetFoot{margin-top:7px!important;gap:9px!important}
+.mcrossServiceSheetNotes{min-height:60px!important;padding:6px!important}
+.mcrossServiceSheetNotes textarea{min-height:36px!important}
+.mcrossServiceSheetTotals>div{padding:5px 9px!important;font-size:11px!important}
+.mcrossServiceSheetTotals .grand strong{font-size:22px!important}
+.mcrossServiceSheetActions{margin-top:7px!important}
+
+@media(max-width:1024px){
+ .mcrossServiceSheet{width:calc(100% - 18px)!important;max-width:980px!important;padding:11px!important}
+ .mcrossServiceSheetRow{grid-template-columns:30px minmax(168px,1.85fr) minmax(84px,.75fr) 98px 40px 74px 90px 30px!important}
+ .mcrossServiceSheetRow>span{height:25px!important;min-height:25px!important;font-size:10px!important}
+}
+
+/* M-CROSS_SERVICE_ORDER_CONTROLS_V6_SAFE */
+.mcrossServiceSheet{width:min(100%,920px)!important;max-width:920px!important}
+.mcrossServiceSheetControls{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:6px;margin:6px 0 8px}.mcrossServiceSheetControls>button,.mcrossServiceSheetControls .factor{min-height:36px;border:1px solid #83a98b;border-radius:9px;background:#f7fcf5;box-sizing:border-box}.mcrossServiceSheetControls>button{padding:5px 8px;color:#285f3c;font:inherit;font-weight:900;text-align:left}.mcrossServiceSheetControls .factor{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:5px;padding:4px 6px}.mcrossServiceSheetControls .factor>strong{font-size:11px;color:#285f3c}.mcrossServiceSheetControls .factor>span{font-size:9px;color:#67806c}.mcrossServiceSheetControls .factor>div{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}.mcrossServiceSheetControls .factor button{min-height:25px;padding:1px 4px;border:1px solid #9ec5a6;border-radius:6px;background:#fff;color:#526358;font-size:10px}.mcrossServiceSheetControls .factor button.active{background:#3f945c;color:#fff;border-color:#3f945c}
+@media(max-width:1024px){.mcrossServiceSheet{width:calc(100% - 18px)!important;max-width:920px!important}.mcrossServiceSheetControls{grid-template-columns:1.25fr 1fr 1fr}}
+@media(max-width:700px){.mcrossServiceSheetControls{grid-template-columns:1fr}.mcrossServiceSheetControls .factor{grid-template-columns:55px 45px 1fr}}
+
+/* M-CROSS_SERVICE_ORDER_META_LARGE_V7_SAFE */
+.mcrossServiceSheetMeta>div{min-height:29px!important;grid-template-columns:78px 1fr!important;font-size:15px!important}
+.mcrossServiceSheetMeta span{font-size:14px!important;font-weight:900!important}
+.mcrossServiceSheetMeta strong{font-size:16px!important;font-weight:700!important;line-height:1.2!important}
+.mcrossServiceSheetMeta .wide strong{font-size:17px!important;color:#245d38!important}
+@media(max-width:1024px){.mcrossServiceSheetMeta>div{min-height:28px!important;font-size:14px!important}.mcrossServiceSheetMeta span{font-size:13px!important}.mcrossServiceSheetMeta strong{font-size:15px!important}.mcrossServiceSheetMeta .wide strong{font-size:16px!important}}
+
+/* M-CROSS_SERVICE_ORDER_GRID_ENLARGE_V8_SAFE */
+.mcrossServiceSheetTable{border:1px solid var(--grid)!important;border-right:0!important;border-bottom:0!important}
+.mcrossServiceSheetRow{grid-template-columns:34px minmax(220px,1.95fr) minmax(105px,.82fr) 112px 46px 84px 100px 34px!important}
+.mcrossServiceSheetRow>span{height:30px!important;min-height:30px!important;padding:2px 4px!important;font-size:12px!important;line-height:1.15!important;border-right:1px solid var(--grid)!important;border-bottom:1px solid var(--grid)!important}
+.mcrossServiceSheetRow.head>span{height:29px!important;min-height:29px!important;font-size:11.5px!important;font-weight:900!important;background:#c8dfc9!important}
+.mcrossServiceSheetRow:not(.head)>span{background:rgba(255,255,255,.22)!important}
+.mcrossServiceSheetRow:not(.head)>span:nth-child(2),.mcrossServiceSheetRow:not(.head)>span:nth-child(3),.mcrossServiceSheetRow:not(.head)>span:nth-child(4),.mcrossServiceSheetRow:not(.head)>span:nth-child(6){margin:2px!important;height:26px!important;min-height:26px!important;border:1px solid #a8c1ac!important;border-radius:5px!important;background:#f9fcf6!important}
+.mcrossServiceSheetRow input{height:24px!important;min-height:24px!important;font-size:12px!important;padding:0 3px!important}
+.mcrossServiceSheetDelete{width:20px!important;height:20px!important;font-size:13px!important}
+@media(max-width:1024px){.mcrossServiceSheetRow{grid-template-columns:31px minmax(175px,1.85fr) minmax(88px,.76fr) 101px 42px 76px 91px 31px!important}.mcrossServiceSheetRow>span{height:29px!important;min-height:29px!important;font-size:11px!important}.mcrossServiceSheetRow.head>span{height:28px!important;min-height:28px!important;font-size:10.5px!important}}
