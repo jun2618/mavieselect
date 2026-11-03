@@ -10792,7 +10792,7 @@ return savedEntries
                       <button type="button" onClick={() => setSelectedOrderKeys([])}>クリア</button>
                     </div>
                     {/* M-CROSS_PURCHASE_ORDER_CURRENT_COUNT_V33_SAFE */}
-                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => { setShowPurchaseOrderExplorer(true); window.setTimeout(() => window.scrollTo({top:0,left:0,behavior:"smooth"}),80) }}>📁 保存済み発注書 <span>{purchaseOrders.filter(order=>{
+                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => { setShowPurchaseOrderExplorer(true); window.setTimeout(() => document.querySelector(".saveState")?.scrollIntoView({behavior:"smooth",block:"start"}),80) }}>📁 保存済み発注書 <span>{purchaseOrders.filter(order=>{
                       const currentCompany=String(company||'').trim()
                       const currentProperty=String(selectedProperty?.name||'').trim()
                       const currentUnit=String(unit||'').trim().replace(/号室$/,'')
