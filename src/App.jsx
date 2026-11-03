@@ -6328,7 +6328,7 @@ export default function App() {
     }
   }, [])
   useEffect(() => {
-    if (!started || !isDirty) return
+    if (!started) return
     if (!company || !selectedProperty || !unit.trim()) return
 
     const draft = {
@@ -8348,8 +8348,8 @@ return savedEntries
     setMeasurementType(draft.measurementType || '天井')
     setCaseCrossFactor(String(draft.caseCrossFactor ?? pricingSettings.crossFactor))
     setCurrentStorageKey(draft.currentStorageKey || '')
-    setHeight('')
-    setCount('')
+    setHeight(String(draft.height || ''))
+    setCount(String(draft.count || ''))
     setMemo(draft.draftMemo || '')
     setActiveInput('')
     setSaveStatus('')
