@@ -19,8 +19,6 @@ export default function MCrossEstimateSheet({company='',propertyName='',unit='',
  /* M-CROSS_WORK_COPY_V2_SAFE */
  /* M-CROSS_WORK_CHECKBOX_LEFT_V1_SAFE */
  const[selectedWorkIds,setSelectedWorkIds]=useState([])
- /* M-CROSS_SELECTED_WORK_TO_COST_V1_SAFE */
- useEffect(()=>{try{const key=['mcross_cost_selected_work_v1',company,propertyName,unit,workName].map(v=>encodeURIComponent(String(v||''))).join(':');const picked=rows.filter(r=>selectedWorkIds.includes(r.id)).map(r=>({name:String(r.name||'').trim()})).filter(r=>r.name);localStorage.setItem(key,JSON.stringify(picked))}catch{}},[company,propertyName,unit,workName,rows,selectedWorkIds])
  const refreshRequestedRef=useRef(false)
  const lastVersionTokenRef=useRef(versionToken)
  const[showWorkInstruction,setShowWorkInstruction]=useState(false)
