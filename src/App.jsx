@@ -10892,9 +10892,9 @@ return savedEntries
                               <div className="draftOrderEditRows">
                                 {purchaseOrderEditItems.map((item,index)=><article className="draftOrderEditRow" key={(item.id||'draft')+'-'+index}>
                                   <label className="wide"><span>{selected.orderMode==='material'?'品番・商品名':'施工内容'}</span><input value={item.label||item.productCode||''} onChange={event=>setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,label:event.target.value,productCode:selected.orderMode==='material'?event.target.value:current.productCode}:current))}/></label>
-                                  <label><span>数量</span><input type="number" inputMode="decimal" min="0" step="0.01" value={item.orderQuantity??''} onFocus={event=>event.target.select()} onChange={event=>{const raw=event.target.value;setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,orderQuantity:raw}:current))}}/></label>
+                                  <label><span>数量</span><input onFocus={e=>requestAnimationFrame(()=>e.currentTarget.select())} onPointerUp={e=>{e.preventDefault();requestAnimationFrame(()=>e.currentTarget.select())}} type="number" inputMode="decimal" min="0" step="0.01" value={item.orderQuantity??''} onFocus={event=>event.target.select()} onChange={event=>{const raw=event.target.value;setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,orderQuantity:raw}:current))}}/></label>
                                   <label><span>単位</span><input value={item.unit||''} onChange={event=>setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,unit:event.target.value}:current))}/></label>
-                                  <label><span>単価</span><input type="number" inputMode="numeric" min="0" step="1" value={item.orderRate??''} onFocus={event=>event.target.select()} onChange={event=>{const raw=event.target.value;setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,orderRate:raw}:current))}}/></label>
+                                  <label><span>単価</span><input onFocus={e=>requestAnimationFrame(()=>e.currentTarget.select())} onPointerUp={e=>{e.preventDefault();requestAnimationFrame(()=>e.currentTarget.select())}} type="number" inputMode="numeric" min="0" step="1" value={item.orderRate??''} onFocus={event=>event.target.select()} onChange={event=>{const raw=event.target.value;setPurchaseOrderEditItems(previous=>previous.map((current,i)=>i===index?{...current,orderRate:raw}:current))}}/></label>
                                   <div className="draftOrderEditAmount"><span>金額</span><strong>{formatYen((Number(item.orderQuantity)||0)*(Number(item.orderRate)||0))}</strong></div>
                                   <button type="button" className="danger" onClick={()=>setPurchaseOrderEditItems(previous=>previous.filter((_,i)=>i!==index))}>削除</button>
                                 </article>)}
@@ -11640,7 +11640,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
 
                                 <label>
                                   <span>発注数量</span>
-                                  <input
+                                  <input onFocus={e=>requestAnimationFrame(()=>e.currentTarget.select())} onPointerUp={e=>{e.preventDefault();requestAnimationFrame(()=>e.currentTarget.select())}}
                                     type="number"
                                     min="0"
                                     step="0.01"
@@ -11682,7 +11682,7 @@ className="purchaseOrderPreviewItems">{(selected?.items||[]).map((item,index)=><
 
                                 <label>
                                   <span>単価</span>
-                                  <input
+                                  <input onFocus={e=>requestAnimationFrame(()=>e.currentTarget.select())} onPointerUp={e=>{e.preventDefault();requestAnimationFrame(()=>e.currentTarget.select())}}
                                     type="number"
                                     min="0"
                                     step="1"
