@@ -10429,7 +10429,7 @@ return savedEntries
                             setSelectedProperty(item)
                             setPropertySearch(item.name)
                             setSaveStatus('')
-                            setShowPropertyListPicker(false)
+                            setShowPropertyListPicker(false); window.setTimeout(() => window.scrollTo({top:0,left:0,behavior:'auto'}),80)
                           }}>
                             <strong>{item.name}</strong>
                             <small>{item.address || '住所未登録'}</small>
@@ -10792,7 +10792,7 @@ return savedEntries
                       <button type="button" onClick={() => setSelectedOrderKeys([])}>クリア</button>
                     </div>
                     {/* M-CROSS_PURCHASE_ORDER_CURRENT_COUNT_V33_SAFE */}
-                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => { setShowPurchaseOrderExplorer(true); window.setTimeout(() => document.querySelector(".saveState")?.scrollIntoView({behavior:"smooth",block:"start"}),80) }}>📁 保存済み発注書 <span>{purchaseOrders.filter(order=>{
+                    <button className="purchaseOrderExplorerOpen" type="button" onClick={() => { setShowPurchaseOrderExplorer(true); window.setTimeout(() => { const el=document.querySelector(".purchaseOrderExplorerBackdrop"); if(el){el.scrollTop=0;el.querySelector(".purchaseOrderExplorer")?.scrollIntoView({behavior:"auto",block:"start"})} },80) }}>📁 保存済み発注書 <span>{purchaseOrders.filter(order=>{
                       const currentCompany=String(company||'').trim()
                       const currentProperty=String(selectedProperty?.name||'').trim()
                       const currentUnit=String(unit||'').trim().replace(/号室$/,'')
