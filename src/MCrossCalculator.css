@@ -47,3 +47,21 @@
 
 /* M-CROSS_CALCULATOR_DRAG_FINAL_V1 */
 .mcrossCalculatorDragHandle{position:absolute;z-index:7;left:10%;top:3%;width:75%;height:16%;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}.mcrossCalculatorDragHandle:active{cursor:grabbing}.mcrossIllustrationCalculator{transition:none!important}
+
+/* M-CROSS_CALCULATOR_SCALE_SMALL_V1 */
+.mcrossIllustrationCalculator{width:min(217px,32vw)!important;max-height:90vh!important}
+
+/* M-CROSS_CALCULATOR_SCALE_MEDIUM_V2 */
+.mcrossIllustrationCalculator{width:min(320px,48vw)!important;max-height:none!important}
+
+/* M-CROSS_CALCULATOR_SIZE_DISPLAY_FONT_V3 */
+.mcrossIllustrationCalculator{width:min(350px,54vw)!important}.mcrossDigitalDisplay{font-size:34px!important}
+
+/* M-CROSS_DISPLAY_CORNER_FINE_V6 */
+.mcrossDigitalDisplay{left:13%!important;width:74%!important}
+
+/* M-CROSS_DISPLAY_CORNER_RADIUS_V7 */
+.mcrossDigitalDisplay{border-radius:16px!important}
+
+/* M-CROSS_DISPLAY_BOTTOM_FINE_V8 */
+.mcrossDigitalDisplay{height:11.1%!important}
