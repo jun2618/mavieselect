@@ -8039,7 +8039,6 @@ return savedEntries
     const savedEditableEstimateRows=Array.isArray(entry.editableEstimateRows)?JSON.parse(JSON.stringify(entry.editableEstimateRows)):null
     setOpenedEstimateRows(savedEditableEstimateRows)
     setCurrentEstimateRows(savedEditableEstimateRows||[])
-    if(savedEditableEstimateRows){try{const editableKey=['mcross_editable_estimate_v1',entry.company||'',entry.propertyName||'',entry.unit||'',entry.workName||''].map(v=>encodeURIComponent(String(v||''))).join(':');localStorage.removeItem(editableKey)}catch{}} /* M-CROSS_SAVED_ESTIMATE_SINGLE_SOURCE_V1_SAFE */
     /* M-CROSS_LOAD_SAVED_ROOMS_MERGE_V1_SAFE */
     setProjectRooms([...new Set([...defaultRooms,...(Array.isArray(entry.rooms)?entry.rooms:[]),...(Array.isArray(entry.customRooms)?entry.customRooms:[])].map(v=>String(v||'').trim()).filter(Boolean))])
     setRoomConfirmations(
